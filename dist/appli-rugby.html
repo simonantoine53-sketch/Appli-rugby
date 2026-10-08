@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appli Rugby – Éditeur d'exercices</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
+  <style>
+/* ---------- Base ---------- */
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --border: #e3e6ea;
+  --text: #1f2933;
+  --muted: #6b7280;
+  --primary: #1a73e8;
+  --primary-dark: #1558b8;
+  --accent: #b5174b;
+  --field: #4a9e4f;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
+button { font: inherit; cursor: pointer; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+
+/* ---------- Header ---------- */
+.topbar {
+  height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 16px;
+  background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto;
+}
+.btn-back {
+  width: 36px; height: 36px; border-radius: 8px; border: none; background: var(--accent); color: #fff;
+  display: grid; place-items: center;
+}
+.title-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.clip-icon { color: #444; }
+.crumb { font-size: 20px; font-weight: 700; white-space: nowrap; }
+.title-input {
+  font-size: 20px; font-weight: 700; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px;
+  min-width: 120px; width: 240px; background: transparent; color: var(--text);
+}
+.title-input:hover { border-color: var(--border); }
+.title-input:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+.zoom { margin-left: auto; display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.zoom button { width: 40px; height: 40px; border: none; background: #fff; font-size: 18px; }
+.zoom button:hover { background: #f1f3f5; }
+.zoom span { width: 64px; text-align: center; border-left: 1px solid var(--border); border-right: 1px solid var(--border); line-height: 40px; }
+
+.actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+.btn {
+  border-radius: 8px; padding: 10px 16px; border: 1px solid transparent; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.primary:hover { background: var(--primary-dark); }
+.btn.secondary { background: #e8f0fe; color: var(--primary); }
+.btn.secondary:hover { background: #d8e6fc; }
+.btn.outline { background: #fff; color: var(--text); border-color: var(--border); }
+.btn.outline:hover { background: #f6f8fa; }
+.btn.ghost { background: transparent; color: #444; }
+.btn.ghost:hover { background: #f1f3f5; }
+.btn.ghost:disabled { opacity: .35; cursor: default; background: transparent; }
+.btn.icon-only { padding: 8px; }
+.btn.small { padding: 6px 12px; font-size: 13px; }
+.btn.wide { width: 100%; justify-content: center; }
+.btn.danger { background: #fdecea; color: #c62828; }
+
+.menu-wrap { position: relative; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); min-width: 300px; padding: 6px; z-index: 40; }
+.menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; border: none; background: transparent; padding: 10px 12px; border-radius: 8px; }
+.menu button:hover { background: #f1f3f5; }
+.menu button span { font-size: 12px; color: var(--muted); }
+.progress { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: grid; place-items: center; z-index: 70; }
+.progress .box { background: #fff; border-radius: 12px; padding: 20px 26px; min-width: 300px; text-align: center; box-shadow: var(--shadow); }
+.progress .bar { height: 8px; background: #e3e6ea; border-radius: 4px; overflow: hidden; margin-top: 12px; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .15s; }
+
+/* ---------- Layout ---------- */
+.layout { flex: 1 1 auto; display: flex; min-height: 0; }
+
+/* ---------- Palette ---------- */
+.sidebar {
+  width: 300px; flex: 0 0 auto; background: var(--panel); border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 8px 16px 24px;
+}
+.group { padding: 10px 0 14px; border-bottom: 1px solid var(--border); }
+.group:last-child { border-bottom: none; }
+.group-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.group-head h3 { margin: 0; font-size: 15px; }
+.select-tool {
+  width: 36px; height: 24px; border-radius: 6px; border: none; background: #9aa3ad; color: #fff; display: grid; place-items: center;
+}
+.select-tool.active { background: var(--primary); }
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.tool {
+  position: relative; aspect-ratio: 1; border: 1.5px solid #d9dde3; border-radius: 8px; background: #fff;
+  display: grid; place-items: center; color: #222; padding: 0;
+}
+.tool:hover { border-color: #9aa3ad; }
+.tool.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,115,232,.25); background: #f3f7fe; }
+.tool svg { width: 32px; height: 32px; }
+.tool .key { position: absolute; right: 4px; bottom: 2px; font-size: 10px; color: #8a929c; }
+
+/* ---------- Canvas ---------- */
+.canvas-area { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.canvas-wrap { flex: 1 1 auto; overflow: auto; display: grid; place-items: center; padding: 24px; }
+#canvas { display: block; border-radius: 18px; box-shadow: var(--shadow); background: var(--field); touch-action: none; user-select: none; }
+#canvas.tool-active { cursor: crosshair; }
+#canvas .objects > g { cursor: move; }
+#canvas .handle { fill: #fff; stroke: var(--primary); stroke-width: 1.5; cursor: nwse-resize; }
+#canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
+#canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.hint { padding: 6px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: #fff; }
+
+/* Barre de propriétés de l'objet sélectionné */
+.props {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 5;
+  background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 6px 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: calc(100% - 32px);
+}
+.props .sep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+.props .pbtn {
+  border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 5px 8px; font-size: 13px; color: #333;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.props .pbtn:hover { background: #f1f3f5; }
+.props .pbtn.on { background: #e8f0fe; color: var(--primary); border-color: #c6dafc; }
+.props .pbtn.danger { color: #c62828; }
+.props .swatch { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #c9cdd2; cursor: pointer; }
+.props .swatch.on { box-shadow: 0 0 0 2px var(--primary); }
+.props input[type=text] { width: 60px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; font: inherit; }
+.props input[type=range] { width: 80px; }
+
+/* ---------- Panneau droit ---------- */
+.panel { width: 300px; flex: 0 0 auto; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 12px; }
+.tab { background: none; border: none; padding: 14px 8px; margin-right: 12px; font-size: 15px; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab-content { padding: 16px; overflow-y: auto; flex: 1 1 auto; }
+.steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.step-card {
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 8px; cursor: pointer; background: #fff;
+  display: grid; grid-template-columns: 18px 1fr 28px; gap: 6px; align-items: start;
+}
+.step-card.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(26,115,232,.15); }
+.step-card .num { font-size: 12px; color: var(--primary); font-weight: 700; padding-top: 2px; }
+.step-card .thumb { width: 100%; aspect-ratio: 16/10; border-radius: 6px; overflow: hidden; background: var(--field); display: grid; place-items: center; }
+.step-card .thumb svg { width: 100%; height: 100%; }
+.step-card .meta { grid-column: 2; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.step-card .card-actions { display: flex; flex-direction: column; gap: 4px; }
+.step-card .card-actions button { width: 26px; height: 26px; border: none; background: transparent; border-radius: 6px; color: #555; display: grid; place-items: center; }
+.step-card .card-actions button:hover { background: #f1f3f5; }
+.step-card .card-actions button.del:hover { color: #c62828; background: #fdecea; }
+.help { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+.field-group { margin-bottom: 18px; }
+.label { display: block; font-weight: 600; margin-bottom: 8px; }
+.choice-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.choice-row label { display: inline-flex; align-items: center; gap: 6px; }
+.shortcuts { margin: 0; padding-left: 16px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-size: 11px; font-family: inherit; color: #333; }
+
+/* ---------- Modales ---------- */
+.modal { position: fixed; inset: 0; background: rgba(15,23,42,.55); display: grid; place-items: center; z-index: 50; padding: 24px; }
+.modal-box { background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: flex; flex-direction: column; max-height: 100%; width: min(1100px, 100%); }
+.modal-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.modal-head strong { font-size: 16px; }
+.btn-close { margin-left: auto; border: none; background: transparent; font-size: 18px; width: 32px; height: 32px; border-radius: 8px; }
+.btn-close:hover { background: #f1f3f5; }
+.preview-canvas { padding: 20px; display: grid; place-items: center; background: #eef1f4; min-height: 0; overflow: auto; }
+.preview-canvas svg { max-width: 100%; max-height: 65vh; border-radius: 14px; box-shadow: var(--shadow); }
+.preview-controls { display: flex; justify-content: center; gap: 10px; padding: 14px; }
+.library-box { width: min(760px, 100%); }
+.library-list { padding: 16px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.lib-card { border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; cursor: pointer; }
+.lib-card:hover { border-color: var(--primary); }
+.lib-card .thumb { aspect-ratio: 16/10; background: var(--field); }
+.lib-card .thumb svg { width: 100%; height: 100%; display: block; }
+.lib-card .body { padding: 8px 10px; display: flex; align-items: center; gap: 6px; }
+.lib-card .name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-card .date { font-size: 11px; color: var(--muted); padding: 0 10px 8px; }
+.lib-card .del { border: none; background: transparent; color: #999; border-radius: 6px; width: 26px; height: 26px; }
+.lib-card .del:hover { color: #c62828; background: #fdecea; }
+.library-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 30px 0; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #1f2933; color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Mobile ---------- */
+.mobile-bar { display: none; }
+
+@media (max-width: 900px) {
+  .topbar { height: 52px; gap: 6px; padding: 0 8px; }
+  .crumb, .zoom, .hint, .clip-icon { display: none; }
+  .btn-back { width: 32px; height: 32px; flex: 0 0 auto; }
+  .title-wrap { flex: 1 1 auto; min-width: 0; }
+  .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 4px 6px; }
+  .actions { margin-left: 0; gap: 4px; flex: 0 0 auto; }
+  .actions .btn { padding: 8px; }
+  .actions .btn span { display: none; }
+  .menu { min-width: 250px; }
+  .menu button span { display: block; }
+
+  .layout { position: relative; }
+  .canvas-area { padding-bottom: 56px; }
+  .canvas-wrap { padding: 8px; }
+  #canvas { border-radius: 10px; }
+  .props { top: 6px; left: 6px; right: 6px; transform: none; max-width: none; padding: 4px 6px; gap: 4px; }
+  .props input[type=text] { font-size: 16px; width: 52px; }
+  .props .pbtn { padding: 5px 7px; }
+
+  .sidebar, .panel {
+    position: fixed; left: 0; right: 0; bottom: 56px; width: auto; height: 46vh;
+    border: none; border-top: 1px solid var(--border); border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 24px rgba(0,0,0,.14); transform: translateY(120%); transition: transform .25s ease; z-index: 30;
+  }
+  .sidebar.open, .panel.open { transform: none; }
+  .sidebar { padding: 4px 12px 16px; }
+  .group { padding: 8px 0 10px; }
+  .tools { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; }
+  .tool svg { width: 28px; height: 28px; }
+  .tab-content { padding: 12px; }
+
+  .mobile-bar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
+    background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-bar button { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--muted); }
+  .mobile-bar button.active { color: var(--primary); }
+
+  .modal { padding: 8px; }
+  .preview-canvas { padding: 8px; }
+  .preview-controls { flex-wrap: wrap; gap: 6px; padding: 10px; }
+  .preview-controls .btn { padding: 8px 10px; font-size: 13px; }
+  .library-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button id="btn-library" class="btn-back" title="Mes dessins">
+    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="title-wrap">
+    <svg viewBox="0 0 24 24" width="22" height="22" class="clip-icon"><path d="M8 12l6-6a3 3 0 014 4l-8 8a5 5 0 01-7-7l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="crumb">Exercice /</span>
+    <input id="title" class="title-input" value="Nouveau dessin" spellcheck="false" aria-label="Nom du dessin">
+  </div>
+
+  <div class="zoom">
+    <button id="zoom-out" title="Zoom arrière">−</button>
+    <span id="zoom-val">100%</span>
+    <button id="zoom-in" title="Zoom avant">+</button>
+  </div>
+
+  <div class="actions">
+    <button id="btn-undo" class="btn ghost icon-only" title="Annuler (Ctrl+Z)">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btn-redo" class="btn ghost icon-only" title="Rétablir (Ctrl+Y)">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btn-preview" class="btn secondary">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <span>Aperçu</span>
+    </button>
+    <div class="menu-wrap">
+      <button id="btn-export" class="btn secondary">
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Exporter ▾</span>
+      </button>
+      <div id="export-menu" class="menu hidden">
+        <button data-export="png"><strong>Image PNG</strong><span>L'étape affichée, en haute résolution</span></button>
+        <button data-export="gif"><strong>GIF animé</strong><span>Toutes les étapes avec le déplacement des joueurs (WhatsApp, mail…)</span></button>
+        <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD</span></button>
+      </div>
+    </div>
+    <button id="btn-save" class="btn primary">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 3h11l3 3v15H5z M8 3v6h8V3 M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Enregistrer le dessin</span>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar" id="palette"></aside>
+
+  <section class="canvas-area">
+    <div id="props" class="props hidden"></div>
+    <div class="canvas-wrap" id="canvas-wrap">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="hint" id="hint">Choisissez un outil à gauche, puis cliquez ou glissez sur le terrain.</div>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="steps">Étapes</button>
+      <button class="tab" data-tab="settings">Réglages</button>
+    </div>
+
+    <div id="tab-steps" class="tab-content">
+      <div id="steps" class="steps"></div>
+      <button id="add-step" class="btn outline wide">+ Ajouter une étape</button>
+      <p class="help">Une nouvelle étape reprend la position des objets de l'étape courante. Déplacez-les pour créer l'animation.</p>
+    </div>
+
+    <div id="tab-settings" class="tab-content hidden">
+      <div class="field-group">
+        <label class="label">Terrain</label>
+        <div class="choice-row">
+          <label><input type="radio" name="field" value="full" checked> Complet</label>
+          <label><input type="radio" name="field" value="half"> Demi-terrain</label>
+          <label><input type="radio" name="field" value="empty"> Vide</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Orientation</label>
+        <div class="choice-row">
+          <label><input type="radio" name="orientation" value="landscape" checked> Paysage</label>
+          <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Durée d'une étape en aperçu</label>
+        <div class="choice-row">
+          <input type="range" id="step-duration" min="400" max="3000" step="100" value="1200">
+          <span id="step-duration-val">1,2 s</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Fichier</label>
+        <div class="choice-row">
+          <button id="btn-export-json" class="btn outline">Exporter en JSON</button>
+          <button id="btn-import-json" class="btn outline">Importer un JSON</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Raccourcis</label>
+        <ul class="shortcuts">
+          <li><kbd>V</kbd> ou <kbd>Échap</kbd> : sélection</li>
+          <li><kbd>1</kbd>–<kbd>0</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd>, <kbd>T</kbd> : outils de forme</li>
+          <li><kbd>Suppr</kbd> : supprimer l'objet sélectionné</li>
+          <li><kbd>Ctrl</kbd>+<kbd>D</kbd> : dupliquer</li>
+          <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> : annuler / rétablir</li>
+          <li><kbd>Flèches</kbd> : déplacer l'objet (Maj = plus vite)</li>
+          <li>Double-clic sur un texte ou un joueur pour le modifier</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Barre d'onglets mobile -->
+<nav class="mobile-bar">
+  <button data-mtab="tools"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="7" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 13.5l3.5 7h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 20.5l6.5-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Outils</button>
+  <button data-mtab="steps"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Étapes</button>
+  <button data-mtab="settings"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Réglages</button>
+</nav>
+
+<!-- Aperçu animé -->
+<div id="modal-preview" class="modal hidden">
+  <div class="modal-box preview-box">
+    <div class="modal-head">
+      <strong id="preview-title">Aperçu</strong>
+      <span id="preview-step" class="muted"></span>
+      <button class="btn-close" data-close="modal-preview" title="Fermer">✕</button>
+    </div>
+    <div class="preview-canvas" id="preview-canvas"></div>
+    <div class="preview-controls">
+      <button id="preview-prev" class="btn outline">⏮ Précédente</button>
+      <button id="preview-play" class="btn primary">▶ Lire</button>
+      <button id="preview-next" class="btn outline">Suivante ⏭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bibliothèque de dessins -->
+<div id="modal-library" class="modal hidden">
+  <div class="modal-box library-box">
+    <div class="modal-head">
+      <strong>Mes dessins</strong>
+      <button id="btn-new-drawing" class="btn primary small">+ Nouveau dessin</button>
+      <button class="btn-close" data-close="modal-library" title="Fermer">✕</button>
+    </div>
+    <div id="library-list" class="library-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<input type="file" id="file-import" accept="application/json" hidden>
+
+<script>
+/* Palette d'outils : définition des groupes, des outils et de leurs icônes (SVG 32x32). */
+(function (global) {
+  'use strict';
+
+  const S = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  const D = 'stroke-dasharray="3 3"';
+  const ARROW = '<path d="M20 8l6 0 0 6" ' + S + '/>';
+
+  const COLORS = {
+    orange: '#f57c00', yellow: '#fbc02d', green: '#43a047', red: '#e53935',
+    blue: '#1e88e5', purple: '#8e24aa', black: '#212121', grey: '#9e9e9e', white: '#ffffff'
+  };
+
+  const shapeTools = [
+    { id: 'circle',   key: '1', label: 'Cercle',             kind: 'shape', shape: 'circle', icon: `<circle cx="16" cy="16" r="11" ${S}/>` },
+    { id: 'circle-d', key: '2', label: 'Cercle pointillé',   kind: 'shape', shape: 'circle', dashed: true, icon: `<circle cx="16" cy="16" r="11" ${S} ${D}/>` },
+    { id: 'rect',     key: '3', label: 'Rectangle',          kind: 'shape', shape: 'rect',   icon: `<rect x="5" y="5" width="22" height="22" ${S}/>` },
+    { id: 'rect-d',   key: '4', label: 'Rectangle pointillé',kind: 'shape', shape: 'rect',   dashed: true, icon: `<rect x="5" y="5" width="22" height="22" ${S} ${D}/>` },
+    { id: 'tri',      key: '5', label: 'Triangle',           kind: 'shape', shape: 'tri',    icon: `<path d="M16 5l12 22H4z" ${S}/>` },
+    { id: 'tri-d',    key: '6', label: 'Triangle pointillé', kind: 'shape', shape: 'tri',    dashed: true, icon: `<path d="M16 5l12 22H4z" ${S} ${D}/>` },
+    { id: 'poly',     key: '7', label: 'Quadrilatère',       kind: 'shape', shape: 'poly',   icon: `<path d="M10 5h18l-8 22H4z" ${S}/>` },
+    { id: 'poly-d',   key: '8', label: 'Quadrilatère pointillé', kind: 'shape', shape: 'poly', dashed: true, icon: `<path d="M10 5h18l-8 22H4z" ${S} ${D}/>` },
+    { id: 'line',     key: '9', label: 'Ligne',              kind: 'line', style: 'straight', icon: `<path d="M5 27L27 5" ${S}/>` },
+    { id: 'line-d',   key: '0', label: 'Ligne pointillée',   kind: 'line', style: 'straight', dashed: true, icon: `<path d="M5 27L27 5" ${S} ${D}/>` },
+    { id: 'arrow',    key: 'A', label: 'Flèche (passe / déplacement)', kind: 'line', style: 'straight', arrow: true, icon: `<path d="M5 27L26 6" ${S}/>${ARROW}` },
+    { id: 'arrow-d',  key: 'E', label: 'Flèche pointillée (passe)', kind: 'line', style: 'straight', arrow: true, dashed: true, icon: `<path d="M5 27L26 6" ${S} ${D}/>${ARROW}` },
+        { id: 'wavy',     key: 'S', label: 'Course avec ballon', kind: 'line', style: 'wavy', arrow: true, icon: `<g transform="rotate(-45 16 16)"><path d="M4 16c2-6 4-6 6 0s4 6 6 0 4-6 6 0" ${S}/><path d="M22 12l4 4-4 4" ${S}/></g>` },
+        { id: 'zigzag',   key: 'D', label: 'Course en appuis',   kind: 'line', style: 'zigzag', arrow: true, icon: `<g transform="rotate(-45 16 16)"><path d="M4 16l3-5 4 10 4-10 4 10 3-5" ${S} ${D}/><path d="M22 12l4 4-4 4" ${S}/></g>` },
+    { id: 'free',     key: 'F', label: 'Tracé libre',        kind: 'free', icon: `<path d="M5 24c4-10 8-12 10-8s-2 10 2 10 6-14 10-18" ${S}/><path d="M22 26l6-6" ${S}/>` },
+    { id: 'text',     key: 'T', label: 'Texte',              kind: 'text', icon: `<path d="M6 8h20M16 8v18M12 26h8" ${S} stroke-width="2.5"/>` }
+  ];
+
+  const equipTools = [
+    { id: 'ball',     label: 'Ballon',          kind: 'equip', equip: 'ball',     icon: `<ellipse cx="16" cy="16" rx="12" ry="7" ${S}/><path d="M11 16h10M13 14v4M16 13.5v5M19 14v4" ${S} stroke-width="1.5"/>` },
+    { id: 'balls',    label: 'Ballons',         kind: 'equip', equip: 'balls',    icon: `<ellipse cx="11" cy="20" rx="7" ry="4" ${S}/><ellipse cx="21" cy="20" rx="7" ry="4" ${S}/><ellipse cx="16" cy="12" rx="7" ry="4" ${S}/>` },
+    { id: 'bag',      label: 'Sac de plaquage', kind: 'equip', equip: 'bag',      icon: `<rect x="10" y="4" width="12" height="24" rx="6" ${S}/><path d="M13 10h6" ${S}/>` },
+    { id: 'plot',     label: 'Plot',            kind: 'equip', equip: 'plot',     icon: `<ellipse cx="16" cy="20" rx="11" ry="5" fill="#f57c00"/><ellipse cx="16" cy="14" rx="5" ry="2.5" fill="#f57c00" stroke="#fff"/><path d="M11 14v6M21 14v6" stroke="#f57c00" stroke-width="2"/>` },
+    { id: 'pole',     label: 'Piquet',          kind: 'equip', equip: 'pole',     icon: `<path d="M16 4v22" stroke="#f57c00" stroke-width="3" stroke-linecap="round"/><ellipse cx="16" cy="26" rx="8" ry="3" fill="#f57c00"/>` },
+    { id: 'cone',     label: 'Cône',            kind: 'equip', equip: 'cone',     icon: `<path d="M16 5l8 20H8z" fill="#f57c00"/><rect x="5" y="24" width="22" height="3" rx="1.5" fill="#f57c00"/>` },
+    { id: 'disc',     label: 'Coupelle',        kind: 'equip', equip: 'disc',     icon: `<path d="M8 20l6-8h4l6 8z" fill="#f57c00"/><ellipse cx="16" cy="20" rx="10" ry="3" fill="#f57c00"/>` },
+    { id: 'ring',     label: 'Cerceau',         kind: 'equip', equip: 'ring',     icon: `<circle cx="16" cy="16" r="10" fill="none" stroke="#f57c00" stroke-width="4"/>` },
+    { id: 'sled',     label: 'Joug',            kind: 'equip', equip: 'sled',     icon: `<rect x="3" y="12" width="26" height="8" rx="2" fill="#e53935"/><circle cx="8" cy="23" r="2.5" fill="#333"/><circle cx="24" cy="23" r="2.5" fill="#333"/><path d="M8 12V8M24 12V8" stroke="#e53935" stroke-width="2"/>` },
+    { id: 'shield',   label: 'Bouclier',        kind: 'equip', equip: 'shield',   icon: `<rect x="6" y="4" width="20" height="24" rx="3" fill="#e53935"/><path d="M10 6v20M14 6v20M18 6v20M22 6v20" stroke="#fff" stroke-width="1.5"/>` },
+    { id: 'ladder',   label: 'Échelle',         kind: 'equip', equip: 'ladder',   icon: `<rect x="3" y="11" width="26" height="10" ${S} stroke-width="1.5"/><path d="M8 11v10M13 11v10M18 11v10M23 11v10" stroke="currentColor" stroke-width="1.5"/>` }
+  ];
+
+  const playerColors = ['orange', 'yellow', 'green', 'red', 'blue', 'purple', 'black', 'grey'];
+  const SHIRT = 'M8 3l3 0c0 2 6 2 6 0l3 0 7 4-2.5 4-2.5-1.5v19H9v-19L6.5 11 4 7z';
+  const playerTools = playerColors.map(c => ({
+    id: 'player-' + c, label: 'Joueur ' + c, kind: 'player', color: c, jersey: false,
+    icon: `<circle cx="16" cy="16" r="11" fill="${COLORS[c]}"/>`
+  })).concat(playerColors.map(c => ({
+    id: 'jersey-' + c, label: 'Maillot ' + c, kind: 'player', color: c, jersey: true,
+    icon: `<path d="${SHIRT}" transform="translate(1 1) scale(0.95)" fill="${COLORS[c]}" stroke="${c === 'white' ? '#999' : 'none'}"/>`
+  })));
+
+  const TOOL_GROUPS = [
+    { id: 'shapes', title: 'Formes', tools: shapeTools },
+    { id: 'equip', title: 'Équipement', tools: equipTools },
+    { id: 'players', title: 'Joueurs', tools: playerTools }
+  ];
+
+  const TOOLS = {};
+  TOOL_GROUPS.forEach(g => g.tools.forEach(t => { TOOLS[t.id] = t; }));
+
+  global.RugbyPalette = { TOOL_GROUPS, TOOLS, COLORS, SHIRT };
+})(window);
+
+</script>
+<script>
+/* Rendu du terrain de rugby (SVG). Toutes les cotes sont en mètres, converties en pixels. */
+(function (global) {
+  'use strict';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const M = 8;      // pixels par mètre
+  const PAD = 40;   // marge de pelouse autour du terrain
+  const WIDTH_M = 70;
+
+  function svgEl(tag, attrs, children) {
+    const el = document.createElementNS(SVG_NS, tag);
+    if (attrs) for (const k in attrs) if (attrs[k] !== undefined && attrs[k] !== null) el.setAttribute(k, attrs[k]);
+    if (children) children.forEach(c => { if (c) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return el;
+  }
+
+  /** Dimensions du dessin selon les réglages. */
+  function fieldSpec(settings) {
+    const type = settings.field || 'full';
+    const lengthM = type === 'half' ? 60 : 120;      // en-buts inclus (10 m chacun)
+    const Wl = lengthM * M + PAD * 2;                // largeur en paysage
+    const Hl = WIDTH_M * M + PAD * 2;
+    const landscape = settings.orientation !== 'portrait';
+    return { type, lengthM, widthM: WIDTH_M, Wl, Hl, landscape, W: landscape ? Wl : Hl, H: landscape ? Hl : Wl };
+  }
+
+  function line(x1, y1, x2, y2, extra) {
+    const a = Object.assign({ x1: PAD + x1 * M, y1: PAD + y1 * M, x2: PAD + x2 * M, y2: PAD + y2 * M, stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2 }, extra || {});
+    return svgEl('line', a);
+  }
+
+  function posts(xGoal, dir, g) {
+    // "H" vu du dessus : barre transversale sur la ligne de but + montants
+    const y1 = 35 - 2.8, y2 = 35 + 2.8;
+    g.appendChild(line(xGoal, y1, xGoal, y2, { 'stroke-width': 4, stroke: '#fff' }));
+    g.appendChild(line(xGoal - 2.5 * dir, y1, xGoal + 2.5 * dir, y1, { 'stroke-width': 3, stroke: '#fff' }));
+    g.appendChild(line(xGoal - 2.5 * dir, y2, xGoal + 2.5 * dir, y2, { 'stroke-width': 3, stroke: '#fff' }));
+  }
+
+  /** Construit le groupe <g> du terrain. */
+  function renderField(spec) {
+    const root = svgEl('g', { class: 'field' });
+    root.appendChild(svgEl('rect', { x: 0, y: 0, width: spec.W, height: spec.H, fill: '#4a9e4f' }));
+
+    if (spec.type === 'empty') return root;
+
+    // Bandes de tonte pour le relief
+    const stripes = svgEl('g', { transform: spec.landscape ? '' : `translate(${spec.Hl} 0) rotate(90)` });
+    for (let i = 0; i < spec.lengthM / 10; i++) {
+      if (i % 2 === 0) stripes.appendChild(svgEl('rect', { x: PAD + i * 10 * M, y: 0, width: 10 * M, height: spec.Hl, fill: 'rgba(255,255,255,.04)' }));
+    }
+    root.appendChild(stripes);
+
+    const g = svgEl('g', { transform: spec.landscape ? '' : `translate(${spec.Hl} 0) rotate(90)` });
+    const L = spec.lengthM, W = spec.widthM;
+    const dash = { 'stroke-dasharray': '10 8' };
+
+    // Contour (lignes de ballon mort + touches)
+    g.appendChild(svgEl('rect', { x: PAD, y: PAD, width: L * M, height: W * M, fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2 }));
+
+    // Lignes verticales (perpendiculaires à la touche)
+    const solid = [10, 32, 60];               // but, 22 m, médiane
+    const dashed = [15, 50];                  // 5 m, 10 m
+    if (L === 120) { solid.push(88, 110); dashed.push(70, 105); }
+    solid.forEach(x => g.appendChild(line(x, 0, x, W)));
+    dashed.forEach(x => g.appendChild(line(x, 0, x, W, dash)));
+
+    // Lignes des 5 m et 15 m (parallèles à la touche) entre les lignes de but
+    const xEnd = L === 120 ? 110 : L;
+    [5, 15, W - 15, W - 5].forEach(y => g.appendChild(line(10, y, xEnd, y, dash)));
+
+    // Poteaux
+    posts(10, 1, g);
+    if (L === 120) posts(110, -1, g);
+
+    root.appendChild(g);
+    return root;
+  }
+
+  global.RugbyField = { SVG_NS, M, PAD, svgEl, fieldSpec, renderField };
+})(window);
+
+</script>
+<script>
+/* Rendu SVG des objets du dessin + géométrie (bornes, déplacement, interpolation). */
+(function (global) {
+  'use strict';
+
+  const { svgEl } = global.RugbyField;
+  const { COLORS, SHIRT } = global.RugbyPalette;
+
+  const EQUIP_SIZE = { ball: [30, 18], balls: [40, 30], bag: [18, 40], plot: [26, 16], pole: [16, 40], cone: [26, 34], disc: [22, 14], ring: [32, 32], sled: [48, 26], shield: [30, 40], ladder: [50, 18] };
+  const PLAYER_R = 13;
+
+  function colorOf(name) { return COLORS[name] || name || '#ffffff'; }
+  function dashAttr(obj) { return obj.dashed ? { 'stroke-dasharray': `${(obj.width || 3) * 2.5} ${(obj.width || 3) * 2}` } : {}; }
+
+  /* ---------- Géométrie des lignes ---------- */
+  function linePath(obj) {
+    const { x1, y1, x2, y2 } = obj;
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len, px = -uy, py = ux;
+    const headLen = obj.arrow ? 10 + (obj.width || 3) * 1.5 : 0;
+    const bodyLen = Math.max(0, len - headLen * 0.8);
+    let d;
+    if (obj.style === 'wavy' || obj.style === 'zigzag') {
+      const wave = obj.style === 'wavy' ? 18 : 22, amp = obj.style === 'wavy' ? 6 : 7;
+      const pts = [];
+      const step = obj.style === 'wavy' ? 2 : wave / 2;
+      for (let t = 0; t <= bodyLen; t += step) {
+        const off = obj.style === 'wavy' ? Math.sin(t / wave * Math.PI * 2) * amp : (Math.round(t / (wave / 2)) % 2 === 0 ? -amp : amp) * (t === 0 ? 0 : 1);
+        pts.push([x1 + ux * t + px * off, y1 + uy * t + py * off]);
+      }
+      pts.push([x1 + ux * bodyLen, y1 + uy * bodyLen]);
+      d = 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+    } else {
+      d = `M${x1} ${y1}L${x1 + ux * bodyLen} ${y1 + uy * bodyLen}`;
+    }
+    let head = null;
+    if (obj.arrow) {
+      const hw = headLen * 0.5;
+      const bx = x2 - ux * headLen, by = y2 - uy * headLen;
+      head = `M${x2} ${y2}L${bx + px * hw} ${by + py * hw}L${bx - px * hw} ${by - py * hw}Z`;
+    }
+    return { d, head };
+  }
+
+  function polyPoints(obj) {
+    if (obj.points) return obj.points;
+    const { x, y, w, h } = obj;
+    return [[x + w * 0.25, y], [x + w, y], [x + w * 0.75, y + h], [x, y + h]];
+  }
+
+  function freePath(points) {
+    if (!points.length) return '';
+    if (points.length < 3) return 'M' + points.map(p => p[0] + ' ' + p[1]).join('L');
+    let d = `M${points[0][0]} ${points[0][1]}`;
+    for (let i = 1; i < points.length - 1; i++) {
+      const mx = (points[i][0] + points[i + 1][0]) / 2, my = (points[i][1] + points[i + 1][1]) / 2;
+      d += `Q${points[i][0]} ${points[i][1]} ${mx} ${my}`;
+    }
+    const last = points[points.length - 1];
+    d += `L${last[0]} ${last[1]}`;
+    return d;
+  }
+
+  /* ---------- Équipement ---------- */
+  function equipShape(kind) {
+    const O = '#f57c00', OD = '#c45f00';
+    switch (kind) {
+      case 'ball': return [svgEl('ellipse', { rx: 14, ry: 8, fill: '#fff', stroke: '#333', 'stroke-width': 1.5 }), svgEl('path', { d: 'M-6 0h12M-3 -2v4M0 -2.5v5M3 -2v4', stroke: '#333', 'stroke-width': 1.2, fill: 'none' })];
+      case 'balls': return [[-9, 6], [9, 6], [0, -6]].map(p => svgEl('ellipse', { cx: p[0], cy: p[1], rx: 10, ry: 6, fill: '#fff', stroke: '#333', 'stroke-width': 1.3 }));
+      case 'bag': return [svgEl('rect', { x: -9, y: -20, width: 18, height: 40, rx: 7, fill: '#1565c0', stroke: '#0d47a1', 'stroke-width': 1.5 }), svgEl('rect', { x: -9, y: -6, width: 18, height: 6, fill: '#fff', opacity: .7 })];
+      case 'plot': return [svgEl('ellipse', { cy: 3, rx: 13, ry: 6, fill: O, stroke: OD }), svgEl('ellipse', { cy: -3, rx: 6, ry: 3, fill: '#ffa040', stroke: OD }), svgEl('path', { d: 'M-6 -3v6M6 -3v6', stroke: O, 'stroke-width': 3 })];
+      case 'pole': return [svgEl('ellipse', { cy: 16, rx: 8, ry: 4, fill: OD }), svgEl('rect', { x: -2, y: -20, width: 4, height: 36, rx: 2, fill: O })];
+      case 'cone': return [svgEl('rect', { x: -13, y: 12, width: 26, height: 5, rx: 2, fill: OD }), svgEl('path', { d: 'M0 -17L11 13H-11z', fill: O }), svgEl('path', { d: 'M-5 -2h10', stroke: '#fff', 'stroke-width': 2 })];
+      case 'disc': return [svgEl('ellipse', { cy: 3, rx: 11, ry: 4, fill: O, stroke: OD }), svgEl('path', { d: 'M-5 3l3-7h4l3 7z', fill: '#ffa040' })];
+      case 'ring': return [svgEl('circle', { r: 13, fill: 'none', stroke: O, 'stroke-width': 5 })];
+      case 'sled': return [svgEl('path', { d: 'M-16 -10v-6M16 -10v-6', stroke: '#e53935', 'stroke-width': 3 }), svgEl('rect', { x: -24, y: -10, width: 48, height: 16, rx: 3, fill: '#e53935', stroke: '#b71c1c' }), svgEl('circle', { cx: -16, cy: 10, r: 3.5, fill: '#333' }), svgEl('circle', { cx: 16, cy: 10, r: 3.5, fill: '#333' })];
+      case 'shield': return [svgEl('rect', { x: -15, y: -20, width: 30, height: 40, rx: 5, fill: '#e53935', stroke: '#b71c1c' }), svgEl('path', { d: 'M-8 -17v34M0 -17v34M8 -17v34', stroke: '#fff', 'stroke-width': 2 })];
+      case 'ladder': { const items = [svgEl('rect', { x: -25, y: -9, width: 50, height: 18, fill: 'none', stroke: '#fff', 'stroke-width': 2 })]; for (let x = -15; x <= 15; x += 10) items.push(svgEl('line', { x1: x, y1: -9, x2: x, y2: 9, stroke: '#fff', 'stroke-width': 2 })); return items; }
+    }
+    return [svgEl('circle', { r: 10, fill: '#fff' })];
+  }
+
+  /* ---------- Rendu d'un objet ---------- */
+  function renderObject(obj) {
+    const g = svgEl('g', { 'data-id': obj.id });
+    if (obj.opacity !== undefined && obj.opacity < 1) g.setAttribute('opacity', obj.opacity);
+    const stroke = colorOf(obj.color || 'white');
+    const sw = obj.width || 3;
+
+    switch (obj.type) {
+      case 'shape': {
+        const common = Object.assign({ fill: stroke, 'fill-opacity': obj.fill ? 0.3 : 0, stroke, 'stroke-width': sw }, dashAttr(obj));
+        if (obj.shape === 'circle') g.appendChild(svgEl('ellipse', Object.assign({ cx: obj.x + obj.w / 2, cy: obj.y + obj.h / 2, rx: Math.max(1, obj.w / 2), ry: Math.max(1, obj.h / 2) }, common)));
+        else if (obj.shape === 'rect') g.appendChild(svgEl('rect', Object.assign({ x: obj.x, y: obj.y, width: Math.max(1, obj.w), height: Math.max(1, obj.h), rx: 2 }, common)));
+        else if (obj.shape === 'tri') g.appendChild(svgEl('path', Object.assign({ d: `M${obj.x + obj.w / 2} ${obj.y}L${obj.x + obj.w} ${obj.y + obj.h}H${obj.x}Z` }, common)));
+        else g.appendChild(svgEl('polygon', Object.assign({ points: polyPoints(obj).map(p => p.join(',')).join(' ') }, common)));
+        // zone de clic transparente (pour les formes non remplies)
+        if (!obj.fill) {
+          const hit = g.firstChild.cloneNode();
+          hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', 14); hit.setAttribute('fill', 'none'); hit.removeAttribute('stroke-dasharray');
+          g.appendChild(hit);
+        }
+        break;
+      }
+      case 'line': {
+        const { d, head } = linePath(obj);
+        g.appendChild(svgEl('path', { d, stroke: 'transparent', 'stroke-width': 16, fill: 'none' }));
+        g.appendChild(svgEl('path', Object.assign({ d, stroke, 'stroke-width': sw, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, dashAttr(obj))));
+        if (head) g.appendChild(svgEl('path', { d: head, fill: stroke }));
+        break;
+      }
+      case 'free': {
+        const d = freePath(obj.points);
+        g.appendChild(svgEl('path', { d, stroke: 'transparent', 'stroke-width': 16, fill: 'none' }));
+        g.appendChild(svgEl('path', Object.assign({ d, stroke, 'stroke-width': sw, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, dashAttr(obj))));
+        break;
+      }
+      case 'text': {
+        const size = obj.size || 18;
+        const t = svgEl('text', { x: obj.x, y: obj.y, 'font-size': size, 'font-weight': 700, fill: stroke, stroke: stroke === '#ffffff' ? 'rgba(0,0,0,.45)' : 'rgba(255,255,255,.7)', 'stroke-width': 3, 'paint-order': 'stroke', 'font-family': 'Arial, Helvetica, sans-serif', 'dominant-baseline': 'middle' });
+        const lines = String(obj.text || '').split('\n');
+        lines.forEach((ln, i) => t.appendChild(svgEl('tspan', { x: obj.x, dy: i === 0 ? 0 : size * 1.2 }, [ln || ' '])));
+        g.appendChild(t);
+        break;
+      }
+      case 'equip': {
+        const sc = obj.scale || 1;
+        const inner = svgEl('g', { transform: `translate(${obj.x} ${obj.y}) rotate(${obj.rot || 0}) scale(${sc})` }, equipShape(obj.kind));
+        const [w, h] = EQUIP_SIZE[obj.kind] || [30, 30];
+        inner.insertBefore(svgEl('rect', { x: -w / 2, y: -h / 2, width: w, height: h, fill: 'transparent' }), inner.firstChild);
+        g.appendChild(inner);
+        break;
+      }
+      case 'player': {
+        const fill = colorOf(obj.color);
+        const sc = obj.scale || 1;
+        const textFill = (obj.color === 'yellow' || obj.color === 'white') ? '#222' : '#fff';
+        const inner = svgEl('g', { transform: `translate(${obj.x} ${obj.y}) scale(${sc})` });
+        if (obj.jersey) {
+          inner.appendChild(svgEl('path', { d: SHIRT, transform: 'translate(-16 -16) scale(1.15)', fill, stroke: 'rgba(0,0,0,.35)', 'stroke-width': 1 }));
+          if (obj.label) inner.appendChild(svgEl('text', { y: 7, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: textFill, 'font-family': 'Arial, sans-serif' }, [String(obj.label)]));
+        } else {
+          inner.appendChild(svgEl('circle', { r: PLAYER_R, fill, stroke: '#fff', 'stroke-width': 2.5 }));
+          if (obj.label) inner.appendChild(svgEl('text', { y: 0, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12, 'font-weight': 700, fill: textFill, 'font-family': 'Arial, sans-serif' }, [String(obj.label)]));
+        }
+        g.appendChild(inner);
+        break;
+      }
+    }
+    return g;
+  }
+
+  /* ---------- Bornes & déplacements ---------- */
+  function bounds(obj) {
+    switch (obj.type) {
+      case 'shape': {
+        if (obj.shape === 'poly' && obj.points) {
+          const xs = obj.points.map(p => p[0]), ys = obj.points.map(p => p[1]);
+          const x = Math.min(...xs), y = Math.min(...ys);
+          return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+        }
+        return { x: obj.x, y: obj.y, w: obj.w, h: obj.h };
+      }
+      case 'line': return { x: Math.min(obj.x1, obj.x2), y: Math.min(obj.y1, obj.y2), w: Math.abs(obj.x2 - obj.x1), h: Math.abs(obj.y2 - obj.y1) };
+      case 'free': {
+        const xs = obj.points.map(p => p[0]), ys = obj.points.map(p => p[1]);
+        const x = Math.min(...xs), y = Math.min(...ys);
+        return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+      }
+      case 'text': {
+        const size = obj.size || 18, lines = String(obj.text || '').split('\n');
+        const w = Math.max(...lines.map(l => l.length)) * size * 0.6;
+        return { x: obj.x - 2, y: obj.y - size * 0.6, w: w + 4, h: size * 1.2 * lines.length };
+      }
+      case 'equip': { const [w, h] = EQUIP_SIZE[obj.kind] || [30, 30]; const s = Math.max(w, h) * (obj.scale || 1); return { x: obj.x - s / 2, y: obj.y - s / 2, w: s, h: s }; }
+      case 'player': { const s = (obj.jersey ? 40 : PLAYER_R * 2 + 4) * (obj.scale || 1); return { x: obj.x - s / 2, y: obj.y - s / 2, w: s, h: s }; }
+    }
+    return { x: 0, y: 0, w: 0, h: 0 };
+  }
+
+  function move(obj, dx, dy) {
+    if (obj.type === 'line') { obj.x1 += dx; obj.y1 += dy; obj.x2 += dx; obj.y2 += dy; }
+    else if (obj.type === 'free' || (obj.type === 'shape' && obj.points)) { obj.points = obj.points.map(p => [p[0] + dx, p[1] + dy]); }
+    else { obj.x += dx; obj.y += dy; }
+  }
+
+  /* ---------- Trajectoires ---------- */
+  const SNAP = 30; // distance (px) pour associer un tracé à un objet
+
+  /** Points d'une ligne/tracé libre avec abscisses curvilignes. */
+  function pathSamples(line) {
+    const pts = line.type === 'free' ? line.points : [[line.x1, line.y1], [line.x2, line.y2]];
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1] || 1 };
+  }
+  function pointAt(samples, t) {
+    const d = t * samples.len, { pts, cum } = samples;
+    let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+    const seg = cum[i] - cum[i - 1] || 1, k = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
+    return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k];
+  }
+
+  /** Cherche un tracé (ligne, flèche, tracé libre) qui part de l'objet a et arrive à l'objet b. */
+  function findPath(a, b, candidates) {
+    if (typeof a.x !== 'number' || typeof b.x !== 'number' || !candidates) return null;
+    let best = null, bestScore = Infinity;
+    candidates.forEach(l => {
+      if (l.type !== 'line' && l.type !== 'free') return;
+      const s = pathSamples(l); if (s.pts.length < 2) return;
+      const p0 = s.pts[0], p1 = s.pts[s.pts.length - 1];
+      const d0 = Math.hypot(p0[0] - a.x, p0[1] - a.y), d1 = Math.hypot(p1[0] - b.x, p1[1] - b.y);
+      if (d0 < SNAP && d1 < SNAP && d0 + d1 < bestScore) { bestScore = d0 + d1; best = s; }
+    });
+    return best;
+  }
+
+  /** Interpolation entre deux versions d'un même objet (aperçu animé).
+   *  pathsFrom : objets de l'étape de départ, pour suivre une course dessinée. */
+  function lerpObject(a, b, t, pathsFrom) {
+    const out = JSON.parse(JSON.stringify(b));
+    ['x', 'y', 'w', 'h', 'x1', 'y1', 'x2', 'y2', 'rot', 'scale', 'size'].forEach(k => {
+      if (typeof a[k] === 'number' && typeof b[k] === 'number') out[k] = a[k] + (b[k] - a[k]) * t;
+    });
+    if (a.points && b.points && a.points.length === b.points.length) out.points = b.points.map((p, i) => [a.points[i][0] + (p[0] - a.points[i][0]) * t, a.points[i][1] + (p[1] - a.points[i][1]) * t]);
+    const path = (a.type === 'player' || a.type === 'equip') && findPath(a, b, pathsFrom);
+    if (path) {
+      // on suit le tracé, en ajoutant l'écart entre le tracé et sa corde au déplacement rectiligne
+      const p = pointAt(path, t), p0 = path.pts[0], p1 = path.pts[path.pts.length - 1];
+      out.x += p[0] - (p0[0] + (p1[0] - p0[0]) * t);
+      out.y += p[1] - (p0[1] + (p1[1] - p0[1]) * t);
+    }
+    return out;
+  }
+
+  global.RugbyObjects = { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE, PLAYER_R, colorOf };
+})(window);
+
+</script>
+<script>
+/* Export animé : génération des images intermédiaires, encodeur GIF (LZW) et vidéo WebM. */
+(function (global) {
+  'use strict';
+
+  const { fieldSpec } = global.RugbyField;
+  const { lerpObject } = global.RugbyObjects;
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const ease = t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+  /** Liste des images (listes d'objets) pour toute l'animation, à intervalle dt (ms). */
+  function buildFrames(drawing, dt) {
+    const steps = drawing.steps;
+    const hold = drawing.settings.stepDuration || 1200;
+    const trans = Math.max(200, hold * 0.7);
+    const frames = [];
+    const push = objs => frames.push(objs);
+    steps.forEach((st, i) => {
+      for (let t = 0; t < hold; t += dt) push(st.objects);
+      const next = steps[i + 1];
+      if (!next) return;
+      const a = st.objects, b = next.objects;
+      for (let t = dt; t < trans; t += dt) {
+        const e = ease(t / trans), list = [];
+        a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
+        b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
+        push(list);
+      }
+    });
+    return frames;
+  }
+
+  /** Rasterise une scène SVG dans un canvas (promesse). */
+  function rasterize(svgEl, W, H, scale) {
+    return new Promise((resolve, reject) => {
+      svgEl.setAttribute('width', W); svgEl.setAttribute('height', H);
+      const xml = new XMLSerializer().serializeToString(svgEl);
+      const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = Math.round(W * scale); c.height = Math.round(H * scale);
+        const ctx = c.getContext('2d'); ctx.scale(scale, scale); ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url); resolve(c);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('rasterize')); };
+      img.src = url;
+    });
+  }
+
+  /* ---------- Encodeur GIF ---------- */
+  /** Palette adaptative : les 256 couleurs les plus fréquentes de quelques images clés. */
+  function buildPalette(canvases) {
+    const counts = new Map();
+    const picks = [0, Math.floor(canvases.length / 2), canvases.length - 1];
+    picks.forEach(i => {
+      const c = canvases[i], d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      for (let j = 0; j < d.length; j += 4) { const k = (d[j] << 16) | (d[j + 1] << 8) | d[j + 2]; counts.set(k, (counts.get(k) || 0) + 1); }
+    });
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 256).map(e => e[0]);
+    while (top.length < 256) top.push(0);
+    return top;
+  }
+  function makeIndexer(palette) {
+    const cache = new Map();
+    palette.forEach((c, i) => { if (!cache.has(c)) cache.set(c, i); });
+    const pr = palette.map(c => c >> 16), pg = palette.map(c => (c >> 8) & 255), pb = palette.map(c => c & 255);
+    return (r, g, b) => {
+      const k = (r << 16) | (g << 8) | b;
+      let idx = cache.get(k);
+      if (idx !== undefined) return idx;
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < 256; i++) { const dr = pr[i] - r, dg = pg[i] - g, db = pb[i] - b, d = dr * dr + dg * dg + db * db; if (d < bd) { bd = d; best = i; } }
+      cache.set(k, best); return best;
+    };
+  }
+
+  class ByteWriter {
+    constructor() { this.chunks = []; this.buf = new Uint8Array(1 << 16); this.pos = 0; }
+    byte(v) { if (this.pos === this.buf.length) { this.chunks.push(this.buf); this.buf = new Uint8Array(1 << 16); this.pos = 0; } this.buf[this.pos++] = v & 255; }
+    bytes(arr) { for (let i = 0; i < arr.length; i++) this.byte(arr[i]); }
+    short(v) { this.byte(v & 255); this.byte((v >> 8) & 255); }
+    str(s) { for (let i = 0; i < s.length; i++) this.byte(s.charCodeAt(i)); }
+    result() { this.chunks.push(this.buf.subarray(0, this.pos)); return new Blob(this.chunks, { type: 'image/gif' }); }
+  }
+
+  /** Compression LZW d'une suite d'index (taille de code minimale 8), émise en sous-blocs. */
+  function lzwEncode(indices, out) {
+    const MIN = 8, CLEAR = 256, EOI = 257;
+    let codeSize = MIN + 1, next = 258, dict = new Map();
+    let bitBuf = 0, bitCnt = 0;
+    const block = new Uint8Array(255); let blockLen = 0;
+    const flushBlock = () => { if (blockLen) { out.byte(blockLen); out.bytes(block.subarray(0, blockLen)); blockLen = 0; } };
+    const emit = code => {
+      bitBuf |= code << bitCnt; bitCnt += codeSize;
+      while (bitCnt >= 8) { block[blockLen++] = bitBuf & 255; bitBuf >>>= 8; bitCnt -= 8; if (blockLen === 255) flushBlock(); }
+    };
+    emit(CLEAR);
+    let prefix = indices[0];
+    for (let i = 1; i < indices.length; i++) {
+      const k = indices[i], key = (prefix << 8) | k;
+      const found = dict.get(key);
+      if (found !== undefined) { prefix = found; continue; }
+      emit(prefix);
+      if (next < 4096) { dict.set(key, next++); if (next - 1 === (1 << codeSize) && codeSize < 12) codeSize++; }
+      else { emit(CLEAR); dict = new Map(); next = 258; codeSize = MIN + 1; }
+      prefix = k;
+    }
+    emit(prefix); emit(EOI);
+    if (bitCnt > 0) { block[blockLen++] = bitBuf & 255; if (blockLen === 255) flushBlock(); }
+    flushBlock();
+    out.byte(0);
+  }
+
+  function encodeGif(canvases, delayMs) {
+    const W = canvases[0].width, H = canvases[0].height;
+    const out = new ByteWriter();
+    out.str('GIF89a');
+    out.short(W); out.short(H); out.byte(0xF7); out.byte(0); out.byte(0);
+    const palette = buildPalette(canvases), quantize = makeIndexer(palette);
+    palette.forEach(c => out.bytes([c >> 16, (c >> 8) & 255, c & 255]));
+    // Boucle infinie (extension Netscape)
+    out.bytes([0x21, 0xFF, 0x0B]); out.str('NETSCAPE2.0'); out.bytes([3, 1, 0, 0, 0]);
+    const delay = Math.max(2, Math.round(delayMs / 10));
+    const indices = new Uint8Array(W * H);
+    canvases.forEach(c => {
+      const data = c.getContext('2d').getImageData(0, 0, W, H).data;
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) indices[j] = quantize(data[i], data[i + 1], data[i + 2]);
+      out.bytes([0x21, 0xF9, 4, 0x04]); out.short(delay); out.byte(0); out.byte(0);
+      out.byte(0x2C); out.short(0); out.short(0); out.short(W); out.short(H); out.byte(0);
+      out.byte(8);
+      lzwEncode(indices, out);
+    });
+    out.byte(0x3B);
+    return out.result();
+  }
+
+  /** Export GIF animé. sceneFn(settings, objects) renvoie un <svg>. */
+  async function exportGif(drawing, sceneFn, onProgress) {
+    const spec = fieldSpec(drawing.settings);
+    const dt = 60, scale = Math.min(1, 800 / spec.W);
+    const frames = buildFrames(drawing, dt);
+    const canvases = [];
+    for (let i = 0; i < frames.length; i++) {
+      canvases.push(await rasterize(sceneFn(drawing.settings, frames[i]), spec.W, spec.H, scale));
+      if (onProgress) onProgress((i + 1) / frames.length * 0.8);
+    }
+    const blob = encodeGif(canvases, dt);
+    if (onProgress) onProgress(1);
+    return blob;
+  }
+
+  /** Export vidéo WebM via MediaRecorder (temps réel). */
+  function exportWebm(drawing, sceneFn, onProgress) {
+    return new Promise(async (resolve, reject) => {
+      if (typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream) return reject(new Error('Vidéo non prise en charge par ce navigateur.'));
+      const spec = fieldSpec(drawing.settings);
+      const dt = 50, scale = 2;
+      const frames = buildFrames(drawing, dt);
+      const canvas = document.createElement('canvas');
+      canvas.width = spec.W * scale; canvas.height = spec.H * scale;
+      const ctx = canvas.getContext('2d');
+      // Pré-rendu de toutes les images pour un enregistrement fluide
+      const imgs = [];
+      for (let i = 0; i < frames.length; i++) {
+        imgs.push(await rasterize(sceneFn(drawing.settings, frames[i]), spec.W, spec.H, scale));
+        if (onProgress) onProgress((i + 1) / frames.length * 0.5);
+      }
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+      const stream = canvas.captureStream(1000 / dt);
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4e6 } : undefined);
+      const chunks = [];
+      rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+      rec.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+      rec.onerror = e => reject(e.error || new Error('MediaRecorder'));
+      ctx.drawImage(imgs[0], 0, 0);
+      rec.start(200);
+      let i = 0;
+      const t0 = performance.now();
+      const tick = () => {
+        const idx = Math.min(imgs.length - 1, Math.floor((performance.now() - t0) / dt));
+        while (i <= idx) { ctx.drawImage(imgs[i], 0, 0); i++; }
+        if (onProgress) onProgress(0.5 + idx / imgs.length * 0.5);
+        if (idx < imgs.length - 1) requestAnimationFrame(tick);
+        else setTimeout(() => rec.stop(), 300);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  global.RugbyExport = { buildFrames, rasterize, encodeGif, exportGif, exportWebm };
+})(window);
+
+</script>
+<script>
+/* Éditeur d'exercices rugby : état, interactions, étapes, aperçu, export, sauvegarde. */
+(function () {
+  'use strict';
+
+  const { svgEl, fieldSpec, renderField, SVG_NS } = window.RugbyField;
+  const { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
+  const { TOOL_GROUPS, TOOLS, COLORS } = window.RugbyPalette;
+
+  const $ = s => document.querySelector(s);
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const LIB_KEY = 'rugby-drawings-v1';
+  const CUR_KEY = 'rugby-drawing-current-v1';
+
+  /* ---------- État ---------- */
+  function newDrawing() {
+    return { id: uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
+  }
+  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, zoom: 1, history: [], future: [] };
+
+  const svg = $('#canvas');
+  const wrap = $('#canvas-wrap');
+  const fieldG = svgEl('g');
+  const objectsG = svgEl('g', { class: 'objects' });
+  const overlayG = svgEl('g', { class: 'overlay' });
+  svg.append(fieldG, objectsG, overlayG);
+
+  const curStep = () => state.drawing.steps[state.step];
+  const curObjects = () => curStep().objects;
+  const findObj = id => curObjects().find(o => o.id === id);
+
+  /* ---------- Historique ---------- */
+  const snapshot = () => JSON.stringify(state.drawing);
+  function commit(before) {
+    const after = snapshot();
+    if (before !== after) { state.history.push(before); if (state.history.length > 100) state.history.shift(); state.future = []; }
+    afterChange();
+  }
+  function undo() { if (!state.history.length) return; state.future.push(snapshot()); state.drawing = JSON.parse(state.history.pop()); fixStepIndex(); afterChange(true); }
+  function redo() { if (!state.future.length) return; state.history.push(snapshot()); state.drawing = JSON.parse(state.future.pop()); fixStepIndex(); afterChange(true); }
+  function fixStepIndex() { state.step = Math.min(state.step, state.drawing.steps.length - 1); if (state.selected && !findObj(state.selected)) state.selected = null; }
+
+  let saveTimer = null;
+  function afterChange(full) {
+    state.drawing.updatedAt = Date.now();
+    if (full) { renderField_(); applySettingsToUI(); }
+    render();
+    renderSteps();
+    $('#btn-undo').disabled = !state.history.length;
+    $('#btn-redo').disabled = !state.future.length;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
+  }
+
+  /* ---------- Rendu ---------- */
+  function renderField_() {
+    const spec = fieldSpec(state.drawing.settings);
+    svg.setAttribute('viewBox', `0 0 ${spec.W} ${spec.H}`);
+    fieldG.replaceChildren(renderField(spec));
+    fitZoom();
+  }
+
+  function render() {
+    objectsG.replaceChildren(...curObjects().map(renderObject));
+    renderOverlay();
+    renderProps();
+  }
+
+  function renderOverlay() {
+    overlayG.replaceChildren();
+    const obj = state.selected && findObj(state.selected);
+    if (!obj) return;
+    const b = bounds(obj);
+    overlayG.appendChild(svgEl('rect', { class: 'selection-box', x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8 }));
+    const handle = (x, y, name, cls) => svgEl('circle', { class: 'handle ' + (cls || ''), cx: x, cy: y, r: 5, 'data-handle': name });
+    if (obj.type === 'shape' && obj.shape === 'poly') {
+      polyPoints(obj).forEach((p, i) => overlayG.appendChild(handle(p[0], p[1], 'v' + i, 'vertex')));
+    } else if (obj.type === 'shape') {
+      overlayG.append(handle(obj.x, obj.y, 'nw'), handle(obj.x + obj.w, obj.y, 'ne'), handle(obj.x, obj.y + obj.h, 'sw'), handle(obj.x + obj.w, obj.y + obj.h, 'se'));
+    } else if (obj.type === 'line') {
+      overlayG.append(handle(obj.x1, obj.y1, 'p1', 'endpoint'), handle(obj.x2, obj.y2, 'p2', 'endpoint'));
+    }
+  }
+
+  /* ---------- Zoom ---------- */
+  let baseWidth = 800;
+  function fitZoom() {
+    const spec = fieldSpec(state.drawing.settings);
+    const availW = wrap.clientWidth - 48, availH = wrap.clientHeight - 48;
+    baseWidth = Math.max(200, Math.min(availW, availH * spec.W / spec.H));
+    applyZoom();
+  }
+  function applyZoom() {
+    svg.style.width = Math.round(baseWidth * state.zoom) + 'px';
+    $('#zoom-val').textContent = Math.round(state.zoom * 100) + '%';
+  }
+  $('#zoom-in').onclick = () => { state.zoom = Math.min(3, state.zoom + 0.1); applyZoom(); };
+  $('#zoom-out').onclick = () => { state.zoom = Math.max(0.3, state.zoom - 0.1); applyZoom(); };
+  window.addEventListener('resize', fitZoom);
+
+  /* ---------- Palette ---------- */
+  function buildPalette() {
+    const root = $('#palette');
+    TOOL_GROUPS.forEach((g, gi) => {
+      const grid = svgEl ? document.createElement('div') : null; grid.className = 'tools';
+      g.tools.forEach(t => {
+        const b = document.createElement('button');
+        b.className = 'tool'; b.dataset.tool = t.id; b.title = t.label + (t.key ? ` (${t.key})` : '');
+        b.innerHTML = `<svg viewBox="0 0 32 32">${t.icon}</svg>` + (t.key ? `<span class="key">${t.key}</span>` : '');
+        b.onclick = () => setTool(state.tool === t.id ? null : t.id);
+        grid.appendChild(b);
+      });
+      const head = document.createElement('div'); head.className = 'group-head';
+      head.innerHTML = `<h3>${g.title}</h3>` + (gi === 0 ? `<button class="select-tool" id="btn-select" title="Sélection (V)"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor"/></svg></button>` : '');
+      const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
+      root.appendChild(sec);
+    });
+    $('#btn-select').onclick = () => setTool(null);
+  }
+
+  function setTool(id) {
+    state.tool = id;
+    if (id) closeDrawer();
+    if (id) { state.selected = null; renderOverlay(); renderProps(); }
+    document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
+    $('#btn-select').classList.toggle('active', !id);
+    svg.classList.toggle('tool-active', !!id);
+    const t = id && TOOLS[id];
+    $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
+      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
+      : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
+  }
+
+  /* ---------- Création d'objets ---------- */
+  function makeObject(t, p) {
+    const base = { id: uid(), type: t.kind };
+    switch (t.kind) {
+      case 'shape': return Object.assign(base, { shape: t.shape, x: p.x, y: p.y, w: 0, h: 0, dashed: !!t.dashed, color: 'white', width: 3, fill: false });
+      case 'line': return Object.assign(base, { style: t.style, x1: p.x, y1: p.y, x2: p.x, y2: p.y, dashed: !!t.dashed, arrow: !!t.arrow, color: 'white', width: 3 });
+      case 'free': return Object.assign(base, { points: [[p.x, p.y]], color: 'white', width: 3, dashed: false });
+      case 'text': return Object.assign(base, { x: p.x, y: p.y, text: 'Texte', size: 18, color: 'white' });
+      case 'equip': return Object.assign(base, { kind: t.equip, x: p.x, y: p.y, rot: 0, scale: 1 });
+      case 'player': return Object.assign(base, { color: t.color, jersey: !!t.jersey, x: p.x, y: p.y, label: '', scale: 1 });
+    }
+  }
+
+  /* ---------- Interactions souris ---------- */
+  function toSvg(evt) {
+    const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  let drag = null;
+
+  svg.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    closeDrawer();
+    const p = toSvg(e);
+    const before = snapshot();
+    const t = state.tool && TOOLS[state.tool];
+    if (t) {
+      const obj = makeObject(t, p);
+      if (t.kind === 'text') {
+        const txt = prompt('Texte à afficher :', 'Texte');
+        if (!txt) return;
+        obj.text = txt; curObjects().push(obj); state.selected = obj.id; commit(before); return;
+      }
+      curObjects().push(obj);
+      state.selected = obj.id;
+      if (t.kind === 'player' || t.kind === 'equip') { commit(before); return; }
+      drag = { mode: 'create', obj, start: p, before, kind: t.kind };
+      svg.setPointerCapture(e.pointerId);
+      render();
+      return;
+    }
+    // Mode sélection
+    const h = e.target.closest('[data-handle]');
+    if (h && state.selected) {
+      const obj = findObj(state.selected);
+      drag = { mode: 'handle', name: h.dataset.handle, obj, orig: clone(obj), start: p, before };
+      svg.setPointerCapture(e.pointerId);
+      return;
+    }
+    const g = e.target.closest('[data-id]');
+    if (g) {
+      state.selected = g.dataset.id;
+      const obj = findObj(state.selected);
+      drag = { mode: 'move', obj, orig: clone(obj), start: p, before };
+      svg.setPointerCapture(e.pointerId);
+      render();
+      return;
+    }
+    state.selected = null; render();
+  });
+
+  svg.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = toSvg(e);
+    const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    const o = drag.obj;
+    if (drag.mode === 'create') {
+      if (drag.kind === 'shape') { o.x = Math.min(drag.start.x, p.x); o.y = Math.min(drag.start.y, p.y); o.w = Math.abs(dx); o.h = Math.abs(dy); if (e.shiftKey) { o.w = o.h = Math.max(o.w, o.h); } }
+      else if (drag.kind === 'line') { o.x2 = p.x; o.y2 = p.y; }
+      else if (drag.kind === 'free') { const last = o.points[o.points.length - 1]; if (Math.hypot(p.x - last[0], p.y - last[1]) > 3) o.points.push([p.x, p.y]); }
+    } else if (drag.mode === 'move') {
+      Object.assign(o, clone(drag.orig)); move(o, dx, dy);
+    } else if (drag.mode === 'handle') {
+      const r = drag.orig; Object.assign(o, clone(r));
+      const n = drag.name;
+      if (n === 'p1') { o.x1 = p.x; o.y1 = p.y; }
+      else if (n === 'p2') { o.x2 = p.x; o.y2 = p.y; }
+      else if (n[0] === 'v') { o.points = polyPoints(r).map(q => q.slice()); o.points[+n.slice(1)] = [p.x, p.y]; }
+      else {
+        let x1 = r.x, y1 = r.y, x2 = r.x + r.w, y2 = r.y + r.h;
+        if (n.includes('w')) x1 = p.x; if (n.includes('e')) x2 = p.x; if (n.includes('n')) y1 = p.y; if (n.includes('s')) y2 = p.y;
+        o.x = Math.min(x1, x2); o.y = Math.min(y1, y2); o.w = Math.max(8, Math.abs(x2 - x1)); o.h = Math.max(8, Math.abs(y2 - y1));
+      }
+    }
+    render();
+  });
+
+  function endDrag() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.mode === 'create') {
+      const o = d.obj;
+      if (d.kind === 'shape' && (o.w < 6 || o.h < 6)) { o.w = o.h = 60; o.x = d.start.x - 30; o.y = d.start.y - 30; }
+      if (d.kind === 'shape' && o.shape === 'poly') { o.points = polyPoints(o); }
+      if (d.kind === 'line' && Math.hypot(o.x2 - o.x1, o.y2 - o.y1) < 6) { o.x2 = o.x1 + 80; o.y2 = o.y1; }
+      if (d.kind === 'free' && o.points.length < 2) { removeObj(o.id); state.selected = null; }
+    }
+    commit(d.before);
+  }
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  svg.addEventListener('dblclick', e => {
+    const g = e.target.closest('[data-id]'); if (!g) return;
+    const obj = findObj(g.dataset.id); if (!obj) return;
+    const before = snapshot();
+    if (obj.type === 'text') { const t = prompt('Texte :', obj.text); if (t !== null) { obj.text = t; commit(before); } }
+    else if (obj.type === 'player') { const t = prompt('Numéro ou lettre du joueur :', obj.label || ''); if (t !== null) { obj.label = t.slice(0, 3); commit(before); } }
+  });
+
+  function removeObj(id) { const arr = curObjects(); const i = arr.findIndex(o => o.id === id); if (i >= 0) arr.splice(i, 1); }
+
+  /* ---------- Clavier ---------- */
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+    if (!$('#modal-preview').classList.contains('hidden')) { if (e.key === 'Escape') closeModal('modal-preview'); return; }
+    const k = e.key;
+    if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+    if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'd') { e.preventDefault(); duplicateSelected(); return; }
+    if (k === 'Escape') { setTool(null); state.selected = null; render(); return; }
+    if (k.toLowerCase() === 'v') { setTool(null); return; }
+    if (k === 'Delete' || k === 'Backspace') { if (state.selected) { const b = snapshot(); removeObj(state.selected); state.selected = null; commit(b); } return; }
+    if (k.startsWith('Arrow') && state.selected) {
+      e.preventDefault();
+      const d = e.shiftKey ? 10 : 2, obj = findObj(state.selected), b = snapshot();
+      move(obj, k === 'ArrowLeft' ? -d : k === 'ArrowRight' ? d : 0, k === 'ArrowUp' ? -d : k === 'ArrowDown' ? d : 0);
+      commit(b); return;
+    }
+    const tool = Object.values(TOOLS).find(t => t.key && t.key.toLowerCase() === k.toLowerCase());
+    if (tool && !e.ctrlKey && !e.metaKey) setTool(tool.id);
+  });
+
+  function duplicateSelected() {
+    const obj = findObj(state.selected); if (!obj) return;
+    const b = snapshot(); const c = clone(obj); c.id = uid(); move(c, 20, 20);
+    curObjects().push(c); state.selected = c.id; commit(b);
+  }
+
+  /* ---------- Barre de propriétés ---------- */
+  function renderProps() {
+    const box = $('#props');
+    const obj = state.selected && findObj(state.selected);
+    if (!obj) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    box.replaceChildren();
+    const add = el => box.appendChild(el);
+    const sep = () => { const s = document.createElement('span'); s.className = 'sep'; add(s); };
+    const btn = (label, title, on, fn, cls) => { const b = document.createElement('button'); b.className = 'pbtn' + (on ? ' on' : '') + (cls ? ' ' + cls : ''); b.innerHTML = label; b.title = title; b.onclick = () => { const s = snapshot(); fn(); commit(s); }; add(b); return b; };
+
+    const hasColor = obj.type !== 'equip';
+    if (hasColor) {
+      Object.keys(COLORS).forEach(c => {
+        const s = document.createElement('span'); s.className = 'swatch' + (obj.color === c ? ' on' : ''); s.style.background = COLORS[c]; s.title = c;
+        s.onclick = () => { const b = snapshot(); obj.color = c; commit(b); };
+        add(s);
+      });
+      sep();
+    }
+    if (obj.type === 'shape' || obj.type === 'line' || obj.type === 'free') {
+      btn('Pointillé', 'Trait pointillé', obj.dashed, () => { obj.dashed = !obj.dashed; });
+      btn('Épais', 'Épaisseur du trait', obj.width >= 5, () => { obj.width = obj.width >= 5 ? 3 : 5; });
+    }
+    if (obj.type === 'shape') btn('Rempli', 'Remplir la forme', obj.fill, () => { obj.fill = !obj.fill; });
+    if (obj.type === 'line') {
+      btn('Flèche', 'Pointe de flèche', obj.arrow, () => { obj.arrow = !obj.arrow; });
+      const sel = document.createElement('select'); sel.className = 'pbtn';
+      [['straight', 'Droite'], ['wavy', 'Ondulée'], ['zigzag', 'Zigzag']].forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; o.selected = obj.style === v; sel.appendChild(o); });
+      sel.onchange = () => { const b = snapshot(); obj.style = sel.value; commit(b); };
+      add(sel);
+    }
+    if (obj.type === 'player') {
+      const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'N°'; inp.maxLength = 3; inp.value = obj.label || '';
+      inp.oninput = () => { obj.label = inp.value; render_objectsOnly(); };
+      inp.onchange = () => { const b = snapshot(); commit(b); };
+      inp.onfocus = () => { inp.dataset.before = snapshot(); };
+      inp.onblur = () => { if (inp.dataset.before) { commit(inp.dataset.before); } };
+      add(inp);
+      btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
+    }
+    if (obj.type === 'text') {
+      btn('Modifier', 'Modifier le texte', false, () => { const t = prompt('Texte :', obj.text); if (t !== null) obj.text = t; });
+      btn('A−', 'Réduire', false, () => { obj.size = Math.max(10, (obj.size || 18) - 2); });
+      btn('A+', 'Agrandir', false, () => { obj.size = Math.min(60, (obj.size || 18) + 2); });
+    }
+    if (obj.type === 'equip' || obj.type === 'player') {
+      btn('−', 'Réduire', false, () => { obj.scale = Math.max(0.5, +((obj.scale || 1) - 0.1).toFixed(2)); });
+      btn('+', 'Agrandir', false, () => { obj.scale = Math.min(3, +((obj.scale || 1) + 0.1).toFixed(2)); });
+    }
+    if (obj.type === 'equip') {
+      btn('↺', 'Pivoter de −45°', false, () => { obj.rot = ((obj.rot || 0) - 45) % 360; });
+      btn('↻', 'Pivoter de +45°', false, () => { obj.rot = ((obj.rot || 0) + 45) % 360; });
+    }
+    sep();
+    btn('Dupliquer', 'Dupliquer (Ctrl+D)', false, () => { const c = clone(obj); c.id = uid(); move(c, 20, 20); curObjects().push(c); state.selected = c.id; });
+    btn('Devant', 'Mettre au premier plan', false, () => { const a = curObjects(); const i = a.indexOf(obj); a.splice(i, 1); a.push(obj); });
+    btn('Derrière', 'Mettre à l’arrière-plan', false, () => { const a = curObjects(); const i = a.indexOf(obj); a.splice(i, 1); a.unshift(obj); });
+    btn('Supprimer', 'Supprimer (Suppr)', false, () => { removeObj(obj.id); state.selected = null; }, 'danger');
+  }
+  function render_objectsOnly() { objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
+
+  /* ---------- Étapes ---------- */
+  function sceneSvg(settings, objects) {
+    const spec = fieldSpec(settings);
+    const s = svgEl('svg', { xmlns: SVG_NS, viewBox: `0 0 ${spec.W} ${spec.H}` });
+    s.appendChild(renderField(spec));
+    s.appendChild(svgEl('g', {}, objects.map(renderObject)));
+    return s;
+  }
+
+  function renderSteps() {
+    const root = $('#steps');
+    root.replaceChildren();
+    state.drawing.steps.forEach((st, i) => {
+      const card = document.createElement('div');
+      card.className = 'step-card' + (i === state.step ? ' active' : '');
+      card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
+        <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+        <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}</div>`;
+      card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects));
+      card.onclick = () => { state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
+      card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects) }); state.step = i + 1; state.selected = null; commit(b); };
+      card.querySelector('.del').onclick = e => {
+        e.stopPropagation();
+        if (state.drawing.steps.length === 1) { toast('Impossible de supprimer la seule étape.'); return; }
+        if (!confirm(`Supprimer l'étape ${i + 1} ?`)) return;
+        const b = snapshot(); state.drawing.steps.splice(i, 1); state.step = Math.max(0, Math.min(state.step, state.drawing.steps.length - 1)); state.selected = null; commit(b);
+      };
+      root.appendChild(card);
+    });
+  }
+  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()) }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); };
+
+  /* ---------- Onglets & réglages ---------- */
+  function activateTab(name) {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    $('#tab-steps').classList.toggle('hidden', name !== 'steps');
+    $('#tab-settings').classList.toggle('hidden', name !== 'settings');
+  }
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => activateTab(t.dataset.tab));
+
+  /* ---------- Tiroirs mobiles ---------- */
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+  let drawer = null;
+  function openDrawer(which) {
+    drawer = drawer === which ? null : which;
+    $('.sidebar').classList.toggle('open', drawer === 'tools');
+    $('.panel').classList.toggle('open', drawer === 'steps' || drawer === 'settings');
+    if (drawer === 'steps' || drawer === 'settings') activateTab(drawer);
+    document.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === drawer));
+  }
+  const closeDrawer = () => { if (drawer && isMobile()) openDrawer(drawer); };
+  document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => openDrawer(b.dataset.mtab));
+  window.addEventListener('resize', () => { if (!isMobile() && drawer) openDrawer(drawer); });
+  document.querySelectorAll('input[name=field], input[name=orientation]').forEach(r => r.onchange = () => {
+    const b = snapshot(); state.drawing.settings[r.name] = r.value; renderField_(); commit(b);
+  });
+  $('#step-duration').oninput = e => { state.drawing.settings.stepDuration = +e.target.value; $('#step-duration-val').textContent = (e.target.value / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s'; };
+  function applySettingsToUI() {
+    const s = state.drawing.settings;
+    document.querySelectorAll('input[name=field]').forEach(r => r.checked = r.value === (s.field || 'full'));
+    document.querySelectorAll('input[name=orientation]').forEach(r => r.checked = r.value === (s.orientation || 'landscape'));
+    $('#step-duration').value = s.stepDuration || 1200;
+    $('#step-duration-val').textContent = ((s.stepDuration || 1200) / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s';
+    $('#title').value = state.drawing.title;
+  }
+  $('#title').onchange = e => { state.drawing.title = e.target.value.trim() || 'Sans titre'; e.target.value = state.drawing.title; afterChange(); };
+
+  /* ---------- Aperçu animé ---------- */
+  const preview = { playing: false, step: 0, raf: null };
+  function openPreview() {
+    preview.step = state.step; preview.playing = false;
+    openModal('modal-preview');
+    $('#preview-title').textContent = state.drawing.title;
+    showPreviewStep(preview.step);
+  }
+  function showPreviewStep(i, objects) {
+    const st = state.drawing.steps[i];
+    $('#preview-canvas').replaceChildren(sceneSvg(state.drawing.settings, objects || st.objects));
+    $('#preview-step').textContent = `Étape ${i + 1} / ${state.drawing.steps.length}`;
+  }
+  function animateTo(next, done) {
+    const a = state.drawing.steps[preview.step].objects, b = state.drawing.steps[next].objects;
+    const dur = Math.max(200, (state.drawing.settings.stepDuration || 1200) * 0.7);
+    const t0 = performance.now();
+    const frame = now => {
+      const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const list = [];
+      a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
+      b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
+      showPreviewStep(next, list);
+      if (t < 1) preview.raf = requestAnimationFrame(frame); else { preview.step = next; showPreviewStep(next); done && done(); }
+    };
+    cancelAnimationFrame(preview.raf);
+    preview.raf = requestAnimationFrame(frame);
+  }
+  function playLoop() {
+    if (!preview.playing) return;
+    const next = (preview.step + 1) % state.drawing.steps.length;
+    const hold = state.drawing.settings.stepDuration || 1200;
+    preview.timer = setTimeout(() => { if (!preview.playing) return; animateTo(next, playLoop); }, hold * 0.6);
+  }
+  function setPlaying(on) {
+    preview.playing = on; $('#preview-play').textContent = on ? '⏸ Pause' : '▶ Lire';
+    clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
+    if (on) { if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $('#preview-play').textContent = '▶ Lire'; return; } playLoop(); }
+    else showPreviewStep(preview.step);
+  }
+  $('#btn-preview').onclick = openPreview;
+  $('#preview-play').onclick = () => setPlaying(!preview.playing);
+  $('#preview-next').onclick = () => { setPlaying(false); animateTo((preview.step + 1) % state.drawing.steps.length); };
+  $('#preview-prev').onclick = () => { setPlaying(false); animateTo((preview.step - 1 + state.drawing.steps.length) % state.drawing.steps.length); };
+
+  /* ---------- Export PNG ---------- */
+  function exportPng() {
+    const spec = fieldSpec(state.drawing.settings);
+    const s = sceneSvg(state.drawing.settings, curObjects());
+    s.setAttribute('width', spec.W); s.setAttribute('height', spec.H);
+    const xml = new XMLSerializer().serializeToString(s);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2, c = document.createElement('canvas');
+      c.width = spec.W * scale; c.height = spec.H * scale;
+      const ctx = c.getContext('2d'); ctx.scale(scale, scale); ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      c.toBlob(blob => download(blob, `${slug(state.drawing.title)}-etape-${state.step + 1}.png`), 'image/png');
+      toast('Image exportée.');
+    };
+    img.onerror = () => toast("Échec de l'export de l'image.");
+    img.src = url;
+  }
+  const slug = s => (s || 'dessin').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dessin';
+  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+  /* ---------- Menu d'export & exports animés ---------- */
+  const exportMenu = $('#export-menu');
+  $('#btn-export').onclick = e => { e.stopPropagation(); exportMenu.classList.toggle('hidden'); };
+  document.addEventListener('click', () => exportMenu.classList.add('hidden'));
+  exportMenu.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
+    exportMenu.classList.add('hidden');
+    const kind = b.dataset.export;
+    if (kind === 'png') return exportPng();
+    if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
+    const label = kind === 'gif' ? 'Création du GIF animé…' : 'Enregistrement de la vidéo…';
+    const prog = showProgress(label);
+    const fn = kind === 'gif' ? window.RugbyExport.exportGif : window.RugbyExport.exportWebm;
+    fn(state.drawing, sceneSvg, prog.update)
+      .then(blob => { download(blob, `${slug(state.drawing.title)}.${kind}`); toast(kind === 'gif' ? 'GIF animé exporté.' : 'Vidéo exportée.'); })
+      .catch(err => toast('Export impossible : ' + (err && err.message ? err.message : err)))
+      .finally(prog.close);
+  });
+  function showProgress(label) {
+    const el = document.createElement('div'); el.className = 'progress';
+    el.innerHTML = `<div class="box"><div class="lbl"></div><div class="bar"><i></i></div></div>`;
+    el.querySelector('.lbl').textContent = label; document.body.appendChild(el);
+    return { update: p => { el.querySelector('i').style.width = Math.round(p * 100) + '%'; }, close: () => el.remove() };
+  }
+
+  /* ---------- JSON import / export ---------- */
+  $('#btn-export-json').onclick = () => download(new Blob([snapshot()], { type: 'application/json' }), `${slug(state.drawing.title)}.json`);
+  $('#btn-import-json').onclick = () => $('#file-import').click();
+  $('#file-import').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { loadDrawing(JSON.parse(r.result)); toast('Dessin importé.'); } catch (err) { toast('Fichier invalide.'); } };
+    r.readAsText(f); e.target.value = '';
+  };
+
+  /* ---------- Bibliothèque (localStorage) ---------- */
+  function readLib() { try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); } catch (e) { return []; } }
+  function writeLib(list) { try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } }
+  function saveDrawing() {
+    state.drawing.title = $('#title').value.trim() || 'Sans titre';
+    const list = readLib(); const d = clone(state.drawing); d.updatedAt = Date.now();
+    const i = list.findIndex(x => x.id === d.id); if (i >= 0) list[i] = d; else list.unshift(d);
+    writeLib(list); toast('Dessin enregistré dans « Mes dessins ».');
+  }
+  $('#btn-save').onclick = saveDrawing;
+
+  function loadDrawing(d) {
+    if (!d || !Array.isArray(d.steps) || !d.steps.length) throw new Error('bad drawing');
+    d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200 }, d.settings || {});
+    state.drawing = d; state.step = 0; state.selected = null; state.history = []; state.future = [];
+    renderField_(); applySettingsToUI(); afterChange();
+  }
+
+  function openLibrary() {
+    const root = $('#library-list'); root.replaceChildren();
+    const list = readLib();
+    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment.'; root.appendChild(p); }
+    list.forEach(d => {
+      const c = document.createElement('div'); c.className = 'lib-card';
+      c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
+      c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
+      c.querySelector('.name').textContent = d.title;
+      c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
+      c.onclick = () => { loadDrawing(clone(d)); closeModal('modal-library'); };
+      c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); openLibrary(); } };
+      root.appendChild(c);
+    });
+    openModal('modal-library');
+  }
+  $('#btn-library').onclick = openLibrary;
+  $('#btn-new-drawing').onclick = () => { loadDrawing(newDrawing()); closeModal('modal-library'); };
+
+  /* ---------- Modales & toast ---------- */
+  function openModal(id) { $('#' + id).classList.remove('hidden'); }
+  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') setPlaying(false); }
+  document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
+  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+  let toastTimer;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
+
+  /* ---------- Démarrage ---------- */
+  buildPalette();
+  setTool(null);
+  let restored = null;
+  try { restored = JSON.parse(localStorage.getItem(CUR_KEY) || 'null'); } catch (e) { /* ignore */ }
+  try { loadDrawing(restored || newDrawing()); } catch (e) { loadDrawing(newDrawing()); }
+  // Un dessin vide reçoit un petit exemple pour montrer les possibilités
+  if (!restored) seedExample();
+
+  function seedExample() {
+    const b = snapshot();
+    const o = curObjects();
+    const blue = [[500, 300], [480, 340], [480, 380], [480, 420], [480, 460], [480, 500]];
+    blue.forEach((p, i) => o.push({ id: uid(), type: 'player', color: 'blue', jersey: false, x: p[0], y: p[1], label: String(i + 9), scale: 1 }));
+    o.push({ id: uid(), type: 'equip', kind: 'ball', x: 522, y: 292, rot: -20, scale: 0.8 });
+    o.push({ id: uid(), type: 'shape', shape: 'rect', x: 600, y: 360, w: 180, h: 150, dashed: false, color: 'white', width: 3, fill: true });
+    [[640, 400], [720, 400], [680, 435], [640, 470], [720, 470]].forEach(p => o.push({ id: uid(), type: 'player', color: 'red', jersey: false, x: p[0], y: p[1], label: '', scale: 1 }));
+    o.push({ id: uid(), type: 'line', style: 'wavy', x1: 520, y1: 300, x2: 600, y2: 350, dashed: false, arrow: true, color: 'white', width: 3 });
+    o.push({ id: uid(), type: 'text', x: 600, y: 335, text: 'Zone de défense', size: 16, color: 'white' });
+    commit(b);
+    state.history = []; state.future = []; $('#btn-undo').disabled = true;
+  }
+})();
+
+</script>
+</body>
+</html>
