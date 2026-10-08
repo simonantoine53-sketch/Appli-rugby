@@ -162,6 +162,7 @@
       root.appendChild(sec);
     });
     $('#btn-select').onclick = () => setTool(null);
+    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
   function setTool(id) {
@@ -172,6 +173,9 @@
     $('#btn-select').classList.toggle('active', !id);
     svg.classList.toggle('tool-active', !!id);
     const t = id && TOOLS[id];
+    const fab = $('#fab-select');
+    fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
+    $('#fab-select-label').textContent = t ? 'Modifier (quitter ' + t.label.toLowerCase() + ')' : 'Modifier';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;

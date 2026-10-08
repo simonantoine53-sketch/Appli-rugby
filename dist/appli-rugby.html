@@ -117,6 +117,15 @@ button { font: inherit; cursor: pointer; }
 #canvas .handle { fill: #fff; stroke: var(--primary); stroke-width: 1.5; cursor: nwse-resize; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.fab-select {
+  position: absolute; left: 16px; bottom: 44px; z-index: 6; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 999px; border: 2px solid var(--primary); background: #fff; color: var(--primary);
+  font-weight: 700; font-size: 14px; box-shadow: var(--shadow); cursor: pointer; transition: background .15s, transform .15s;
+}
+.fab-select:hover { transform: translateY(-1px); }
+.fab-select.tool-on { background: var(--primary); color: #fff; animation: fab-pulse 1.6s ease-in-out infinite; }
+.fab-select.selecting { background: #e8f0fe; }
+@keyframes fab-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(26,115,232,.45); } 50% { box-shadow: 0 0 0 10px rgba(26,115,232,0); } }
 .zoom-fab { display: none; position: absolute; right: 12px; bottom: 68px; flex-direction: column; gap: 6px; z-index: 6; }
 .zoom-fab button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: #fff; box-shadow: var(--shadow); font-size: 20px; display: grid; place-items: center; color: #333; }
 .hint { padding: 6px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: #fff; }
@@ -326,6 +335,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .tab-content { padding: 12px; }
 
   .zoom-fab { display: flex; }
+  .fab-select { left: 12px; bottom: 68px; padding: 11px 16px; font-size: 15px; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
@@ -444,6 +454,10 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     <div class="canvas-wrap" id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
+    <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      <span id="fab-select-label">Modifier</span>
+    </button>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
       <button data-zoom="out" title="Zoom arrière">−</button>
@@ -621,12 +635,13 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   ];
 
   const playerColors = ['orange', 'yellow', 'green', 'red', 'blue', 'purple', 'black', 'grey'];
+  const FR = { orange: 'orange', yellow: 'jaune', green: 'vert', red: 'rouge', blue: 'bleu', purple: 'violet', black: 'noir', grey: 'gris' };
   const SHIRT = 'M8 3l3 0c0 2 6 2 6 0l3 0 7 4-2.5 4-2.5-1.5v19H9v-19L6.5 11 4 7z';
   const playerTools = playerColors.map(c => ({
-    id: 'player-' + c, label: 'Joueur ' + c, kind: 'player', color: c, jersey: false,
+    id: 'player-' + c, label: 'Joueur ' + FR[c], kind: 'player', color: c, jersey: false,
     icon: `<circle cx="16" cy="16" r="11" fill="${COLORS[c]}"/>`
   })).concat(playerColors.map(c => ({
-    id: 'jersey-' + c, label: 'Maillot ' + c, kind: 'player', color: c, jersey: true,
+    id: 'jersey-' + c, label: 'Maillot ' + FR[c], kind: 'player', color: c, jersey: true,
     icon: `<path d="${SHIRT}" transform="translate(1 1) scale(0.95)" fill="${COLORS[c]}" stroke="${c === 'white' ? '#999' : 'none'}"/>`
   })));
 
@@ -1336,6 +1351,7 @@ window.RUGBY_CONFIG = {
       root.appendChild(sec);
     });
     $('#btn-select').onclick = () => setTool(null);
+    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
   function setTool(id) {
@@ -1346,6 +1362,9 @@ window.RUGBY_CONFIG = {
     $('#btn-select').classList.toggle('active', !id);
     svg.classList.toggle('tool-active', !!id);
     const t = id && TOOLS[id];
+    const fab = $('#fab-select');
+    fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
+    $('#fab-select-label').textContent = t ? 'Modifier (quitter ' + t.label.toLowerCase() + ')' : 'Modifier';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;

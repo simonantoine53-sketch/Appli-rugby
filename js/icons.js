@@ -45,12 +45,13 @@
   ];
 
   const playerColors = ['orange', 'yellow', 'green', 'red', 'blue', 'purple', 'black', 'grey'];
+  const FR = { orange: 'orange', yellow: 'jaune', green: 'vert', red: 'rouge', blue: 'bleu', purple: 'violet', black: 'noir', grey: 'gris' };
   const SHIRT = 'M8 3l3 0c0 2 6 2 6 0l3 0 7 4-2.5 4-2.5-1.5v19H9v-19L6.5 11 4 7z';
   const playerTools = playerColors.map(c => ({
-    id: 'player-' + c, label: 'Joueur ' + c, kind: 'player', color: c, jersey: false,
+    id: 'player-' + c, label: 'Joueur ' + FR[c], kind: 'player', color: c, jersey: false,
     icon: `<circle cx="16" cy="16" r="11" fill="${COLORS[c]}"/>`
   })).concat(playerColors.map(c => ({
-    id: 'jersey-' + c, label: 'Maillot ' + c, kind: 'player', color: c, jersey: true,
+    id: 'jersey-' + c, label: 'Maillot ' + FR[c], kind: 'player', color: c, jersey: true,
     icon: `<path d="${SHIRT}" transform="translate(1 1) scale(0.95)" fill="${COLORS[c]}" stroke="${c === 'white' ? '#999' : 'none'}"/>`
   })));
 
