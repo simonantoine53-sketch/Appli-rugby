@@ -120,6 +120,7 @@
 
   function setTool(id) {
     state.tool = id;
+    if (id) closeDrawer();
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
     $('#btn-select').classList.toggle('active', !id);
@@ -152,6 +153,7 @@
 
   svg.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
+    closeDrawer();
     const p = toSvg(e);
     const before = snapshot();
     const t = state.tool && TOOLS[state.tool];
@@ -351,7 +353,7 @@
         <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}</div>`;
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects));
-      card.onclick = () => { state.step = i; state.selected = null; render(); renderSteps(); };
+      card.onclick = () => { state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
       card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects) }); state.step = i + 1; state.selected = null; commit(b); };
       card.querySelector('.del').onclick = e => {
         e.stopPropagation();
@@ -365,11 +367,26 @@
   $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()) }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); };
 
   /* ---------- Onglets & réglages ---------- */
-  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
-    $('#tab-steps').classList.toggle('hidden', t.dataset.tab !== 'steps');
-    $('#tab-settings').classList.toggle('hidden', t.dataset.tab !== 'settings');
-  });
+  function activateTab(name) {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    $('#tab-steps').classList.toggle('hidden', name !== 'steps');
+    $('#tab-settings').classList.toggle('hidden', name !== 'settings');
+  }
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => activateTab(t.dataset.tab));
+
+  /* ---------- Tiroirs mobiles ---------- */
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+  let drawer = null;
+  function openDrawer(which) {
+    drawer = drawer === which ? null : which;
+    $('.sidebar').classList.toggle('open', drawer === 'tools');
+    $('.panel').classList.toggle('open', drawer === 'steps' || drawer === 'settings');
+    if (drawer === 'steps' || drawer === 'settings') activateTab(drawer);
+    document.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === drawer));
+  }
+  const closeDrawer = () => { if (drawer && isMobile()) openDrawer(drawer); };
+  document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => openDrawer(b.dataset.mtab));
+  window.addEventListener('resize', () => { if (!isMobile() && drawer) openDrawer(drawer); });
   document.querySelectorAll('input[name=field], input[name=orientation]').forEach(r => r.onchange = () => {
     const b = snapshot(); state.drawing.settings[r.name] = r.value; renderField_(); commit(b);
   });
@@ -405,7 +422,7 @@
       const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       const list = [];
       a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
-      b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e) : Object.assign(clone(o), { opacity: e })); });
+      b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
       showPreviewStep(next, list);
       if (t < 1) preview.raf = requestAnimationFrame(frame); else { preview.step = next; showPreviewStep(next); done && done(); }
     };

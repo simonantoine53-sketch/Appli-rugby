@@ -34,12 +34,12 @@
     </button>
     <button id="btn-preview" class="btn secondary">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-      Aperçu
+      <span>Aperçu</span>
     </button>
     <div class="menu-wrap">
       <button id="btn-export" class="btn secondary">
         <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" stroke-width="2"/></svg>
-        Exporter ▾
+        <span>Exporter ▾</span>
       </button>
       <div id="export-menu" class="menu hidden">
         <button data-export="png"><strong>Image PNG</strong><span>L'étape affichée, en haute résolution</span></button>
@@ -47,7 +47,10 @@
         <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD</span></button>
       </div>
     </div>
-    <button id="btn-save" class="btn primary">Enregistrer le dessin</button>
+    <button id="btn-save" class="btn primary">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 3h11l3 3v15H5z M8 3v6h8V3 M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span>Enregistrer le dessin</span>
+    </button>
   </div>
 </header>
 
@@ -119,6 +122,13 @@
     </div>
   </aside>
 </main>
+
+<!-- Barre d'onglets mobile -->
+<nav class="mobile-bar">
+  <button data-mtab="tools"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="7" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 13.5l3.5 7h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 20.5l6.5-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Outils</button>
+  <button data-mtab="steps"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Étapes</button>
+  <button data-mtab="settings"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Réglages</button>
+</nav>
 
 <!-- Aperçu animé -->
 <div id="modal-preview" class="modal hidden">
