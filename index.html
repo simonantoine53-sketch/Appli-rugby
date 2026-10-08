@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=202610081340">
+  <link rel="stylesheet" href="css/style.css?v=202610081343">
 </head>
 <body>
 
@@ -113,7 +113,7 @@
     </div>
     <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
       <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-      <span id="fab-select-label">Sélectionner / déplacer<small>touchez un élément du terrain</small></span>
+      <span id="fab-select-label" class="sr-only">Sélectionner / déplacer</span>
     </button>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
@@ -244,13 +244,13 @@
 <div id="toast" class="toast"></div>
 <input type="file" id="file-import" accept="application/json" hidden>
 
-<script src="js/icons.js?v=202610081340"></script>
-<script src="js/field.js?v=202610081340"></script>
-<script src="js/objects.js?v=202610081340"></script>
-<script src="js/export.js?v=202610081340"></script>
+<script src="js/icons.js?v=202610081343"></script>
+<script src="js/field.js?v=202610081343"></script>
+<script src="js/objects.js?v=202610081343"></script>
+<script src="js/export.js?v=202610081343"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610081340"></script>
-<script src="js/editor.js?v=202610081340"></script>
-<script src="js/account.js?v=202610081340"></script>
+<script src="js/config.js?v=202610081343"></script>
+<script src="js/editor.js?v=202610081343"></script>
+<script src="js/account.js?v=202610081343"></script>
 </body>
 </html>
