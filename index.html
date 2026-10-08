@@ -20,9 +20,9 @@
   </div>
 
   <div class="zoom">
-    <button id="zoom-out" title="Zoom arrière">−</button>
+    <button data-zoom="out" title="Zoom arrière">−</button>
     <span id="zoom-val">100%</span>
-    <button id="zoom-in" title="Zoom avant">+</button>
+    <button data-zoom="in" title="Zoom avant">+</button>
   </div>
 
   <div class="actions">
@@ -61,6 +61,11 @@
     <div id="props" class="props hidden"></div>
     <div class="canvas-wrap" id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="zoom-fab">
+      <button data-zoom="in" title="Zoom avant">+</button>
+      <button data-zoom="out" title="Zoom arrière">−</button>
+      <button data-zoom="fit" title="Ajuster à l'écran"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
     <div class="hint" id="hint">Choisissez un outil à gauche, puis cliquez ou glissez sur le terrain.</div>
   </section>
