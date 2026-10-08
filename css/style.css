@@ -191,12 +191,29 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .view { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .home-bar .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; }
 .home-body { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; padding: 16px 24px 32px; gap: 12px; max-width: 1100px; width: 100%; margin: 0 auto; }
-.home-body .library-list { padding: 0; overflow: visible; }
+.home-body > * { flex: 0 0 auto; }
+.home-body .library-list, .home-body .member-list { padding: 0; overflow: visible; }
 .home-body #home-tabs { padding: 0; border-bottom: 1px solid var(--border); }
 .home-current { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; }
 .home-login { grid-column: 1 / -1; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .home-login p { margin: 0; color: var(--muted); }
 .home-h4 { grid-column: 1 / -1; margin: 8px 0 0; }
+
+/* ---------- Page équipe ---------- */
+.select { font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; max-width: 220px; }
+.team-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.team-card h2 { margin: 0; font-size: 20px; flex: 1 1 auto; }
+.team-card .code { display: inline-flex; align-items: center; gap: 8px; }
+.team-card code { background: #f6f8fa; border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 16px; letter-spacing: 3px; }
+.team-tabs { border-bottom: 1px solid var(--border); }
+.member-list { display: flex; flex-direction: column; gap: 8px; }
+.member-list .member-row { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.member-row .avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8f0fe; color: var(--primary); font-weight: 700; display: grid; place-items: center; flex: 0 0 auto; }
+.member-row .who { flex: 1 1 auto; min-width: 0; }
+.member-row .who small { display: block; color: var(--muted); font-size: 12px; }
+.team-forms-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.team-forms-card h4 { margin: 0; }
+.team-row-select { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* ---------- Comptes & équipes ---------- */
 .btn.account.logged { color: var(--primary); }
@@ -249,7 +266,9 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .home-bar .brand strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-bar .actions .btn.account { padding: 8px 6px; }
-  .home-bar #home-new .long { display: none; }
+  .home-bar #home-new .long, .home-bar #home-team .long { display: none; }
+  .home-bar .select { max-width: 150px; font-size: 13px; }
+  .team-card h2 { font-size: 18px; }
   .home-body { padding: 12px 12px 32px; }
   #btn-account, #btn-redo { display: none; }
   .mobile-bar .has-badge::after { top: 4px; right: 12px; }
