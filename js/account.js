@@ -245,6 +245,12 @@
       if (error) return E.toast(errMsg(error));
       await loadTeams(); renderTeamPage();
     }));
+    if (staff) foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
+      if (!confirm(`Supprimer définitivement « ${S.team.name} », ses membres et ses stratégies publiées ?`)) return;
+      const { error } = await sb.from('teams').delete().eq('id', S.team.id);
+      if (error) return E.toast(errMsg(error));
+      E.toast('Équipe supprimée.'); await loadTeams(); renderTeamPage();
+    }));
     root.appendChild(foot);
     root.appendChild(teamForms());
   }
