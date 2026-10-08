@@ -118,10 +118,12 @@ button { font: inherit; cursor: pointer; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
 .fab-select {
-  position: absolute; left: 16px; bottom: 44px; z-index: 6; display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 22px; border-radius: 999px; border: 2px solid var(--primary); background: #fff; color: var(--primary);
-  font-weight: 700; font-size: 16px; box-shadow: 0 4px 18px rgba(26,115,232,.35); cursor: pointer; transition: background .15s, transform .15s;
+  position: absolute; left: 16px; bottom: 44px; z-index: 6; display: inline-flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border-radius: 999px; border: 2px solid var(--primary); background: #fff; color: var(--primary);
+  font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(26,115,232,.25); cursor: pointer; transition: background .15s, transform .15s; text-align: left;
 }
+.fab-select svg { width: 26px; height: 26px; flex: 0 0 auto; }
+.fab-select small { display: block; font-size: 12px; font-weight: 500; opacity: .85; }
 .fab-select:hover { transform: translateY(-1px); }
 .fab-select.tool-on { background: var(--primary); color: #fff; animation: fab-pulse 1.6s ease-in-out infinite; }
 .fab-select.selecting { background: #e8f0fe; }
@@ -340,6 +342,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .zoom-fab { display: flex; }
   .fab-select { left: 10px; bottom: 66px; padding: 13px 16px; font-size: 15px; max-width: calc(100% - 90px); }
   .fab-select span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fab-select small { white-space: normal; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
@@ -460,7 +463,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     </div>
     <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
       <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-      <span id="fab-select-label">Sélectionner &amp; déplacer</span>
+      <span id="fab-select-label">Sélectionner / déplacer<small>touchez un élément du terrain</small></span>
     </button>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
@@ -1350,11 +1353,10 @@ window.RUGBY_CONFIG = {
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (gi === 0 ? `<button class="select-tool" id="btn-select" title="Sélection (V)"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor"/></svg></button>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>`;
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
-    $('#btn-select').onclick = () => setTool(null);
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
@@ -1363,12 +1365,11 @@ window.RUGBY_CONFIG = {
     if (id) closeDrawer();
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
-    $('#btn-select').classList.toggle('active', !id);
     svg.classList.toggle('tool-active', !!id);
     const t = id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
-    $('#fab-select-label').textContent = t ? 'Sélectionner & déplacer (quitter ' + t.label.toLowerCase() + ')' : 'Sélectionner & déplacer';
+    $('#fab-select-label').innerHTML = t ? 'Sélectionner / déplacer<small>quitter l’outil « ' + t.label.toLowerCase() + ' »</small>' : 'Sélectionner / déplacer<small>touchez un élément du terrain</small>';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;

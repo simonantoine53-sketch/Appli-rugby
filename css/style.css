@@ -110,10 +110,12 @@ button { font: inherit; cursor: pointer; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
 .fab-select {
-  position: absolute; left: 16px; bottom: 44px; z-index: 6; display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 22px; border-radius: 999px; border: 2px solid var(--primary); background: #fff; color: var(--primary);
-  font-weight: 700; font-size: 16px; box-shadow: 0 4px 18px rgba(26,115,232,.35); cursor: pointer; transition: background .15s, transform .15s;
+  position: absolute; left: 16px; bottom: 44px; z-index: 6; display: inline-flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border-radius: 999px; border: 2px solid var(--primary); background: #fff; color: var(--primary);
+  font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(26,115,232,.25); cursor: pointer; transition: background .15s, transform .15s; text-align: left;
 }
+.fab-select svg { width: 26px; height: 26px; flex: 0 0 auto; }
+.fab-select small { display: block; font-size: 12px; font-weight: 500; opacity: .85; }
 .fab-select:hover { transform: translateY(-1px); }
 .fab-select.tool-on { background: var(--primary); color: #fff; animation: fab-pulse 1.6s ease-in-out infinite; }
 .fab-select.selecting { background: #e8f0fe; }
@@ -332,6 +334,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .zoom-fab { display: flex; }
   .fab-select { left: 10px; bottom: 66px; padding: 13px 16px; font-size: 15px; max-width: calc(100% - 90px); }
   .fab-select span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fab-select small { white-space: normal; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
