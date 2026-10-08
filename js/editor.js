@@ -175,7 +175,7 @@
     const t = id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
-    $('#fab-select-label').textContent = t ? 'Modifier (quitter ' + t.label.toLowerCase() + ')' : 'Modifier';
+    $('#fab-select-label').textContent = t ? 'Sélectionner & déplacer (quitter ' + t.label.toLowerCase() + ')' : 'Sélectionner & déplacer';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
@@ -531,6 +531,7 @@
   document.addEventListener('click', () => exportMenu.classList.add('hidden'));
   exportMenu.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
     exportMenu.classList.add('hidden');
+    if (window.RugbyAccount && window.RugbyAccount.isActive() && !window.RugbyAccount.canUse('export')) return;
     const kind = b.dataset.export;
     if (kind === 'png') return exportPng();
     if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
@@ -601,7 +602,11 @@
   function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
-    if (view === 'team' && !(acc && acc.isActive() && acc.isLoggedIn())) { view = 'home'; if (acc && acc.isActive()) acc.openAuth(); }
+    if (view === 'team' && !(acc && acc.isActive() && acc.isLoggedIn())) {
+      const waiting = acc && acc.isActive() && !acc.isReady();   // session pas encore connue : on affiche l'accueil sans changer l'URL
+      view = 'home';
+      if (!waiting && acc && acc.isActive()) acc.openAuth();
+    }
     ['home', 'editor', 'team'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
     if (view === 'editor') requestAnimationFrame(fitZoom);
     else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }

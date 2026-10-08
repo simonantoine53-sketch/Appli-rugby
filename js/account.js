@@ -24,7 +24,12 @@
   const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
   const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
-  const isCoach = () => !!(S.team && S.team.role === 'coach');
+  const isSuper = () => !!(S.profile && S.profile.is_superadmin);
+  const isCoach = () => isSuper() || !!(S.team && S.team.role === 'coach');
+  const isStaff = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.role === 'admin'));
+  const isClubMember = () => isSuper() || S.teams.length > 0;
+  const ROLE_LABEL = { coach: 'Coach', admin: 'Admin', player: 'Joueur' };
+  const roleBadge = r => `<span class="role-badge ${r}">${ROLE_LABEL[r] || r}</span>`;
   const errMsg = e => {
     const m = (e && e.message) || String(e);
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
@@ -36,6 +41,7 @@
   };
 
   /* ---------- Session ---------- */
+  let ready = false;
   async function refreshSession(session) {
     S.user = session ? session.user : null;
     if (S.user) {
@@ -44,20 +50,28 @@
       await loadTeams();
     } else { S.profile = null; S.teams = []; setTeam(null); }
     renderAccountButton();
+    ready = true;
     refreshCurrentView();
   }
   sb.auth.getSession().then(({ data }) => refreshSession(data.session));
   sb.auth.onAuthStateChange((_evt, session) => { if ((session && session.user && session.user.id) !== (S.user && S.user.id)) refreshSession(session); });
 
   function refreshCurrentView() {
+    if (location.hash.startsWith('#/team')) { if (S.user) { E.go('team'); } else { E.go('home'); openAuth(); } return; }
     if (!$('#view-home').classList.contains('hidden')) renderHome();
-    else if (!$('#view-team').classList.contains('hidden')) { if (S.user) renderTeamPage(); else E.go('home'); }
   }
 
   async function loadTeams() {
-    const { data, error } = await sb.from('team_members').select('role, teams(id, name, join_code, created_by)').eq('user_id', S.user.id);
+    const { data, error } = await sb.from('team_members').select('role, status, teams(id, name, join_code, created_by)').eq('user_id', S.user.id);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
-    S.teams = (data || []).filter(r => r.teams).map(r => Object.assign({ role: r.role }, r.teams)).sort((a, b) => a.name.localeCompare(b.name));
+    const rows = (data || []).filter(r => r.teams);
+    S.pending = rows.filter(r => r.status === 'pending').map(r => r.teams);
+    S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role }, r.teams));
+    if (isSuper()) {
+      const { data: all } = await sb.from('teams').select('id, name, join_code, created_by').order('name');
+      (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
+    }
+    S.teams.sort((a, b) => a.name.localeCompare(b.name));
     let wanted = null; try { wanted = localStorage.getItem(TEAM_KEY); } catch (e) { /* ignore */ }
     setTeam(S.teams.find(t => t.id === wanted) || S.teams[0] || null);
   }
@@ -150,8 +164,11 @@
   async function joinTeam(code) {
     const { data, error } = await sb.rpc('join_team', { p_code: code });
     if (error) return E.toast(errMsg(error));
-    await loadTeams(); setTeam(S.teams.find(t => t.id === data.id));
-    E.toast(`Vous avez rejoint « ${data.name} ».`); E.go('team'); renderTeamPage();
+    await loadTeams();
+    const t = S.teams.find(x => x.id === data.id);
+    if (t) { setTeam(t); E.toast(`Vous êtes membre de « ${data.name} ».`); }
+    else E.toast(`Demande envoyée à « ${data.name} ». Un coach ou un admin doit la valider.`);
+    E.go('team'); renderTeamPage();
   }
   function teamForms() {
     const box = el('div', 'team-forms-card');
@@ -161,15 +178,23 @@
     const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’équipe (6 lettres)" required minlength="6" maxlength="6" style="text-transform:uppercase"><button class="btn secondary small" type="submit">Rejoindre (joueur)</button>');
     f2.onsubmit = e => { e.preventDefault(); joinTeam(f2.querySelector('input').value); };
     box.append(f1, f2);
-    box.appendChild(el('p', 'help', 'Le coach (administrateur de l’équipe) publie les stratégies, nomme d’autres coachs et gère les joueurs. Un joueur consulte l’équipe et propose ses propres dessins au coach.'));
+    box.appendChild(el('p', 'help', 'Une demande d’adhésion par code doit être validée par un coach ou un admin du club. Le coach publie les stratégies ; l’admin gère les membres et les demandes ; le joueur consulte l’équipe, garde ses dessins privés et peut les proposer au coach.'));
+    return box;
+  }
+  function pendingCard() {
+    if (!S.pending || !S.pending.length) return null;
+    const box = el('div', 'team-forms-card');
+    box.appendChild(el('h4', '', 'Demandes en attente'));
+    S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} » : en attente de validation par un coach ou un admin du club.`)));
     return box;
   }
   function teamSelect(onChange) {
     const sel = el('select', 'select');
-    S.teams.forEach(t => { const o = el('option'); o.value = t.id; o.textContent = `${t.name} (${t.role === 'coach' ? 'coach' : 'joueur'})`; o.selected = S.team && S.team.id === t.id; sel.appendChild(o); });
+    S.teams.forEach(t => { const o = el('option'); o.value = t.id; o.textContent = optLabel(t); o.selected = S.team && S.team.id === t.id; sel.appendChild(o); });
     sel.onchange = () => { setTeam(S.teams.find(t => t.id === sel.value)); onChange(); };
     return sel;
   }
+  const optLabel = t => `${t.name} (${t.superadmin ? 'super-admin' : (ROLE_LABEL[t.role] || t.role).toLowerCase()})`;
   function shareCode() {
     const text = `Rejoins mon équipe « ${S.team.name} » sur Appli Rugby Strat avec le code ${S.team.join_code} : ${location.origin}${location.pathname}`;
     if (navigator.share) navigator.share({ title: 'Appli Rugby Strat', text }).catch(() => {});
@@ -187,12 +212,13 @@
     $('#team-page-title').textContent = S.team ? S.team.name : 'Mon équipe';
     if (S.teams.length > 1) { S.teams.forEach(t => { const o = el('option'); o.value = t.id; o.textContent = t.name; o.selected = S.team && S.team.id === t.id; sw.appendChild(o); }); sw.classList.remove('hidden'); sw.onchange = () => { setTeam(S.teams.find(t => t.id === sw.value)); renderTeamPage(); }; }
     else sw.classList.add('hidden');
-    if (!S.team) { root.appendChild(teamForms()); return; }
-    const coach = isCoach();
+    const pend = pendingCard();
+    if (!S.team) { if (pend) root.appendChild(pend); root.appendChild(teamForms()); return; }
+    const coach = isCoach(), staff = isStaff();
 
     const card = el('div', 'team-card');
-    card.appendChild(el('h2', '', `${esc(S.team.name)} <span class="role-badge ${S.team.role}">${coach ? 'Coach · admin' : 'Joueur'}</span>`));
-    if (coach) {
+    card.appendChild(el('h2', '', `${esc(S.team.name)} ${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role)}`));
+    if (staff) {
       const code = el('div', 'code', `<span class="muted">Code d’invitation</span> <code>${esc(S.team.join_code)}</code>`);
       code.appendChild(btn('Inviter', 'secondary small', shareCode));
       card.appendChild(code);
@@ -207,10 +233,11 @@
 
     const list = el('div', 'library-list');
     root.appendChild(list);
-    if (teamTab === 'members') await renderMembers(list, coach, seq);
+    if (teamTab === 'members') await renderMembers(list, staff, seq);
     else await renderTeamDrawings(list, teamTab === 'proposed' ? 'proposed' : 'team', seq);
     if (seq !== teamSeq) return;
 
+    if (pend) root.appendChild(pend);
     const foot = el('div', 'team-forms-card');
     foot.appendChild(btn('Quitter cette équipe', 'outline small', async () => {
       if (!confirm(`Quitter « ${S.team.name} » ?`)) return;
@@ -222,30 +249,46 @@
     root.appendChild(teamForms());
   }
 
-  async function renderMembers(list, coach, seq) {
+  async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: members, error } = await sb.from('team_members').select('user_id, role, joined_at, profiles!team_members_user_profile_fk(display_name)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, joined_at, profiles!team_members_user_profile_fk(display_name)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
-    members.sort((a, b) => (a.role === b.role ? 0 : a.role === 'coach' ? -1 : 1) || ((a.profiles && a.profiles.display_name) || '').localeCompare((b.profiles && b.profiles.display_name) || ''));
-    list.appendChild(el('p', 'muted', `${members.length} membre${members.length > 1 ? 's' : ''}` + (coach ? ' · pour ajouter un joueur, partagez le code d’invitation.' : '')));
+    const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
+    const order = { coach: 0, admin: 1, player: 2 };
+    const members = rows.filter(m => m.status === 'active').sort((a, b) => (order[a.role] - order[b.role]) || nameOf(a).localeCompare(nameOf(b)));
+    const pending = rows.filter(m => m.status === 'pending');
+    const setMember = async (m, patch, confirmMsg) => {
+      if (confirmMsg && !confirm(confirmMsg)) return;
+      const q = patch ? sb.from('team_members').update(patch) : sb.from('team_members').delete();
+      const { error } = await q.match({ team_id: S.team.id, user_id: m.user_id });
+      if (error) E.toast(errMsg(error)); renderTeamPage();
+    };
+    if (staff && pending.length) {
+      list.appendChild(el('h4', 'home-h4', `Demandes d’adhésion (${pending.length})`));
+      pending.forEach(m => {
+        const row = el('div', 'member-row pending');
+        row.appendChild(el('div', 'avatar', esc(nameOf(m).trim().slice(0, 1).toUpperCase() || '?')));
+        row.appendChild(el('div', 'who', `${esc(nameOf(m))}<small>Demande du ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
+        row.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
+        row.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        list.appendChild(row);
+      });
+      list.appendChild(el('h4', 'home-h4', 'Membres'));
+    }
+    list.appendChild(el('p', 'muted', `${members.length} membre${members.length > 1 ? 's' : ''}` + (staff ? ' · pour ajouter un joueur, partagez le code d’invitation puis validez sa demande ici.' : '')));
     members.forEach(m => {
-      const name = (m.profiles && m.profiles.display_name) || 'Membre';
+      const name = nameOf(m);
       const row = el('div', 'member-row');
       row.appendChild(el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
       row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>Depuis le ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
-      row.appendChild(el('span', 'role-badge ' + m.role, m.role === 'coach' ? 'Coach' : 'Joueur'));
-      if (coach && m.user_id !== S.user.id) {
-        row.appendChild(btn(m.role === 'coach' ? 'Rétrograder' : 'Nommer coach', 'outline small', async () => {
-          const { error } = await sb.from('team_members').update({ role: m.role === 'coach' ? 'player' : 'coach' }).match({ team_id: S.team.id, user_id: m.user_id });
-          if (error) E.toast(errMsg(error)); renderTeamPage();
-        }));
-        row.appendChild(btn('Retirer', 'outline small danger', async () => {
-          if (!confirm(`Retirer ${name} de l'équipe ?`)) return;
-          const { error } = await sb.from('team_members').delete().match({ team_id: S.team.id, user_id: m.user_id });
-          if (error) E.toast(errMsg(error)); renderTeamPage();
-        }));
-      }
+      if (staff && m.user_id !== S.user.id) {
+        const sel = el('select', 'select small');
+        [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
+        sel.onchange = () => setMember(m, { role: sel.value });
+        row.appendChild(sel);
+        row.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l'équipe ?`)));
+      } else row.appendChild(el('span', 'role-badge ' + m.role, ROLE_LABEL[m.role] || m.role));
       list.appendChild(row);
     });
   }
@@ -260,9 +303,17 @@
     data.forEach(row => list.appendChild(cloudCard(row, renderTeamPage)));
   }
 
+  /* ---------- Restrictions ---------- */
+  /** Enregistrer et exporter sont réservés aux membres d'un club. */
+  function canUse(feature) {
+    if (!S.user) { openAuth(); E.toast(feature === 'export' ? 'Connectez-vous et rejoignez un club pour exporter.' : 'Connectez-vous et rejoignez un club pour enregistrer.'); return false; }
+    if (!isClubMember()) { E.toast((feature === 'export' ? 'L’export' : 'L’enregistrement') + ' est réservé aux membres d’un club. Rejoignez un club avec son code.'); E.go('team'); return false; }
+    return true;
+  }
+
   /* ---------- Sauvegarde dans le cloud ---------- */
   async function save() {
-    if (!S.user) { openAuth(); return; }
+    if (!canUse('save')) return;
     const d = E.drawing;
     if (!isUuid(d.id)) d.id = crypto.randomUUID();
     d.title = $('#title').value.trim() || 'Sans titre';
@@ -297,6 +348,14 @@
       if (local.length) { root.appendChild(el('h4', 'home-h4', 'Sur cet appareil')); local.forEach(d => root.appendChild(E.localCard(d, () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); }))); }
       return;
     }
+    if (!isClubMember()) {
+      tabs.classList.add('hidden');
+      const box = el('div', 'home-login', '<p><strong>Vous n’êtes membre d’aucun club.</strong><br>Vous pouvez dessiner et prévisualiser librement. L’enregistrement, l’export et le partage sont réservés aux membres d’un club : demandez son code d’invitation à votre coach.</p>');
+      box.appendChild(btn('Rejoindre ou créer un club', 'primary', () => E.go('team')));
+      root.appendChild(box);
+      const pend = pendingCard(); if (pend) root.appendChild(pend);
+      return;
+    }
     tabs.classList.remove('hidden');
     const defs = [['mine', 'Mes dessins'], ['team', 'Équipe'], ['local', 'Sur cet appareil']];
     defs.forEach(([id, label]) => { const b = el('button', 'tab' + (libTab === id ? ' active' : '')); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; renderHome(); }; tabs.appendChild(b); });
@@ -322,7 +381,7 @@
   function cloudCard(row, refresh) {
     const c = el('div', 'lib-card');
     const d = row.data || {}; const steps = (d.steps || []).length;
-    const coachHere = isCoach() && row.team_id === S.team.id;
+    const coachHere = isCoach() && S.team && row.team_id === S.team.id;
     const mine = row.owner_id === S.user.id;
     const teamName = (S.teams.find(t => t.id === row.team_id) || {}).name;
     const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' + (teamName ? ' · ' + esc(teamName) : '') }[row.visibility];
@@ -377,6 +436,6 @@
     });
   }
 
-  window.RugbyAccount = { isActive: () => true, isLoggedIn: () => !!S.user, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
