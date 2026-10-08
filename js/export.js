@@ -22,7 +22,7 @@
       for (let t = dt; t < trans; t += dt) {
         const e = ease(t / trans), list = [];
         a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
-        b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e) : Object.assign(clone(o), { opacity: e })); });
+        b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
         push(list);
       }
     });

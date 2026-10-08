@@ -183,13 +183,52 @@
     else { obj.x += dx; obj.y += dy; }
   }
 
-  /** Interpolation entre deux versions d'un même objet (aperçu animé). */
-  function lerpObject(a, b, t) {
+  /* ---------- Trajectoires ---------- */
+  const SNAP = 30; // distance (px) pour associer un tracé à un objet
+
+  /** Points d'une ligne/tracé libre avec abscisses curvilignes. */
+  function pathSamples(line) {
+    const pts = line.type === 'free' ? line.points : [[line.x1, line.y1], [line.x2, line.y2]];
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1] || 1 };
+  }
+  function pointAt(samples, t) {
+    const d = t * samples.len, { pts, cum } = samples;
+    let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+    const seg = cum[i] - cum[i - 1] || 1, k = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
+    return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k];
+  }
+
+  /** Cherche un tracé (ligne, flèche, tracé libre) qui part de l'objet a et arrive à l'objet b. */
+  function findPath(a, b, candidates) {
+    if (typeof a.x !== 'number' || typeof b.x !== 'number' || !candidates) return null;
+    let best = null, bestScore = Infinity;
+    candidates.forEach(l => {
+      if (l.type !== 'line' && l.type !== 'free') return;
+      const s = pathSamples(l); if (s.pts.length < 2) return;
+      const p0 = s.pts[0], p1 = s.pts[s.pts.length - 1];
+      const d0 = Math.hypot(p0[0] - a.x, p0[1] - a.y), d1 = Math.hypot(p1[0] - b.x, p1[1] - b.y);
+      if (d0 < SNAP && d1 < SNAP && d0 + d1 < bestScore) { bestScore = d0 + d1; best = s; }
+    });
+    return best;
+  }
+
+  /** Interpolation entre deux versions d'un même objet (aperçu animé).
+   *  pathsFrom : objets de l'étape de départ, pour suivre une course dessinée. */
+  function lerpObject(a, b, t, pathsFrom) {
     const out = JSON.parse(JSON.stringify(b));
     ['x', 'y', 'w', 'h', 'x1', 'y1', 'x2', 'y2', 'rot', 'scale', 'size'].forEach(k => {
       if (typeof a[k] === 'number' && typeof b[k] === 'number') out[k] = a[k] + (b[k] - a[k]) * t;
     });
     if (a.points && b.points && a.points.length === b.points.length) out.points = b.points.map((p, i) => [a.points[i][0] + (p[0] - a.points[i][0]) * t, a.points[i][1] + (p[1] - a.points[i][1]) * t]);
+    const path = (a.type === 'player' || a.type === 'equip') && findPath(a, b, pathsFrom);
+    if (path) {
+      // on suit le tracé, en ajoutant l'écart entre le tracé et sa corde au déplacement rectiligne
+      const p = pointAt(path, t), p0 = path.pts[0], p1 = path.pts[path.pts.length - 1];
+      out.x += p[0] - (p0[0] + (p1[0] - p0[0]) * t);
+      out.y += p[1] - (p0[1] + (p1[1] - p0[1]) * t);
+    }
     return out;
   }
 
