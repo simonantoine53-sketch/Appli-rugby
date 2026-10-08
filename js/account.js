@@ -84,8 +84,10 @@
     if (!S.user) { lbl.textContent = 'Se connecter'; btnAccount.classList.remove('logged'); }
     else { lbl.textContent = (S.profile && S.profile.display_name) + (S.team ? ' · ' + S.team.name : ''); btnAccount.classList.add('logged'); }
     btnAccount.title = S.user ? 'Compte et équipe' : 'Se connecter';
-    $('#btn-library').classList.toggle('has-badge', S.unseen > 0);
-    $('#btn-library').dataset.badge = S.unseen;
+    ['#btn-library', '#mtab-library'].forEach(sel => { const el = $(sel); if (!el) return; el.classList.toggle('has-badge', S.unseen > 0); el.dataset.badge = S.unseen; });
+    const mtab = $('#mtab-account span');
+    if (mtab) { mtab.textContent = S.user ? (S.profile && S.profile.display_name) || 'Compte' : 'Compte'; }
+    $('#mtab-account') && $('#mtab-account').classList.toggle('logged', !!S.user);
   }
   btnAccount.onclick = () => S.user ? openTeams() : openAuth();
 

@@ -414,11 +414,11 @@
 
   /* ---------- Onglets & réglages ---------- */
   function activateTab(name) {
-    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    document.querySelectorAll('.panel .tab').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
     $('#tab-steps').classList.toggle('hidden', name !== 'steps');
     $('#tab-settings').classList.toggle('hidden', name !== 'settings');
   }
-  document.querySelectorAll('.tab').forEach(t => t.onclick = () => activateTab(t.dataset.tab));
+  document.querySelectorAll('.panel .tab').forEach(t => t.onclick = () => activateTab(t.dataset.tab));
 
   /* ---------- Tiroirs mobiles ---------- */
   const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
@@ -434,7 +434,12 @@
   document.addEventListener('pointerdown', e => {
     if (drawer && !e.target.closest('.sidebar, .panel, .mobile-bar, .modal')) closeDrawer();
   }, true);
-  document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => openDrawer(b.dataset.mtab));
+  document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => {
+    const which = b.dataset.mtab;
+    if (which === 'library') { closeDrawer(); $('#btn-library').click(); return; }
+    if (which === 'account') { closeDrawer(); $('#btn-account').click(); return; }
+    openDrawer(which);
+  });
   window.addEventListener('resize', () => { if (!isMobile() && drawer) openDrawer(drawer); });
   document.querySelectorAll('input[name=field], input[name=orientation]').forEach(r => r.onchange = () => {
     const b = snapshot(); state.drawing.settings[r.name] = r.value; renderField_(); commit(b);
