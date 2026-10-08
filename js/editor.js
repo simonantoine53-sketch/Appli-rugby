@@ -94,9 +94,55 @@
     svg.style.width = Math.round(baseWidth * state.zoom) + 'px';
     $('#zoom-val').textContent = Math.round(state.zoom * 100) + '%';
   }
-  $('#zoom-in').onclick = () => { state.zoom = Math.min(3, state.zoom + 0.1); applyZoom(); };
-  $('#zoom-out').onclick = () => { state.zoom = Math.max(0.3, state.zoom - 0.1); applyZoom(); };
+  /** Change le zoom en gardant fixe le point du terrain situé sous (cx, cy) (coordonnées écran). */
+  function zoomAt(newZoom, cx, cy) {
+    newZoom = Math.max(0.5, Math.min(4, newZoom));
+    const r0 = svg.getBoundingClientRect();
+    const px = cx - r0.left, py = cy - r0.top, k = newZoom / state.zoom;
+    state.zoom = newZoom; applyZoom();
+    const r1 = svg.getBoundingClientRect();
+    wrap.scrollLeft += r1.left - (cx - px * k);
+    wrap.scrollTop += r1.top - (cy - py * k);
+  }
+  function zoomCenter(delta) { const r = wrap.getBoundingClientRect(); zoomAt(state.zoom + delta, r.left + r.width / 2, r.top + r.height / 2); }
+  document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => {
+    if (b.dataset.zoom === 'fit') { state.zoom = 1; fitZoom(); } else zoomCenter(b.dataset.zoom === 'in' ? 0.25 : -0.25);
+  });
+  wrap.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoomAt(state.zoom * (e.deltaY < 0 ? 1.1 : 0.9), e.clientX, e.clientY); }, { passive: false });
   window.addEventListener('resize', fitZoom);
+
+  // Pincement à deux doigts : zoom + déplacement
+  const pointers = new Map();
+  let pinch = null;
+  function cancelDrag() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.mode === 'create') { removeObj(d.obj.id); state.selected = null; }
+    else if (d.orig) Object.assign(d.obj, clone(d.orig));
+    render();
+  }
+  function pinchInfo() {
+    const [a, b] = [...pointers.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+  svg.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) { cancelDrag(); const i = pinchInfo(); pinch = { d0: i.d, zoom0: state.zoom, x: i.x, y: i.y }; }
+  }, true);
+  svg.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pointers.size === 2) {
+      const i = pinchInfo();
+      zoomAt(pinch.zoom0 * i.d / pinch.d0, i.x, i.y);
+      wrap.scrollLeft -= i.x - pinch.x; wrap.scrollTop -= i.y - pinch.y;
+      pinch.x = i.x; pinch.y = i.y;
+    }
+  }, true);
+  const endTouch = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; };
+  svg.addEventListener('pointerup', endTouch, true);
+  svg.addEventListener('pointercancel', endTouch, true);
 
   /* ---------- Palette ---------- */
   function buildPalette() {
@@ -152,7 +198,7 @@
   let drag = null;
 
   svg.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || pinch || pointers.size > 1) return;
     closeDrawer();
     const p = toSvg(e);
     const before = snapshot();
@@ -193,7 +239,7 @@
   });
 
   svg.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag || pinch) return;
     const p = toSvg(e);
     const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     const o = drag.obj;
@@ -385,6 +431,9 @@
     document.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === drawer));
   }
   const closeDrawer = () => { if (drawer && isMobile()) openDrawer(drawer); };
+  document.addEventListener('pointerdown', e => {
+    if (drawer && !e.target.closest('.sidebar, .panel, .mobile-bar, .modal')) closeDrawer();
+  }, true);
   document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => openDrawer(b.dataset.mtab));
   window.addEventListener('resize', () => { if (!isMobile() && drawer) openDrawer(drawer); });
   document.querySelectorAll('input[name=field], input[name=orientation]').forEach(r => r.onchange = () => {

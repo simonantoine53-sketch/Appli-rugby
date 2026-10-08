@@ -110,13 +110,15 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- Canvas ---------- */
 .canvas-area { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
-.canvas-wrap { flex: 1 1 auto; overflow: auto; display: grid; place-items: center; padding: 24px; }
-#canvas { display: block; border-radius: 18px; box-shadow: var(--shadow); background: var(--field); touch-action: none; user-select: none; }
+.canvas-wrap { flex: 1 1 auto; overflow: auto; display: flex; padding: 24px; }
+#canvas { display: block; margin: auto; flex: 0 0 auto; border-radius: 18px; box-shadow: var(--shadow); background: var(--field); touch-action: none; user-select: none; }
 #canvas.tool-active { cursor: crosshair; }
 #canvas .objects > g { cursor: move; }
 #canvas .handle { fill: #fff; stroke: var(--primary); stroke-width: 1.5; cursor: nwse-resize; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.zoom-fab { display: none; position: absolute; right: 12px; bottom: 68px; flex-direction: column; gap: 6px; z-index: 6; }
+.zoom-fab button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: #fff; box-shadow: var(--shadow); font-size: 20px; display: grid; place-items: center; color: #333; }
 .hint { padding: 6px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: #fff; }
 
 /* Barre de propriétés de l'objet sélectionné */
@@ -228,6 +230,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .tool svg { width: 28px; height: 28px; }
   .tab-content { padding: 12px; }
 
+  .zoom-fab { display: flex; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
@@ -257,9 +260,9 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   </div>
 
   <div class="zoom">
-    <button id="zoom-out" title="Zoom arrière">−</button>
+    <button data-zoom="out" title="Zoom arrière">−</button>
     <span id="zoom-val">100%</span>
-    <button id="zoom-in" title="Zoom avant">+</button>
+    <button data-zoom="in" title="Zoom avant">+</button>
   </div>
 
   <div class="actions">
@@ -298,6 +301,11 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     <div id="props" class="props hidden"></div>
     <div class="canvas-wrap" id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="zoom-fab">
+      <button data-zoom="in" title="Zoom avant">+</button>
+      <button data-zoom="out" title="Zoom arrière">−</button>
+      <button data-zoom="fit" title="Ajuster à l'écran"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
     <div class="hint" id="hint">Choisissez un outil à gauche, puis cliquez ou glissez sur le terrain.</div>
   </section>
@@ -1083,9 +1091,55 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     svg.style.width = Math.round(baseWidth * state.zoom) + 'px';
     $('#zoom-val').textContent = Math.round(state.zoom * 100) + '%';
   }
-  $('#zoom-in').onclick = () => { state.zoom = Math.min(3, state.zoom + 0.1); applyZoom(); };
-  $('#zoom-out').onclick = () => { state.zoom = Math.max(0.3, state.zoom - 0.1); applyZoom(); };
+  /** Change le zoom en gardant fixe le point du terrain situé sous (cx, cy) (coordonnées écran). */
+  function zoomAt(newZoom, cx, cy) {
+    newZoom = Math.max(0.5, Math.min(4, newZoom));
+    const r0 = svg.getBoundingClientRect();
+    const px = cx - r0.left, py = cy - r0.top, k = newZoom / state.zoom;
+    state.zoom = newZoom; applyZoom();
+    const r1 = svg.getBoundingClientRect();
+    wrap.scrollLeft += r1.left - (cx - px * k);
+    wrap.scrollTop += r1.top - (cy - py * k);
+  }
+  function zoomCenter(delta) { const r = wrap.getBoundingClientRect(); zoomAt(state.zoom + delta, r.left + r.width / 2, r.top + r.height / 2); }
+  document.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => {
+    if (b.dataset.zoom === 'fit') { state.zoom = 1; fitZoom(); } else zoomCenter(b.dataset.zoom === 'in' ? 0.25 : -0.25);
+  });
+  wrap.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoomAt(state.zoom * (e.deltaY < 0 ? 1.1 : 0.9), e.clientX, e.clientY); }, { passive: false });
   window.addEventListener('resize', fitZoom);
+
+  // Pincement à deux doigts : zoom + déplacement
+  const pointers = new Map();
+  let pinch = null;
+  function cancelDrag() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.mode === 'create') { removeObj(d.obj.id); state.selected = null; }
+    else if (d.orig) Object.assign(d.obj, clone(d.orig));
+    render();
+  }
+  function pinchInfo() {
+    const [a, b] = [...pointers.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+  svg.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) { cancelDrag(); const i = pinchInfo(); pinch = { d0: i.d, zoom0: state.zoom, x: i.x, y: i.y }; }
+  }, true);
+  svg.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pointers.size === 2) {
+      const i = pinchInfo();
+      zoomAt(pinch.zoom0 * i.d / pinch.d0, i.x, i.y);
+      wrap.scrollLeft -= i.x - pinch.x; wrap.scrollTop -= i.y - pinch.y;
+      pinch.x = i.x; pinch.y = i.y;
+    }
+  }, true);
+  const endTouch = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; };
+  svg.addEventListener('pointerup', endTouch, true);
+  svg.addEventListener('pointercancel', endTouch, true);
 
   /* ---------- Palette ---------- */
   function buildPalette() {
@@ -1141,7 +1195,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   let drag = null;
 
   svg.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || pinch || pointers.size > 1) return;
     closeDrawer();
     const p = toSvg(e);
     const before = snapshot();
@@ -1182,7 +1236,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   });
 
   svg.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag || pinch) return;
     const p = toSvg(e);
     const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     const o = drag.obj;
@@ -1374,6 +1428,9 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     document.querySelectorAll('[data-mtab]').forEach(b => b.classList.toggle('active', b.dataset.mtab === drawer));
   }
   const closeDrawer = () => { if (drawer && isMobile()) openDrawer(drawer); };
+  document.addEventListener('pointerdown', e => {
+    if (drawer && !e.target.closest('.sidebar, .panel, .mobile-bar, .modal')) closeDrawer();
+  }, true);
   document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => openDrawer(b.dataset.mtab));
   window.addEventListener('resize', () => { if (!isMobile() && drawer) openDrawer(drawer); });
   document.querySelectorAll('input[name=field], input[name=orientation]').forEach(r => r.onchange = () => {

@@ -102,13 +102,15 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------- Canvas ---------- */
 .canvas-area { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
-.canvas-wrap { flex: 1 1 auto; overflow: auto; display: grid; place-items: center; padding: 24px; }
-#canvas { display: block; border-radius: 18px; box-shadow: var(--shadow); background: var(--field); touch-action: none; user-select: none; }
+.canvas-wrap { flex: 1 1 auto; overflow: auto; display: flex; padding: 24px; }
+#canvas { display: block; margin: auto; flex: 0 0 auto; border-radius: 18px; box-shadow: var(--shadow); background: var(--field); touch-action: none; user-select: none; }
 #canvas.tool-active { cursor: crosshair; }
 #canvas .objects > g { cursor: move; }
 #canvas .handle { fill: #fff; stroke: var(--primary); stroke-width: 1.5; cursor: nwse-resize; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.zoom-fab { display: none; position: absolute; right: 12px; bottom: 68px; flex-direction: column; gap: 6px; z-index: 6; }
+.zoom-fab button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: #fff; box-shadow: var(--shadow); font-size: 20px; display: grid; place-items: center; color: #333; }
 .hint { padding: 6px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); background: #fff; }
 
 /* Barre de propriétés de l'objet sélectionné */
@@ -220,6 +222,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .tool svg { width: 28px; height: 28px; }
   .tab-content { padding: 12px; }
 
+  .zoom-fab { display: flex; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
