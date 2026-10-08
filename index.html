@@ -5,12 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=202610080833">
 </head>
 <body>
 
+<!-- ===== Page d'accueil : mes dessins, stratégies de l'équipe ===== -->
+<div id="view-home" class="view">
+  <header class="topbar home-bar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <strong>Appli Rugby Strat</strong>
+    </div>
+    <div class="actions">
+      <button id="home-account" class="btn ghost account">
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Se connecter</span>
+      </button>
+      <button id="home-new" class="btn primary">+ Nouveau<span class="long"> dessin</span></button>
+    </div>
+  </header>
+  <div class="home-body">
+    <div id="home-current" class="home-current hidden">
+      <div><span class="muted">Dessin en cours</span><br><strong id="home-current-title"></strong></div>
+      <button id="home-resume" class="btn secondary">Continuer</button>
+    </div>
+    <div id="home-tabs" class="tabs small"></div>
+    <div id="home-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===== Éditeur ===== -->
+<div id="view-editor" class="view hidden">
 <header class="topbar">
-  <button id="btn-library" class="btn-back" title="Mes dessins">
+  <button id="btn-library" class="btn-back" title="Retour à l'accueil">
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title-wrap">
@@ -134,12 +161,13 @@
 
 <!-- Barre d'onglets mobile -->
 <nav class="mobile-bar">
-  <button data-mtab="library" id="mtab-library"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Dessins</button>
+  <button data-mtab="library" id="mtab-library"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Accueil</button>
   <button data-mtab="tools"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="7" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 13.5l3.5 7h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 20.5l6.5-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Outils</button>
   <button data-mtab="steps"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Étapes</button>
   <button data-mtab="settings"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Réglages</button>
   <button data-mtab="account" id="mtab-account"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Compte</span></button>
 </nav>
+</div><!-- /view-editor -->
 
 <!-- Aperçu animé -->
 <div id="modal-preview" class="modal hidden">
@@ -155,19 +183,6 @@
       <button id="preview-play" class="btn primary">▶ Lire</button>
       <button id="preview-next" class="btn outline">Suivante ⏭</button>
     </div>
-  </div>
-</div>
-
-<!-- Bibliothèque de dessins -->
-<div id="modal-library" class="modal hidden">
-  <div class="modal-box library-box">
-    <div class="modal-head">
-      <strong>Mes dessins</strong>
-      <button id="btn-new-drawing" class="btn primary small">+ Nouveau dessin</button>
-      <button class="btn-close" data-close="modal-library" title="Fermer">✕</button>
-    </div>
-    <div id="library-tabs" class="tabs small hidden"></div>
-    <div id="library-list" class="library-list"></div>
   </div>
 </div>
 
@@ -220,13 +235,13 @@
 <div id="toast" class="toast"></div>
 <input type="file" id="file-import" accept="application/json" hidden>
 
-<script src="js/icons.js"></script>
-<script src="js/field.js"></script>
-<script src="js/objects.js"></script>
-<script src="js/export.js"></script>
+<script src="js/icons.js?v=202610080833"></script>
+<script src="js/field.js?v=202610080833"></script>
+<script src="js/objects.js?v=202610080833"></script>
+<script src="js/export.js?v=202610080833"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js"></script>
-<script src="js/editor.js"></script>
-<script src="js/account.js"></script>
+<script src="js/config.js?v=202610080833"></script>
+<script src="js/editor.js?v=202610080833"></script>
+<script src="js/account.js?v=202610080833"></script>
 </body>
 </html>

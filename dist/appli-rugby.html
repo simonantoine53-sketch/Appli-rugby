@@ -195,6 +195,17 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #1f2933; color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- Vues & page d'accueil ---------- */
+.view { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.home-bar .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; }
+.home-body { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; padding: 16px 24px 32px; gap: 12px; max-width: 1100px; width: 100%; margin: 0 auto; }
+.home-body .library-list { padding: 0; overflow: visible; }
+.home-body #home-tabs { padding: 0; border-bottom: 1px solid var(--border); }
+.home-current { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; }
+.home-login { grid-column: 1 / -1; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.home-login p { margin: 0; color: var(--muted); }
+.home-h4 { grid-column: 1 / -1; margin: 8px 0 0; }
+
 /* ---------- Comptes & équipes ---------- */
 .btn.account.logged { color: var(--primary); }
 .has-badge { position: relative; }
@@ -241,7 +252,14 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .actions { margin-left: 0; gap: 4px; flex: 0 0 auto; }
   .actions .btn { padding: 8px; }
   .actions .btn span { display: none; }
-  .btn-back, #btn-account, #btn-redo { display: none; }
+  .home-bar { gap: 8px; }
+  .home-bar .brand { gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .home-bar .brand strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .home-bar .actions .btn.account { padding: 8px 6px; }
+  .home-bar #home-new .long { display: none; }
+  .home-body { padding: 12px 12px 32px; }
+  #btn-account, #btn-redo { display: none; }
   .mobile-bar .has-badge::after { top: 4px; right: 12px; }
   .mobile-bar button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -305,8 +323,35 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 </head>
 <body>
 
+<!-- ===== Page d'accueil : mes dessins, stratégies de l'équipe ===== -->
+<div id="view-home" class="view">
+  <header class="topbar home-bar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <strong>Appli Rugby Strat</strong>
+    </div>
+    <div class="actions">
+      <button id="home-account" class="btn ghost account">
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Se connecter</span>
+      </button>
+      <button id="home-new" class="btn primary">+ Nouveau<span class="long"> dessin</span></button>
+    </div>
+  </header>
+  <div class="home-body">
+    <div id="home-current" class="home-current hidden">
+      <div><span class="muted">Dessin en cours</span><br><strong id="home-current-title"></strong></div>
+      <button id="home-resume" class="btn secondary">Continuer</button>
+    </div>
+    <div id="home-tabs" class="tabs small"></div>
+    <div id="home-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- ===== Éditeur ===== -->
+<div id="view-editor" class="view hidden">
 <header class="topbar">
-  <button id="btn-library" class="btn-back" title="Mes dessins">
+  <button id="btn-library" class="btn-back" title="Retour à l'accueil">
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title-wrap">
@@ -430,12 +475,13 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 
 <!-- Barre d'onglets mobile -->
 <nav class="mobile-bar">
-  <button data-mtab="library" id="mtab-library"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Dessins</button>
+  <button data-mtab="library" id="mtab-library"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Accueil</button>
   <button data-mtab="tools"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="7" cy="7" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 13.5l3.5 7h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 20.5l6.5-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Outils</button>
   <button data-mtab="steps"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Étapes</button>
   <button data-mtab="settings"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Réglages</button>
   <button data-mtab="account" id="mtab-account"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Compte</span></button>
 </nav>
+</div><!-- /view-editor -->
 
 <!-- Aperçu animé -->
 <div id="modal-preview" class="modal hidden">
@@ -451,19 +497,6 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
       <button id="preview-play" class="btn primary">▶ Lire</button>
       <button id="preview-next" class="btn outline">Suivante ⏭</button>
     </div>
-  </div>
-</div>
-
-<!-- Bibliothèque de dessins -->
-<div id="modal-library" class="modal hidden">
-  <div class="modal-box library-box">
-    <div class="modal-head">
-      <strong>Mes dessins</strong>
-      <button id="btn-new-drawing" class="btn primary small">+ Nouveau dessin</button>
-      <button class="btn-close" data-close="modal-library" title="Fermer">✕</button>
-    </div>
-    <div id="library-tabs" class="tabs small hidden"></div>
-    <div id="library-list" class="library-list"></div>
   </div>
 </div>
 
@@ -1553,7 +1586,7 @@ window.RUGBY_CONFIG = {
   }, true);
   document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => {
     const which = b.dataset.mtab;
-    if (which === 'library') { closeDrawer(); $('#btn-library').click(); return; }
+    if (which === 'library') { closeDrawer(); go('home'); return; }
     if (which === 'account') { closeDrawer(); $('#btn-account').click(); return; }
     openDrawer(which);
   });
@@ -1690,25 +1723,45 @@ window.RUGBY_CONFIG = {
     renderField_(); applySettingsToUI(); afterChange();
   }
 
-  function openLibrary() {
-    $('#library-tabs').classList.add('hidden');
-    const root = $('#library-list'); root.replaceChildren();
+  /** Page d'accueil en mode local : dessins stockés sur cet appareil. */
+  function renderLocalHome() {
+    $('#home-tabs').classList.add('hidden');
+    const root = $('#home-list'); root.replaceChildren();
     const list = readLib();
-    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment.'; root.appendChild(p); }
-    list.forEach(d => {
-      const c = document.createElement('div'); c.className = 'lib-card';
-      c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
-      c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
-      c.querySelector('.name').textContent = d.title;
-      c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
-      c.onclick = () => { loadDrawing(clone(d)); closeModal('modal-library'); };
-      c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); openLibrary(); } };
-      root.appendChild(c);
-    });
-    openModal('modal-library');
+    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); }
+    list.forEach(d => root.appendChild(localCard(d, () => { loadDrawing(clone(d)); go('editor'); })));
   }
-  $('#btn-library').onclick = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.openLibrary() : openLibrary();
-  $('#btn-new-drawing').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); closeModal('modal-library'); };
+  function localCard(d, onOpen) {
+    const c = document.createElement('div'); c.className = 'lib-card';
+    c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
+    c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
+    c.querySelector('.name').textContent = d.title;
+    c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
+    c.onclick = onOpen;
+    c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderHome(); } };
+    return c;
+  }
+
+  /* ---------- Navigation accueil / éditeur ---------- */
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : 'home'; }
+  function go(view) { const h = view === 'editor' ? '#/editor' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  function showView(view) {
+    $('#view-home').classList.toggle('hidden', view !== 'home');
+    $('#view-editor').classList.toggle('hidden', view !== 'editor');
+    if (view === 'editor') requestAnimationFrame(fitZoom);
+    else { closeDrawer(); renderHome(); }
+  }
+  function renderHome() {
+    const d = state.drawing;
+    const hasContent = d.steps.some(st => st.objects.length);
+    $('#home-current').classList.toggle('hidden', !hasContent);
+    $('#home-current-title').textContent = d.title;
+    if (window.RugbyAccount && window.RugbyAccount.isActive()) window.RugbyAccount.renderHome(); else renderLocalHome();
+  }
+  window.addEventListener('hashchange', () => showView(currentView()));
+  $('#home-resume').onclick = () => go('editor');
+  $('#home-new').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
+  $('#btn-library').onclick = () => go('home');
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
@@ -1721,7 +1774,7 @@ window.RUGBY_CONFIG = {
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone
+    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, renderHome, localCard
   };
 
   /* ---------- Démarrage ---------- */
@@ -1732,6 +1785,7 @@ window.RUGBY_CONFIG = {
   try { loadDrawing(restored || newDrawing()); } catch (e) { loadDrawing(newDrawing()); }
   // Un dessin vide reçoit un petit exemple pour montrer les possibilités
   if (!restored) seedExample();
+  showView(currentView());
 
   function seedExample() {
     const b = snapshot();
@@ -1760,9 +1814,10 @@ window.RUGBY_CONFIG = {
   const $ = s => document.querySelector(s);
   const active = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase);
   const btnAccount = $('#btn-account');
+  const accountButtons = [btnAccount, $('#home-account')];
 
   if (!active) {
-    btnAccount.onclick = () => E.toast('Mode local : aucun backend configuré (voir js/config.js).');
+    accountButtons.forEach(b => { b.onclick = () => E.toast('Mode local : aucun backend configuré (voir js/config.js).'); });
     window.RugbyAccount = { isActive: () => false };
     return;
   }
@@ -1832,16 +1887,19 @@ window.RUGBY_CONFIG = {
   function markSeen() { if (S.team) { try { localStorage.setItem(seenKey(S.team.id), new Date().toISOString()); } catch (e) { /* ignore */ } S.unseen = 0; renderAccountButton(); } }
 
   function renderAccountButton() {
-    const lbl = btnAccount.querySelector('span');
-    if (!S.user) { lbl.textContent = 'Se connecter'; btnAccount.classList.remove('logged'); }
-    else { lbl.textContent = (S.profile && S.profile.display_name) + (S.team ? ' · ' + S.team.name : ''); btnAccount.classList.add('logged'); }
-    btnAccount.title = S.user ? 'Compte et équipe' : 'Se connecter';
+    accountButtons.forEach(b => {
+      const lbl = b.querySelector('span');
+      if (!S.user) { lbl.textContent = 'Se connecter'; b.classList.remove('logged'); }
+      else { lbl.textContent = (S.profile && S.profile.display_name) + (S.team ? ' · ' + S.team.name : ''); b.classList.add('logged'); }
+      b.title = S.user ? 'Compte et équipe' : 'Se connecter';
+    });
+    if (!$('#view-home').classList.contains('hidden')) renderHome();
     ['#btn-library', '#mtab-library'].forEach(sel => { const el = $(sel); if (!el) return; el.classList.toggle('has-badge', S.unseen > 0); el.dataset.badge = S.unseen; });
     const mtab = $('#mtab-account span');
     if (mtab) { mtab.textContent = S.user ? (S.profile && S.profile.display_name) || 'Compte' : 'Compte'; }
     $('#mtab-account') && $('#mtab-account').classList.toggle('logged', !!S.user);
   }
-  btnAccount.onclick = () => S.user ? openTeams() : openAuth();
+  accountButtons.forEach(b => { b.onclick = () => S.user ? openTeams() : openAuth(); });
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) {
@@ -1943,15 +2001,26 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Bibliothèque ---------- */
   let libTab = 'mine';
-  async function openLibrary() {
-    if (!S.user) { openAuth(); return; }
-    E.openModal('modal-library');
-    const tabs = $('#library-tabs'); tabs.classList.remove('hidden'); tabs.replaceChildren();
+  let renderSeq = 0;
+  async function renderHome() {
+    const seq = ++renderSeq;
+    const tabs = $('#home-tabs'); tabs.replaceChildren();
+    const root = $('#home-list'); root.replaceChildren();
+    if (!S.user) {
+      tabs.classList.add('hidden');
+      const box = document.createElement('div'); box.className = 'home-login';
+      box.innerHTML = `<p>Connectez-vous pour retrouver vos dessins sur tous vos appareils, rejoindre une équipe et recevoir les stratégies du coach.</p>`;
+      const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Se connecter ou créer un compte'; b.onclick = () => openAuth(); box.appendChild(b);
+      root.appendChild(box);
+      const local = E.readLib();
+      if (local.length) { const h = document.createElement('h4'); h.className = 'home-h4'; h.textContent = 'Sur cet appareil'; root.appendChild(h); local.forEach(d => root.appendChild(E.localCard(d, () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); }))); }
+      return;
+    }
+    tabs.classList.remove('hidden');
     const defs = [['mine', 'Mes dessins'], ['team', S.team ? 'Équipe' : 'Équipe (aucune)']];
     if (S.team && S.team.role === 'coach') defs.push(['proposed', 'Propositions']);
     defs.push(['local', 'Sur cet appareil']);
-    defs.forEach(([id, label]) => { const b = document.createElement('button'); b.className = 'tab' + (libTab === id ? ' active' : ''); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; openLibrary(); }; tabs.appendChild(b); });
-    const root = $('#library-list'); root.replaceChildren();
+    defs.forEach(([id, label]) => { const b = document.createElement('button'); b.className = 'tab' + (libTab === id ? ' active' : ''); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; renderHome(); }; tabs.appendChild(b); });
     if (libTab === 'local') { renderLocal(root); return; }
     if (libTab === 'team') markSeen();
     let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
@@ -1959,6 +2028,7 @@ window.RUGBY_CONFIG = {
     else if (!S.team) { empty(root, 'Rejoignez ou créez une équipe pour voir ses stratégies.'); return; }
     else q = q.eq('team_id', S.team.id).eq('visibility', libTab);
     const { data, error } = await q;
+    if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Enregistrer le dessin » dans l’éditeur.' : libTab === 'team' ? 'Aucune stratégie publiée par le coach pour le moment.' : 'Aucune proposition de joueur.'); return; }
     data.forEach(row => root.appendChild(cloudCard(row)));
@@ -1985,7 +2055,7 @@ window.RUGBY_CONFIG = {
       if (error) return E.toast(errMsg(error));
       if (E.drawing.id === row.id) { S.current.visibility = visibility; S.current.team_id = patch.team_id; }
       E.toast(visibility === 'team' ? 'Publié : toute l’équipe peut la voir.' : visibility === 'proposed' ? 'Proposé au coach.' : 'Retiré, redevenu privé.');
-      openLibrary();
+      renderHome();
     };
     if (coach && row.visibility !== 'team') add('Publier à l’équipe', 'primary', () => setVis('team'));
     if (coach && row.visibility === 'team') add('Retirer', 'outline', () => setVis('private'));
@@ -1994,7 +2064,7 @@ window.RUGBY_CONFIG = {
     if (mine || coach) add('Supprimer', 'outline danger', async () => {
       if (!confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
-      if (error) return E.toast(errMsg(error)); openLibrary();
+      if (error) return E.toast(errMsg(error)); renderHome();
     });
     return c;
   }
@@ -2002,7 +2072,7 @@ window.RUGBY_CONFIG = {
   function loadCloud(row) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
-    E.loadDrawing(d); E.closeModal('modal-library');
+    E.loadDrawing(d); E.go('editor');
     if (row.owner_id !== S.user.id && !(S.team && S.team.role === 'coach')) E.toast('Stratégie du coach : vos modifications seront enregistrées comme copie personnelle.');
   }
 
@@ -2015,7 +2085,7 @@ window.RUGBY_CONFIG = {
       c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
       c.querySelector('.name').textContent = d.title;
       c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
-      c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.closeModal('modal-library'); };
+      c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); };
       const b = document.createElement('button'); b.className = 'btn small secondary'; b.textContent = 'Envoyer dans mon compte';
       b.onclick = async () => { const copy = E.clone(d); copy.id = crypto.randomUUID(); const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' }); E.toast(error ? errMsg(error) : 'Copié dans votre compte.'); };
       c.querySelector('.card-btns').appendChild(b);
@@ -2034,7 +2104,8 @@ window.RUGBY_CONFIG = {
     return origSave();
   }
 
-  window.RugbyAccount = { isActive: () => true, save: saveSmart, openLibrary, openAuth, openTeams, onNewDrawing };
+  window.RugbyAccount = { isActive: () => true, save: saveSmart, renderHome, openAuth, openTeams, onNewDrawing };
+  if (!$('#view-home').classList.contains('hidden')) renderHome();
 })();
 
 </script>

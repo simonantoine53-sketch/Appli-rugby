@@ -2,10 +2,14 @@
 const fs = require('fs');
 const path = require('path');
 const root = __dirname;
-let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (m, href) =>
+// Numéro de version anti-cache (horodatage) injecté dans index.html à chaque build
+const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+let src = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/\?v=[^"]*"/g, '?v=' + stamp + '"');
+fs.writeFileSync(path.join(root, 'index.html'), src);
+let html = src.replace(/\?v=[^"]*"/g, '"');
+html = html.replace(/<link rel="stylesheet" href="([^"?]+)[^"]*">/g, (m, href) =>
   '<style>\n' + fs.readFileSync(path.join(root, href), 'utf8') + '\n</style>');
-html = html.replace(/<script src="([^"]+)"><\/script>/g, (m, src) =>
+html = html.replace(/<script src="([^"?]+)[^"]*"><\/script>/g, (m, src) =>
   /^https?:/.test(src) ? m : '<script>\n' + fs.readFileSync(path.join(root, src), 'utf8').replace(/<\/script/g, '<\\/script') + '\n</script>');
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'dist', 'appli-rugby.html'), html);
