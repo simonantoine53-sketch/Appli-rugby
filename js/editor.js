@@ -593,14 +593,17 @@
   }
 
   /* ---------- Navigation accueil / éditeur ---------- */
-  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : 'home'; }
-  function go(view) { const h = view === 'editor' ? '#/editor' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : 'home'; }
+  function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
-    $('#view-home').classList.toggle('hidden', view !== 'home');
-    $('#view-editor').classList.toggle('hidden', view !== 'editor');
+    const acc = window.RugbyAccount;
+    if (view === 'team' && !(acc && acc.isActive() && acc.isLoggedIn())) { view = 'home'; if (acc && acc.isActive()) acc.openAuth(); }
+    ['home', 'editor', 'team'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
     if (view === 'editor') requestAnimationFrame(fitZoom);
+    else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }
     else { closeDrawer(); renderHome(); }
   }
+  $('#team-back').onclick = () => go('home');
   function renderHome() {
     const d = state.drawing;
     const hasContent = d.steps.some(st => st.objects.length);
