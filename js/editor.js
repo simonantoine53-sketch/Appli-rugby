@@ -436,7 +436,7 @@
   }, true);
   document.querySelectorAll('[data-mtab]').forEach(b => b.onclick = () => {
     const which = b.dataset.mtab;
-    if (which === 'library') { closeDrawer(); $('#btn-library').click(); return; }
+    if (which === 'library') { closeDrawer(); go('home'); return; }
     if (which === 'account') { closeDrawer(); $('#btn-account').click(); return; }
     openDrawer(which);
   });
@@ -573,25 +573,45 @@
     renderField_(); applySettingsToUI(); afterChange();
   }
 
-  function openLibrary() {
-    $('#library-tabs').classList.add('hidden');
-    const root = $('#library-list'); root.replaceChildren();
+  /** Page d'accueil en mode local : dessins stockés sur cet appareil. */
+  function renderLocalHome() {
+    $('#home-tabs').classList.add('hidden');
+    const root = $('#home-list'); root.replaceChildren();
     const list = readLib();
-    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment.'; root.appendChild(p); }
-    list.forEach(d => {
-      const c = document.createElement('div'); c.className = 'lib-card';
-      c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
-      c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
-      c.querySelector('.name').textContent = d.title;
-      c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
-      c.onclick = () => { loadDrawing(clone(d)); closeModal('modal-library'); };
-      c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); openLibrary(); } };
-      root.appendChild(c);
-    });
-    openModal('modal-library');
+    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); }
+    list.forEach(d => root.appendChild(localCard(d, () => { loadDrawing(clone(d)); go('editor'); })));
   }
-  $('#btn-library').onclick = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.openLibrary() : openLibrary();
-  $('#btn-new-drawing').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); closeModal('modal-library'); };
+  function localCard(d, onOpen) {
+    const c = document.createElement('div'); c.className = 'lib-card';
+    c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
+    c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
+    c.querySelector('.name').textContent = d.title;
+    c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
+    c.onclick = onOpen;
+    c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderHome(); } };
+    return c;
+  }
+
+  /* ---------- Navigation accueil / éditeur ---------- */
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : 'home'; }
+  function go(view) { const h = view === 'editor' ? '#/editor' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  function showView(view) {
+    $('#view-home').classList.toggle('hidden', view !== 'home');
+    $('#view-editor').classList.toggle('hidden', view !== 'editor');
+    if (view === 'editor') requestAnimationFrame(fitZoom);
+    else { closeDrawer(); renderHome(); }
+  }
+  function renderHome() {
+    const d = state.drawing;
+    const hasContent = d.steps.some(st => st.objects.length);
+    $('#home-current').classList.toggle('hidden', !hasContent);
+    $('#home-current-title').textContent = d.title;
+    if (window.RugbyAccount && window.RugbyAccount.isActive()) window.RugbyAccount.renderHome(); else renderLocalHome();
+  }
+  window.addEventListener('hashchange', () => showView(currentView()));
+  $('#home-resume').onclick = () => go('editor');
+  $('#home-new').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
+  $('#btn-library').onclick = () => go('home');
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
@@ -604,7 +624,7 @@
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone
+    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, renderHome, localCard
   };
 
   /* ---------- Démarrage ---------- */
@@ -615,6 +635,7 @@
   try { loadDrawing(restored || newDrawing()); } catch (e) { loadDrawing(newDrawing()); }
   // Un dessin vide reçoit un petit exemple pour montrer les possibilités
   if (!restored) seedExample();
+  showView(currentView());
 
   function seedExample() {
     const b = snapshot();

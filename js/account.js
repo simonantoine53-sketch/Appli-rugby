@@ -8,9 +8,10 @@
   const $ = s => document.querySelector(s);
   const active = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase);
   const btnAccount = $('#btn-account');
+  const accountButtons = [btnAccount, $('#home-account')];
 
   if (!active) {
-    btnAccount.onclick = () => E.toast('Mode local : aucun backend configuré (voir js/config.js).');
+    accountButtons.forEach(b => { b.onclick = () => E.toast('Mode local : aucun backend configuré (voir js/config.js).'); });
     window.RugbyAccount = { isActive: () => false };
     return;
   }
@@ -80,16 +81,19 @@
   function markSeen() { if (S.team) { try { localStorage.setItem(seenKey(S.team.id), new Date().toISOString()); } catch (e) { /* ignore */ } S.unseen = 0; renderAccountButton(); } }
 
   function renderAccountButton() {
-    const lbl = btnAccount.querySelector('span');
-    if (!S.user) { lbl.textContent = 'Se connecter'; btnAccount.classList.remove('logged'); }
-    else { lbl.textContent = (S.profile && S.profile.display_name) + (S.team ? ' · ' + S.team.name : ''); btnAccount.classList.add('logged'); }
-    btnAccount.title = S.user ? 'Compte et équipe' : 'Se connecter';
+    accountButtons.forEach(b => {
+      const lbl = b.querySelector('span');
+      if (!S.user) { lbl.textContent = 'Se connecter'; b.classList.remove('logged'); }
+      else { lbl.textContent = (S.profile && S.profile.display_name) + (S.team ? ' · ' + S.team.name : ''); b.classList.add('logged'); }
+      b.title = S.user ? 'Compte et équipe' : 'Se connecter';
+    });
+    if (!$('#view-home').classList.contains('hidden')) renderHome();
     ['#btn-library', '#mtab-library'].forEach(sel => { const el = $(sel); if (!el) return; el.classList.toggle('has-badge', S.unseen > 0); el.dataset.badge = S.unseen; });
     const mtab = $('#mtab-account span');
     if (mtab) { mtab.textContent = S.user ? (S.profile && S.profile.display_name) || 'Compte' : 'Compte'; }
     $('#mtab-account') && $('#mtab-account').classList.toggle('logged', !!S.user);
   }
-  btnAccount.onclick = () => S.user ? openTeams() : openAuth();
+  accountButtons.forEach(b => { b.onclick = () => S.user ? openTeams() : openAuth(); });
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) {
@@ -191,15 +195,26 @@
 
   /* ---------- Bibliothèque ---------- */
   let libTab = 'mine';
-  async function openLibrary() {
-    if (!S.user) { openAuth(); return; }
-    E.openModal('modal-library');
-    const tabs = $('#library-tabs'); tabs.classList.remove('hidden'); tabs.replaceChildren();
+  let renderSeq = 0;
+  async function renderHome() {
+    const seq = ++renderSeq;
+    const tabs = $('#home-tabs'); tabs.replaceChildren();
+    const root = $('#home-list'); root.replaceChildren();
+    if (!S.user) {
+      tabs.classList.add('hidden');
+      const box = document.createElement('div'); box.className = 'home-login';
+      box.innerHTML = `<p>Connectez-vous pour retrouver vos dessins sur tous vos appareils, rejoindre une équipe et recevoir les stratégies du coach.</p>`;
+      const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Se connecter ou créer un compte'; b.onclick = () => openAuth(); box.appendChild(b);
+      root.appendChild(box);
+      const local = E.readLib();
+      if (local.length) { const h = document.createElement('h4'); h.className = 'home-h4'; h.textContent = 'Sur cet appareil'; root.appendChild(h); local.forEach(d => root.appendChild(E.localCard(d, () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); }))); }
+      return;
+    }
+    tabs.classList.remove('hidden');
     const defs = [['mine', 'Mes dessins'], ['team', S.team ? 'Équipe' : 'Équipe (aucune)']];
     if (S.team && S.team.role === 'coach') defs.push(['proposed', 'Propositions']);
     defs.push(['local', 'Sur cet appareil']);
-    defs.forEach(([id, label]) => { const b = document.createElement('button'); b.className = 'tab' + (libTab === id ? ' active' : ''); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; openLibrary(); }; tabs.appendChild(b); });
-    const root = $('#library-list'); root.replaceChildren();
+    defs.forEach(([id, label]) => { const b = document.createElement('button'); b.className = 'tab' + (libTab === id ? ' active' : ''); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; renderHome(); }; tabs.appendChild(b); });
     if (libTab === 'local') { renderLocal(root); return; }
     if (libTab === 'team') markSeen();
     let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
@@ -207,6 +222,7 @@
     else if (!S.team) { empty(root, 'Rejoignez ou créez une équipe pour voir ses stratégies.'); return; }
     else q = q.eq('team_id', S.team.id).eq('visibility', libTab);
     const { data, error } = await q;
+    if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Enregistrer le dessin » dans l’éditeur.' : libTab === 'team' ? 'Aucune stratégie publiée par le coach pour le moment.' : 'Aucune proposition de joueur.'); return; }
     data.forEach(row => root.appendChild(cloudCard(row)));
@@ -233,7 +249,7 @@
       if (error) return E.toast(errMsg(error));
       if (E.drawing.id === row.id) { S.current.visibility = visibility; S.current.team_id = patch.team_id; }
       E.toast(visibility === 'team' ? 'Publié : toute l’équipe peut la voir.' : visibility === 'proposed' ? 'Proposé au coach.' : 'Retiré, redevenu privé.');
-      openLibrary();
+      renderHome();
     };
     if (coach && row.visibility !== 'team') add('Publier à l’équipe', 'primary', () => setVis('team'));
     if (coach && row.visibility === 'team') add('Retirer', 'outline', () => setVis('private'));
@@ -242,7 +258,7 @@
     if (mine || coach) add('Supprimer', 'outline danger', async () => {
       if (!confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
-      if (error) return E.toast(errMsg(error)); openLibrary();
+      if (error) return E.toast(errMsg(error)); renderHome();
     });
     return c;
   }
@@ -250,7 +266,7 @@
   function loadCloud(row) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
-    E.loadDrawing(d); E.closeModal('modal-library');
+    E.loadDrawing(d); E.go('editor');
     if (row.owner_id !== S.user.id && !(S.team && S.team.role === 'coach')) E.toast('Stratégie du coach : vos modifications seront enregistrées comme copie personnelle.');
   }
 
@@ -263,7 +279,7 @@
       c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
       c.querySelector('.name').textContent = d.title;
       c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
-      c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.closeModal('modal-library'); };
+      c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); };
       const b = document.createElement('button'); b.className = 'btn small secondary'; b.textContent = 'Envoyer dans mon compte';
       b.onclick = async () => { const copy = E.clone(d); copy.id = crypto.randomUUID(); const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' }); E.toast(error ? errMsg(error) : 'Copié dans votre compte.'); };
       c.querySelector('.card-btns').appendChild(b);
@@ -282,5 +298,6 @@
     return origSave();
   }
 
-  window.RugbyAccount = { isActive: () => true, save: saveSmart, openLibrary, openAuth, openTeams, onNewDrawing };
+  window.RugbyAccount = { isActive: () => true, save: saveSmart, renderHome, openAuth, openTeams, onNewDrawing };
+  if (!$('#view-home').classList.contains('hidden')) renderHome();
 })();
