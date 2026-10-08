@@ -57,6 +57,7 @@
   sb.auth.onAuthStateChange((_evt, session) => { if ((session && session.user && session.user.id) !== (S.user && S.user.id)) refreshSession(session); });
 
   function refreshCurrentView() {
+    if (!ready) return;   // la session n'est pas encore connue : on ne redirige pas
     if (location.hash.startsWith('#/team')) { if (S.user) { E.go('team'); } else { E.go('home'); openAuth(); } return; }
     if (!$('#view-home').classList.contains('hidden')) renderHome();
   }
