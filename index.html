@@ -47,6 +47,10 @@
         <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD</span></button>
       </div>
     </div>
+    <button id="btn-account" class="btn ghost account">
+      <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Se connecter</span>
+    </button>
     <button id="btn-save" class="btn primary">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 3h11l3 3v15H5z M8 3v6h8V3 M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
       <span>Enregistrer le dessin</span>
@@ -160,7 +164,54 @@
       <button id="btn-new-drawing" class="btn primary small">+ Nouveau dessin</button>
       <button class="btn-close" data-close="modal-library" title="Fermer">✕</button>
     </div>
+    <div id="library-tabs" class="tabs small hidden"></div>
     <div id="library-list" class="library-list"></div>
+  </div>
+</div>
+
+<!-- Connexion / inscription -->
+<div id="modal-auth" class="modal hidden">
+  <div class="modal-box auth-box">
+    <div class="modal-head">
+      <div class="tabs small"><button class="tab active" data-mode="login">Connexion</button><button class="tab" data-mode="signup">Inscription</button></div>
+      <button class="btn-close" data-close="modal-auth" title="Fermer">✕</button>
+    </div>
+    <form id="auth-form" class="form" data-mode="login">
+      <label class="hidden">Prénom / pseudo<input id="auth-name" type="text" autocomplete="nickname" maxlength="40"></label>
+      <label>E-mail<input id="auth-email" type="email" required autocomplete="email"></label>
+      <label>Mot de passe<input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
+      <p id="auth-error" class="form-error"></p>
+      <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
+      <p class="help">Un compte permet d'enregistrer vos dessins en ligne, de rejoindre une équipe et de recevoir les stratégies du coach.</p>
+    </form>
+  </div>
+</div>
+
+<!-- Compte et équipes -->
+<div id="modal-team" class="modal hidden">
+  <div class="modal-box team-box">
+    <div class="modal-head">
+      <strong>Mon compte</strong>
+      <span id="team-user" class="muted"></span>
+      <button id="btn-logout" class="btn outline small">Se déconnecter</button>
+      <button class="btn-close" data-close="modal-team" title="Fermer">✕</button>
+    </div>
+    <div class="team-body">
+      <h4>Mes équipes</h4>
+      <div id="team-list" class="team-list"></div>
+      <div id="team-members" class="team-members"></div>
+      <div class="team-forms">
+        <form id="team-create-form" class="inline-form">
+          <input id="team-create-name" type="text" placeholder="Nom de la nouvelle équipe" required minlength="2" maxlength="60">
+          <button class="btn primary small" type="submit">Créer (je serai coach)</button>
+        </form>
+        <form id="team-join-form" class="inline-form">
+          <input id="team-join-code" type="text" placeholder="Code d'équipe (6 lettres)" required minlength="6" maxlength="6" style="text-transform:uppercase">
+          <button class="btn secondary small" type="submit">Rejoindre (joueur)</button>
+        </form>
+      </div>
+      <p class="help">Le coach publie ses stratégies à toute l'équipe et peut nommer d'autres coachs. Un joueur garde ses dessins privés et peut en proposer au coach.</p>
+    </div>
   </div>
 </div>
 
@@ -171,6 +222,9 @@
 <script src="js/field.js"></script>
 <script src="js/objects.js"></script>
 <script src="js/export.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
 <script src="js/editor.js"></script>
+<script src="js/account.js"></script>
 </body>
 </html>

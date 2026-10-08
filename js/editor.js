@@ -14,7 +14,7 @@
 
   /* ---------- État ---------- */
   function newDrawing() {
-    return { id: uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
+    return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
   }
   const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, zoom: 1, history: [], future: [] };
 
@@ -559,7 +559,7 @@
     const i = list.findIndex(x => x.id === d.id); if (i >= 0) list[i] = d; else list.unshift(d);
     writeLib(list); toast('Dessin enregistré dans « Mes dessins ».');
   }
-  $('#btn-save').onclick = saveDrawing;
+  $('#btn-save').onclick = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.save() : saveDrawing();
 
   function loadDrawing(d) {
     if (!d || !Array.isArray(d.steps) || !d.steps.length) throw new Error('bad drawing');
@@ -569,6 +569,7 @@
   }
 
   function openLibrary() {
+    $('#library-tabs').classList.add('hidden');
     const root = $('#library-list'); root.replaceChildren();
     const list = readLib();
     if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment.'; root.appendChild(p); }
@@ -584,8 +585,8 @@
     });
     openModal('modal-library');
   }
-  $('#btn-library').onclick = openLibrary;
-  $('#btn-new-drawing').onclick = () => { loadDrawing(newDrawing()); closeModal('modal-library'); };
+  $('#btn-library').onclick = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.openLibrary() : openLibrary();
+  $('#btn-new-drawing').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); closeModal('modal-library'); };
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
@@ -594,6 +595,12 @@
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
   let toastTimer;
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
+
+  /* ---------- API pour les modules externes ---------- */
+  window.RugbyEditor = {
+    get drawing() { return state.drawing; },
+    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone
+  };
 
   /* ---------- Démarrage ---------- */
   buildPalette();

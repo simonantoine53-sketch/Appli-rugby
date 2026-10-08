@@ -187,6 +187,40 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #1f2933; color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- Comptes & équipes ---------- */
+.btn.account.logged { color: var(--primary); }
+.has-badge { position: relative; }
+.has-badge::after { content: attr(data-badge); position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e53935; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.tabs.small { padding: 0; border: none; }
+.tabs.small .tab { padding: 10px 6px; font-size: 14px; }
+#library-tabs { padding: 0 16px; border-bottom: 1px solid var(--border); }
+.auth-box { width: min(420px, 100%); }
+.team-box { width: min(640px, 100%); }
+.form { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; }
+.form input, .inline-form input { font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.form-error { margin: 0; color: #c62828; font-size: 13px; min-height: 1em; }
+.team-body { padding: 16px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.team-body h4 { margin: 0; }
+.team-list { display: flex; flex-direction: column; gap: 6px; }
+.team-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 8px; }
+.team-row.active { border-color: var(--primary); background: #f3f7fe; }
+.role-badge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: #eceff1; color: #455a64; }
+.role-badge.coach { background: #fde7e9; color: #b5174b; }
+.team-members { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: #f6f8fa; border-radius: 8px; }
+.team-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.team-head code { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 15px; letter-spacing: 2px; }
+.member-row { display: flex; align-items: center; gap: 8px; }
+.member-row span:first-child { flex: 1; }
+.team-forms { display: flex; flex-direction: column; gap: 8px; }
+.inline-form { display: flex; gap: 8px; }
+.inline-form input { flex: 1; min-width: 0; }
+.lib-card .card-btns { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px; }
+.lib-card .card-btns .btn.small { padding: 5px 9px; font-size: 12px; }
+.vis-badge { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: #eceff1; color: #455a64; }
+.vis-badge.team { background: #e3f2e6; color: #2e7d32; }
+.vis-badge.proposed { background: #fff3e0; color: #ef6c00; }
+
 /* ---------- Mobile ---------- */
 .mobile-bar { display: none; }
 
@@ -199,6 +233,8 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .actions { margin-left: 0; gap: 4px; flex: 0 0 auto; }
   .actions .btn { padding: 8px; }
   .actions .btn span { display: none; }
+  .has-badge::after { top: -4px; right: -4px; }
+  .team-box, .auth-box { width: 100%; }
   .menu { min-width: 250px; }
   .menu button span { display: block; }
 
