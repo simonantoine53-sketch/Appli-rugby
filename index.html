@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appli Rugby – Éditeur d'exercices</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button id="btn-library" class="btn-back" title="Mes dessins">
+    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="title-wrap">
+    <svg viewBox="0 0 24 24" width="22" height="22" class="clip-icon"><path d="M8 12l6-6a3 3 0 014 4l-8 8a5 5 0 01-7-7l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="crumb">Exercice /</span>
+    <input id="title" class="title-input" value="Nouveau dessin" spellcheck="false" aria-label="Nom du dessin">
+  </div>
+
+  <div class="zoom">
+    <button id="zoom-out" title="Zoom arrière">−</button>
+    <span id="zoom-val">100%</span>
+    <button id="zoom-in" title="Zoom avant">+</button>
+  </div>
+
+  <div class="actions">
+    <button id="btn-undo" class="btn ghost icon-only" title="Annuler (Ctrl+Z)">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btn-redo" class="btn ghost icon-only" title="Rétablir (Ctrl+Y)">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="btn-preview" class="btn secondary">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      Aperçu
+    </button>
+    <div class="menu-wrap">
+      <button id="btn-export" class="btn secondary">
+        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" stroke-width="2"/></svg>
+        Exporter ▾
+      </button>
+      <div id="export-menu" class="menu hidden">
+        <button data-export="png"><strong>Image PNG</strong><span>L'étape affichée, en haute résolution</span></button>
+        <button data-export="gif"><strong>GIF animé</strong><span>Toutes les étapes avec le déplacement des joueurs (WhatsApp, mail…)</span></button>
+        <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD</span></button>
+      </div>
+    </div>
+    <button id="btn-save" class="btn primary">Enregistrer le dessin</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar" id="palette"></aside>
+
+  <section class="canvas-area">
+    <div id="props" class="props hidden"></div>
+    <div class="canvas-wrap" id="canvas-wrap">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="hint" id="hint">Choisissez un outil à gauche, puis cliquez ou glissez sur le terrain.</div>
+  </section>
+
+  <aside class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="steps">Étapes</button>
+      <button class="tab" data-tab="settings">Réglages</button>
+    </div>
+
+    <div id="tab-steps" class="tab-content">
+      <div id="steps" class="steps"></div>
+      <button id="add-step" class="btn outline wide">+ Ajouter une étape</button>
+      <p class="help">Une nouvelle étape reprend la position des objets de l'étape courante. Déplacez-les pour créer l'animation.</p>
+    </div>
+
+    <div id="tab-settings" class="tab-content hidden">
+      <div class="field-group">
+        <label class="label">Terrain</label>
+        <div class="choice-row">
+          <label><input type="radio" name="field" value="full" checked> Complet</label>
+          <label><input type="radio" name="field" value="half"> Demi-terrain</label>
+          <label><input type="radio" name="field" value="empty"> Vide</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Orientation</label>
+        <div class="choice-row">
+          <label><input type="radio" name="orientation" value="landscape" checked> Paysage</label>
+          <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Durée d'une étape en aperçu</label>
+        <div class="choice-row">
+          <input type="range" id="step-duration" min="400" max="3000" step="100" value="1200">
+          <span id="step-duration-val">1,2 s</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Fichier</label>
+        <div class="choice-row">
+          <button id="btn-export-json" class="btn outline">Exporter en JSON</button>
+          <button id="btn-import-json" class="btn outline">Importer un JSON</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Raccourcis</label>
+        <ul class="shortcuts">
+          <li><kbd>V</kbd> ou <kbd>Échap</kbd> : sélection</li>
+          <li><kbd>1</kbd>–<kbd>0</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd>, <kbd>T</kbd> : outils de forme</li>
+          <li><kbd>Suppr</kbd> : supprimer l'objet sélectionné</li>
+          <li><kbd>Ctrl</kbd>+<kbd>D</kbd> : dupliquer</li>
+          <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> : annuler / rétablir</li>
+          <li><kbd>Flèches</kbd> : déplacer l'objet (Maj = plus vite)</li>
+          <li>Double-clic sur un texte ou un joueur pour le modifier</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- Aperçu animé -->
+<div id="modal-preview" class="modal hidden">
+  <div class="modal-box preview-box">
+    <div class="modal-head">
+      <strong id="preview-title">Aperçu</strong>
+      <span id="preview-step" class="muted"></span>
+      <button class="btn-close" data-close="modal-preview" title="Fermer">✕</button>
+    </div>
+    <div class="preview-canvas" id="preview-canvas"></div>
+    <div class="preview-controls">
+      <button id="preview-prev" class="btn outline">⏮ Précédente</button>
+      <button id="preview-play" class="btn primary">▶ Lire</button>
+      <button id="preview-next" class="btn outline">Suivante ⏭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bibliothèque de dessins -->
+<div id="modal-library" class="modal hidden">
+  <div class="modal-box library-box">
+    <div class="modal-head">
+      <strong>Mes dessins</strong>
+      <button id="btn-new-drawing" class="btn primary small">+ Nouveau dessin</button>
+      <button class="btn-close" data-close="modal-library" title="Fermer">✕</button>
+    </div>
+    <div id="library-list" class="library-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<input type="file" id="file-import" accept="application/json" hidden>
+
+<script src="js/icons.js"></script>
+<script src="js/field.js"></script>
+<script src="js/objects.js"></script>
+<script src="js/export.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>
