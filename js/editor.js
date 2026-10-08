@@ -157,11 +157,10 @@
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (gi === 0 ? `<button class="select-tool" id="btn-select" title="Sélection (V)"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor"/></svg></button>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>`;
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
-    $('#btn-select').onclick = () => setTool(null);
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
@@ -170,12 +169,11 @@
     if (id) closeDrawer();
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
-    $('#btn-select').classList.toggle('active', !id);
     svg.classList.toggle('tool-active', !!id);
     const t = id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
-    $('#fab-select-label').textContent = t ? 'Sélectionner & déplacer (quitter ' + t.label.toLowerCase() + ')' : 'Sélectionner & déplacer';
+    $('#fab-select-label').innerHTML = t ? 'Sélectionner / déplacer<small>quitter l’outil « ' + t.label.toLowerCase() + ' »</small>' : 'Sélectionner / déplacer<small>touchez un élément du terrain</small>';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
