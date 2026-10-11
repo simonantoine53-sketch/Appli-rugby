@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#4a9e4f">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Rugby Strat">
   <style>
 /* ---------- Base ---------- */
 :root {
@@ -289,6 +294,11 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .comment .del { margin-left: auto; border: none; background: none; color: #999; cursor: pointer; }
 .comments-form { padding: 10px 18px 16px; }
 .comments-form input { font-size: 16px; }
+
+/* ---------- Notifications push ---------- */
+.push-block { display: flex; flex-direction: column; gap: 6px; }
+.push-block .small { font-size: 12px; margin: 0; }
+#btn-push.on { border-color: var(--primary); color: var(--primary); }
 
 /* ---------- Comptes & équipes ---------- */
 .btn.account.logged { color: var(--primary); }
@@ -773,6 +783,10 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     <div class="team-body">
       <p id="team-user" class="muted"></p>
       <button id="btn-goto-team" class="btn secondary wide">Voir mon équipe</button>
+      <div id="push-block" class="push-block hidden">
+        <button id="btn-push" class="btn outline wide">🔔 Activer les notifications</button>
+        <p id="push-help" class="muted small"></p>
+      </div>
       <button id="btn-logout" class="btn outline wide">Se déconnecter</button>
     </div>
   </div>
@@ -1559,7 +1573,9 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
    pour un fonctionnement 100 % local (dessins stockés dans le navigateur, sans compte). */
 window.RUGBY_CONFIG = {
   supabaseUrl: 'https://rnbsupogbesfngjfykyc.supabase.co',
-  supabaseKey: 'sb_publishable_JtiH_AF7CbToELN6OAupew_oo9sn5gL'
+  supabaseKey: 'sb_publishable_JtiH_AF7CbToELN6OAupew_oo9sn5gL',
+  // Clé publique VAPID (notifications push) : publique par conception.
+  vapidPublicKey: 'BCt12h_eNLuuI-RQkZ13pI5fdXmm_yYf7tzTW2xQxTEw8PgbAyfWkP4kKKgztCi_BErkWB-loR0cUiSyzrD2j5s'
 };
 
 </script>
@@ -2725,6 +2741,7 @@ window.RUGBY_CONFIG = {
     E.openModal('modal-team');
     $('#team-user').textContent = `${S.profile.display_name} · ${S.user.email}`;
     $('#btn-goto-team').textContent = S.team ? `Voir l’équipe « ${S.team.name} »` : 'Créer ou rejoindre une équipe';
+    if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
   }
   $('#btn-goto-team').onclick = () => { E.closeModal('modal-team'); E.go('team'); };
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.closeModal('modal-team'); E.go('home'); E.toast('Déconnecté.'); };
@@ -3090,6 +3107,7 @@ window.RUGBY_CONFIG = {
       const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
       if (error) return E.toast(errMsg(error));
       if (E.drawing.id === row.id) { S.current.visibility = visibility; S.current.team_id = patch.team_id; }
+      if (visibility !== 'private' && window.RugbyPush) window.RugbyPush.notify(row.id, visibility === 'team' ? 'published' : 'proposed');
       E.toast(visibility === 'team' ? `Publié dans « ${S.team.name} » : toute l’équipe peut la voir.` : visibility === 'proposed' ? `Proposé au coach de « ${S.team.name} ».` : 'Retiré, redevenu privé.');
       refresh();
     };
@@ -3141,8 +3159,77 @@ window.RUGBY_CONFIG = {
     });
   }
 
-  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
+})();
+
+</script>
+<script>
+/* Notifications push (Web Push) : inscription du navigateur et envoi via la fonction Edge « push-notify ». */
+(function () {
+  const $ = s => document.querySelector(s);
+  const cfg = window.RUGBY_CONFIG || {};
+  const acc = () => window.RugbyAccount;
+  const supported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && !!cfg.vapidPublicKey;
+  const isIosNotInstalled = () => /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
+  let reg = null;
+
+  async function getReg() {
+    if (reg) return reg;
+    if (!('serviceWorker' in navigator)) return null;
+    try { reg = await navigator.serviceWorker.register('sw.js'); await navigator.serviceWorker.ready; return reg; }
+    catch (e) { console.warn('service worker', e); return null; }
+  }
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => { getReg(); });
+
+  function b64ToBytes(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, c => c.charCodeAt(0));
+  }
+  function b64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+
+  async function current() { const r = await getReg(); return r ? r.pushManager.getSubscription() : null; }
+
+  async function enable() {
+    const A = acc(); if (!A || !A.isLoggedIn()) return;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { $('#push-help').textContent = 'Notifications refusées par le navigateur. Autorisez-les dans les réglages du site.'; return; }
+    const r = await getReg(); if (!r) return;
+    let sub = await r.pushManager.getSubscription();
+    if (!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.vapidPublicKey) });
+    const j = sub.toJSON();
+    const { error } = await A.sb.from('push_subscriptions').upsert({ user_id: A.user().id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' });
+    if (error) { console.warn(error); $('#push-help').textContent = 'Impossible d’enregistrer l’abonnement : ' + error.message; return; }
+    renderButton(true);
+  }
+  async function disable() {
+    const A = acc(); const sub = await current();
+    if (sub) { if (A && A.isLoggedIn()) await A.sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+    renderButton(true);
+  }
+
+  async function renderButton(hasTeam) {
+    const block = $('#push-block'), btn = $('#btn-push'), help = $('#push-help');
+    if (!block) return;
+    if (!hasTeam || !supported()) { block.classList.toggle('hidden', !hasTeam || !isIosNotInstalled()); if (hasTeam && isIosNotInstalled()) { btn.classList.add('hidden'); help.textContent = 'Sur iPhone : ajoutez l’appli à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour recevoir les notifications.'; } return; }
+    block.classList.remove('hidden'); btn.classList.remove('hidden');
+    const sub = await current();
+    const on = !!sub && Notification.permission === 'granted';
+    btn.textContent = on ? '🔕 Désactiver les notifications' : '🔔 Activer les notifications';
+    btn.classList.toggle('on', on);
+    help.textContent = on ? 'Vous serez prévenu quand une stratégie est publiée ou proposée dans votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil à chaque nouvelle stratégie de votre équipe.';
+    btn.onclick = () => (on ? disable() : enable()).catch(e => { console.warn(e); help.textContent = 'Erreur : ' + e.message; });
+  }
+
+  // Appelée après une publication / proposition : envoie la notification aux membres concernés
+  async function notify(drawingId, kind) {
+    const A = acc(); if (!A || !A.isLoggedIn() || !A.sb.functions) return;
+    try { const { data, error } = await A.sb.functions.invoke('push-notify', { body: { drawing_id: drawingId, kind } }); if (error) console.warn('push-notify', error); else if (data && data.sent) console.log('push envoyées :', data.sent); }
+    catch (e) { console.warn('push-notify', e); }
+  }
+
+  window.RugbyPush = { enable, disable, renderButton, notify, supported, b64url };
 })();
 
 </script>

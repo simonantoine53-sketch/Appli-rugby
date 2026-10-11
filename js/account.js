@@ -151,6 +151,7 @@
     E.openModal('modal-team');
     $('#team-user').textContent = `${S.profile.display_name} · ${S.user.email}`;
     $('#btn-goto-team').textContent = S.team ? `Voir l’équipe « ${S.team.name} »` : 'Créer ou rejoindre une équipe';
+    if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
   }
   $('#btn-goto-team').onclick = () => { E.closeModal('modal-team'); E.go('team'); };
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.closeModal('modal-team'); E.go('home'); E.toast('Déconnecté.'); };
@@ -516,6 +517,7 @@
       const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
       if (error) return E.toast(errMsg(error));
       if (E.drawing.id === row.id) { S.current.visibility = visibility; S.current.team_id = patch.team_id; }
+      if (visibility !== 'private' && window.RugbyPush) window.RugbyPush.notify(row.id, visibility === 'team' ? 'published' : 'proposed');
       E.toast(visibility === 'team' ? `Publié dans « ${S.team.name} » : toute l’équipe peut la voir.` : visibility === 'proposed' ? `Proposé au coach de « ${S.team.name} ».` : 'Retiré, redevenu privé.');
       refresh();
     };
@@ -567,6 +569,6 @@
     });
   }
 
-  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

@@ -3,5 +3,7 @@
    pour un fonctionnement 100 % local (dessins stockés dans le navigateur, sans compte). */
 window.RUGBY_CONFIG = {
   supabaseUrl: 'https://rnbsupogbesfngjfykyc.supabase.co',
-  supabaseKey: 'sb_publishable_JtiH_AF7CbToELN6OAupew_oo9sn5gL'
+  supabaseKey: 'sb_publishable_JtiH_AF7CbToELN6OAupew_oo9sn5gL',
+  // Clé publique VAPID (notifications push) : publique par conception.
+  vapidPublicKey: 'BCt12h_eNLuuI-RQkZ13pI5fdXmm_yYf7tzTW2xQxTEw8PgbAyfWkP4kKKgztCi_BErkWB-loR0cUiSyzrD2j5s'
 };
