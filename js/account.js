@@ -339,6 +339,33 @@
   }
   function onNewDrawing() { S.current = { visibility: 'private', team_id: null, owner_id: null }; if (S.user) E.drawing.id = crypto.randomUUID(); }
 
+  /* ---------- Formations enregistrées (par équipe) ---------- */
+  async function saveFormation(name, data) {
+    const row = { owner_id: S.user.id, team_id: S.team ? S.team.id : null, name, data };
+    const { error } = await sb.from('formations').insert(row);
+    if (error) { E.toast('Enregistrement impossible : ' + errMsg(error)); return; }
+    E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans votre compte.`);
+  }
+  async function listFormations() {
+    if (!S.user) { openAuth(); return { list: [], scope: '' }; }
+    let q = sb.from('formations').select('id, name, data, team_id, owner_id, created_at, owner:profiles!formations_owner_id_fkey(display_name)').order('created_at', { ascending: false });
+    if (S.team) q = q.or(`team_id.eq.${S.team.id},owner_id.eq.${S.user.id}`);
+    else q = q.eq('owner_id', S.user.id);
+    const { data, error } = await q;
+    if (error) { E.toast(errMsg(error)); return { list: [], scope: '' }; }
+    const list = (data || []).map(f => ({
+      id: f.id, name: f.name, data: f.data,
+      team_name: f.team_id ? ((S.teams.find(t => t.id === f.team_id) || {}).name || 'équipe') : 'perso',
+      owner_name: f.owner && f.owner.display_name,
+      canDelete: f.owner_id === S.user.id || (isStaff() && S.team && f.team_id === S.team.id)
+    }));
+    return { list, scope: S.team ? `Équipe « ${S.team.name} » et mes formations` : 'Mes formations' };
+  }
+  async function deleteFormation(id) {
+    const { error } = await sb.from('formations').delete().eq('id', id);
+    if (error) E.toast(errMsg(error));
+  }
+
   /* ---------- Page d'accueil ---------- */
   let libTab = 'mine';
   let renderSeq = 0;
@@ -443,6 +470,6 @@
     });
   }
 
-  window.RugbyAccount = { isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
