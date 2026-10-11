@@ -16,7 +16,7 @@
   function newDrawing() {
     return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
   }
-  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [] };
+  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [], multiMode: false, axisMode: false };
   /** Identifiants sélectionnés (sélection multiple avec Maj, sinon l'objet courant). */
   const selIds = () => { const ids = state.multi.filter(id => findObj(id)); if (ids.length) return ids; return state.selected && findObj(state.selected) ? [state.selected] : []; };
   const selObjs = () => selIds().map(findObj);
@@ -167,6 +167,8 @@
     });
     $('#btn-save-formation').onclick = saveCurrentFormation;
     $('#btn-list-formations').onclick = openSavedFormations;
+    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
+    $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
@@ -325,8 +327,8 @@
     const g = e.target.closest('[data-id]');
     if (g) {
       const id = g.dataset.id;
-      if (e.shiftKey) {
-        // Maj + clic : ajoute ou retire l'objet de la sélection multiple
+      if (e.shiftKey || state.multiMode) {
+        // Maj + clic (ou mode sélection multiple sur mobile) : ajoute ou retire l'objet de la sélection
         let ids = selIds();
         ids = ids.includes(id) ? ids.filter(x => x !== id) : ids.concat(id);
         state.multi = ids.length > 1 ? ids : []; state.selected = ids.length ? ids[ids.length - 1] : null;
@@ -348,10 +350,11 @@
     const p = toSvg(e);
     let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     // Maj : déplacement contraint sur un seul axe (horizontal ou vertical)
-    if (e.shiftKey && drag.mode === 'move') { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
-    // Maj : lignes et flèches contraintes à 0°, 45° ou 90°
+    const constrain = e.shiftKey || state.axisMode;
+    if (constrain && drag.mode === 'move') { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
+    // Maj (ou mode aligné) : lignes et flèches contraintes à 0°, 45° ou 90°
     const snapTo = (x0, y0) => {
-      if (!e.shiftKey) return p;
+      if (!constrain) return p;
       const vx = p.x - x0, vy = p.y - y0, len = Math.hypot(vx, vy);
       if (len < 1) return p;
       const a = Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) * (Math.PI / 4);
