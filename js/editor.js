@@ -332,19 +332,29 @@
   svg.addEventListener('pointermove', e => {
     if (!drag || pinch) return;
     const p = toSvg(e);
-    const dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    // Maj : déplacement contraint sur un seul axe (horizontal ou vertical)
+    if (e.shiftKey && drag.mode === 'move') { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
+    // Maj : lignes et flèches contraintes à 0°, 45° ou 90°
+    const snapTo = (x0, y0) => {
+      if (!e.shiftKey) return p;
+      const vx = p.x - x0, vy = p.y - y0, len = Math.hypot(vx, vy);
+      if (len < 1) return p;
+      const a = Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) * (Math.PI / 4);
+      return { x: x0 + Math.cos(a) * len, y: y0 + Math.sin(a) * len };
+    };
     const o = drag.obj;
     if (drag.mode === 'create') {
       if (drag.kind === 'shape') { o.x = Math.min(drag.start.x, p.x); o.y = Math.min(drag.start.y, p.y); o.w = Math.abs(dx); o.h = Math.abs(dy); if (e.shiftKey) { o.w = o.h = Math.max(o.w, o.h); } }
-      else if (drag.kind === 'line') { o.x2 = p.x; o.y2 = p.y; }
+      else if (drag.kind === 'line') { const q = snapTo(o.x1, o.y1); o.x2 = q.x; o.y2 = q.y; }
       else if (drag.kind === 'free') { const last = o.points[o.points.length - 1]; if (Math.hypot(p.x - last[0], p.y - last[1]) > 3) o.points.push([p.x, p.y]); }
     } else if (drag.mode === 'move') {
       Object.assign(o, clone(drag.orig)); move(o, dx, dy);
     } else if (drag.mode === 'handle') {
       const r = drag.orig; Object.assign(o, clone(r));
       const n = drag.name;
-      if (n === 'p1') { o.x1 = p.x; o.y1 = p.y; }
-      else if (n === 'p2') { o.x2 = p.x; o.y2 = p.y; }
+      if (n === 'p1') { const q = snapTo(r.x2, r.y2); o.x1 = q.x; o.y1 = q.y; }
+      else if (n === 'p2') { const q = snapTo(r.x1, r.y1); o.x2 = q.x; o.y2 = q.y; }
       else if (n[0] === 'v') { o.points = polyPoints(r).map(q => q.slice()); o.points[+n.slice(1)] = [p.x, p.y]; }
       else {
         let x1 = r.x, y1 = r.y, x2 = r.x + r.w, y2 = r.y + r.h;
