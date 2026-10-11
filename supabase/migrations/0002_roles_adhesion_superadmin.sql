@@ -58,3 +58,23 @@ alter policy members_delete on public.team_members using (user_id = auth.uid() o
 
 -- Super-administrateur : compte Toutoune
 update public.profiles set is_superadmin = true where id = '6cf0824c-8a60-462a-b4c9-f54313f94645';
+
+-- Formations enregistrées (réutilisables), par équipe ou personnelles
+create table if not exists public.formations (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  team_id uuid references public.teams(id) on delete cascade,
+  name text not null,
+  data jsonb not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists formations_team_idx on public.formations (team_id);
+alter table public.formations enable row level security;
+create policy formations_select on public.formations for select to authenticated
+  using (owner_id = auth.uid() or (team_id is not null and public.is_member(team_id)));
+create policy formations_insert on public.formations for insert to authenticated
+  with check (owner_id = auth.uid() and (team_id is null or public.is_member(team_id)));
+create policy formations_update on public.formations for update to authenticated
+  using (owner_id = auth.uid() or public.is_staff(team_id)) with check (owner_id = auth.uid() or public.is_staff(team_id));
+create policy formations_delete on public.formations for delete to authenticated
+  using (owner_id = auth.uid() or public.is_staff(team_id));

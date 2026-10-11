@@ -82,5 +82,37 @@
     return objects;
   }
 
-  global.RugbyFormations = { build };
+  /* ---------- Formations personnalisées (enregistrées) ---------- */
+  const PT_FIELDS = [['x', 'y'], ['x1', 'y1'], ['x2', 'y2']];
+
+  /** Capture les objets du terrain en coordonnées relatives (mètres, repère paysage) au centre du groupe. */
+  function capture(settings, objects) {
+    const pts = [];
+    objects.forEach(o => {
+      PT_FIELDS.forEach(([kx, ky]) => { if (typeof o[kx] === 'number') pts.push(fromSvg(settings, o[kx], o[ky])); });
+      (o.points || []).forEach(p => pts.push(fromSvg(settings, p[0], p[1])));
+    });
+    if (!pts.length) return null;
+    const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+    const rel = objects.map(o => {
+      const c = JSON.parse(JSON.stringify(o)); delete c.id;
+      PT_FIELDS.forEach(([kx, ky]) => { if (typeof c[kx] === 'number') { const [mx, my] = fromSvg(settings, c[kx], c[ky]); c[kx] = +(mx - cx).toFixed(2); c[ky] = +(my - cy).toFixed(2); } });
+      if (c.points) c.points = c.points.map(p => { const [mx, my] = fromSvg(settings, p[0], p[1]); return [+(mx - cx).toFixed(2), +(my - cy).toFixed(2)]; });
+      return c;
+    });
+    return { version: 1, objects: rel };
+  }
+
+  /** Replace une formation capturée autour du point touché (coordonnées SVG). */
+  function buildCustom(settings, data, anchor) {
+    const [ax, ay] = fromSvg(settings, anchor[0], anchor[1]);
+    return (data.objects || []).map(o => {
+      const c = JSON.parse(JSON.stringify(o)); c.id = uid();
+      PT_FIELDS.forEach(([kx, ky]) => { if (typeof c[kx] === 'number') { const [X, Y] = toSvg(settings, ax + c[kx], ay + c[ky]); c[kx] = Math.round(X); c[ky] = Math.round(Y); } });
+      if (c.points) c.points = c.points.map(p => { const [X, Y] = toSvg(settings, ax + p[0], ay + p[1]); return [Math.round(X), Math.round(Y)]; });
+      return c;
+    });
+  }
+
+  global.RugbyFormations = { build, capture, buildCustom };
 })(window);

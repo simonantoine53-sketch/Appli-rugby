@@ -157,10 +157,12 @@
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>`;
+      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<span class="mini-wrap"><button class="mini" id="btn-save-formation" title="Enregistrer les objets du terrain comme formation réutilisable">💾 Enregistrer</button><button class="mini" id="btn-list-formations" title="Mes formations enregistrées">📂 Mes formations</button></span>` : '');
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
+    $('#btn-save-formation').onclick = saveCurrentFormation;
+    $('#btn-list-formations').onclick = openSavedFormations;
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
@@ -184,6 +186,7 @@
   $('#formation-form').onsubmit = e => {
     e.preventDefault();
     closeModal('modal-formation');
+    formation.opts = { attack: formation.opts.attack, defense: formation.opts.defense };
     formation.opts.type = formation.tool.formation;
     formation.opts.dir = +document.querySelector('input[name=formation-dir]:checked').value;
     formation.opts.size = +document.querySelector('input[name=formation-size]:checked').value;
@@ -191,14 +194,61 @@
     formation.opts.ball = $('#formation-ball').checked;
     setTool('formation');
   };
+  /* ---------- Formations enregistrées ---------- */
+  const FORM_KEY = 'rugby-formations-v1';
+  const readForms = () => { try { return JSON.parse(localStorage.getItem(FORM_KEY) || '[]'); } catch (e) { return []; } };
+  const writeForms = list => { try { localStorage.setItem(FORM_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } };
+  const acc = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount : null;
+
+  async function saveCurrentFormation() {
+    closeDrawer();
+    const objs = curObjects();
+    if (!objs.length) { toast('Le terrain est vide : placez d’abord des joueurs.'); return; }
+    if (acc() && !acc().canUse('save')) return;
+    const name = prompt('Nom de la formation (ex. « Touche à 5 attaque », « Mêlée 8 avants ») :', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '');
+    if (!name) return;
+    const data = window.RugbyFormations.capture(state.drawing.settings, objs);
+    if (!data) { toast('Rien à enregistrer.'); return; }
+    if (acc()) { await acc().saveFormation(name.trim(), data); }
+    else { const list = readForms(); list.unshift({ id: uid(), name: name.trim(), data, createdAt: Date.now() }); writeForms(list); toast(`Formation « ${name.trim()} » enregistrée sur cet appareil.`); }
+  }
+
+  async function openSavedFormations() {
+    closeDrawer();
+    const root = $('#saved-formations-list'); root.replaceChildren();
+    openModal('modal-saved-formations');
+    let list, scope;
+    if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
+    $('#saved-formations-scope').textContent = scope || '';
+    if (!list.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Aucune formation enregistrée. Placez des joueurs sur le terrain puis cliquez « Enregistrer » dans le groupe Formations.'; root.appendChild(p); return; }
+    list.forEach(f => {
+      const row = document.createElement('div'); row.className = 'saved-row';
+      const n = (f.data && f.data.objects || []).length;
+      row.innerHTML = `<div class="who"></div>`;
+      row.querySelector('.who').innerHTML = `<strong></strong><small>${n} objet${n > 1 ? 's' : ''}${f.team_name ? ' · ' + f.team_name : ''}${f.owner_name ? ' · ' + f.owner_name : ''}</small>`;
+      row.querySelector('strong').textContent = f.name;
+      const place = document.createElement('button'); place.className = 'btn primary small'; place.textContent = 'Placer';
+      place.onclick = () => { closeModal('modal-saved-formations'); formation.opts = { type: 'custom', data: f.data, name: f.name }; setTool('formation'); };
+      row.appendChild(place);
+      if (f.canDelete !== false) {
+        const del = document.createElement('button'); del.className = 'btn outline small danger'; del.textContent = 'Supprimer';
+        del.onclick = async () => { if (!confirm(`Supprimer « ${f.name} » ?`)) return; if (acc()) await acc().deleteFormation(f.id); else writeForms(readForms().filter(x => x.id !== f.id)); openSavedFormations(); };
+        row.appendChild(del);
+      }
+      root.appendChild(row);
+    });
+  }
+
   function placeFormation(p) {
     const before = snapshot();
-    const objs = window.RugbyFormations.build(state.drawing.settings, formation.opts, [p.x, p.y]);
+    const objs = formation.opts.type === 'custom'
+      ? window.RugbyFormations.buildCustom(state.drawing.settings, formation.opts.data, [p.x, p.y])
+      : window.RugbyFormations.build(state.drawing.settings, formation.opts, [p.x, p.y]);
     curObjects().push(...objs);
     state.selected = null;
     commit(before);
     setTool(null);
-    toast((formation.opts.type === 'lineout' ? 'Touche' : 'Mêlée') + ' placée : 30 joueurs. Déplacez-les si besoin.');
+    toast((formation.opts.type === 'custom' ? `Formation « ${formation.opts.name} »` : formation.opts.type === 'lineout' ? 'Touche' : 'Mêlée') + ` placée : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
   }
 
   function setTool(id) {
