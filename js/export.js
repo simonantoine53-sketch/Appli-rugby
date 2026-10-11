@@ -13,9 +13,10 @@
     const hold = drawing.settings.stepDuration || 1200;
     const trans = Math.max(200, hold * 0.7);
     const frames = [];
-    const push = objs => frames.push(objs);
+    const push = (objs, note) => frames.push({ objects: objs, note: note || '' });
     steps.forEach((st, i) => {
-      for (let t = 0; t < hold; t += dt) push(st.objects);
+      const stepHold = (st.duration || hold) * (st.hold ? 1.6 : 1);
+      for (let t = 0; t < stepHold; t += dt) push(st.objects, st.note);
       const next = steps[i + 1];
       if (!next) return;
       const a = st.objects, b = next.objects;
@@ -23,7 +24,7 @@
         const e = ease(t / trans), list = [];
         a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
         b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
-        push(list);
+        push(list, next.note);
       }
     });
     return frames;
@@ -141,7 +142,7 @@
     const frames = buildFrames(drawing, dt);
     const canvases = [];
     for (let i = 0; i < frames.length; i++) {
-      canvases.push(await rasterize(sceneFn(drawing.settings, frames[i]), spec.W, spec.H, scale));
+      canvases.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note), spec.W, spec.H, scale));
       if (onProgress) onProgress((i + 1) / frames.length * 0.8);
     }
     const blob = encodeGif(canvases, dt);
@@ -162,15 +163,20 @@
       // Pré-rendu de toutes les images pour un enregistrement fluide
       const imgs = [];
       for (let i = 0; i < frames.length; i++) {
-        imgs.push(await rasterize(sceneFn(drawing.settings, frames[i]), spec.W, spec.H, scale));
+        imgs.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note), spec.W, spec.H, scale));
         if (onProgress) onProgress((i + 1) / frames.length * 0.5);
       }
-      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+      const wantMp4 = drawing.__format === 'mp4';
+      const candidates = wantMp4
+        ? ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+      const mime = candidates.find(m => MediaRecorder.isTypeSupported(m)) || '';
       const stream = canvas.captureStream(1000 / dt);
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 4e6 } : undefined);
       const chunks = [];
       rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-      rec.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+      const outType = mime.startsWith('video/mp4') ? 'video/mp4' : 'video/webm';
+      rec.onstop = () => { const blob = new Blob(chunks, { type: outType }); blob.ext = outType === 'video/mp4' ? 'mp4' : 'webm'; resolve(blob); };
       rec.onerror = e => reject(e.error || new Error('MediaRecorder'));
       ctx.drawImage(imgs[0], 0, 0);
       rec.start(200);

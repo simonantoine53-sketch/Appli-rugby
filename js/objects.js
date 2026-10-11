@@ -12,31 +12,57 @@
   function dashAttr(obj) { return obj.dashed ? { 'stroke-dasharray': `${(obj.width || 3) * 2.5} ${(obj.width || 3) * 2}` } : {}; }
 
   /* ---------- Géométrie des lignes ---------- */
+  /** Points échantillonnés le long de la ligne (droite ou courbe quadratique via cx, cy). */
+  function lineSamples(obj, n) {
+    const pts = [];
+    if (typeof obj.cx === 'number') {
+      for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; pts.push([u * u * obj.x1 + 2 * u * t * obj.cx + t * t * obj.x2, u * u * obj.y1 + 2 * u * t * obj.cy + t * t * obj.y2]); }
+    } else {
+      for (let i = 0; i <= n; i++) { const t = i / n; pts.push([obj.x1 + (obj.x2 - obj.x1) * t, obj.y1 + (obj.y2 - obj.y1) * t]); }
+    }
+    return pts;
+  }
+
   function linePath(obj) {
-    const { x1, y1, x2, y2 } = obj;
-    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len, uy = dy / len, px = -uy, py = ux;
+    const samples = lineSamples(obj, typeof obj.cx === 'number' ? 48 : 1);
+    const cum = [0];
+    for (let i = 1; i < samples.length; i++) cum.push(cum[i - 1] + Math.hypot(samples[i][0] - samples[i - 1][0], samples[i][1] - samples[i - 1][1]));
+    const len = cum[cum.length - 1] || 1;
     const headLen = obj.arrow ? 10 + (obj.width || 3) * 1.5 : 0;
     const bodyLen = Math.max(0, len - headLen * 0.8);
+    // point et tangente à une abscisse curviligne donnée
+    const at = d => {
+      let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+      const seg = cum[i] - cum[i - 1] || 1, k = Math.max(0, Math.min(1, (d - cum[i - 1]) / seg));
+      const p = [samples[i - 1][0] + (samples[i][0] - samples[i - 1][0]) * k, samples[i - 1][1] + (samples[i][1] - samples[i - 1][1]) * k];
+      const tx = samples[i][0] - samples[i - 1][0], ty = samples[i][1] - samples[i - 1][1], tl = Math.hypot(tx, ty) || 1;
+      return { p, ux: tx / tl, uy: ty / tl };
+    };
     let d;
     if (obj.style === 'wavy' || obj.style === 'zigzag') {
       const wave = obj.style === 'wavy' ? 18 : 22, amp = obj.style === 'wavy' ? 6 : 7;
       const pts = [];
       const step = obj.style === 'wavy' ? 2 : wave / 2;
       for (let t = 0; t <= bodyLen; t += step) {
+        const q = at(t);
         const off = obj.style === 'wavy' ? Math.sin(t / wave * Math.PI * 2) * amp : (Math.round(t / (wave / 2)) % 2 === 0 ? -amp : amp) * (t === 0 ? 0 : 1);
-        pts.push([x1 + ux * t + px * off, y1 + uy * t + py * off]);
+        pts.push([q.p[0] - q.uy * off, q.p[1] + q.ux * off]);
       }
-      pts.push([x1 + ux * bodyLen, y1 + uy * bodyLen]);
+      pts.push(at(bodyLen).p);
+      d = 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+    } else if (typeof obj.cx === 'number') {
+      const pts = []; for (let t = 0; t <= bodyLen; t += 4) pts.push(at(t).p); pts.push(at(bodyLen).p);
       d = 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
     } else {
-      d = `M${x1} ${y1}L${x1 + ux * bodyLen} ${y1 + uy * bodyLen}`;
+      const e = at(bodyLen).p;
+      d = `M${obj.x1} ${obj.y1}L${e[0]} ${e[1]}`;
     }
     let head = null;
     if (obj.arrow) {
-      const hw = headLen * 0.5;
-      const bx = x2 - ux * headLen, by = y2 - uy * headLen;
-      head = `M${x2} ${y2}L${bx + px * hw} ${by + py * hw}L${bx - px * hw} ${by - py * hw}Z`;
+      const q = at(Math.max(0, len - headLen));
+      const ux = q.ux, uy = q.uy, px = -uy, py = ux, hw = headLen * 0.5;
+      const bx = obj.x2 - ux * headLen, by = obj.y2 - uy * headLen;
+      head = `M${obj.x2} ${obj.y2}L${bx + px * hw} ${by + py * hw}L${bx - px * hw} ${by - py * hw}Z`;
     }
     return { d, head };
   }
@@ -142,6 +168,7 @@
           inner.appendChild(svgEl('circle', { r: PLAYER_R, fill, stroke: '#fff', 'stroke-width': 2.5 }));
           if (obj.label) inner.appendChild(svgEl('text', { y: 0, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12, 'font-weight': 700, fill: textFill, 'font-family': 'Arial, sans-serif' }, [String(obj.label)]));
         }
+        if (obj.name) inner.appendChild(svgEl('text', { y: (obj.jersey ? 24 : PLAYER_R + 11), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#fff', stroke: 'rgba(0,0,0,.55)', 'stroke-width': 2.5, 'paint-order': 'stroke', 'font-family': 'Arial, sans-serif' }, [String(obj.name)]));
         if (obj.ball) {
           inner.appendChild(svgEl('g', { transform: `translate(${PLAYER_R * 0.95} ${-PLAYER_R * 0.9}) rotate(-30)` }, [
             svgEl('ellipse', { rx: 9, ry: 5.2, fill: '#fff', stroke: '#333', 'stroke-width': 1.2 }),
@@ -166,7 +193,7 @@
         }
         return { x: obj.x, y: obj.y, w: obj.w, h: obj.h };
       }
-      case 'line': return { x: Math.min(obj.x1, obj.x2), y: Math.min(obj.y1, obj.y2), w: Math.abs(obj.x2 - obj.x1), h: Math.abs(obj.y2 - obj.y1) };
+      case 'line': { const xs = [obj.x1, obj.x2], ys = [obj.y1, obj.y2]; if (typeof obj.cx === 'number') { xs.push((obj.x1 + 2 * obj.cx + obj.x2) / 4); ys.push((obj.y1 + 2 * obj.cy + obj.y2) / 4); } const x = Math.min(...xs), y = Math.min(...ys); return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }; }
       case 'free': {
         const xs = obj.points.map(p => p[0]), ys = obj.points.map(p => p[1]);
         const x = Math.min(...xs), y = Math.min(...ys);
@@ -184,7 +211,7 @@
   }
 
   function move(obj, dx, dy) {
-    if (obj.type === 'line') { obj.x1 += dx; obj.y1 += dy; obj.x2 += dx; obj.y2 += dy; }
+    if (obj.type === 'line') { obj.x1 += dx; obj.y1 += dy; obj.x2 += dx; obj.y2 += dy; if (typeof obj.cx === 'number') { obj.cx += dx; obj.cy += dy; } }
     else if (obj.type === 'free' || (obj.type === 'shape' && obj.points)) { obj.points = obj.points.map(p => [p[0] + dx, p[1] + dy]); }
     else { obj.x += dx; obj.y += dy; }
   }
@@ -194,7 +221,7 @@
 
   /** Points d'une ligne/tracé libre avec abscisses curvilignes. */
   function pathSamples(line) {
-    const pts = line.type === 'free' ? line.points : [[line.x1, line.y1], [line.x2, line.y2]];
+    const pts = line.type === 'free' ? line.points : lineSamples(line, typeof line.cx === 'number' ? 32 : 1);
     const cum = [0];
     for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
     return { pts, cum, len: cum[cum.length - 1] || 1 };
@@ -224,7 +251,7 @@
    *  pathsFrom : objets de l'étape de départ, pour suivre une course dessinée. */
   function lerpObject(a, b, t, pathsFrom) {
     const out = JSON.parse(JSON.stringify(b));
-    ['x', 'y', 'w', 'h', 'x1', 'y1', 'x2', 'y2', 'rot', 'scale', 'size'].forEach(k => {
+    ['x', 'y', 'w', 'h', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'rot', 'scale', 'size'].forEach(k => {
       if (typeof a[k] === 'number' && typeof b[k] === 'number') out[k] = a[k] + (b[k] - a[k]) * t;
     });
     if (a.points && b.points && a.points.length === b.points.length) out.points = b.points.map((p, i) => [a.points[i][0] + (p[0] - a.points[i][0]) * t, a.points[i][1] + (p[1] - a.points[i][1]) * t]);
@@ -238,5 +265,5 @@
     return out;
   }
 
-  global.RugbyObjects = { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE, PLAYER_R, colorOf };
+  global.RugbyObjects = { renderObject, bounds, move, lerpObject, polyPoints, lineSamples, EQUIP_SIZE, PLAYER_R, colorOf };
 })(window);

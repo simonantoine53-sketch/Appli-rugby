@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const { svgEl, fieldSpec, renderField, SVG_NS } = window.RugbyField;
+  const { svgEl, fieldSpec, renderField, SVG_NS, M, PAD } = window.RugbyField;
   const { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
   const { TOOL_GROUPS, TOOLS, COLORS } = window.RugbyPalette;
 
@@ -14,7 +14,7 @@
 
   /* ---------- État ---------- */
   function newDrawing() {
-    return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
+    return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', category: '', tags: '', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200, snap: false }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
   }
   const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [], multiMode: false, axisMode: false };
   /** Identifiants sélectionnés (sélection multiple avec Maj, sinon l'objet courant). */
@@ -83,6 +83,9 @@
       overlayG.append(handle(obj.x, obj.y, 'nw'), handle(obj.x + obj.w, obj.y, 'ne'), handle(obj.x, obj.y + obj.h, 'sw'), handle(obj.x + obj.w, obj.y + obj.h, 'se'));
     } else if (obj.type === 'line') {
       overlayG.append(handle(obj.x1, obj.y1, 'p1', 'endpoint'), handle(obj.x2, obj.y2, 'p2', 'endpoint'));
+      const curved = typeof obj.cx === 'number';
+      const mx = curved ? (obj.x1 + 2 * obj.cx + obj.x2) / 4 : (obj.x1 + obj.x2) / 2, my = curved ? (obj.y1 + 2 * obj.cy + obj.y2) / 4 : (obj.y1 + obj.y2) / 2;
+      const c = handle(mx, my, 'c', 'curve'); c.setAttribute('r', 6); if (!curved) c.setAttribute('fill-opacity', '.5'); overlayG.appendChild(c);
     }
   }
 
@@ -288,6 +291,28 @@
     }
   }
 
+  /* ---------- Grille magnétique (option) ---------- */
+  function snapPoint(p) {
+    if (!state.drawing.settings.snap) return p;
+    const spec = fieldSpec(state.drawing.settings);
+    const L = spec.lengthM, W = spec.widthM;
+    const along = [0, 10, 15, 32, 50, 60].concat(L === 120 ? [70, 88, 105, 110, 120] : []);
+    const across = [0, 5, 15, 35, W - 15, W - 5, W];
+    const grid = 2.5;
+    const snap1 = (v, lines) => { // v en mètres
+      let best = null, bd = 1.2;
+      lines.forEach(l => { const d = Math.abs(v - l); if (d < bd) { bd = d; best = l; } });
+      if (best !== null) return best;
+      const g = Math.round(v / grid) * grid; return Math.abs(v - g) < 0.6 ? g : v;
+    };
+    const toM = v => (v - PAD) / M, toPx = v => PAD + v * M;
+    if (spec.landscape) return { x: toPx(snap1(toM(p.x), along)), y: toPx(snap1(toM(p.y), across)) };
+    // portrait : x correspond à la largeur inversée, y à la longueur
+    const lx = p.y, ly = spec.Hl - p.x;
+    const sx = toPx(snap1(toM(lx), along)), sy = toPx(snap1(toM(ly), across));
+    return { x: spec.Hl - sy, y: sx };
+  }
+
   /* ---------- Interactions souris ---------- */
   function toSvg(evt) {
     const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
@@ -303,7 +328,7 @@
     if (state.tool === 'formation') { placeFormation(p); return; }
     const t = state.tool && TOOLS[state.tool];
     if (t) {
-      const obj = makeObject(t, p);
+      const obj = makeObject(t, (t.kind === 'player' || t.kind === 'equip') ? snapPoint(p) : p);
       if (t.kind === 'text') {
         const txt = prompt('Texte à afficher :', 'Texte');
         if (!txt) return;
@@ -367,11 +392,19 @@
       else if (drag.kind === 'line') { const q = snapTo(o.x1, o.y1); o.x2 = q.x; o.y2 = q.y; }
       else if (drag.kind === 'free') { const last = o.points[o.points.length - 1]; if (Math.hypot(p.x - last[0], p.y - last[1]) > 3) o.points.push([p.x, p.y]); }
     } else if (drag.mode === 'move') {
-      (drag.group || [{ obj: o, orig: drag.orig }]).forEach(g => { Object.assign(g.obj, clone(g.orig)); move(g.obj, dx, dy); });
+      const group = drag.group || [{ obj: o, orig: drag.orig }];
+      let sdx = dx, sdy = dy;
+      if (state.drawing.settings.snap && group.length === 1 && typeof o.x === 'number' && (o.type === 'player' || o.type === 'equip')) {
+        const sp = snapPoint({ x: drag.orig.x + dx, y: drag.orig.y + dy }); sdx = sp.x - drag.orig.x; sdy = sp.y - drag.orig.y;
+      }
+      group.forEach(g => { Object.assign(g.obj, clone(g.orig)); move(g.obj, sdx, sdy); });
     } else if (drag.mode === 'handle') {
       const r = drag.orig; Object.assign(o, clone(r));
       const n = drag.name;
-      if (n === 'p1') { const q = snapTo(r.x2, r.y2); o.x1 = q.x; o.y1 = q.y; }
+      if (n === 'c') { // point de passage : la courbe passe par le point tiré
+        o.cx = 2 * p.x - (r.x1 + r.x2) / 2; o.cy = 2 * p.y - (r.y1 + r.y2) / 2;
+      }
+      else if (n === 'p1') { const q = snapTo(r.x2, r.y2); o.x1 = q.x; o.y1 = q.y; }
       else if (n === 'p2') { const q = snapTo(r.x1, r.y1); o.x2 = q.x; o.y2 = q.y; }
       else if (n[0] === 'v') { o.points = polyPoints(r).map(q => q.slice()); o.points[+n.slice(1)] = [p.x, p.y]; }
       else {
@@ -508,6 +541,7 @@
     if (obj.type === 'shape') btn('Rempli', 'Remplir la forme', obj.fill, () => { obj.fill = !obj.fill; });
     if (obj.type === 'line') {
       btn('Flèche', 'Pointe de flèche', obj.arrow, () => { obj.arrow = !obj.arrow; });
+      if (typeof obj.cx === 'number') btn('Redresser', 'Supprimer la courbure', false, () => { delete obj.cx; delete obj.cy; });
       const sel = document.createElement('select'); sel.className = 'pbtn';
       [['straight', 'Droite'], ['wavy', 'Ondulée'], ['zigzag', 'Zigzag']].forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; o.selected = obj.style === v; sel.appendChild(o); });
       sel.onchange = () => { const b = snapshot(); obj.style = sel.value; commit(b); };
@@ -520,6 +554,11 @@
       inp.onfocus = () => { inp.dataset.before = snapshot(); };
       inp.onblur = () => { if (inp.dataset.before) { commit(inp.dataset.before); } };
       add(inp);
+      const nameInp = document.createElement('input'); nameInp.type = 'text'; nameInp.placeholder = 'Nom'; nameInp.maxLength = 18; nameInp.value = obj.name || ''; nameInp.style.width = '110px'; nameInp.setAttribute('list', 'player-names');
+      nameInp.oninput = () => { obj.name = nameInp.value; render_objectsOnly(); };
+      nameInp.onfocus = () => { nameInp.dataset.before = snapshot(); if (window.RugbyAccount && window.RugbyAccount.memberNames) window.RugbyAccount.memberNames().then(names => { const dl = $('#player-names'); dl.replaceChildren(); names.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }); };
+      nameInp.onblur = () => { if (nameInp.dataset.before) commit(nameInp.dataset.before); };
+      add(nameInp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
       btn('🏉 Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
     }
@@ -545,11 +584,19 @@
   function render_objectsOnly() { objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
 
   /* ---------- Étapes ---------- */
-  function sceneSvg(settings, objects) {
+  function sceneSvg(settings, objects, note) {
     const spec = fieldSpec(settings);
     const s = svgEl('svg', { xmlns: SVG_NS, viewBox: `0 0 ${spec.W} ${spec.H}` });
     s.appendChild(renderField(spec));
     s.appendChild(svgEl('g', {}, objects.map(renderObject)));
+    if (note) {
+      const lines = String(note).split('\n').slice(0, 3);
+      const w = Math.min(spec.W - 24, Math.max(...lines.map(l => l.length)) * 9.5 + 28), h = 14 + lines.length * 20;
+      const g = svgEl('g', { transform: `translate(12 10)` });
+      g.appendChild(svgEl('rect', { width: w, height: h, rx: 8, fill: 'rgba(15,23,42,.78)' }));
+      lines.forEach((l, i) => g.appendChild(svgEl('text', { x: 14, y: 24 + i * 20, 'font-size': 16, 'font-weight': 700, fill: '#fff', 'font-family': 'Arial, Helvetica, sans-serif' }, [l])));
+      s.appendChild(g);
+    }
     return s;
   }
 
@@ -562,8 +609,20 @@
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
         <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
         <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}</div>`;
-      card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects));
+      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}${st.note ? ' · 📝' : ''}${st.hold ? ' · ⏸' : ''}${st.duration ? ' · ' + (st.duration / 1000).toLocaleString('fr-FR') + ' s' : ''}</div>`;
+      card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note));
+      if (i === state.step) {
+        const opts = document.createElement('div'); opts.className = 'step-opts';
+        opts.innerHTML = `<input type="text" class="step-note" placeholder="Note affichée pendant l'aperçu (ex. « Regarder la fixation du 10 »)" maxlength="90">
+          <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">auto</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
+          <label><input type="checkbox" class="step-hold"> Pause sur cette étape</label></div>`;
+        opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
+        const note = opts.querySelector('.step-note'); note.value = st.note || '';
+        note.onfocus = () => { note.dataset.before = snapshot(); }; note.oninput = () => { st.note = note.value; }; note.onblur = () => { if (note.dataset.before) { commit(note.dataset.before); } };
+        const dur = opts.querySelector('.step-dur'); dur.value = String(st.duration || 0); dur.onchange = () => { const b = snapshot(); st.duration = +dur.value || undefined; commit(b); };
+        const hold = opts.querySelector('.step-hold'); hold.checked = !!st.hold; hold.onchange = () => { const b = snapshot(); st.hold = hold.checked || undefined; commit(b); };
+        card.appendChild(opts);
+      }
       card.onclick = () => { state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
       card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects) }); state.step = i + 1; state.selected = null; commit(b); };
       card.querySelector('.del').onclick = e => {
@@ -617,8 +676,14 @@
     $('#step-duration').value = s.stepDuration || 1200;
     $('#step-duration-val').textContent = ((s.stepDuration || 1200) / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s';
     $('#title').value = state.drawing.title;
+    $('#drawing-category').value = state.drawing.category || '';
+    $('#drawing-tags').value = state.drawing.tags || '';
+    $('#snap-toggle').checked = !!s.snap;
   }
   $('#title').onchange = e => { state.drawing.title = e.target.value.trim() || 'Sans titre'; e.target.value = state.drawing.title; afterChange(); };
+  $('#drawing-category').onchange = e => { const b = snapshot(); state.drawing.category = e.target.value; commit(b); };
+  $('#drawing-tags').onchange = e => { const b = snapshot(); state.drawing.tags = e.target.value.trim(); commit(b); };
+  $('#snap-toggle').onchange = e => { state.drawing.settings.snap = e.target.checked; toast(e.target.checked ? 'Aimantation activée : les joueurs s’accrochent aux lignes et à une grille de 2,5 m.' : 'Aimantation désactivée.'); };
 
   /* ---------- Aperçu animé ---------- */
   const preview = { playing: false, step: 0, raf: null };
@@ -630,8 +695,8 @@
   }
   function showPreviewStep(i, objects) {
     const st = state.drawing.steps[i];
-    $('#preview-canvas').replaceChildren(sceneSvg(state.drawing.settings, objects || st.objects));
-    $('#preview-step').textContent = `Étape ${i + 1} / ${state.drawing.steps.length}`;
+    $('#preview-canvas').replaceChildren(sceneSvg(state.drawing.settings, objects || st.objects, st.note));
+    $('#preview-step').textContent = `Étape ${i + 1} / ${state.drawing.steps.length}` + (st.hold ? ' · pause' : '');
   }
   function animateTo(next, done) {
     const a = state.drawing.steps[preview.step].objects, b = state.drawing.steps[next].objects;
@@ -650,9 +715,13 @@
   }
   function playLoop() {
     if (!preview.playing) return;
+    const cur = state.drawing.steps[preview.step];
     const next = (preview.step + 1) % state.drawing.steps.length;
-    const hold = state.drawing.settings.stepDuration || 1200;
-    preview.timer = setTimeout(() => { if (!preview.playing) return; animateTo(next, playLoop); }, hold * 0.6);
+    const hold = cur.duration || state.drawing.settings.stepDuration || 1200;
+    preview.timer = setTimeout(() => {
+      if (!preview.playing) return;
+      animateTo(next, () => { if (state.drawing.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
+    }, hold * 0.6);
   }
   function setPlaying(on) {
     preview.playing = on; $('#preview-play').textContent = on ? '⏸ Pause' : '▶ Lire';
@@ -695,20 +764,40 @@
     if (window.RugbyAccount && window.RugbyAccount.isActive() && !window.RugbyAccount.canUse('export')) return;
     const kind = b.dataset.export;
     if (kind === 'png') return exportPng();
+    if (kind === 'pdf') return exportPdf();
     if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
     const label = kind === 'gif' ? 'Création du GIF animé…' : 'Enregistrement de la vidéo…';
     const prog = showProgress(label);
     const fn = kind === 'gif' ? window.RugbyExport.exportGif : window.RugbyExport.exportWebm;
+    state.drawing.__format = kind;
     fn(state.drawing, sceneSvg, prog.update)
-      .then(blob => { download(blob, `${slug(state.drawing.title)}.${kind}`); toast(kind === 'gif' ? 'GIF animé exporté.' : 'Vidéo exportée.'); })
+      .then(blob => { const ext = kind === 'gif' ? 'gif' : (blob.ext || 'webm'); download(blob, `${slug(state.drawing.title)}.${ext}`); toast(kind === 'gif' ? 'GIF animé exporté.' : (ext === 'mp4' ? 'Vidéo MP4 exportée.' : 'Vidéo WebM exportée (MP4 non pris en charge par ce navigateur).')); })
       .catch(err => toast('Export impossible : ' + (err && err.message ? err.message : err)))
-      .finally(prog.close);
+      .finally(() => { delete state.drawing.__format; prog.close(); });
   });
   function showProgress(label) {
     const el = document.createElement('div'); el.className = 'progress';
     el.innerHTML = `<div class="box"><div class="lbl"></div><div class="bar"><i></i></div></div>`;
     el.querySelector('.lbl').textContent = label; document.body.appendChild(el);
     return { update: p => { el.querySelector('i').style.width = Math.round(p * 100) + '%'; }, close: () => el.remove() };
+  }
+
+  /* ---------- Fiche PDF (impression) ---------- */
+  function exportPdf() {
+    const d = state.drawing;
+    const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const steps = d.steps.map((st, i) => `<section class="step"><h2>Étape ${i + 1}${st.note ? ' · ' + esc(st.note) : ''}</h2>${new XMLSerializer().serializeToString(sceneSvg(d.settings, st.objects))}</section>`).join('');
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${esc(d.title)}</title>
+      <style>body{font-family:Arial,Helvetica,sans-serif;margin:16mm;color:#1f2933}h1{margin:0 0 2px;font-size:22px}.sub{color:#666;margin:0 0 14px;font-size:13px}
+      .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.step{break-inside:avoid;border:1px solid #ddd;border-radius:8px;padding:8px}.step h2{font-size:14px;margin:0 0 6px}.step svg{width:100%;height:auto;border-radius:6px}
+      @media print{.noprint{display:none}}@page{margin:12mm}</style></head><body>
+      <h1>${esc(d.title)}</h1><p class="sub">${esc([d.category, d.tags].filter(Boolean).join(' · '))}${d.category || d.tags ? ' · ' : ''}${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · Appli Rugby Strat</p>
+      <p class="noprint"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></p>
+      <div class="grid">${steps}</div></body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) { toast('Autorisez les fenêtres surgissantes pour la fiche PDF.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* l'utilisateur imprimera depuis le bouton */ } }, 400);
   }
 
   /* ---------- JSON import / export ---------- */
@@ -734,25 +823,58 @@
 
   function loadDrawing(d) {
     if (!d || !Array.isArray(d.steps) || !d.steps.length) throw new Error('bad drawing');
-    d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200 }, d.settings || {});
+    d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200, snap: false }, d.settings || {});
+    if (d.category === undefined) d.category = ''; if (d.tags === undefined) d.tags = '';
     state.drawing = d; state.step = 0; state.selected = null; state.history = []; state.future = [];
     renderField_(); applySettingsToUI(); afterChange();
   }
 
   /** Page d'accueil en mode local : dessins stockés sur cet appareil. */
+  const CATEGORIES = ['Attaque', 'Défense', 'Touche', 'Mêlée', 'Jeu au pied', 'Physique', 'Entraînement', 'Match', 'Autre'];
+  const homeFilter = { q: '', cat: '' };
+  /** Filtre une liste de dessins (objets avec title, category, tags) selon la recherche et la catégorie. */
+  function filterDrawings(list) {
+    const q = homeFilter.q.trim().toLowerCase();
+    return list.filter(d => (!homeFilter.cat || (d.category || '') === homeFilter.cat) && (!q || `${d.title} ${d.category || ''} ${d.tags || ''}`.toLowerCase().includes(q)));
+  }
+  /** Barre de recherche + catégories, rendue au-dessus d'une liste. */
+  function filterBar(onChange, counts) {
+    const bar = document.createElement('div'); bar.className = 'filter-bar';
+    const inp = document.createElement('input'); inp.type = 'search'; inp.placeholder = 'Rechercher un dessin…'; inp.value = homeFilter.q;
+    inp.oninput = () => { homeFilter.q = inp.value; onChange(); };
+    bar.appendChild(inp);
+    const chips = document.createElement('div'); chips.className = 'chips';
+    [['', 'Tout']].concat(CATEGORIES.map(c => [c, c])).forEach(([v, l]) => {
+      const n = counts ? (v ? counts[v] || 0 : null) : null;
+      if (v && counts && !n) return;
+      const b = document.createElement('button'); b.className = 'chip' + (homeFilter.cat === v ? ' on' : ''); b.textContent = l + (n ? ` (${n})` : '');
+      b.onclick = () => { homeFilter.cat = v; onChange(); }; chips.appendChild(b);
+    });
+    bar.appendChild(chips);
+    return bar;
+  }
+  const countByCat = list => list.reduce((acc, d) => { if (d.category) acc[d.category] = (acc[d.category] || 0) + 1; return acc; }, {});
+
   function renderLocalHome() {
     $('#home-tabs').classList.add('hidden');
     const root = $('#home-list'); root.replaceChildren();
-    const list = readLib();
-    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); }
-    list.forEach(d => root.appendChild(localCard(d, () => { loadDrawing(clone(d)); go('editor'); })));
+    const all = readLib();
+    if (!all.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); return; }
+    root.appendChild(filterBar(renderLocalHome, countByCat(all)));
+    const list = filterDrawings(all);
+    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin ne correspond à la recherche.'; root.appendChild(p); }
+    list.forEach(d => root.appendChild(localCard(d, () => { loadDrawing(clone(d)); go('editor'); }, () => {
+      const c = clone(d); c.id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(); c.title = d.title + ' (copie)'; c.updatedAt = Date.now();
+      const lib = readLib(); lib.unshift(c); writeLib(lib); renderHome(); toast('Dessin dupliqué.');
+    })));
   }
-  function localCard(d, onOpen) {
+  function localCard(d, onOpen, onDuplicate) {
     const c = document.createElement('div'); c.className = 'lib-card';
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
     c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
     c.querySelector('.name').textContent = d.title;
-    c.querySelector('.date').textContent = `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}`;
+    c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${d.category}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${d.tags.replace(/[<>]/g, '')}` : '');
+    if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
     c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderHome(); } };
     return c;
@@ -797,7 +919,8 @@
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, renderHome, localCard
+    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, renderHome, localCard,
+    filterBar, filterDrawings, countByCat, CATEGORIES
   };
 
   /* ---------- Démarrage ---------- */
