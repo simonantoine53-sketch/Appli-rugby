@@ -307,7 +307,11 @@
     if (seq !== teamSeq) return;
     if (error) { empty(list, 'Erreur : ' + errMsg(error)); return; }
     if (!data.length) { empty(list, visibility === 'team' ? (isCoach() ? 'Aucune stratégie publiée. Ouvrez un de vos dessins depuis l’accueil et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié.') : 'Aucune proposition de joueur pour le moment.'); return; }
-    data.forEach(row => list.appendChild(cloudCard(row, renderTeamPage)));
+    const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
+    if (visibility === 'team') list.appendChild(E.filterBar(renderTeamPage, E.countByCat(withMeta)));
+    const shown = visibility === 'team' ? E.filterDrawings(withMeta) : withMeta;
+    if (!shown.length) { empty(list, 'Aucune stratégie ne correspond à la recherche.'); return; }
+    shown.forEach(row => list.appendChild(cloudCard(row, renderTeamPage)));
   }
 
   /* ---------- Restrictions ---------- */
@@ -366,6 +370,16 @@
     if (error) E.toast(errMsg(error));
   }
 
+  /* ---------- Noms des membres (pour nommer les joueurs) ---------- */
+  const namesCache = {};
+  async function memberNames() {
+    if (!S.user || !S.team) return [];
+    if (namesCache[S.team.id]) return namesCache[S.team.id];
+    const { data } = await sb.from('team_members').select('status, profiles!team_members_user_profile_fk(display_name)').eq('team_id', S.team.id);
+    const names = (data || []).filter(m => m.status === 'active' && m.profiles).map(m => m.profiles.display_name).sort();
+    namesCache[S.team.id] = names; return names;
+  }
+
   /* ---------- Page d'accueil ---------- */
   let libTab = 'mine';
   let renderSeq = 0;
@@ -408,7 +422,11 @@
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Nouveau dessin », puis « Enregistrer le dessin » dans l’éditeur.' : (isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.')); return; }
-    data.forEach(row => root.appendChild(cloudCard(row, renderHome)));
+    const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
+    root.appendChild(E.filterBar(renderHome, E.countByCat(withMeta)));
+    const shown = E.filterDrawings(withMeta);
+    if (!shown.length) { empty(root, 'Aucun dessin ne correspond à la recherche.'); return; }
+    shown.forEach(row => root.appendChild(cloudCard(row, renderHome)));
   }
   function empty(root, msg) { root.appendChild(el('p', 'library-empty', msg)); }
 
@@ -422,7 +440,8 @@
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span></div><div class="date"></div><div class="card-btns"></div>`;
     c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
     c.querySelector('.name').textContent = row.title;
-    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}`;
+    const cat = d.category ? `<span class="vis-badge cat">${esc(d.category)}</span> ` : '';
+    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${cat}${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}${d.tags ? ' · ' + esc(d.tags) : ''}`;
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
@@ -436,6 +455,11 @@
       refresh();
     };
     if (mine || coachHere) btns.appendChild(btn('Ouvrir', 'outline', () => loadCloud(row)));
+    btns.appendChild(btn('Dupliquer', 'outline', async () => {
+      const copy = E.clone(row.data || {}); copy.id = crypto.randomUUID(); copy.title = row.title + ' (copie)';
+      const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
+      if (error) return E.toast(errMsg(error)); E.toast('Copie créée dans « Mes dessins ».'); libTab = 'mine'; refresh();
+    }));
     if (isCoach() && row.visibility !== 'team' && (mine || coachHere)) btns.appendChild(btn(`Publier à l’équipe${S.teams.length > 1 ? ' « ' + S.team.name + ' »' : ''}`, 'primary', () => setVis('team')));
     if (isCoach() && row.visibility === 'team' && coachHere) btns.appendChild(btn('Retirer de l’équipe', 'outline', () => setVis('private')));
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary', () => setVis('proposed')));
@@ -470,6 +494,6 @@
     });
   }
 
-  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

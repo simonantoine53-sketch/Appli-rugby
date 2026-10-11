@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=202610110653">
+  <link rel="stylesheet" href="css/style.css?v=202610110713">
 </head>
 <body>
 
@@ -89,7 +89,9 @@
       <div id="export-menu" class="menu hidden">
         <button data-export="png"><strong>Image PNG</strong><span>L'étape affichée, en haute résolution</span></button>
         <button data-export="gif"><strong>GIF animé</strong><span>Toutes les étapes avec le déplacement des joueurs (WhatsApp, mail…)</span></button>
-        <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD</span></button>
+        <button data-export="mp4"><strong>Vidéo MP4</strong><span>Toutes les étapes en vidéo, lisible sur iPhone (WebM si le navigateur ne sait pas faire de MP4)</span></button>
+        <button data-export="webm"><strong>Vidéo WebM</strong><span>Toutes les étapes en vidéo HD (Chrome, Android)</span></button>
+        <button data-export="pdf"><strong>Fiche PDF</strong><span>Toutes les étapes sur une page à imprimer ou distribuer</span></button>
       </div>
     </div>
     <button id="btn-account" class="btn ghost account">
@@ -161,6 +163,22 @@
         <div class="choice-row">
           <label><input type="radio" name="orientation" value="landscape" checked> Paysage</label>
           <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Catégorie</label>
+        <div class="choice-row">
+          <select id="drawing-category" class="select">
+            <option value="">— aucune —</option>
+            <option>Attaque</option><option>Défense</option><option>Touche</option><option>Mêlée</option><option>Jeu au pied</option><option>Physique</option><option>Entraînement</option><option>Match</option><option>Autre</option>
+          </select>
+          <input id="drawing-tags" type="text" class="select" placeholder="Étiquettes (ex. U16, côté fermé)" maxlength="80">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Aide au placement</label>
+        <div class="choice-row">
+          <label><input type="checkbox" id="snap-toggle"> Aimanter les joueurs aux lignes du terrain (grille de 2,5 m)</label>
         </div>
       </div>
       <div class="field-group">
@@ -312,15 +330,16 @@
 
 <div id="toast" class="toast"></div>
 <input type="file" id="file-import" accept="application/json" hidden>
+<datalist id="player-names"></datalist>
 
-<script src="js/icons.js?v=202610110653"></script>
-<script src="js/field.js?v=202610110653"></script>
-<script src="js/formations.js?v=202610110653"></script>
-<script src="js/objects.js?v=202610110653"></script>
-<script src="js/export.js?v=202610110653"></script>
+<script src="js/icons.js?v=202610110713"></script>
+<script src="js/field.js?v=202610110713"></script>
+<script src="js/formations.js?v=202610110713"></script>
+<script src="js/objects.js?v=202610110713"></script>
+<script src="js/export.js?v=202610110713"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610110653"></script>
-<script src="js/editor.js?v=202610110653"></script>
-<script src="js/account.js?v=202610110653"></script>
+<script src="js/config.js?v=202610110713"></script>
+<script src="js/editor.js?v=202610110713"></script>
+<script src="js/account.js?v=202610110713"></script>
 </body>
 </html>
