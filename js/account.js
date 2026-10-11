@@ -30,6 +30,7 @@
   const isClubMember = () => isSuper() || S.teams.length > 0;
   const ROLE_LABEL = { coach: 'Coach', admin: 'Admin', player: 'Joueur' };
   const roleBadge = r => `<span class="role-badge ${r}">${ROLE_LABEL[r] || r}</span>`;
+  const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const errMsg = e => {
     const m = (e && e.message) || String(e);
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
@@ -52,6 +53,7 @@
     renderAccountButton();
     ready = true;
     refreshCurrentView();
+    if (window.RugbyAdmin) window.RugbyAdmin.onSession();
   }
   sb.auth.getSession().then(({ data }) => refreshSession(data.session));
   sb.auth.onAuthStateChange((_evt, session) => { if ((session && session.user && session.user.id) !== (S.user && S.user.id)) refreshSession(session); });
@@ -59,6 +61,7 @@
   function refreshCurrentView() {
     if (!ready) return;   // la session n'est pas encore connue : on ne redirige pas
     if (location.hash.startsWith('#/team')) { if (S.user) { E.go('team'); } else { E.go('home'); openAuth(); } return; }
+    if (location.hash.startsWith('#/admin')) { if (isSuper()) E.go('admin'); else { E.go('home'); if (!S.user) openAuth(); } return; }
     if (!$('#view-home').classList.contains('hidden')) renderHome();
   }
 
@@ -93,6 +96,7 @@
       countUnseen(team.id);
     }
     renderAccountButton();
+    if (ready && window.RugbyAdmin) window.RugbyAdmin.onSession();
   }
 
   async function countUnseen(teamId) {
@@ -152,6 +156,7 @@
     $('#team-user').textContent = `${S.profile.display_name} · ${S.user.email}`;
     $('#btn-goto-team').textContent = S.team ? `Voir l’équipe « ${S.team.name} »` : 'Créer ou rejoindre une équipe';
     if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
+    $('#btn-admin').classList.toggle('hidden', !isSuper());
   }
   $('#btn-goto-team').onclick = () => { E.closeModal('modal-team'); E.go('team'); };
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.closeModal('modal-team'); E.go('home'); E.toast('Déconnecté.'); };
@@ -335,6 +340,7 @@
     if (error) { E.toast('Sauvegarde impossible : ' + errMsg(error)); return; }
     S.current.owner_id = S.current.owner_id || S.user.id; S.current.team_id = row.team_id;
     E.afterChange();
+    track('save', { steps: (d.steps || []).length, visibility: row.visibility });
     E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
   }
   async function saveSmart() {
@@ -384,7 +390,7 @@
     const { error } = await sb.from('drawings').update({ share_token: token }).eq('id', row.id);
     if (error) return E.toast(errMsg(error));
     row.share_token = token;
-    if (token) shareLink(row); else E.toast('Partage arrêté : le lien ne fonctionne plus.');
+    if (token) { track('share_link'); shareLink(row); } else E.toast('Partage arrêté : le lien ne fonctionne plus.');
   }
   function shareLink(row) {
     const url = shareUrl(row.share_token);
@@ -429,7 +435,7 @@
     const body = $('#comments-input').value.trim(); if (!body || !commentsFor) return;
     const { error } = await sb.from('drawing_comments').insert({ drawing_id: commentsFor.row.id, user_id: S.user.id, body });
     if (error) return E.toast(errMsg(error));
-    $('#comments-input').value = ''; await renderComments();
+    $('#comments-input').value = ''; track('comment', { coach: isCoach() }); await renderComments();
     commentCounts[commentsFor.row.id] = (commentCounts[commentsFor.row.id] || 0) + 1;
     if (commentsFor.refresh) commentsFor.refresh();
   };
@@ -518,6 +524,7 @@
       if (error) return E.toast(errMsg(error));
       if (E.drawing.id === row.id) { S.current.visibility = visibility; S.current.team_id = patch.team_id; }
       if (visibility !== 'private' && window.RugbyPush) window.RugbyPush.notify(row.id, visibility === 'team' ? 'published' : 'proposed');
+      if (visibility !== 'private') track(visibility === 'team' ? 'publish' : 'propose', { steps: ((row.data || {}).steps || []).length, category: (row.data || {}).category || '' });
       E.toast(visibility === 'team' ? `Publié dans « ${S.team.name} » : toute l’équipe peut la voir.` : visibility === 'proposed' ? `Proposé au coach de « ${S.team.name} ».` : 'Retiré, redevenu privé.');
       refresh();
     };
@@ -525,7 +532,7 @@
     btns.appendChild(btn('Dupliquer', 'outline', async () => {
       const copy = E.clone(row.data || {}); copy.id = crypto.randomUUID(); copy.title = row.title + ' (copie)';
       const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
-      if (error) return E.toast(errMsg(error)); E.toast('Copie créée dans « Mes dessins ».'); libTab = 'mine'; refresh();
+      if (error) return E.toast(errMsg(error)); track('duplicate'); E.toast('Copie créée dans « Mes dessins ».'); libTab = 'mine'; refresh();
     }));
     if (isCoach() && row.visibility !== 'team' && (mine || coachHere)) btns.appendChild(btn(`Publier à l’équipe${S.teams.length > 1 ? ' « ' + S.team.name + ' »' : ''}`, 'primary', () => setVis('team')));
     if (isCoach() && row.visibility === 'team' && coachHere) btns.appendChild(btn('Retirer de l’équipe', 'outline', () => setVis('private')));
@@ -569,6 +576,14 @@
     });
   }
 
-  window.RugbyAccount = { sb, user: () => S.user, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  /** Ouvre la page d'une équipe (super-admin : n'importe quelle équipe). */
+  async function openTeam(id) {
+    if (!S.teams.find(t => t.id === id)) await loadTeams();
+    const t = S.teams.find(x => x.id === id);
+    if (!t) return E.toast('Équipe introuvable.');
+    setTeam(t); teamTab = 'strats'; E.go('team');
+  }
+
+  window.RugbyAccount = { sb, user: () => S.user, team: () => S.team, isSuper, openTeam, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

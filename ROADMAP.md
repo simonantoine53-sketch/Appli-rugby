@@ -15,6 +15,13 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Catégories et recherche, duplication, durée et pause par étape, note de coaching par étape, noms des joueurs depuis l'effectif, flèches courbes, grille magnétique (option), export PDF et MP4.
 - Mode présentation plein écran (flèches / espace / clic pour avancer), lien de partage public en lecture seule, commentaires des joueurs avec réponse du coach, notifications push (publication et proposition ; sur iPhone l'appli doit être ajoutée à l'écran d'accueil).
 
+## Back-office super-admin (11 octobre 2026)
+- Verrou : personne ne peut se passer super-admin soi-même (droits de colonne + trigger).
+- Bouton « Mon avis » (accueil et Mon compte) : bug / idée / autre, contexte joint automatiquement ; l'auteur voit le statut et la réponse.
+- Page Back-office (`#/admin`, depuis Mon compte, réservée aux super-admins) : vue d'ensemble (comptes actifs, temps d'usage, part éditeur, mobile, outils, exports, terrains, catégories), retours avec statut / note interne / réponse, toutes les équipes (ouvrir, renommer, nouveau code, supprimer), tous les comptes (équipes, dernière connexion, temps, promotion super-admin), métadonnées des stratégies, demandes d'adhésion, erreurs JS, bandeau d'annonce, options de fonctionnalités par équipe.
+- Suivi d'usage : événements (outil, export, aperçu, présentation, publication…) et sessions de temps (toutes les 60 s quand l'onglet est visible).
+- Plus tard : désactiver / supprimer un compte, réinitialiser un mot de passe (Edge Function avec clé service), statut d'abonnement par club.
+
 ## À noter pour l'éditeur
 - **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
 - **Cadrage par étape** (idée touche) : chaque étape mémorise un cadrage (zoom + centre). On zoome sur la touche pour détailler la combinaison (sauteur, lift, lancer), puis l'étape suivante dézoome pour le lancement des trois-quarts ; l'aperçu et les exports animent le zoom entre les étapes. À faire après validation terrain.

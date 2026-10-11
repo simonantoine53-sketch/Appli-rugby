@@ -9,6 +9,8 @@
   const $ = s => document.querySelector(s);
   const uid = () => Math.random().toString(36).slice(2, 10);
   const clone = o => JSON.parse(JSON.stringify(o));
+  const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
+  const TOOL_GROUP = {}; TOOL_GROUPS.forEach(g => g.tools.forEach(t => { TOOL_GROUP[t.id] = g.id; }));
   const LIB_KEY = 'rugby-drawings-v1';
   const CUR_KEY = 'rugby-drawing-current-v1';
 
@@ -258,10 +260,12 @@
     state.selected = null;
     commit(before);
     setTool(null);
+    track('formation', { type: formation.opts.type });
     toast((formation.opts.type === 'custom' ? `Formation « ${formation.opts.name} »` : formation.opts.type === 'lineout' ? 'Touche' : 'Mêlée') + ` placée : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
   }
 
   function setTool(id) {
+    if (id && id !== state.tool && id !== 'formation') track('tool', { tool: id, group: TOOL_GROUP[id] || '?' });
     state.tool = id;
     if (id) closeDrawer();
     if (id && TOOLS[id] && TOOLS[id].kind === 'player' && TOOLS[id].color) state.lastPlayerColor = TOOLS[id].color;
@@ -645,7 +649,7 @@
       root.appendChild(card);
     });
   }
-  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()) }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); };
+  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()) }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); track('step_add', { steps: state.drawing.steps.length }); };
 
   /* ---------- Onglets & réglages ---------- */
   function activateTab(name) {
@@ -703,6 +707,7 @@
     preview.drawing = null; preview.canvas = '#preview-canvas'; preview.label = '#preview-step'; preview.playBtn = '#preview-play';
     preview.step = state.step; preview.playing = false;
     openModal('modal-preview');
+    track('preview', { steps: state.drawing.steps.length });
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
   }
@@ -759,7 +764,7 @@
     if (on && m.requestFullscreen && !document.fullscreenElement) m.requestFullscreen().catch(() => {});
     if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
   }
-  $('#preview-full').onclick = () => setPresenting(!$('#modal-preview').classList.contains('presenting'));
+  $('#preview-full').onclick = () => { const on = !$('#modal-preview').classList.contains('presenting'); if (on) track('present'); setPresenting(on); };
   document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && $('#modal-preview').classList.contains('presenting')) $('#modal-preview').classList.remove('presenting'), $('#preview-full').textContent = '⛶ Plein écran'; });
   $('#preview-canvas').addEventListener('click', () => { if ($('#modal-preview').classList.contains('presenting')) previewNext(); });
 
@@ -816,6 +821,7 @@
     exportMenu.classList.add('hidden');
     if (window.RugbyAccount && window.RugbyAccount.isActive() && !window.RugbyAccount.canUse('export')) return;
     const kind = b.dataset.export;
+    track('export', { kind, steps: state.drawing.steps.length });
     if (kind === 'png') return exportPng();
     if (kind === 'pdf') return exportPdf();
     if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
@@ -934,9 +940,9 @@
   }
 
   /* ---------- Navigation accueil / éditeur ---------- */
-  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : location.hash.startsWith('#/s/') ? 'share' : 'home'; }
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : location.hash.startsWith('#/admin') ? 'admin' : location.hash.startsWith('#/s/') ? 'share' : 'home'; }
   const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
-  function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : view === 'admin' ? '#/admin' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
     if (view === 'team' && !(acc && acc.isActive() && acc.isLoggedIn())) {
@@ -944,11 +950,13 @@
       view = 'home';
       if (!waiting && acc && acc.isActive()) acc.openAuth();
     }
-    ['home', 'editor', 'team', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    if (view === 'admin' && !(acc && acc.isActive() && acc.isLoggedIn() && acc.isSuper())) view = 'home';   // account.js redirige une fois la session connue
+    ['home', 'editor', 'team', 'share', 'admin'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
     if (view !== 'share' && preview.drawing) stopPreview();
     if (view === 'share') { closeDrawer(); openShare(shareToken()); return; }
     if (view === 'editor') requestAnimationFrame(fitZoom);
     else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }
+    else if (view === 'admin') { closeDrawer(); if (window.RugbyAdmin) window.RugbyAdmin.render(); }
     else { closeDrawer(); renderHome(); }
   }
   $('#team-back').onclick = () => go('home');
@@ -961,7 +969,7 @@
   }
   window.addEventListener('hashchange', () => showView(currentView()));
   $('#home-resume').onclick = () => go('editor');
-  $('#home-new').onclick = () => { loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
+  $('#home-new').onclick = () => { track('new_drawing'); loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
   $('#btn-library').onclick = () => go('home');
 
   /* ---------- Modales & toast ---------- */
