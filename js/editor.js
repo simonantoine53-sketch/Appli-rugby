@@ -16,7 +16,11 @@
   function newDrawing() {
     return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
   }
-  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, zoom: 1, history: [], future: [] };
+  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [] };
+  /** Identifiants sélectionnés (sélection multiple avec Maj, sinon l'objet courant). */
+  const selIds = () => { const ids = state.multi.filter(id => findObj(id)); if (ids.length) return ids; return state.selected && findObj(state.selected) ? [state.selected] : []; };
+  const selObjs = () => selIds().map(findObj);
+  function clearSelection() { state.selected = null; state.multi = []; }
 
   const svg = $('#canvas');
   const wrap = $('#canvas-wrap');
@@ -38,7 +42,7 @@
   }
   function undo() { if (!state.history.length) return; state.future.push(snapshot()); state.drawing = JSON.parse(state.history.pop()); fixStepIndex(); afterChange(true); }
   function redo() { if (!state.future.length) return; state.history.push(snapshot()); state.drawing = JSON.parse(state.future.pop()); fixStepIndex(); afterChange(true); }
-  function fixStepIndex() { state.step = Math.min(state.step, state.drawing.steps.length - 1); if (state.selected && !findObj(state.selected)) state.selected = null; }
+  function fixStepIndex() { state.step = Math.min(state.step, state.drawing.steps.length - 1); if (state.selected && !findObj(state.selected)) state.selected = null; state.multi = state.multi.filter(id => findObj(id)); }
 
   let saveTimer = null;
   function afterChange(full) {
@@ -68,10 +72,10 @@
 
   function renderOverlay() {
     overlayG.replaceChildren();
-    const obj = state.selected && findObj(state.selected);
-    if (!obj) return;
-    const b = bounds(obj);
-    overlayG.appendChild(svgEl('rect', { class: 'selection-box', x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8 }));
+    const objs = selObjs();
+    objs.forEach(o => { const b = bounds(o); overlayG.appendChild(svgEl('rect', { class: 'selection-box', x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8 })); });
+    if (objs.length !== 1) return;
+    const obj = objs[0];
     const handle = (x, y, name, cls) => svgEl('circle', { class: 'handle ' + (cls || ''), cx: x, cy: y, r: 5, 'data-handle': name });
     if (obj.type === 'shape' && obj.shape === 'poly') {
       polyPoints(obj).forEach((p, i) => overlayG.appendChild(handle(p[0], p[1], 'v' + i, 'vertex')));
@@ -254,6 +258,7 @@
   function setTool(id) {
     state.tool = id;
     if (id) closeDrawer();
+    if (id && TOOLS[id] && TOOLS[id].kind === 'player' && TOOLS[id].color) state.lastPlayerColor = TOOLS[id].color;
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
     svg.classList.toggle('tool-active', !!id);
@@ -276,7 +281,7 @@
       case 'free': return Object.assign(base, { points: [[p.x, p.y]], color: 'white', width: 3, dashed: false });
       case 'text': return Object.assign(base, { x: p.x, y: p.y, text: 'Texte', size: 18, color: 'white' });
       case 'equip': return Object.assign(base, { kind: t.equip, x: p.x, y: p.y, rot: 0, scale: 1 });
-      case 'player': return Object.assign(base, { color: t.color, jersey: !!t.jersey, x: p.x, y: p.y, label: '', scale: 1 });
+      case 'player': return Object.assign(base, { color: t.color || state.lastPlayerColor, jersey: !!t.jersey, ball: !!t.ball, x: p.x, y: p.y, label: '', scale: 1 });
     }
   }
 
@@ -319,14 +324,23 @@
     }
     const g = e.target.closest('[data-id]');
     if (g) {
-      state.selected = g.dataset.id;
-      const obj = findObj(state.selected);
-      drag = { mode: 'move', obj, orig: clone(obj), start: p, before };
+      const id = g.dataset.id;
+      if (e.shiftKey) {
+        // Maj + clic : ajoute ou retire l'objet de la sélection multiple
+        let ids = selIds();
+        ids = ids.includes(id) ? ids.filter(x => x !== id) : ids.concat(id);
+        state.multi = ids.length > 1 ? ids : []; state.selected = ids.length ? ids[ids.length - 1] : null;
+        render(); return;
+      }
+      if (!selIds().includes(id)) { state.selected = id; state.multi = []; }
+      const group = selObjs().map(o => ({ obj: o, orig: clone(o) }));
+      const obj = findObj(id);
+      drag = { mode: 'move', obj, orig: clone(obj), group, start: p, before };
       svg.setPointerCapture(e.pointerId);
       render();
       return;
     }
-    state.selected = null; render();
+    clearSelection(); render();
   });
 
   svg.addEventListener('pointermove', e => {
@@ -349,7 +363,7 @@
       else if (drag.kind === 'line') { const q = snapTo(o.x1, o.y1); o.x2 = q.x; o.y2 = q.y; }
       else if (drag.kind === 'free') { const last = o.points[o.points.length - 1]; if (Math.hypot(p.x - last[0], p.y - last[1]) > 3) o.points.push([p.x, p.y]); }
     } else if (drag.mode === 'move') {
-      Object.assign(o, clone(drag.orig)); move(o, dx, dy);
+      (drag.group || [{ obj: o, orig: drag.orig }]).forEach(g => { Object.assign(g.obj, clone(g.orig)); move(g.obj, dx, dy); });
     } else if (drag.mode === 'handle') {
       const r = drag.orig; Object.assign(o, clone(r));
       const n = drag.name;
@@ -399,13 +413,14 @@
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'd') { e.preventDefault(); duplicateSelected(); return; }
-    if (k === 'Escape') { setTool(null); state.selected = null; render(); return; }
+    if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'a') { e.preventDefault(); const ids = curObjects().map(o => o.id); state.multi = ids.length > 1 ? ids : []; state.selected = ids[ids.length - 1] || null; render(); return; }
+    if (k === 'Escape') { setTool(null); clearSelection(); render(); return; }
     if (k.toLowerCase() === 'v') { setTool(null); return; }
-    if (k === 'Delete' || k === 'Backspace') { if (state.selected) { const b = snapshot(); removeObj(state.selected); state.selected = null; commit(b); } return; }
-    if (k.startsWith('Arrow') && state.selected) {
+    if (k === 'Delete' || k === 'Backspace') { if (selIds().length) { const b = snapshot(); deleteSelected(); commit(b); } return; }
+    if (k.startsWith('Arrow') && selIds().length) {
       e.preventDefault();
-      const d = e.shiftKey ? 10 : 2, obj = findObj(state.selected), b = snapshot();
-      move(obj, k === 'ArrowLeft' ? -d : k === 'ArrowRight' ? d : 0, k === 'ArrowUp' ? -d : k === 'ArrowDown' ? d : 0);
+      const d = e.shiftKey ? 10 : 2, b = snapshot();
+      selObjs().forEach(obj => move(obj, k === 'ArrowLeft' ? -d : k === 'ArrowRight' ? d : 0, k === 'ArrowUp' ? -d : k === 'ArrowDown' ? d : 0));
       commit(b); return;
     }
     const tool = Object.values(TOOLS).find(t => t.key && t.key.toLowerCase() === k.toLowerCase());
@@ -413,21 +428,65 @@
   });
 
   function duplicateSelected() {
-    const obj = findObj(state.selected); if (!obj) return;
-    const b = snapshot(); const c = clone(obj); c.id = uid(); move(c, 20, 20);
-    curObjects().push(c); state.selected = c.id; commit(b);
+    const objs = selObjs(); if (!objs.length) return;
+    const b = snapshot();
+    const copies = objs.map(o => { const c = clone(o); c.id = uid(); move(c, 20, 20); curObjects().push(c); return c.id; });
+    state.multi = copies.length > 1 ? copies : []; state.selected = copies[copies.length - 1];
+    commit(b);
+  }
+  function deleteSelected() { selIds().forEach(removeObj); clearSelection(); }
+
+  /** Alignement et répartition des objets sélectionnés. */
+  function alignSelection(kind) {
+    const objs = selObjs(); if (objs.length < 2) return;
+    const boxes = objs.map(o => ({ o, b: bounds(o) }));
+    const minX = Math.min(...boxes.map(x => x.b.x)), maxX = Math.max(...boxes.map(x => x.b.x + x.b.w));
+    const minY = Math.min(...boxes.map(x => x.b.y)), maxY = Math.max(...boxes.map(x => x.b.y + x.b.h));
+    const midX = (minX + maxX) / 2, midY = (minY + maxY) / 2;
+    if (kind === 'left') boxes.forEach(x => move(x.o, minX - x.b.x, 0));
+    else if (kind === 'right') boxes.forEach(x => move(x.o, maxX - (x.b.x + x.b.w), 0));
+    else if (kind === 'hcenter') boxes.forEach(x => move(x.o, midX - (x.b.x + x.b.w / 2), 0));
+    else if (kind === 'top') boxes.forEach(x => move(x.o, 0, minY - x.b.y));
+    else if (kind === 'bottom') boxes.forEach(x => move(x.o, 0, maxY - (x.b.y + x.b.h)));
+    else if (kind === 'vcenter') boxes.forEach(x => move(x.o, 0, midY - (x.b.y + x.b.h / 2)));
+    else if (kind === 'hdist' || kind === 'vdist') {
+      const horiz = kind === 'hdist';
+      const sorted = boxes.slice().sort((a, b) => horiz ? (a.b.x + a.b.w / 2) - (b.b.x + b.b.w / 2) : (a.b.y + a.b.h / 2) - (b.b.y + b.b.h / 2));
+      const first = sorted[0], last = sorted[sorted.length - 1];
+      const c0 = horiz ? first.b.x + first.b.w / 2 : first.b.y + first.b.h / 2;
+      const c1 = horiz ? last.b.x + last.b.w / 2 : last.b.y + last.b.h / 2;
+      sorted.forEach((x, i) => { const target = c0 + (c1 - c0) * i / (sorted.length - 1); const cur = horiz ? x.b.x + x.b.w / 2 : x.b.y + x.b.h / 2; move(x.o, horiz ? target - cur : 0, horiz ? 0 : target - cur); });
+    }
   }
 
   /* ---------- Barre de propriétés ---------- */
   function renderProps() {
     const box = $('#props');
-    const obj = state.selected && findObj(state.selected);
-    if (!obj) { box.classList.add('hidden'); return; }
+    const sel = selObjs();
+    const obj = sel.length === 1 ? sel[0] : null;
+    if (!sel.length) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
     box.replaceChildren();
     const add = el => box.appendChild(el);
     const sep = () => { const s = document.createElement('span'); s.className = 'sep'; add(s); };
     const btn = (label, title, on, fn, cls) => { const b = document.createElement('button'); b.className = 'pbtn' + (on ? ' on' : '') + (cls ? ' ' + cls : ''); b.innerHTML = label; b.title = title; b.onclick = () => { const s = snapshot(); fn(); commit(s); }; add(b); return b; };
+    if (!obj) {
+      const lbl = document.createElement('span'); lbl.className = 'pcount'; lbl.textContent = `${sel.length} objets`; add(lbl); sep();
+      const ico = (d) => `<svg viewBox="0 0 20 20" width="18" height="18">${d}</svg>`;
+      btn(ico('<path d="M3 2v16" stroke="currentColor" stroke-width="2"/><rect x="5" y="4" width="10" height="4" fill="currentColor"/><rect x="5" y="12" width="6" height="4" fill="currentColor"/>'), 'Aligner à gauche', false, () => alignSelection('left'));
+      btn(ico('<path d="M10 2v16" stroke="currentColor" stroke-width="2"/><rect x="4" y="4" width="12" height="4" fill="currentColor"/><rect x="6" y="12" width="8" height="4" fill="currentColor"/>'), 'Centrer horizontalement', false, () => alignSelection('hcenter'));
+      btn(ico('<path d="M17 2v16" stroke="currentColor" stroke-width="2"/><rect x="5" y="4" width="10" height="4" fill="currentColor"/><rect x="9" y="12" width="6" height="4" fill="currentColor"/>'), 'Aligner à droite', false, () => alignSelection('right'));
+      btn(ico('<path d="M2 3h16" stroke="currentColor" stroke-width="2"/><rect x="4" y="5" width="4" height="10" fill="currentColor"/><rect x="12" y="5" width="4" height="6" fill="currentColor"/>'), 'Aligner en haut', false, () => alignSelection('top'));
+      btn(ico('<path d="M2 10h16" stroke="currentColor" stroke-width="2"/><rect x="4" y="4" width="4" height="12" fill="currentColor"/><rect x="12" y="6" width="4" height="8" fill="currentColor"/>'), 'Centrer verticalement', false, () => alignSelection('vcenter'));
+      btn(ico('<path d="M2 17h16" stroke="currentColor" stroke-width="2"/><rect x="4" y="5" width="4" height="10" fill="currentColor"/><rect x="12" y="9" width="4" height="6" fill="currentColor"/>'), 'Aligner en bas', false, () => alignSelection('bottom'));
+      sep();
+      btn('⇔ Répartir', 'Espacer régulièrement à l’horizontale', false, () => alignSelection('hdist'));
+      btn('⇕ Répartir', 'Espacer régulièrement à la verticale', false, () => alignSelection('vdist'));
+      sep();
+      btn('Dupliquer', 'Dupliquer la sélection (Ctrl+D)', false, () => { const copies = sel.map(o => { const c = clone(o); c.id = uid(); move(c, 20, 20); curObjects().push(c); return c.id; }); state.multi = copies; state.selected = copies[copies.length - 1]; });
+      btn('Supprimer', 'Supprimer la sélection (Suppr)', false, () => deleteSelected(), 'danger');
+      return;
+    }
 
     const hasColor = obj.type !== 'equip';
     if (hasColor) {
@@ -458,6 +517,7 @@
       inp.onblur = () => { if (inp.dataset.before) { commit(inp.dataset.before); } };
       add(inp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
+      btn('🏉 Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
     }
     if (obj.type === 'text') {
       btn('Modifier', 'Modifier le texte', false, () => { const t = prompt('Texte :', obj.text); if (t !== null) obj.text = t; });
@@ -476,7 +536,7 @@
     btn('Dupliquer', 'Dupliquer (Ctrl+D)', false, () => { const c = clone(obj); c.id = uid(); move(c, 20, 20); curObjects().push(c); state.selected = c.id; });
     btn('Devant', 'Mettre au premier plan', false, () => { const a = curObjects(); const i = a.indexOf(obj); a.splice(i, 1); a.push(obj); });
     btn('Derrière', 'Mettre à l’arrière-plan', false, () => { const a = curObjects(); const i = a.indexOf(obj); a.splice(i, 1); a.unshift(obj); });
-    btn('Supprimer', 'Supprimer (Suppr)', false, () => { removeObj(obj.id); state.selected = null; }, 'danger');
+    btn('Supprimer', 'Supprimer (Suppr)', false, () => { removeObj(obj.id); clearSelection(); }, 'danger');
   }
   function render_objectsOnly() { objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
 

@@ -142,6 +142,12 @@
           inner.appendChild(svgEl('circle', { r: PLAYER_R, fill, stroke: '#fff', 'stroke-width': 2.5 }));
           if (obj.label) inner.appendChild(svgEl('text', { y: 0, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 12, 'font-weight': 700, fill: textFill, 'font-family': 'Arial, sans-serif' }, [String(obj.label)]));
         }
+        if (obj.ball) {
+          inner.appendChild(svgEl('g', { transform: `translate(${PLAYER_R * 0.95} ${-PLAYER_R * 0.9}) rotate(-30)` }, [
+            svgEl('ellipse', { rx: 9, ry: 5.2, fill: '#fff', stroke: '#333', 'stroke-width': 1.2 }),
+            svgEl('path', { d: 'M-4 0h8M-2 -1.5v3M0 -1.8v3.6M2 -1.5v3', stroke: '#333', 'stroke-width': 1, fill: 'none' })
+          ]));
+        }
         g.appendChild(inner);
         break;
       }
