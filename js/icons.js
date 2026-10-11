@@ -55,7 +55,13 @@
     icon: `<path d="${SHIRT}" transform="translate(1 1) scale(0.95)" fill="${COLORS[c]}" stroke="${c === 'white' ? '#999' : 'none'}"/>`
   })));
 
+  const formationTools = [
+    { id: 'form-scrum', label: 'Mêlée (15 contre 15)', kind: 'formation', formation: 'scrum', icon: `<g fill="currentColor"><circle cx="9" cy="10" r="2.6"/><circle cx="9" cy="16" r="2.6"/><circle cx="9" cy="22" r="2.6"/><circle cx="4" cy="13" r="2.6"/><circle cx="4" cy="19" r="2.6"/></g><g fill="#e53935"><circle cx="23" cy="10" r="2.6"/><circle cx="23" cy="16" r="2.6"/><circle cx="23" cy="22" r="2.6"/><circle cx="28" cy="13" r="2.6"/><circle cx="28" cy="19" r="2.6"/></g><path d="M16 6v20" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>` },
+    { id: 'form-lineout', label: 'Touche (15 contre 15)', kind: 'formation', formation: 'lineout', icon: `<path d="M4 5h24" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><circle cx="12" cy="11" r="2.4"/><circle cx="12" cy="16" r="2.4"/><circle cx="12" cy="21" r="2.4"/><circle cx="12" cy="26" r="2.4"/></g><g fill="#e53935"><circle cx="20" cy="11" r="2.4"/><circle cx="20" cy="16" r="2.4"/><circle cx="20" cy="21" r="2.4"/><circle cx="20" cy="26" r="2.4"/></g>` }
+  ];
+
   const TOOL_GROUPS = [
+    { id: 'formations', title: 'Formations', tools: formationTools },
     { id: 'shapes', title: 'Formes', tools: shapeTools },
     { id: 'equip', title: 'Équipement', tools: equipTools },
     { id: 'players', title: 'Joueurs', tools: playerTools }

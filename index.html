@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=202610081344">
+  <link rel="stylesheet" href="css/style.css?v=202610110607">
 </head>
 <body>
 
@@ -208,6 +208,49 @@
   </div>
 </div>
 
+<!-- Options d'une formation -->
+<div id="modal-formation" class="modal hidden">
+  <div class="modal-box auth-box">
+    <div class="modal-head">
+      <strong id="formation-title">Placer une formation</strong>
+      <button class="btn-close" data-close="modal-formation" title="Fermer">✕</button>
+    </div>
+    <form id="formation-form" class="form">
+      <div class="field-group">
+        <label class="label">Attaquants</label>
+        <div id="formation-attack" class="swatches"></div>
+      </div>
+      <div class="field-group">
+        <label class="label">Défenseurs</label>
+        <div id="formation-defense" class="swatches"></div>
+      </div>
+      <div class="field-group">
+        <label class="label">Sens de l'attaque</label>
+        <div class="choice-row">
+          <label><input type="radio" name="formation-dir" value="1" checked> Vers la droite →</label>
+          <label><input type="radio" name="formation-dir" value="-1"> ← Vers la gauche</label>
+        </div>
+      </div>
+      <div class="field-group" id="formation-size-group">
+        <label class="label">Touche</label>
+        <div class="choice-row">
+          <label><input type="radio" name="formation-size" value="4"> À 4</label>
+          <label><input type="radio" name="formation-size" value="5"> À 5</label>
+          <label><input type="radio" name="formation-size" value="7" checked> Complète (7)</label>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="choice-row">
+          <label><input type="checkbox" id="formation-numbers" checked> Numéros des joueurs</label>
+          <label><input type="checkbox" id="formation-ball" checked> Ballon</label>
+        </div>
+      </div>
+      <button class="btn primary wide" type="submit">Placer sur le terrain</button>
+      <p class="help">Après validation, touchez le terrain à l'endroit voulu : les 30 joueurs se placent d'un coup. Pour la touche, l'alignement se met sur la ligne de touche la plus proche du point touché.</p>
+    </form>
+  </div>
+</div>
+
 <!-- Connexion / inscription -->
 <div id="modal-auth" class="modal hidden">
   <div class="modal-box auth-box">
@@ -244,13 +287,14 @@
 <div id="toast" class="toast"></div>
 <input type="file" id="file-import" accept="application/json" hidden>
 
-<script src="js/icons.js?v=202610081344"></script>
-<script src="js/field.js?v=202610081344"></script>
-<script src="js/objects.js?v=202610081344"></script>
-<script src="js/export.js?v=202610081344"></script>
+<script src="js/icons.js?v=202610110607"></script>
+<script src="js/field.js?v=202610110607"></script>
+<script src="js/formations.js?v=202610110607"></script>
+<script src="js/objects.js?v=202610110607"></script>
+<script src="js/export.js?v=202610110607"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610081344"></script>
-<script src="js/editor.js?v=202610081344"></script>
-<script src="js/account.js?v=202610081344"></script>
+<script src="js/config.js?v=202610110607"></script>
+<script src="js/editor.js?v=202610110607"></script>
+<script src="js/account.js?v=202610110607"></script>
 </body>
 </html>
