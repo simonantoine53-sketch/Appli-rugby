@@ -153,7 +153,7 @@
         const b = document.createElement('button');
         b.className = 'tool'; b.dataset.tool = t.id; b.title = t.label + (t.key ? ` (${t.key})` : '');
         b.innerHTML = `<svg viewBox="0 0 32 32">${t.icon}</svg>` + (t.key ? `<span class="key">${t.key}</span>` : '');
-        b.onclick = () => setTool(state.tool === t.id ? null : t.id);
+        b.onclick = () => t.kind === 'formation' ? openFormation(t) : setTool(state.tool === t.id ? null : t.id);
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
@@ -164,17 +164,55 @@
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
+  /* ---------- Formations (15 contre 15) ---------- */
+  const formation = { tool: null, opts: { attack: 'blue', defense: 'red' } };
+  function openFormation(t) {
+    closeDrawer();
+    formation.tool = t;
+    $('#formation-title').textContent = t.formation === 'lineout' ? 'Touche : 15 contre 15' : 'Mêlée : 15 contre 15';
+    $('#formation-size-group').classList.toggle('hidden', t.formation !== 'lineout');
+    ['attack', 'defense'].forEach(side => {
+      const box = $('#formation-' + side); box.replaceChildren();
+      Object.keys(COLORS).filter(c => c !== 'white').forEach(c => {
+        const sw = document.createElement('span'); sw.className = 'swatch' + (formation.opts[side] === c ? ' on' : ''); sw.style.background = COLORS[c]; sw.title = c;
+        sw.onclick = () => { formation.opts[side] = c; if (formation.opts.attack === formation.opts.defense) formation.opts[side === 'attack' ? 'defense' : 'attack'] = c === 'red' ? 'blue' : 'red'; openFormation(t); };
+        box.appendChild(sw);
+      });
+    });
+    openModal('modal-formation');
+  }
+  $('#formation-form').onsubmit = e => {
+    e.preventDefault();
+    closeModal('modal-formation');
+    formation.opts.type = formation.tool.formation;
+    formation.opts.dir = +document.querySelector('input[name=formation-dir]:checked').value;
+    formation.opts.size = +document.querySelector('input[name=formation-size]:checked').value;
+    formation.opts.numbers = $('#formation-numbers').checked;
+    formation.opts.ball = $('#formation-ball').checked;
+    setTool('formation');
+  };
+  function placeFormation(p) {
+    const before = snapshot();
+    const objs = window.RugbyFormations.build(state.drawing.settings, formation.opts, [p.x, p.y]);
+    curObjects().push(...objs);
+    state.selected = null;
+    commit(before);
+    setTool(null);
+    toast((formation.opts.type === 'lineout' ? 'Touche' : 'Mêlée') + ' placée : 30 joueurs. Déplacez-les si besoin.');
+  }
+
   function setTool(id) {
     state.tool = id;
     if (id) closeDrawer();
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
     svg.classList.toggle('tool-active', !!id);
-    const t = id && TOOLS[id];
+    const t = id === 'formation' ? { label: 'Formation', kind: 'formation' } : id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
     $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touchez un élément pour le déplacer ou le modifier';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
+      : t.kind === 'formation' ? 'Touchez le terrain à l’endroit où placer la formation (mêlée : au centre ; touche : près de la ligne de touche).'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
       : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
   }
@@ -204,6 +242,7 @@
     closeDrawer();
     const p = toSvg(e);
     const before = snapshot();
+    if (state.tool === 'formation') { placeFormation(p); return; }
     const t = state.tool && TOOLS[state.tool];
     if (t) {
       const obj = makeObject(t, p);

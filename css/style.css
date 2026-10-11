@@ -195,6 +195,12 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: #1f2933; color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- Formations ---------- */
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatches .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #c9cdd2; cursor: pointer; }
+.swatches .swatch.on { box-shadow: 0 0 0 3px var(--primary); }
+#formation-form .field-group { margin-bottom: 4px; }
+
 /* ---------- Vues & page d'accueil ---------- */
 .view { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .home-bar .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; }
