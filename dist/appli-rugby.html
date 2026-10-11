@@ -264,6 +264,32 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .team-forms-card h4 { margin: 0; }
 .team-row-select { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+/* ---------- Mode présentation ---------- */
+.modal.presenting { padding: 0; background: #000; }
+.modal.presenting .modal-box { width: 100%; height: 100%; max-height: none; border-radius: 0; background: #000; }
+.modal.presenting .modal-head { display: none; }
+.modal.presenting .preview-canvas { background: #000; flex: 1 1 auto; padding: 0; cursor: pointer; }
+.modal.presenting .preview-canvas svg { max-height: calc(100vh - 70px); border-radius: 0; box-shadow: none; }
+.modal.presenting .preview-controls { background: #000; }
+.modal.presenting .preview-controls .btn { background: #222; color: #fff; border-color: #444; }
+.modal.presenting .preview-controls .btn.primary { background: var(--primary); }
+
+/* ---------- Partage public ---------- */
+.share-body { gap: 10px; }
+.share-canvas { padding: 0; background: transparent; border-radius: 14px; }
+.share-canvas svg { max-height: 70vh; }
+.center { text-align: center; }
+
+/* ---------- Commentaires ---------- */
+.comments-list { max-height: 50vh; overflow-y: auto; gap: 8px; }
+.comment { background: #f6f8fa; border-radius: 10px; padding: 8px 12px; }
+.comment .who { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.comment .who strong { color: var(--text); }
+.comment .body { margin-top: 2px; white-space: pre-wrap; }
+.comment .del { margin-left: auto; border: none; background: none; color: #999; cursor: pointer; }
+.comments-form { padding: 10px 18px 16px; }
+.comments-form input { font-size: 16px; }
+
 /* ---------- Comptes & équipes ---------- */
 .btn.account.logged { color: var(--primary); }
 .has-badge { position: relative; }
@@ -433,6 +459,31 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     </div>
   </header>
   <div class="home-body" id="team-page"></div>
+</div>
+
+<!-- ===== Stratégie partagée par lien (lecture seule, sans compte) ===== -->
+<div id="view-share" class="view hidden">
+  <header class="topbar home-bar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <strong id="share-title">Stratégie partagée</strong>
+    </div>
+    <div class="actions">
+      <button id="share-open-app" class="btn primary">Ouvrir l'appli</button>
+    </div>
+  </header>
+  <div class="home-body share-body">
+    <p id="share-meta" class="muted"></p>
+    <div id="share-canvas" class="preview-canvas share-canvas"></div>
+    <div class="preview-controls">
+      <button id="share-prev" class="btn outline">⏮ Précédente</button>
+      <button id="share-play" class="btn primary">▶ Lire</button>
+      <button id="share-next" class="btn outline">Suivante ⏭</button>
+      <button id="share-full" class="btn outline" title="Plein écran">⛶</button>
+    </div>
+    <p id="share-step" class="muted center"></p>
+    <p id="share-error" class="library-empty hidden">Ce lien n'est plus valide ou le partage a été arrêté.</p>
+  </div>
 </div>
 
 <!-- ===== Éditeur ===== -->
@@ -619,6 +670,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
       <button id="preview-prev" class="btn outline">⏮ Précédente</button>
       <button id="preview-play" class="btn primary">▶ Lire</button>
       <button id="preview-next" class="btn outline">Suivante ⏭</button>
+      <button id="preview-full" class="btn outline" title="Mode présentation plein écran (F)">⛶ Plein écran</button>
     </div>
   </div>
 </div>
@@ -675,6 +727,21 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
       <button class="btn-close" data-close="modal-saved-formations" title="Fermer">✕</button>
     </div>
     <div id="saved-formations-list" class="team-body"></div>
+  </div>
+</div>
+
+<!-- Commentaires d'une stratégie -->
+<div id="modal-comments" class="modal hidden">
+  <div class="modal-box auth-box">
+    <div class="modal-head">
+      <strong id="comments-title">Commentaires</strong>
+      <button class="btn-close" data-close="modal-comments" title="Fermer">✕</button>
+    </div>
+    <div id="comments-list" class="team-body comments-list"></div>
+    <form id="comments-form" class="inline-form comments-form">
+      <input id="comments-input" type="text" placeholder="Votre commentaire…" maxlength="1000" required>
+      <button class="btn primary small" type="submit">Envoyer</button>
+    </form>
   </div>
 </div>
 
@@ -1944,7 +2011,18 @@ window.RUGBY_CONFIG = {
   document.addEventListener('keydown', e => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-    if (!$('#modal-preview').classList.contains('hidden')) { if (e.key === 'Escape') closeModal('modal-preview'); return; }
+    if (!$('#modal-preview').classList.contains('hidden')) {
+      if (e.key === 'Escape') { if ($('#modal-preview').classList.contains('presenting')) setPresenting(false); else closeModal('modal-preview'); }
+      else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); previewNext(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); previewPrev(); }
+      else if (e.key.toLowerCase() === 'f') setPresenting(!$('#modal-preview').classList.contains('presenting'));
+      else if (e.key.toLowerCase() === 'p') setPlaying(!preview.playing);
+      return;
+    }
+    if (!$('#view-share').classList.contains('hidden')) {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); previewNext(); } else if (e.key === 'ArrowLeft') { e.preventDefault(); previewPrev(); }
+      return;
+    }
     const k = e.key;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
@@ -2185,21 +2263,24 @@ window.RUGBY_CONFIG = {
   $('#snap-toggle').onchange = e => { state.drawing.settings.snap = e.target.checked; toast(e.target.checked ? 'Aimantation activée : les joueurs s’accrochent aux lignes et à une grille de 2,5 m.' : 'Aimantation désactivée.'); };
 
   /* ---------- Aperçu animé ---------- */
-  const preview = { playing: false, step: 0, raf: null };
+  const preview = { playing: false, step: 0, raf: null, drawing: null, canvas: '#preview-canvas', label: '#preview-step', playBtn: '#preview-play' };
+  const pd = () => preview.drawing || state.drawing;
   function openPreview() {
+    preview.drawing = null; preview.canvas = '#preview-canvas'; preview.label = '#preview-step'; preview.playBtn = '#preview-play';
     preview.step = state.step; preview.playing = false;
     openModal('modal-preview');
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
   }
   function showPreviewStep(i, objects) {
-    const st = state.drawing.steps[i];
-    $('#preview-canvas').replaceChildren(sceneSvg(state.drawing.settings, objects || st.objects, st.note));
-    $('#preview-step').textContent = `Étape ${i + 1} / ${state.drawing.steps.length}` + (st.hold ? ' · pause' : '');
+    const d = pd(); const st = d.steps[i];
+    $(preview.canvas).replaceChildren(sceneSvg(d.settings, objects || st.objects, st.note));
+    $(preview.label).textContent = `Étape ${i + 1} / ${d.steps.length}` + (st.hold ? ' · pause' : '');
   }
   function animateTo(next, done) {
-    const a = state.drawing.steps[preview.step].objects, b = state.drawing.steps[next].objects;
-    const dur = Math.max(200, (state.drawing.settings.stepDuration || 1200) * 0.7);
+    const d = pd();
+    const a = d.steps[preview.step].objects, b = d.steps[next].objects;
+    const dur = Math.max(200, (d.settings.stepDuration || 1200) * 0.7);
     const t0 = performance.now();
     const frame = now => {
       const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -2214,24 +2295,63 @@ window.RUGBY_CONFIG = {
   }
   function playLoop() {
     if (!preview.playing) return;
-    const cur = state.drawing.steps[preview.step];
-    const next = (preview.step + 1) % state.drawing.steps.length;
-    const hold = cur.duration || state.drawing.settings.stepDuration || 1200;
+    const d = pd();
+    const cur = d.steps[preview.step];
+    const next = (preview.step + 1) % d.steps.length;
+    const hold = cur.duration || d.settings.stepDuration || 1200;
     preview.timer = setTimeout(() => {
       if (!preview.playing) return;
-      animateTo(next, () => { if (state.drawing.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
+      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
     }, hold * 0.6);
   }
   function setPlaying(on) {
-    preview.playing = on; $('#preview-play').textContent = on ? '⏸ Pause' : '▶ Lire';
+    preview.playing = on; $(preview.playBtn).textContent = on ? '⏸ Pause' : '▶ Lire';
     clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
-    if (on) { if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $('#preview-play').textContent = '▶ Lire'; return; } playLoop(); }
+    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = '▶ Lire'; return; } playLoop(); }
     else showPreviewStep(preview.step);
   }
+  const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
+  const previewPrev = () => { setPlaying(false); animateTo((preview.step - 1 + pd().steps.length) % pd().steps.length); };
   $('#btn-preview').onclick = openPreview;
   $('#preview-play').onclick = () => setPlaying(!preview.playing);
-  $('#preview-next').onclick = () => { setPlaying(false); animateTo((preview.step + 1) % state.drawing.steps.length); };
-  $('#preview-prev').onclick = () => { setPlaying(false); animateTo((preview.step - 1 + state.drawing.steps.length) % state.drawing.steps.length); };
+  $('#preview-next').onclick = previewNext;
+  $('#preview-prev').onclick = previewPrev;
+
+  /* ---------- Mode présentation (plein écran) ---------- */
+  function setPresenting(on) {
+    const m = $('#modal-preview');
+    m.classList.toggle('presenting', on);
+    $('#preview-full').textContent = on ? '⛶ Quitter' : '⛶ Plein écran';
+    if (on && m.requestFullscreen && !document.fullscreenElement) m.requestFullscreen().catch(() => {});
+    if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  }
+  $('#preview-full').onclick = () => setPresenting(!$('#modal-preview').classList.contains('presenting'));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && $('#modal-preview').classList.contains('presenting')) $('#modal-preview').classList.remove('presenting'), $('#preview-full').textContent = '⛶ Plein écran'; });
+  $('#preview-canvas').addEventListener('click', () => { if ($('#modal-preview').classList.contains('presenting')) previewNext(); });
+
+  /* ---------- Page « stratégie partagée » (lecture seule) ---------- */
+  function stopPreview() { preview.playing = false; clearTimeout(preview.timer); cancelAnimationFrame(preview.raf); preview.drawing = null; preview.step = 0; }
+  function openShare(token) {
+    stopPreview();
+    $('#share-error').classList.add('hidden'); $('#share-meta').textContent = 'Chargement…'; $('#share-canvas').replaceChildren(); $('#share-step').textContent = '';
+    const acc = window.RugbyAccount;
+    if (!acc) { setTimeout(() => openShare(token), 50); return; }   // account.js se charge après l'éditeur
+    if (!acc.isActive() || !acc.fetchShared) { $('#share-error').classList.remove('hidden'); $('#share-meta').textContent = ''; return; }
+    acc.fetchShared(token).then(row => {
+      if (!row || !row.data) { $('#share-error').classList.remove('hidden'); $('#share-meta').textContent = ''; return; }
+      const d = row.data; d.title = row.title; d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200 }, d.settings || {});
+      $('#share-title').textContent = row.title;
+      $('#share-meta').textContent = [row.team_name ? 'Équipe ' + row.team_name : '', row.owner_name ? 'par ' + row.owner_name : '', `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
+      preview.drawing = d; preview.canvas = '#share-canvas'; preview.label = '#share-step'; preview.playBtn = '#share-play'; preview.step = 0; preview.playing = false;
+      showPreviewStep(0);
+      if (d.steps.length > 1) setPlaying(true);
+    });
+  }
+  $('#share-play').onclick = () => setPlaying(!preview.playing);
+  $('#share-next').onclick = previewNext;
+  $('#share-prev').onclick = previewPrev;
+  $('#share-full').onclick = () => { const el = $('#view-share'); if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
+  $('#share-open-app').onclick = () => go('home');
 
   /* ---------- Export PNG ---------- */
   function exportPng() {
@@ -2380,7 +2500,8 @@ window.RUGBY_CONFIG = {
   }
 
   /* ---------- Navigation accueil / éditeur ---------- */
-  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : 'home'; }
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : location.hash.startsWith('#/s/') ? 'share' : 'home'; }
+  const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
   function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
@@ -2389,7 +2510,9 @@ window.RUGBY_CONFIG = {
       view = 'home';
       if (!waiting && acc && acc.isActive()) acc.openAuth();
     }
-    ['home', 'editor', 'team'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    ['home', 'editor', 'team', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    if (view !== 'share' && preview.drawing) stopPreview();
+    if (view === 'share') { closeDrawer(); openShare(shareToken()); return; }
     if (view === 'editor') requestAnimationFrame(fitZoom);
     else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }
     else { closeDrawer(); renderHome(); }
@@ -2409,7 +2532,7 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
-  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') setPlaying(false); }
+  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); } }
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
   let toastTimer;
@@ -2753,10 +2876,11 @@ window.RUGBY_CONFIG = {
 
   async function renderTeamDrawings(list, visibility, seq) {
     if (visibility === 'team') markSeen();
-    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)')
+    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)')
       .eq('team_id', S.team.id).eq('visibility', visibility).order(visibility === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     if (seq !== teamSeq) return;
     if (error) { empty(list, 'Erreur : ' + errMsg(error)); return; }
+    if (visibility === 'team') { await loadCommentCounts(data.map(r => r.id)); if (seq !== teamSeq) return; }
     if (!data.length) { empty(list, visibility === 'team' ? (isCoach() ? 'Aucune stratégie publiée. Ouvrez un de vos dessins depuis l’accueil et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié.') : 'Aucune proposition de joueur pour le moment.'); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     if (visibility === 'team') list.appendChild(E.filterBar(renderTeamPage, E.countByCat(withMeta)));
@@ -2821,6 +2945,68 @@ window.RUGBY_CONFIG = {
     if (error) E.toast(errMsg(error));
   }
 
+  /* ---------- Lien de partage public ---------- */
+  async function fetchShared(token) {
+    const { data, error } = await sb.rpc('get_shared_drawing', { p_token: token });
+    if (error) { console.warn(error); return null; }
+    return data;
+  }
+  const shareUrl = token => `${location.origin}${location.pathname}#/s/${token}`;
+  async function toggleShare(row, enable) {
+    const token = enable ? Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
+    const { error } = await sb.from('drawings').update({ share_token: token }).eq('id', row.id);
+    if (error) return E.toast(errMsg(error));
+    row.share_token = token;
+    if (token) shareLink(row); else E.toast('Partage arrêté : le lien ne fonctionne plus.');
+  }
+  function shareLink(row) {
+    const url = shareUrl(row.share_token);
+    const text = `Stratégie « ${row.title} » : ${url}`;
+    if (navigator.share) navigator.share({ title: row.title, text, url }).catch(() => {});
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url); E.toast('Lien copié : ' + url); }
+    else prompt('Lien de partage :', url);
+  }
+
+  /* ---------- Commentaires ---------- */
+  let commentCounts = {};
+  async function loadCommentCounts(ids) {
+    commentCounts = {};
+    if (!ids.length) return;
+    const { data } = await sb.from('drawing_comments').select('drawing_id').in('drawing_id', ids);
+    (data || []).forEach(c => { commentCounts[c.drawing_id] = (commentCounts[c.drawing_id] || 0) + 1; });
+  }
+  let commentsFor = null;
+  async function openComments(row, refresh) {
+    commentsFor = { row, refresh };
+    $('#comments-title').textContent = `Commentaires · ${row.title}`;
+    E.openModal('modal-comments');
+    await renderComments();
+  }
+  async function renderComments() {
+    const list = $('#comments-list'); list.replaceChildren();
+    const { data, error } = await sb.from('drawing_comments').select('id, user_id, body, created_at, author:profiles!drawing_comments_user_id_fkey(display_name)').eq('drawing_id', commentsFor.row.id).order('created_at');
+    if (error) { list.appendChild(el('p', 'library-empty', errMsg(error))); return; }
+    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Posez une question au coach ou faites une remarque.'));
+    const coachIds = new Set();
+    data.forEach(c => {
+      const item = el('div', 'comment');
+      const who = el('div', 'who', `<strong>${esc((c.author && c.author.display_name) || 'Membre')}</strong>${c.user_id === commentsFor.row.owner_id ? '<span class="role-badge coach">auteur</span>' : ''} <span>${fmtDate(c.created_at)}</span>`);
+      if (c.user_id === S.user.id || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
+      item.appendChild(who); item.appendChild(el('div', 'body', esc(c.body)));
+      list.appendChild(item);
+    });
+    list.scrollTop = list.scrollHeight;
+  }
+  $('#comments-form').onsubmit = async e => {
+    e.preventDefault();
+    const body = $('#comments-input').value.trim(); if (!body || !commentsFor) return;
+    const { error } = await sb.from('drawing_comments').insert({ drawing_id: commentsFor.row.id, user_id: S.user.id, body });
+    if (error) return E.toast(errMsg(error));
+    $('#comments-input').value = ''; await renderComments();
+    commentCounts[commentsFor.row.id] = (commentCounts[commentsFor.row.id] || 0) + 1;
+    if (commentsFor.refresh) commentsFor.refresh();
+  };
+
   /* ---------- Noms des membres (pour nommer les joueurs) ---------- */
   const namesCache = {};
   async function memberNames() {
@@ -2867,11 +3053,13 @@ window.RUGBY_CONFIG = {
       root.appendChild(bar);
       markSeen();
     }
-    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
+    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
     q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
+    await loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id));
+    if (seq !== renderSeq) return;
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Nouveau dessin », puis « Enregistrer le dessin » dans l’éditeur.' : (isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.')); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     root.appendChild(E.filterBar(renderHome, E.countByCat(withMeta)));
@@ -2915,6 +3103,14 @@ window.RUGBY_CONFIG = {
     if (isCoach() && row.visibility === 'team' && coachHere) btns.appendChild(btn('Retirer de l’équipe', 'outline', () => setVis('private')));
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary', () => setVis('proposed')));
     if (!isCoach() && mine && row.visibility === 'proposed') btns.appendChild(btn('Annuler la proposition', 'outline', () => setVis('private')));
+    if (row.visibility === 'team') {
+      const n = commentCounts[row.id] || 0;
+      btns.appendChild(btn(`💬 ${n ? n + ' ' : ''}Commentaires`, 'outline', () => openComments(row, refresh)));
+      if (mine || coachHere) {
+        if (row.share_token) { btns.appendChild(btn('🔗 Copier le lien', 'secondary', () => shareLink(row))); btns.appendChild(btn('Arrêter le partage', 'outline', () => toggleShare(row, false).then(refresh))); }
+        else btns.appendChild(btn('🔗 Lien public', 'secondary', () => toggleShare(row, true).then(refresh)));
+      }
+    }
     if (mine || coachHere) btns.appendChild(btn('Supprimer', 'outline danger', async () => {
       if (!confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
@@ -2945,7 +3141,7 @@ window.RUGBY_CONFIG = {
     });
   }
 
-  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
 

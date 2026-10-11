@@ -302,10 +302,11 @@
 
   async function renderTeamDrawings(list, visibility, seq) {
     if (visibility === 'team') markSeen();
-    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)')
+    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)')
       .eq('team_id', S.team.id).eq('visibility', visibility).order(visibility === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     if (seq !== teamSeq) return;
     if (error) { empty(list, 'Erreur : ' + errMsg(error)); return; }
+    if (visibility === 'team') { await loadCommentCounts(data.map(r => r.id)); if (seq !== teamSeq) return; }
     if (!data.length) { empty(list, visibility === 'team' ? (isCoach() ? 'Aucune stratégie publiée. Ouvrez un de vos dessins depuis l’accueil et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié.') : 'Aucune proposition de joueur pour le moment.'); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     if (visibility === 'team') list.appendChild(E.filterBar(renderTeamPage, E.countByCat(withMeta)));
@@ -370,6 +371,68 @@
     if (error) E.toast(errMsg(error));
   }
 
+  /* ---------- Lien de partage public ---------- */
+  async function fetchShared(token) {
+    const { data, error } = await sb.rpc('get_shared_drawing', { p_token: token });
+    if (error) { console.warn(error); return null; }
+    return data;
+  }
+  const shareUrl = token => `${location.origin}${location.pathname}#/s/${token}`;
+  async function toggleShare(row, enable) {
+    const token = enable ? Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
+    const { error } = await sb.from('drawings').update({ share_token: token }).eq('id', row.id);
+    if (error) return E.toast(errMsg(error));
+    row.share_token = token;
+    if (token) shareLink(row); else E.toast('Partage arrêté : le lien ne fonctionne plus.');
+  }
+  function shareLink(row) {
+    const url = shareUrl(row.share_token);
+    const text = `Stratégie « ${row.title} » : ${url}`;
+    if (navigator.share) navigator.share({ title: row.title, text, url }).catch(() => {});
+    else if (navigator.clipboard) { navigator.clipboard.writeText(url); E.toast('Lien copié : ' + url); }
+    else prompt('Lien de partage :', url);
+  }
+
+  /* ---------- Commentaires ---------- */
+  let commentCounts = {};
+  async function loadCommentCounts(ids) {
+    commentCounts = {};
+    if (!ids.length) return;
+    const { data } = await sb.from('drawing_comments').select('drawing_id').in('drawing_id', ids);
+    (data || []).forEach(c => { commentCounts[c.drawing_id] = (commentCounts[c.drawing_id] || 0) + 1; });
+  }
+  let commentsFor = null;
+  async function openComments(row, refresh) {
+    commentsFor = { row, refresh };
+    $('#comments-title').textContent = `Commentaires · ${row.title}`;
+    E.openModal('modal-comments');
+    await renderComments();
+  }
+  async function renderComments() {
+    const list = $('#comments-list'); list.replaceChildren();
+    const { data, error } = await sb.from('drawing_comments').select('id, user_id, body, created_at, author:profiles!drawing_comments_user_id_fkey(display_name)').eq('drawing_id', commentsFor.row.id).order('created_at');
+    if (error) { list.appendChild(el('p', 'library-empty', errMsg(error))); return; }
+    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Posez une question au coach ou faites une remarque.'));
+    const coachIds = new Set();
+    data.forEach(c => {
+      const item = el('div', 'comment');
+      const who = el('div', 'who', `<strong>${esc((c.author && c.author.display_name) || 'Membre')}</strong>${c.user_id === commentsFor.row.owner_id ? '<span class="role-badge coach">auteur</span>' : ''} <span>${fmtDate(c.created_at)}</span>`);
+      if (c.user_id === S.user.id || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
+      item.appendChild(who); item.appendChild(el('div', 'body', esc(c.body)));
+      list.appendChild(item);
+    });
+    list.scrollTop = list.scrollHeight;
+  }
+  $('#comments-form').onsubmit = async e => {
+    e.preventDefault();
+    const body = $('#comments-input').value.trim(); if (!body || !commentsFor) return;
+    const { error } = await sb.from('drawing_comments').insert({ drawing_id: commentsFor.row.id, user_id: S.user.id, body });
+    if (error) return E.toast(errMsg(error));
+    $('#comments-input').value = ''; await renderComments();
+    commentCounts[commentsFor.row.id] = (commentCounts[commentsFor.row.id] || 0) + 1;
+    if (commentsFor.refresh) commentsFor.refresh();
+  };
+
   /* ---------- Noms des membres (pour nommer les joueurs) ---------- */
   const namesCache = {};
   async function memberNames() {
@@ -416,11 +479,13 @@
       root.appendChild(bar);
       markSeen();
     }
-    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
+    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
     q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
+    await loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id));
+    if (seq !== renderSeq) return;
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Nouveau dessin », puis « Enregistrer le dessin » dans l’éditeur.' : (isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.')); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     root.appendChild(E.filterBar(renderHome, E.countByCat(withMeta)));
@@ -464,6 +529,14 @@
     if (isCoach() && row.visibility === 'team' && coachHere) btns.appendChild(btn('Retirer de l’équipe', 'outline', () => setVis('private')));
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary', () => setVis('proposed')));
     if (!isCoach() && mine && row.visibility === 'proposed') btns.appendChild(btn('Annuler la proposition', 'outline', () => setVis('private')));
+    if (row.visibility === 'team') {
+      const n = commentCounts[row.id] || 0;
+      btns.appendChild(btn(`💬 ${n ? n + ' ' : ''}Commentaires`, 'outline', () => openComments(row, refresh)));
+      if (mine || coachHere) {
+        if (row.share_token) { btns.appendChild(btn('🔗 Copier le lien', 'secondary', () => shareLink(row))); btns.appendChild(btn('Arrêter le partage', 'outline', () => toggleShare(row, false).then(refresh))); }
+        else btns.appendChild(btn('🔗 Lien public', 'secondary', () => toggleShare(row, true).then(refresh)));
+      }
+    }
     if (mine || coachHere) btns.appendChild(btn('Supprimer', 'outline danger', async () => {
       if (!confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
@@ -494,6 +567,6 @@
     });
   }
 
-  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

@@ -445,7 +445,18 @@
   document.addEventListener('keydown', e => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
-    if (!$('#modal-preview').classList.contains('hidden')) { if (e.key === 'Escape') closeModal('modal-preview'); return; }
+    if (!$('#modal-preview').classList.contains('hidden')) {
+      if (e.key === 'Escape') { if ($('#modal-preview').classList.contains('presenting')) setPresenting(false); else closeModal('modal-preview'); }
+      else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); previewNext(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); previewPrev(); }
+      else if (e.key.toLowerCase() === 'f') setPresenting(!$('#modal-preview').classList.contains('presenting'));
+      else if (e.key.toLowerCase() === 'p') setPlaying(!preview.playing);
+      return;
+    }
+    if (!$('#view-share').classList.contains('hidden')) {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); previewNext(); } else if (e.key === 'ArrowLeft') { e.preventDefault(); previewPrev(); }
+      return;
+    }
     const k = e.key;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
@@ -686,21 +697,24 @@
   $('#snap-toggle').onchange = e => { state.drawing.settings.snap = e.target.checked; toast(e.target.checked ? 'Aimantation activée : les joueurs s’accrochent aux lignes et à une grille de 2,5 m.' : 'Aimantation désactivée.'); };
 
   /* ---------- Aperçu animé ---------- */
-  const preview = { playing: false, step: 0, raf: null };
+  const preview = { playing: false, step: 0, raf: null, drawing: null, canvas: '#preview-canvas', label: '#preview-step', playBtn: '#preview-play' };
+  const pd = () => preview.drawing || state.drawing;
   function openPreview() {
+    preview.drawing = null; preview.canvas = '#preview-canvas'; preview.label = '#preview-step'; preview.playBtn = '#preview-play';
     preview.step = state.step; preview.playing = false;
     openModal('modal-preview');
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
   }
   function showPreviewStep(i, objects) {
-    const st = state.drawing.steps[i];
-    $('#preview-canvas').replaceChildren(sceneSvg(state.drawing.settings, objects || st.objects, st.note));
-    $('#preview-step').textContent = `Étape ${i + 1} / ${state.drawing.steps.length}` + (st.hold ? ' · pause' : '');
+    const d = pd(); const st = d.steps[i];
+    $(preview.canvas).replaceChildren(sceneSvg(d.settings, objects || st.objects, st.note));
+    $(preview.label).textContent = `Étape ${i + 1} / ${d.steps.length}` + (st.hold ? ' · pause' : '');
   }
   function animateTo(next, done) {
-    const a = state.drawing.steps[preview.step].objects, b = state.drawing.steps[next].objects;
-    const dur = Math.max(200, (state.drawing.settings.stepDuration || 1200) * 0.7);
+    const d = pd();
+    const a = d.steps[preview.step].objects, b = d.steps[next].objects;
+    const dur = Math.max(200, (d.settings.stepDuration || 1200) * 0.7);
     const t0 = performance.now();
     const frame = now => {
       const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -715,24 +729,63 @@
   }
   function playLoop() {
     if (!preview.playing) return;
-    const cur = state.drawing.steps[preview.step];
-    const next = (preview.step + 1) % state.drawing.steps.length;
-    const hold = cur.duration || state.drawing.settings.stepDuration || 1200;
+    const d = pd();
+    const cur = d.steps[preview.step];
+    const next = (preview.step + 1) % d.steps.length;
+    const hold = cur.duration || d.settings.stepDuration || 1200;
     preview.timer = setTimeout(() => {
       if (!preview.playing) return;
-      animateTo(next, () => { if (state.drawing.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
+      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
     }, hold * 0.6);
   }
   function setPlaying(on) {
-    preview.playing = on; $('#preview-play').textContent = on ? '⏸ Pause' : '▶ Lire';
+    preview.playing = on; $(preview.playBtn).textContent = on ? '⏸ Pause' : '▶ Lire';
     clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
-    if (on) { if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $('#preview-play').textContent = '▶ Lire'; return; } playLoop(); }
+    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = '▶ Lire'; return; } playLoop(); }
     else showPreviewStep(preview.step);
   }
+  const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
+  const previewPrev = () => { setPlaying(false); animateTo((preview.step - 1 + pd().steps.length) % pd().steps.length); };
   $('#btn-preview').onclick = openPreview;
   $('#preview-play').onclick = () => setPlaying(!preview.playing);
-  $('#preview-next').onclick = () => { setPlaying(false); animateTo((preview.step + 1) % state.drawing.steps.length); };
-  $('#preview-prev').onclick = () => { setPlaying(false); animateTo((preview.step - 1 + state.drawing.steps.length) % state.drawing.steps.length); };
+  $('#preview-next').onclick = previewNext;
+  $('#preview-prev').onclick = previewPrev;
+
+  /* ---------- Mode présentation (plein écran) ---------- */
+  function setPresenting(on) {
+    const m = $('#modal-preview');
+    m.classList.toggle('presenting', on);
+    $('#preview-full').textContent = on ? '⛶ Quitter' : '⛶ Plein écran';
+    if (on && m.requestFullscreen && !document.fullscreenElement) m.requestFullscreen().catch(() => {});
+    if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  }
+  $('#preview-full').onclick = () => setPresenting(!$('#modal-preview').classList.contains('presenting'));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && $('#modal-preview').classList.contains('presenting')) $('#modal-preview').classList.remove('presenting'), $('#preview-full').textContent = '⛶ Plein écran'; });
+  $('#preview-canvas').addEventListener('click', () => { if ($('#modal-preview').classList.contains('presenting')) previewNext(); });
+
+  /* ---------- Page « stratégie partagée » (lecture seule) ---------- */
+  function stopPreview() { preview.playing = false; clearTimeout(preview.timer); cancelAnimationFrame(preview.raf); preview.drawing = null; preview.step = 0; }
+  function openShare(token) {
+    stopPreview();
+    $('#share-error').classList.add('hidden'); $('#share-meta').textContent = 'Chargement…'; $('#share-canvas').replaceChildren(); $('#share-step').textContent = '';
+    const acc = window.RugbyAccount;
+    if (!acc) { setTimeout(() => openShare(token), 50); return; }   // account.js se charge après l'éditeur
+    if (!acc.isActive() || !acc.fetchShared) { $('#share-error').classList.remove('hidden'); $('#share-meta').textContent = ''; return; }
+    acc.fetchShared(token).then(row => {
+      if (!row || !row.data) { $('#share-error').classList.remove('hidden'); $('#share-meta').textContent = ''; return; }
+      const d = row.data; d.title = row.title; d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200 }, d.settings || {});
+      $('#share-title').textContent = row.title;
+      $('#share-meta').textContent = [row.team_name ? 'Équipe ' + row.team_name : '', row.owner_name ? 'par ' + row.owner_name : '', `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
+      preview.drawing = d; preview.canvas = '#share-canvas'; preview.label = '#share-step'; preview.playBtn = '#share-play'; preview.step = 0; preview.playing = false;
+      showPreviewStep(0);
+      if (d.steps.length > 1) setPlaying(true);
+    });
+  }
+  $('#share-play').onclick = () => setPlaying(!preview.playing);
+  $('#share-next').onclick = previewNext;
+  $('#share-prev').onclick = previewPrev;
+  $('#share-full').onclick = () => { const el = $('#view-share'); if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
+  $('#share-open-app').onclick = () => go('home');
 
   /* ---------- Export PNG ---------- */
   function exportPng() {
@@ -881,7 +934,8 @@
   }
 
   /* ---------- Navigation accueil / éditeur ---------- */
-  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : 'home'; }
+  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : location.hash.startsWith('#/s/') ? 'share' : 'home'; }
+  const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
   function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
@@ -890,7 +944,9 @@
       view = 'home';
       if (!waiting && acc && acc.isActive()) acc.openAuth();
     }
-    ['home', 'editor', 'team'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    ['home', 'editor', 'team', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    if (view !== 'share' && preview.drawing) stopPreview();
+    if (view === 'share') { closeDrawer(); openShare(shareToken()); return; }
     if (view === 'editor') requestAnimationFrame(fitZoom);
     else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }
     else { closeDrawer(); renderHome(); }
@@ -910,7 +966,7 @@
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
-  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') setPlaying(false); }
+  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); } }
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
   let toastTimer;
