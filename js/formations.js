@@ -27,7 +27,15 @@
       [10, -13, 11], [12, -16, 17], [13, -19, 23], [11, -22, 31],
       [14, -10, -12], [15, -29, 11]
     ];
-    const D = A.map(([n, dx, dy]) => [n, -dx, dy]);
+    // Défense : pack en face, 9 au pied, ligne de défense à plat derrière la ligne de hors-jeu, 15 en couverture
+    const D = [
+      [1, 1.8, -3.2], [2, 1.8, 0], [3, 1.8, 3.2],
+      [4, 4.6, -1.6], [5, 4.6, 1.6],
+      [6, 7.2, -4.4], [7, 7.2, 4.4], [8, 8, 0],
+      [9, 7, 7.5],
+      [10, 11, 10], [12, 11, 17], [13, 11, 24], [11, 11, 33],
+      [14, 11, -11], [15, 24, 12]
+    ];
     return { A, D, ball: [-9.5, 7] };
   }
   function lineoutLayout(n) {
@@ -41,8 +49,13 @@
     A.push([9, -4.5, deep + 3.5]);                  // relayeur
     rest.forEach((num, i) => A.push([num, -12, deep + 4 + i * 3.5]));
     A.push([10, -14, deep + 10], [12, -17, deep + 16], [13, -20, deep + 22], [11, -24, deep + 32], [14, -10, 7], [15, -31, deep + 18]);
-    const D = A.filter(p => p[0] !== 2).map(([num, dx, dy]) => [num, -dx, dy]);
-    D.push([2, 12, deep + 8]);                      // talonneur adverse en retrait
+    // Défense : alignement en face, 9 sur le relayeur, le reste à 10 m sur une ligne à plat, 15 en couverture
+    const D = [];
+    jumpers.forEach((num, i) => D.push([num, 2.2, spots[i]]));
+    D.push([9, 4.5, deep + 3.5]);
+    D.push([2, 12, 2.5]);                           // talonneur défensif devant, couloir des 5 m
+    rest.forEach((num, i) => D.push([num, 12, deep + 2 + i * 4]));
+    D.push([10, 12, deep + 9], [12, 12, deep + 16], [13, 12, deep + 23], [11, 12, deep + 34], [14, 12, 8], [15, 25, deep + 18]);
     return { A, D, ball: [0, -0.4] };
   }
 
