@@ -119,6 +119,9 @@ button { font: inherit; cursor: pointer; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
 .fab-left { position: absolute; left: 16px; bottom: 44px; z-index: 6; display: flex; gap: 8px; }
+.fab-history { display: none; position: absolute; left: 12px; top: 12px; z-index: 6; gap: 8px; }
+.fab-history button { width: 46px; height: 46px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff; color: #333; display: grid; place-items: center; }
+.fab-history button:disabled { opacity: .35; }
 .fab-select, .fab-mode {
   width: 52px; height: 52px; padding: 0;
   display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--primary);
@@ -306,7 +309,9 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .home-bar .select { max-width: 150px; font-size: 13px; }
   .team-card h2 { font-size: 18px; }
   .home-body { padding: 12px 12px 32px; }
-  #btn-account, #btn-redo { display: none; }
+  #btn-account, #btn-redo, #btn-undo { display: none; }
+  .fab-history { display: flex; }
+  .props { top: 66px; }
   .mobile-bar .has-badge::after { top: 4px; right: 12px; }
   .mobile-bar button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -475,6 +480,10 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     <div id="props" class="props hidden"></div>
     <div class="canvas-wrap" id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="fab-history">
+      <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <div class="fab-left">
       <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
@@ -1475,8 +1484,8 @@ window.RUGBY_CONFIG = {
     if (full) { renderField_(); applySettingsToUI(); }
     render();
     renderSteps();
-    $('#btn-undo').disabled = !state.history.length;
-    $('#btn-redo').disabled = !state.future.length;
+    $('#btn-undo').disabled = $('#fab-undo').disabled = !state.history.length;
+    $('#btn-redo').disabled = $('#fab-redo').disabled = !state.future.length;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
   }
@@ -1592,6 +1601,7 @@ window.RUGBY_CONFIG = {
     });
     $('#btn-save-formation').onclick = saveCurrentFormation;
     $('#btn-list-formations').onclick = openSavedFormations;
+    $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };

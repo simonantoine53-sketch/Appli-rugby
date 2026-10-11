@@ -50,8 +50,8 @@
     if (full) { renderField_(); applySettingsToUI(); }
     render();
     renderSteps();
-    $('#btn-undo').disabled = !state.history.length;
-    $('#btn-redo').disabled = !state.future.length;
+    $('#btn-undo').disabled = $('#fab-undo').disabled = !state.history.length;
+    $('#btn-redo').disabled = $('#fab-redo').disabled = !state.future.length;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
   }
@@ -167,6 +167,7 @@
     });
     $('#btn-save-formation').onclick = saveCurrentFormation;
     $('#btn-list-formations').onclick = openSavedFormations;
+    $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
