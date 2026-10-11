@@ -62,7 +62,7 @@
     if (!ready) return;   // la session n'est pas encore connue : on ne redirige pas
     if (location.hash.startsWith('#/team')) { if (S.user) { E.go('team'); } else { E.go('home'); openAuth(); } return; }
     if (location.hash.startsWith('#/admin')) { if (isSuper()) E.go('admin'); else { E.go('home'); if (!S.user) openAuth(); } return; }
-    if (!$('#view-home').classList.contains('hidden')) renderHome();
+    if (!$('#view-home').classList.contains('hidden')) E.renderHome();
   }
 
   async function loadTeams() {
@@ -459,8 +459,14 @@
     const root = $('#home-list'); root.replaceChildren();
     if (!S.user) {
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p>Connectez-vous pour retrouver vos dessins sur tous vos appareils, rejoindre une équipe et recevoir les stratégies du coach.</p>');
-      box.appendChild(btn('Se connecter ou créer un compte', 'primary', () => openAuth()));
+      const box = el('div', 'hero', `<h1>Dessinez vos combinaisons de rugby, toute l’équipe les comprend.</h1>
+        <ul><li>Placez joueurs, courses et passes en quelques secondes</li><li>Animez étape par étape, zoomez sur une touche ou une mêlée</li><li>Publiez à l’équipe ou envoyez un GIF sur WhatsApp</li></ul>`);
+      const btns = el('div', 'hero-btns');
+      btns.append(btn('Créer un compte gratuit', 'primary', () => openAuth('signup')), btn('Essayer sans compte', 'outline', () => E.go('editor')));
+      box.appendChild(btns);
+      const login = el('small', '', 'Déjà un compte ? <a href="#" class="link">Se connecter</a>');
+      login.querySelector('a').onclick = e => { e.preventDefault(); openAuth('login'); };
+      box.appendChild(login);
       root.appendChild(box);
       const local = E.readLib();
       if (local.length) { root.appendChild(el('h4', 'home-h4', 'Sur cet appareil')); local.forEach(d => root.appendChild(E.localCard(d, () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); }))); }
@@ -468,8 +474,8 @@
     }
     if (!isClubMember()) {
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p><strong>Vous n’êtes membre d’aucun club.</strong><br>Vous pouvez dessiner et prévisualiser librement. L’enregistrement, l’export et le partage sont réservés aux membres d’un club : demandez son code d’invitation à votre coach.</p>');
-      box.appendChild(btn('Rejoindre ou créer un club', 'primary', () => E.go('team')));
+      const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code d’invitation donné par votre coach, ou créez le club si vous êtes coach. Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
+      box.appendChild(btn('Rejoindre ou créer mon club', 'primary', () => E.go('team')));
       root.appendChild(box);
       const pend = pendingCard(); if (pend) root.appendChild(pend);
       return;

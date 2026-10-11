@@ -52,8 +52,8 @@
     if (full) { renderField_(); applySettingsToUI(); }
     render();
     renderSteps();
-    $('#btn-undo').disabled = $('#fab-undo').disabled = !state.history.length;
-    $('#btn-redo').disabled = $('#fab-redo').disabled = !state.future.length;
+    $('#fab-undo').disabled = !state.history.length;
+    $('#fab-redo').disabled = !state.future.length;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
   }
@@ -70,6 +70,8 @@
     objectsG.replaceChildren(...curObjects().map(renderObject));
     renderOverlay();
     renderProps();
+    // Sélection multiple et déplacement aligné : proposés seulement quand ils servent
+    $('.fab-left').classList.toggle('with-modes', !!selIds().length || state.multiMode || state.axisMode);
   }
 
   function renderOverlay() {
@@ -212,13 +214,14 @@
       const grid = svgEl ? document.createElement('div') : null; grid.className = 'tools';
       g.tools.forEach(t => {
         const b = document.createElement('button');
-        b.className = 'tool'; b.dataset.tool = t.id; b.title = t.label + (t.key ? ` (${t.key})` : '');
-        b.innerHTML = `<svg viewBox="0 0 32 32">${t.icon}</svg>` + (t.key ? `<span class="key">${t.key}</span>` : '');
+        b.className = 'tool' + (t.kind === 'formation' ? ' labeled' : ''); b.dataset.tool = t.id; b.title = t.label + (t.key ? ` (raccourci ${t.key})` : '');
+        b.setAttribute('aria-label', t.label);
+        b.innerHTML = `<svg viewBox="0 0 32 32">${t.icon}</svg>` + (t.kind === 'formation' ? `<span class="cap">${t.label.split(' (')[0]}</span>` : '') + (t.key ? `<span class="key">${t.key}</span>` : '');
         b.onclick = () => t.kind === 'formation' ? openFormation(t) : setTool(state.tool === t.id ? null : t.id);
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<span class="mini-wrap"><button class="mini" id="btn-save-formation" title="Enregistrer les objets du terrain comme formation réutilisable">💾 Enregistrer</button><button class="mini" id="btn-list-formations" title="Mes formations enregistrées">📂 Mes formations</button></span>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<span class="mini-wrap"><button class="mini" id="btn-list-formations" title="Placer une formation que vous avez enregistrée">Mes formations</button><button class="mini" id="btn-save-formation" title="Enregistrer les joueurs du terrain comme formation réutilisable">+ Créer une formation</button></span>` : '');
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
@@ -325,14 +328,16 @@
     if (id) { state.selected = null; renderOverlay(); renderProps(); }
     document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === id));
     svg.classList.toggle('tool-active', !!id);
+    $('#hint').classList.toggle('tool-on', !!id);
     const t = id === 'formation' ? { label: 'Formation', kind: 'formation' } : id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
     $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touchez un élément pour le déplacer ou le modifier';
+    const touch = window.matchMedia('(pointer: coarse)').matches, name = t ? t.label.split(' (')[0] : '';
     $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
-      : t.kind === 'formation' ? 'Touchez le terrain à l’endroit où placer la formation (mêlée : au centre ; touche : près de la ligne de touche).'
-      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`
-      : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
+      : t.kind === 'formation' ? 'Touchez le terrain là où placer la formation.'
+      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glissez le doigt sur le terrain` : `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
+      : touch ? `${name} : touchez le terrain pour placer` : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
   }
 
   /* ---------- Création d'objets ---------- */
@@ -698,13 +703,13 @@
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
         <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
         <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}${st.note ? ' · 📝' : ''}${st.hold ? ' · ⏸' : ''}${st.frame ? ' · 🔍 cadré' : ''}${st.duration ? ' · ' + (st.duration / 1000).toLocaleString('fr-FR') + ' s' : ''}</div>`;
+      </div><div class="meta">${[st.note ? '📝 consigne' : '', st.hold ? '⏸ pause' : '', st.duration ? (st.duration / 1000).toLocaleString('fr-FR') + ' s' : '', st.frame ? '🔍 cadrée' : ''].filter(Boolean).join(' · ')}</div>`;
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
-        opts.innerHTML = `<input type="text" class="step-note" placeholder="Note affichée pendant l'aperçu (ex. « Regarder la fixation du 10 »)" maxlength="90">
-          <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">auto</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
-          <label><input type="checkbox" class="step-hold"> Pause sur cette étape</label></div>
+        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne pour les joueurs (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
+          <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">normale</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
+          <label title="L'animation s'arrête sur cette étape jusqu'à ce qu'on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
           <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">🔍 ${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
         opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
         const note = opts.querySelector('.step-note'); note.value = st.note || '';
@@ -908,7 +913,7 @@
     const fn = kind === 'gif' ? window.RugbyExport.exportGif : window.RugbyExport.exportWebm;
     state.drawing.__format = kind;
     fn(state.drawing, sceneSvg, prog.update)
-      .then(blob => { const ext = kind === 'gif' ? 'gif' : (blob.ext || 'webm'); download(blob, `${slug(state.drawing.title)}.${ext}`); toast(kind === 'gif' ? 'GIF animé exporté.' : (ext === 'mp4' ? 'Vidéo MP4 exportée.' : 'Vidéo WebM exportée (MP4 non pris en charge par ce navigateur).')); })
+      .then(blob => { const ext = kind === 'gif' ? 'gif' : (blob.ext || 'webm'); download(blob, `${slug(state.drawing.title)}.${ext}`); toast(kind === 'gif' ? 'GIF animé exporté.' : (ext === 'mp4' ? 'Vidéo exportée.' : 'Vidéo exportée au format WebM (ce navigateur ne sait pas faire de MP4).')); })
       .catch(err => toast('Export impossible : ' + (err && err.message ? err.message : err)))
       .finally(() => { delete state.drawing.__format; prog.close(); });
   });
@@ -1041,14 +1046,20 @@
   $('#team-back').onclick = () => go('home');
   function renderHome() {
     const d = state.drawing;
-    const hasContent = d.steps.some(st => st.objects.length);
+    const acc = window.RugbyAccount;
+    const visitor = acc && acc.isActive() && !acc.isLoggedIn();
+    const hasContent = d.steps.some(st => st.objects.length) && !(visitor && d.title === 'Nouveau dessin');   // pas de carte pour l'exemple de démarrage
     $('#home-current').classList.toggle('hidden', !hasContent);
     $('#home-current-title').textContent = d.title;
     if (window.RugbyAccount && window.RugbyAccount.isActive()) window.RugbyAccount.renderHome(); else renderLocalHome();
   }
   window.addEventListener('hashchange', () => showView(currentView()));
   $('#home-resume').onclick = () => go('editor');
-  $('#home-new').onclick = () => { track('new_drawing'); loadDrawing(newDrawing()); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
+  $('#home-new').onclick = () => {
+    track('new_drawing');
+    const nd = newDrawing();
+    if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) nd.settings.orientation = 'portrait';   // remplit l'écran du téléphone
+    loadDrawing(nd); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
   $('#btn-library').onclick = () => go('home');
 
   /* ---------- Modales & toast ---------- */
@@ -1087,6 +1098,6 @@
     o.push({ id: uid(), type: 'line', style: 'wavy', x1: 520, y1: 300, x2: 600, y2: 350, dashed: false, arrow: true, color: 'white', width: 3 });
     o.push({ id: uid(), type: 'text', x: 600, y: 335, text: 'Zone de défense', size: 16, color: 'white' });
     commit(b);
-    state.history = []; state.future = []; $('#btn-undo').disabled = true;
+    state.history = []; state.future = []; $('#fab-undo').disabled = true;
   }
 })();
