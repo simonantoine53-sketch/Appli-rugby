@@ -60,6 +60,9 @@
     { id: 'form-lineout', label: 'Touche (15 contre 15)', kind: 'formation', formation: 'lineout', icon: `<path d="M4 5h24" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><circle cx="12" cy="11" r="2.4"/><circle cx="12" cy="16" r="2.4"/><circle cx="12" cy="21" r="2.4"/><circle cx="12" cy="26" r="2.4"/></g><g fill="#e53935"><circle cx="20" cy="11" r="2.4"/><circle cx="20" cy="16" r="2.4"/><circle cx="20" cy="21" r="2.4"/><circle cx="20" cy="26" r="2.4"/></g>` }
   ];
 
+  playerTools.unshift({ id: 'player-ball', key: 'B', label: 'Joueur avec ballon (dernière couleur choisie)', kind: 'player', ball: true,
+    icon: `<circle cx="14" cy="17" r="10" fill="#1e88e5"/><ellipse cx="24" cy="9" rx="6.5" ry="4" fill="#fff" stroke="#333" stroke-width="1.3" transform="rotate(-30 24 9)"/>` });
+
   const TOOL_GROUPS = [
     { id: 'formations', title: 'Formations', tools: formationTools },
     { id: 'shapes', title: 'Formes', tools: shapeTools },
