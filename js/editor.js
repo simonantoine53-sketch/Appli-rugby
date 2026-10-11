@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const { svgEl, fieldSpec, renderField, SVG_NS, M, PAD } = window.RugbyField;
+  const { svgEl, fieldSpec, renderField, frameRect, lerpFrame, SVG_NS, M, PAD } = window.RugbyField;
   const { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
   const { TOOL_GROUPS, TOOLS, COLORS } = window.RugbyPalette;
 
@@ -74,6 +74,8 @@
 
   function renderOverlay() {
     overlayG.replaceChildren();
+    renderFrameOverlay();
+    if (state.framing) return;
     const objs = selObjs();
     objs.forEach(o => { const b = bounds(o); overlayG.appendChild(svgEl('rect', { class: 'selection-box', x: b.x - 4, y: b.y - 4, width: b.w + 8, height: b.h + 8 })); });
     if (objs.length !== 1) return;
@@ -90,6 +92,56 @@
       const c = handle(mx, my, 'c', 'curve'); c.setAttribute('r', 6); if (!curved) c.setAttribute('fill-opacity', '.5'); overlayG.appendChild(c);
     }
   }
+
+  /* ---------- Cadrage par étape ---------- */
+  // Chaque étape peut mémoriser un cadre (zoom + centre). L'aperçu et les exports animent le passage d'un cadre à l'autre.
+  function renderFrameOverlay() {
+    const st = curStep();
+    if (!st.frame && !state.framing) return;
+    const spec = fieldSpec(state.drawing.settings), f = frameRect(state.drawing.settings, st.frame);
+    const g = svgEl('g', { class: 'frame-layer' + (state.framing ? ' editing' : '') });
+    g.appendChild(svgEl('path', { class: 'frame-mask', d: `M0 0H${spec.W}V${spec.H}H0Z M${f.x} ${f.y}v${f.h}h${f.w}v${-f.h}Z`, 'fill-rule': 'evenodd' }));
+    g.appendChild(svgEl('rect', { class: 'frame-box', x: f.x, y: f.y, width: f.w, height: f.h, 'data-frame': 'move' }));
+    if (state.framing) {
+      const r = Math.max(9, spec.W / 110);
+      [['nw', f.x, f.y], ['ne', f.x + f.w, f.y], ['sw', f.x, f.y + f.h], ['se', f.x + f.w, f.y + f.h]].forEach(([n, x, y]) => g.appendChild(svgEl('circle', { class: 'frame-handle', cx: x, cy: y, r, 'data-frame': n })));
+    } else {
+      g.appendChild(svgEl('text', { class: 'frame-label', x: f.x + 8, y: f.y + 22 }, [`Cadrage de l’étape ${state.step + 1}`]));
+    }
+    overlayG.appendChild(g);
+  }
+  function startFraming() {
+    const st = curStep();
+    state.framing = { before: snapshot() };
+    if (!st.frame) {
+      // Cadre de départ : 45 % du terrain, centré sur l'objet sélectionné ou sur le terrain
+      const spec = fieldSpec(state.drawing.settings), w = spec.W * 0.45, h = w * spec.H / spec.W;
+      const o = state.selected && findObj(state.selected), b = o && bounds(o);
+      const cx = b ? b.x + b.w / 2 : spec.W / 2, cy = b ? b.y + b.h / 2 : spec.H / 2;
+      st.frame = frameRect(state.drawing.settings, { x: cx - w / 2, y: cy - h / 2, w });
+    }
+    clearSelection(); setTool(null);
+    $('#frame-bar').classList.remove('hidden');
+    $('#frame-bar-title').textContent = `Cadrage de l’étape ${state.step + 1}`;
+    closeDrawer(); render();
+  }
+  function endFraming(keep) {
+    if (!state.framing) return;
+    const before = state.framing.before; state.framing = null;
+    $('#frame-bar').classList.add('hidden');
+    if (keep) { const st = curStep(); if (st.frame) { const f = frameRect(state.drawing.settings, st.frame); st.frame = f.full ? undefined : { x: Math.round(f.x), y: Math.round(f.y), w: Math.round(f.w) }; } commit(before); track('frame', { step: state.step + 1 }); }
+    else { state.drawing = JSON.parse(before); fixStepIndex(); afterChange(); }
+  }
+  function zoomFrame(k) {
+    const st = curStep(), f = frameRect(state.drawing.settings, st.frame), cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+    const w = frameRect(state.drawing.settings, { x: 0, y: 0, w: f.w * k }).w, h = w * f.h / f.w;
+    st.frame = frameRect(state.drawing.settings, { x: cx - w / 2, y: cy - h / 2, w }); render();
+  }
+  $('#frame-ok').onclick = () => endFraming(true);
+  $('#frame-cancel').onclick = () => endFraming(false);
+  $('#frame-in').onclick = () => zoomFrame(1 / 1.25);
+  $('#frame-out').onclick = () => zoomFrame(1.25);
+  $('#frame-full').onclick = () => { curStep().frame = undefined; endFraming(true); toast('Cette étape montre tout le terrain.'); };
 
   /* ---------- Zoom ---------- */
   let baseWidth = 800;
@@ -265,6 +317,7 @@
   }
 
   function setTool(id) {
+    if (id && state.framing) endFraming(true);
     if (id && id !== state.tool && id !== 'formation') track('tool', { tool: id, group: TOOL_GROUP[id] || '?' });
     state.tool = id;
     if (id) closeDrawer();
@@ -329,6 +382,11 @@
     closeDrawer();
     const p = toSvg(e);
     const before = snapshot();
+    if (state.framing) {
+      const h = e.target.closest('[data-frame]');
+      if (h) { drag = { mode: 'frame', name: h.dataset.frame, orig: frameRect(state.drawing.settings, curStep().frame), start: p }; svg.setPointerCapture(e.pointerId); }
+      return;
+    }
     if (state.tool === 'formation') { placeFormation(p); return; }
     const t = state.tool && TOOLS[state.tool];
     if (t) {
@@ -391,6 +449,18 @@
       return { x: x0 + Math.cos(a) * len, y: y0 + Math.sin(a) * len };
     };
     const o = drag.obj;
+    if (drag.mode === 'frame') {
+      const r = drag.orig, st = curStep();
+      if (drag.name === 'move') st.frame = frameRect(state.drawing.settings, { x: r.x + dx, y: r.y + dy, w: r.w });
+      else {
+        // Redimensionnement aux proportions du terrain, le coin opposé reste fixe
+        const ax = drag.name.includes('w') ? r.x + r.w : r.x, ay = drag.name.includes('n') ? r.y + r.h : r.y;
+        const w = Math.max(Math.abs(p.x - ax), Math.abs(p.y - ay) * r.w / r.h);
+        const f = frameRect(state.drawing.settings, { x: 0, y: 0, w });
+        st.frame = frameRect(state.drawing.settings, { x: drag.name.includes('w') ? ax - f.w : ax, y: drag.name.includes('n') ? ay - f.h : ay, w: f.w });
+      }
+      renderOverlay(); return;
+    }
     if (drag.mode === 'create') {
       if (drag.kind === 'shape') { o.x = Math.min(drag.start.x, p.x); o.y = Math.min(drag.start.y, p.y); o.w = Math.abs(dx); o.h = Math.abs(dy); if (e.shiftKey) { o.w = o.h = Math.max(o.w, o.h); } }
       else if (drag.kind === 'line') { const q = snapTo(o.x1, o.y1); o.x2 = q.x; o.y2 = q.y; }
@@ -423,6 +493,7 @@
   function endDrag() {
     if (!drag) return;
     const d = drag; drag = null;
+    if (d.mode === 'frame') return;   // validé avec le bouton « Valider le cadrage »
     if (d.mode === 'create') {
       const o = d.obj;
       if (d.kind === 'shape' && (o.w < 6 || o.h < 6)) { o.w = o.h = 60; o.x = d.start.x - 30; o.y = d.start.y - 30; }
@@ -449,6 +520,7 @@
   document.addEventListener('keydown', e => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+    if (state.framing && (e.key === 'Escape' || e.key === 'Enter')) { endFraming(e.key === 'Enter'); return; }
     if (!$('#modal-preview').classList.contains('hidden')) {
       if (e.key === 'Escape') { if ($('#modal-preview').classList.contains('presenting')) setPresenting(false); else closeModal('modal-preview'); }
       else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); previewNext(); }
@@ -599,15 +671,17 @@
   function render_objectsOnly() { objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
 
   /* ---------- Étapes ---------- */
-  function sceneSvg(settings, objects, note) {
+  function sceneSvg(settings, objects, note, frame) {
     const spec = fieldSpec(settings);
-    const s = svgEl('svg', { xmlns: SVG_NS, viewBox: `0 0 ${spec.W} ${spec.H}` });
+    const f = frameRect(settings, frame), k = f.w / spec.W;
+    const s = svgEl('svg', { xmlns: SVG_NS, viewBox: `${f.x} ${f.y} ${f.w} ${f.h}` });
     s.appendChild(renderField(spec));
     s.appendChild(svgEl('g', {}, objects.map(renderObject)));
     if (note) {
+      // La note garde la même taille à l'écran, quel que soit le cadrage
       const lines = String(note).split('\n').slice(0, 3);
       const w = Math.min(spec.W - 24, Math.max(...lines.map(l => l.length)) * 9.5 + 28), h = 14 + lines.length * 20;
-      const g = svgEl('g', { transform: `translate(12 10)` });
+      const g = svgEl('g', { transform: `translate(${f.x + 12 * k} ${f.y + 10 * k}) scale(${k})` });
       g.appendChild(svgEl('rect', { width: w, height: h, rx: 8, fill: 'rgba(15,23,42,.78)' }));
       lines.forEach((l, i) => g.appendChild(svgEl('text', { x: 14, y: 24 + i * 20, 'font-size': 16, 'font-weight': 700, fill: '#fff', 'font-family': 'Arial, Helvetica, sans-serif' }, [l])));
       s.appendChild(g);
@@ -624,22 +698,25 @@
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
         <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
         <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}${st.note ? ' · 📝' : ''}${st.hold ? ' · ⏸' : ''}${st.duration ? ' · ' + (st.duration / 1000).toLocaleString('fr-FR') + ' s' : ''}</div>`;
-      card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note));
+      </div><div class="meta">${st.objects.length} objet${st.objects.length > 1 ? 's' : ''}${st.note ? ' · 📝' : ''}${st.hold ? ' · ⏸' : ''}${st.frame ? ' · 🔍 cadré' : ''}${st.duration ? ' · ' + (st.duration / 1000).toLocaleString('fr-FR') + ' s' : ''}</div>`;
+      card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
         opts.innerHTML = `<input type="text" class="step-note" placeholder="Note affichée pendant l'aperçu (ex. « Regarder la fixation du 10 »)" maxlength="90">
           <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">auto</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
-          <label><input type="checkbox" class="step-hold"> Pause sur cette étape</label></div>`;
+          <label><input type="checkbox" class="step-hold"> Pause sur cette étape</label></div>
+          <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">🔍 ${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
         opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
         const note = opts.querySelector('.step-note'); note.value = st.note || '';
         note.onfocus = () => { note.dataset.before = snapshot(); }; note.oninput = () => { st.note = note.value; }; note.onblur = () => { if (note.dataset.before) { commit(note.dataset.before); } };
         const dur = opts.querySelector('.step-dur'); dur.value = String(st.duration || 0); dur.onchange = () => { const b = snapshot(); st.duration = +dur.value || undefined; commit(b); };
         const hold = opts.querySelector('.step-hold'); hold.checked = !!st.hold; hold.onchange = () => { const b = snapshot(); st.hold = hold.checked || undefined; commit(b); };
+        opts.querySelector('.step-frame').onclick = startFraming;
+        const unf = opts.querySelector('.step-unframe'); if (unf) unf.onclick = () => { const b = snapshot(); st.frame = undefined; commit(b); };
         card.appendChild(opts);
       }
-      card.onclick = () => { state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
-      card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects) }); state.step = i + 1; state.selected = null; commit(b); };
+      card.onclick = () => { if (state.framing) endFraming(true); state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
+      card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects), frame: st.frame ? clone(st.frame) : undefined }); state.step = i + 1; state.selected = null; commit(b); };
       card.querySelector('.del').onclick = e => {
         e.stopPropagation();
         if (state.drawing.steps.length === 1) { toast('Impossible de supprimer la seule étape.'); return; }
@@ -649,7 +726,7 @@
       root.appendChild(card);
     });
   }
-  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()) }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); track('step_add', { steps: state.drawing.steps.length }); };
+  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()), frame: curStep().frame ? clone(curStep().frame) : undefined }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); track('step_add', { steps: state.drawing.steps.length }); };
 
   /* ---------- Onglets & réglages ---------- */
   function activateTab(name) {
@@ -711,9 +788,9 @@
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
   }
-  function showPreviewStep(i, objects) {
+  function showPreviewStep(i, objects, frame) {
     const d = pd(); const st = d.steps[i];
-    $(preview.canvas).replaceChildren(sceneSvg(d.settings, objects || st.objects, st.note));
+    $(preview.canvas).replaceChildren(sceneSvg(d.settings, objects || st.objects, st.note, frame || st.frame));
     $(preview.label).textContent = `Étape ${i + 1} / ${d.steps.length}` + (st.hold ? ' · pause' : '');
   }
   function animateTo(next, done) {
@@ -726,7 +803,8 @@
       const list = [];
       a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
       b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
-      showPreviewStep(next, list);
+      const fa = d.steps[preview.step].frame, fb = d.steps[next].frame;
+      showPreviewStep(next, list, (fa || fb) ? lerpFrame(d.settings, fa, fb, e) : null);
       if (t < 1) preview.raf = requestAnimationFrame(frame); else { preview.step = next; showPreviewStep(next); done && done(); }
     };
     cancelAnimationFrame(preview.raf);
@@ -795,7 +873,7 @@
   /* ---------- Export PNG ---------- */
   function exportPng() {
     const spec = fieldSpec(state.drawing.settings);
-    const s = sceneSvg(state.drawing.settings, curObjects());
+    const s = sceneSvg(state.drawing.settings, curObjects(), '', curStep().frame);
     s.setAttribute('width', spec.W); s.setAttribute('height', spec.H);
     const xml = new XMLSerializer().serializeToString(s);
     const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
@@ -845,7 +923,7 @@
   function exportPdf() {
     const d = state.drawing;
     const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-    const steps = d.steps.map((st, i) => `<section class="step"><h2>Étape ${i + 1}${st.note ? ' · ' + esc(st.note) : ''}</h2>${new XMLSerializer().serializeToString(sceneSvg(d.settings, st.objects))}</section>`).join('');
+    const steps = d.steps.map((st, i) => `<section class="step"><h2>Étape ${i + 1}${st.note ? ' · ' + esc(st.note) : ''}</h2>${new XMLSerializer().serializeToString(sceneSvg(d.settings, st.objects, '', st.frame))}</section>`).join('');
     const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${esc(d.title)}</title>
       <style>body{font-family:Arial,Helvetica,sans-serif;margin:16mm;color:#1f2933}h1{margin:0 0 2px;font-size:22px}.sub{color:#666;margin:0 0 14px;font-size:13px}
       .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.step{break-inside:avoid;border:1px solid #ddd;border-radius:8px;padding:8px}.step h2{font-size:14px;margin:0 0 6px}.step svg{width:100%;height:auto;border-radius:6px}
@@ -885,6 +963,7 @@
     d.settings = Object.assign({ field: 'full', orientation: 'landscape', stepDuration: 1200, snap: false }, d.settings || {});
     if (d.category === undefined) d.category = ''; if (d.tags === undefined) d.tags = '';
     state.drawing = d; state.step = 0; state.selected = null; state.history = []; state.future = [];
+    state.framing = null; $('#frame-bar').classList.add('hidden');
     renderField_(); applySettingsToUI(); afterChange();
   }
 

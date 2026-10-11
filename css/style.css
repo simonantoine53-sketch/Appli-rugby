@@ -324,6 +324,20 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .vis-badge.team { background: #e3f2e6; color: #2e7d32; }
 .vis-badge.proposed { background: #fff3e0; color: #ef6c00; }
 
+/* ---------- Cadrage par étape ---------- */
+.frame-layer { pointer-events: none; }
+.frame-mask { fill: rgba(15, 23, 42, .45); }
+.frame-box { fill: transparent; stroke: #fff; stroke-width: 3; stroke-dasharray: 12 8; }
+.frame-label { fill: #fff; font: 700 16px Arial, Helvetica, sans-serif; paint-order: stroke; stroke: rgba(15,23,42,.6); stroke-width: 3px; }
+.frame-layer.editing .frame-mask { fill: rgba(15, 23, 42, .6); }
+.frame-layer.editing .frame-box { pointer-events: all; cursor: move; stroke: #ffd54f; stroke-dasharray: none; }
+.frame-layer.editing .frame-handle { pointer-events: all; fill: #ffd54f; stroke: #1f2933; stroke-width: 2; cursor: nwse-resize; }
+.frame-layer.editing .frame-handle[data-frame=ne], .frame-layer.editing .frame-handle[data-frame=sw] { cursor: nesw-resize; }
+.frame-bar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 30; background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; width: min(640px, calc(100% - 24px)); }
+.frame-help { color: var(--muted); font-size: 13px; }
+.frame-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.frame-btns #frame-ok { margin-left: auto; }
+
 /* ---------- Annonces ---------- */
 .announce-bar { flex: 0 0 auto; display: flex; flex-direction: column; }
 .announce { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: #e8f0fe; color: #1558b8; font-size: 14px; border-bottom: 1px solid #c6dafc; }

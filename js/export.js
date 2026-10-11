@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  const { fieldSpec } = global.RugbyField;
+  const { fieldSpec, lerpFrame } = global.RugbyField;
   const { lerpObject } = global.RugbyObjects;
   const clone = o => JSON.parse(JSON.stringify(o));
   const ease = t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -13,10 +13,10 @@
     const hold = drawing.settings.stepDuration || 1200;
     const trans = Math.max(200, hold * 0.7);
     const frames = [];
-    const push = (objs, note) => frames.push({ objects: objs, note: note || '' });
+    const push = (objs, note, frame) => frames.push({ objects: objs, note: note || '', frame: frame || null });
     steps.forEach((st, i) => {
       const stepHold = (st.duration || hold) * (st.hold ? 1.6 : 1);
-      for (let t = 0; t < stepHold; t += dt) push(st.objects, st.note);
+      for (let t = 0; t < stepHold; t += dt) push(st.objects, st.note, st.frame);
       const next = steps[i + 1];
       if (!next) return;
       const a = st.objects, b = next.objects;
@@ -24,7 +24,7 @@
         const e = ease(t / trans), list = [];
         a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
         b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
-        push(list, next.note);
+        push(list, next.note, (st.frame || next.frame) ? lerpFrame(drawing.settings, st.frame, next.frame, e) : null);
       }
     });
     return frames;
@@ -135,14 +135,14 @@
     return out.result();
   }
 
-  /** Export GIF animé. sceneFn(settings, objects) renvoie un <svg>. */
+  /** Export GIF animé. sceneFn(settings, objects, note, frame) renvoie un <svg>. */
   async function exportGif(drawing, sceneFn, onProgress) {
     const spec = fieldSpec(drawing.settings);
     const dt = 60, scale = Math.min(1, 800 / spec.W);
     const frames = buildFrames(drawing, dt);
     const canvases = [];
     for (let i = 0; i < frames.length; i++) {
-      canvases.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note), spec.W, spec.H, scale));
+      canvases.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note, frames[i].frame), spec.W, spec.H, scale));
       if (onProgress) onProgress((i + 1) / frames.length * 0.8);
     }
     const blob = encodeGif(canvases, dt);
@@ -163,7 +163,7 @@
       // Pré-rendu de toutes les images pour un enregistrement fluide
       const imgs = [];
       for (let i = 0; i < frames.length; i++) {
-        imgs.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note), spec.W, spec.H, scale));
+        imgs.push(await rasterize(sceneFn(drawing.settings, frames[i].objects, frames[i].note, frames[i].frame), spec.W, spec.H, scale));
         if (onProgress) onProgress((i + 1) / frames.length * 0.5);
       }
       const wantMp4 = drawing.__format === 'mp4';

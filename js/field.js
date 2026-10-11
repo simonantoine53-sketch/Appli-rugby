@@ -77,5 +77,20 @@
     return root;
   }
 
-  global.RugbyField = { SVG_NS, M, PAD, svgEl, fieldSpec, renderField };
+  /** Cadrage d'une étape : rectangle {x, y, w, h} aux proportions du terrain, borné au dessin.
+      Sans cadrage (null), on montre tout le terrain. */
+  function frameRect(settings, f) {
+    const spec = fieldSpec(settings);
+    if (!f || !(f.w > 0)) return { x: 0, y: 0, w: spec.W, h: spec.H, full: true };
+    const w = Math.min(spec.W, Math.max(spec.W * 0.15, f.w)), h = w * spec.H / spec.W;
+    const x = Math.min(spec.W - w, Math.max(0, f.x)), y = Math.min(spec.H - h, Math.max(0, f.y));
+    return { x, y, w, h, full: w >= spec.W - 0.5 };
+  }
+  /** Interpolation entre deux cadrages (e de 0 à 1). */
+  function lerpFrame(settings, a, b, e) {
+    const A = frameRect(settings, a), B = frameRect(settings, b);
+    return { x: A.x + (B.x - A.x) * e, y: A.y + (B.y - A.y) * e, w: A.w + (B.w - A.w) * e, h: A.h + (B.h - A.h) * e };
+  }
+
+  global.RugbyField = { SVG_NS, M, PAD, svgEl, fieldSpec, renderField, frameRect, lerpFrame };
 })(window);

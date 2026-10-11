@@ -24,7 +24,7 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 
 ## À noter pour l'éditeur
 - **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
-- **Cadrage par étape** (idée touche) : chaque étape mémorise un cadrage (zoom + centre). On zoome sur la touche pour détailler la combinaison (sauteur, lift, lancer), puis l'étape suivante dézoome pour le lancement des trois-quarts ; l'aperçu et les exports animent le zoom entre les étapes. À faire après validation terrain.
+- **Cadrage par étape** : fait le 11 octobre 2026. Dans l'étape active, « Cadrer (zoomer sur une zone) » : on glisse le cadre, on tire un coin pour zoomer, on valide. Une nouvelle étape reprend le cadre ; « Tout le terrain » le retire. L'aperçu, le partage, le GIF, la vidéo, le PNG et la fiche PDF animent ou appliquent le cadrage.
 
 ## À réfléchir plus (priorité moyenne)
 - **Cotisations** : suivi de qui a payé, relances. Intéressant pour le club, à remonter, mais la faisabilité (paiement en ligne, prestataire) reste à étudier.
