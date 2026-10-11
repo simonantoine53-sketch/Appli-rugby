@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/style.css?v=202610110713">
+  <meta name="theme-color" content="#4a9e4f">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Rugby Strat">
+  <link rel="stylesheet" href="css/style.css?v=202610110726">
 </head>
 <body>
 
@@ -50,6 +55,31 @@
     </div>
   </header>
   <div class="home-body" id="team-page"></div>
+</div>
+
+<!-- ===== Stratégie partagée par lien (lecture seule, sans compte) ===== -->
+<div id="view-share" class="view hidden">
+  <header class="topbar home-bar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <strong id="share-title">Stratégie partagée</strong>
+    </div>
+    <div class="actions">
+      <button id="share-open-app" class="btn primary">Ouvrir l'appli</button>
+    </div>
+  </header>
+  <div class="home-body share-body">
+    <p id="share-meta" class="muted"></p>
+    <div id="share-canvas" class="preview-canvas share-canvas"></div>
+    <div class="preview-controls">
+      <button id="share-prev" class="btn outline">⏮ Précédente</button>
+      <button id="share-play" class="btn primary">▶ Lire</button>
+      <button id="share-next" class="btn outline">Suivante ⏭</button>
+      <button id="share-full" class="btn outline" title="Plein écran">⛶</button>
+    </div>
+    <p id="share-step" class="muted center"></p>
+    <p id="share-error" class="library-empty hidden">Ce lien n'est plus valide ou le partage a été arrêté.</p>
+  </div>
 </div>
 
 <!-- ===== Éditeur ===== -->
@@ -236,6 +266,7 @@
       <button id="preview-prev" class="btn outline">⏮ Précédente</button>
       <button id="preview-play" class="btn primary">▶ Lire</button>
       <button id="preview-next" class="btn outline">Suivante ⏭</button>
+      <button id="preview-full" class="btn outline" title="Mode présentation plein écran (F)">⛶ Plein écran</button>
     </div>
   </div>
 </div>
@@ -295,6 +326,21 @@
   </div>
 </div>
 
+<!-- Commentaires d'une stratégie -->
+<div id="modal-comments" class="modal hidden">
+  <div class="modal-box auth-box">
+    <div class="modal-head">
+      <strong id="comments-title">Commentaires</strong>
+      <button class="btn-close" data-close="modal-comments" title="Fermer">✕</button>
+    </div>
+    <div id="comments-list" class="team-body comments-list"></div>
+    <form id="comments-form" class="inline-form comments-form">
+      <input id="comments-input" type="text" placeholder="Votre commentaire…" maxlength="1000" required>
+      <button class="btn primary small" type="submit">Envoyer</button>
+    </form>
+  </div>
+</div>
+
 <!-- Connexion / inscription -->
 <div id="modal-auth" class="modal hidden">
   <div class="modal-box auth-box">
@@ -323,6 +369,10 @@
     <div class="team-body">
       <p id="team-user" class="muted"></p>
       <button id="btn-goto-team" class="btn secondary wide">Voir mon équipe</button>
+      <div id="push-block" class="push-block hidden">
+        <button id="btn-push" class="btn outline wide">🔔 Activer les notifications</button>
+        <p id="push-help" class="muted small"></p>
+      </div>
       <button id="btn-logout" class="btn outline wide">Se déconnecter</button>
     </div>
   </div>
@@ -332,14 +382,15 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/icons.js?v=202610110713"></script>
-<script src="js/field.js?v=202610110713"></script>
-<script src="js/formations.js?v=202610110713"></script>
-<script src="js/objects.js?v=202610110713"></script>
-<script src="js/export.js?v=202610110713"></script>
+<script src="js/icons.js?v=202610110726"></script>
+<script src="js/field.js?v=202610110726"></script>
+<script src="js/formations.js?v=202610110726"></script>
+<script src="js/objects.js?v=202610110726"></script>
+<script src="js/export.js?v=202610110726"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610110713"></script>
-<script src="js/editor.js?v=202610110713"></script>
-<script src="js/account.js?v=202610110713"></script>
+<script src="js/config.js?v=202610110726"></script>
+<script src="js/editor.js?v=202610110726"></script>
+<script src="js/account.js?v=202610110726"></script>
+<script src="js/push.js?v=202610110726"></script>
 </body>
 </html>

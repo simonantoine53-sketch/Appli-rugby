@@ -11,9 +11,13 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 2. **Séances d'entraînement** : assembler des dessins en séance chronométrée avec matériel, à relier aux convocations. Les séances peuvent être une catégorie de stratégies.
 3. **Compositions d'équipe** : les 15 postes + remplaçants, publiées aux joueurs, **feuille de match imprimable personnalisable aux couleurs du club (logo, etc.)**. Simon fournira le template actuel du club.
 
+## Fait dans l'éditeur (11 octobre 2026)
+- Catégories et recherche, duplication, durée et pause par étape, note de coaching par étape, noms des joueurs depuis l'effectif, flèches courbes, grille magnétique (option), export PDF et MP4.
+- Mode présentation plein écran (flèches / espace / clic pour avancer), lien de partage public en lecture seule, commentaires des joueurs avec réponse du coach, notifications push (publication et proposition ; sur iPhone l'appli doit être ajoutée à l'écran d'accueil).
+
 ## À noter pour l'éditeur
-- **Catégories de stratégies** : entraînement, entraînement physique, match, stratégie avants, stratégie arrières, touche, mêlée… avec filtre et recherche. Bonne idée, à faire plus tard.
-- Notes de coaching par étape, durée par étape, bibliothèque de formations de départ, lien de partage en lecture seule, export MP4 et PDF multi-étapes.
+- **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
+- **Cadrage par étape** (idée touche) : chaque étape mémorise un cadrage (zoom + centre). On zoome sur la touche pour détailler la combinaison (sauteur, lift, lancer), puis l'étape suivante dézoome pour le lancement des trois-quarts ; l'aperçu et les exports animent le zoom entre les étapes. À faire après validation terrain.
 
 ## À réfléchir plus (priorité moyenne)
 - **Cotisations** : suivi de qui a payé, relances. Intéressant pour le club, à remonter, mais la faisabilité (paiement en ligne, prestataire) reste à étudier.
