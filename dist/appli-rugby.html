@@ -118,11 +118,14 @@ button { font: inherit; cursor: pointer; }
 #canvas .handle { fill: #fff; stroke: var(--primary); stroke-width: 1.5; cursor: nwse-resize; }
 #canvas .handle.vertex, #canvas .handle.endpoint { cursor: pointer; }
 #canvas .selection-box { fill: none; stroke: var(--primary); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
-.fab-select {
-  position: absolute; left: 16px; bottom: 44px; z-index: 6; width: 52px; height: 52px; padding: 0;
+.fab-left { position: absolute; left: 16px; bottom: 44px; z-index: 6; display: flex; gap: 8px; }
+.fab-select, .fab-mode {
+  width: 52px; height: 52px; padding: 0;
   display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--primary);
   background: #fff; color: var(--primary); cursor: pointer;
 }
+.fab-mode { display: none; border-color: var(--border); color: #555; }
+.fab-mode.on { border-color: var(--primary); background: var(--primary); color: #fff; }
 .fab-select svg { width: 26px; height: 26px; }
 .fab-select.tool-on { background: var(--primary); color: #fff; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -351,7 +354,10 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .tab-content { padding: 12px; }
 
   .zoom-fab { display: flex; }
-  .fab-select { left: 12px; bottom: 68px; width: 50px; height: 50px; }
+  .fab-left { left: 12px; bottom: 68px; }
+  .fab-select, .fab-mode { width: 50px; height: 50px; }
+  .fab-mode { display: grid; }
+  .props .pbtn { padding: 6px 8px; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
     background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
@@ -470,10 +476,18 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
     <div class="canvas-wrap" id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
-    <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
-      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-      <span id="fab-select-label" class="sr-only">Sélectionner / déplacer</span>
-    </button>
+    <div class="fab-left">
+      <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 3l14 8-6 2-3 6z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span id="fab-select-label" class="sr-only">Sélectionner / déplacer</span>
+      </button>
+      <button id="fab-multi" class="fab-mode" title="Sélection multiple : chaque appui ajoute ou retire un objet (équivalent de Maj + clic)">
+        <svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="3" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="10" width="11" height="11" rx="2" fill="currentColor" opacity=".85"/></svg>
+      </button>
+      <button id="fab-axis" class="fab-mode" title="Déplacement aligné : horizontal ou vertical seulement (équivalent de Maj + glisser)">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
       <button data-zoom="out" title="Zoom arrière">−</button>
@@ -1427,7 +1441,7 @@ window.RUGBY_CONFIG = {
   function newDrawing() {
     return { id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(), title: 'Nouveau dessin', settings: { field: 'full', orientation: 'landscape', stepDuration: 1200 }, steps: [{ id: uid(), objects: [] }], updatedAt: Date.now() };
   }
-  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [] };
+  const state = { drawing: newDrawing(), step: 0, tool: null, selected: null, multi: [], lastPlayerColor: 'blue', zoom: 1, history: [], future: [], multiMode: false, axisMode: false };
   /** Identifiants sélectionnés (sélection multiple avec Maj, sinon l'objet courant). */
   const selIds = () => { const ids = state.multi.filter(id => findObj(id)); if (ids.length) return ids; return state.selected && findObj(state.selected) ? [state.selected] : []; };
   const selObjs = () => selIds().map(findObj);
@@ -1578,6 +1592,8 @@ window.RUGBY_CONFIG = {
     });
     $('#btn-save-formation').onclick = saveCurrentFormation;
     $('#btn-list-formations').onclick = openSavedFormations;
+    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
+    $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
@@ -1736,8 +1752,8 @@ window.RUGBY_CONFIG = {
     const g = e.target.closest('[data-id]');
     if (g) {
       const id = g.dataset.id;
-      if (e.shiftKey) {
-        // Maj + clic : ajoute ou retire l'objet de la sélection multiple
+      if (e.shiftKey || state.multiMode) {
+        // Maj + clic (ou mode sélection multiple sur mobile) : ajoute ou retire l'objet de la sélection
         let ids = selIds();
         ids = ids.includes(id) ? ids.filter(x => x !== id) : ids.concat(id);
         state.multi = ids.length > 1 ? ids : []; state.selected = ids.length ? ids[ids.length - 1] : null;
@@ -1759,10 +1775,11 @@ window.RUGBY_CONFIG = {
     const p = toSvg(e);
     let dx = p.x - drag.start.x, dy = p.y - drag.start.y;
     // Maj : déplacement contraint sur un seul axe (horizontal ou vertical)
-    if (e.shiftKey && drag.mode === 'move') { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
-    // Maj : lignes et flèches contraintes à 0°, 45° ou 90°
+    const constrain = e.shiftKey || state.axisMode;
+    if (constrain && drag.mode === 'move') { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
+    // Maj (ou mode aligné) : lignes et flèches contraintes à 0°, 45° ou 90°
     const snapTo = (x0, y0) => {
-      if (!e.shiftKey) return p;
+      if (!constrain) return p;
       const vx = p.x - x0, vy = p.y - y0, len = Math.hypot(vx, vy);
       if (len < 1) return p;
       const a = Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) * (Math.PI / 4);
