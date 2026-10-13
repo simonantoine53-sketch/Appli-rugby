@@ -812,3 +812,34 @@ button:focus-visible, .btn:focus-visible, a:focus-visible, label.btn:focus-withi
 .hub-bar .brand.home-link:hover { background: #f1f3f5; }
 .todo-more { align-self: flex-start; margin-top: 4px; color: var(--primary); padding: 0 8px; }
 .tab .tab-badge { margin-left: 6px; vertical-align: 1px; }
+
+/* =====================================================================
+   Listes déroulantes : flèche de l'appli (même marge partout) et menu aux couleurs du site
+   ===================================================================== */
+select {
+  -webkit-appearance: none; -moz-appearance: none; appearance: none; cursor: pointer; text-overflow: ellipsis;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b7280' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important; background-position: right 14px center !important; background-size: 12px 8px !important;
+  padding-left: 12px !important; padding-right: 38px !important;
+}
+select.small, .select.small, .step-opts-row select { background-position: right 12px center !important; padding-left: 10px !important; padding-right: 32px !important; }
+select:hover { border-color: #b9c1cc; }
+select[aria-expanded="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,115,232,.15); }
+select:disabled { opacity: .5; cursor: default; }
+
+.rs-pop { position: fixed; z-index: 120; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(15,23,42,.18); padding: 6px; overflow-y: auto; display: flex; flex-direction: column; }
+.rs-list { display: flex; flex-direction: column; gap: 2px; }
+.rs-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: var(--tap-sm); padding: 0 12px; border: none; background: none; border-radius: 8px; font: inherit; font-size: 15px; color: var(--text); text-align: left; cursor: pointer; }
+.rs-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rs-opt svg { flex: 0 0 auto; }
+.rs-opt:hover, .rs-opt:focus-visible { background: #f1f5fb; outline: none; }
+.rs-opt.on { color: var(--primary); font-weight: 600; }
+.rs-opt:disabled { opacity: .4; cursor: default; }
+.rs-group { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 12px 4px; }
+.rs-back { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 119; }
+.rs-pop.sheet { left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 72vh; border-radius: 16px 16px 0 0; border: none; padding: 8px 12px calc(14px + env(safe-area-inset-bottom, 0px)); animation: rs-up .18s ease-out; }
+.rs-pop.sheet .rs-opt { min-height: 50px; font-size: 16px; }
+.rs-title { font-weight: 700; font-size: 16px; padding: 8px 12px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+@keyframes rs-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rs-pop.sheet { animation: none; } }
