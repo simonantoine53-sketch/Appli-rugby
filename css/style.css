@@ -390,6 +390,69 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .hub-tile .soon-tag { position: absolute; top: 10px; right: 10px; }
 .soon-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #8d5b00; background: #fff3e0; border-radius: 6px; padding: 2px 6px; }
 
+/* ---------- Agenda et convocations ---------- */
+.agenda-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.agenda-list { display: flex; flex-direction: column; gap: 10px; }
+.agenda-week { margin: 6px 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.agenda-empty { margin-top: 0; }
+.ev-card { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 12px; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 12px; cursor: pointer; }
+.ev-card:hover { border-color: var(--primary); }
+.ev-card.cancelled, .ev-detail.cancelled { opacity: .7; }
+.ev-card.cancelled .ev-title, .ev-detail.cancelled h2 { text-decoration: line-through; }
+.ev-date { border-radius: 10px; background: #e8f0fe; color: var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 0; text-transform: uppercase; font-size: 12px; font-weight: 700; line-height: 1.15; align-self: start; }
+.ev-date strong { font-size: 24px; line-height: 1.1; }
+.ev-date.match { background: #fde7e9; color: var(--accent); }
+.ev-date.other { background: #f3e5f5; color: #6a1b9a; }
+.ev-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ev-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.ev-kind { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 2px 7px; border-radius: 6px; background: #e8f0fe; color: var(--primary); }
+.ev-kind.match { background: #fde7e9; color: var(--accent); }
+.ev-kind.other { background: #f3e5f5; color: #6a1b9a; }
+.ev-cancel { font-size: 12px; font-weight: 800; color: #c62828; text-transform: uppercase; }
+.ev-title { font-size: 17px; font-weight: 700; }
+.ev-place { font-size: 14px; color: var(--muted); }
+.rsvp { display: flex; gap: 6px; margin-top: 6px; }
+.rsvp .rsvp-btn { flex: 1 1 0; justify-content: center; padding: 8px 6px; font-size: 14px; background: #fff; border: 1.5px solid var(--border); color: var(--text); min-height: 40px; }
+.rsvp.big .rsvp-btn { min-height: 48px; font-size: 15px; }
+.rsvp .rsvp-btn.yes[aria-pressed="true"] { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.rsvp .rsvp-btn.maybe[aria-pressed="true"] { background: #ef6c00; border-color: #ef6c00; color: #fff; }
+.rsvp .rsvp-btn.no[aria-pressed="true"] { background: #c62828; border-color: #c62828; color: #fff; }
+.rsvp .rsvp-btn:disabled { opacity: .5; cursor: default; }
+.ev-counts { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.pres-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #eceff1; }
+.pres-bar i { display: block; height: 100%; }
+.pres-bar .y { background: #2e7d32; } .pres-bar .m { background: #ef6c00; } .pres-bar .n { background: #c62828; }
+.pres-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; font-weight: 700; }
+.pres-legend .y { color: #2e7d32; } .pres-legend .m { color: #ef6c00; } .pres-legend .n { color: #c62828; } .pres-legend .w { color: var(--muted); }
+.back-link { align-self: flex-start; padding: 6px 4px; color: var(--primary); }
+.ev-detail { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.ev-detail h2 { margin: 0; font-size: 22px; }
+.ev-lines { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.ev-notes { margin: 0; white-space: pre-wrap; background: #f6f8fa; border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+.ev-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ev-answer { background: #fff; border: 2px solid var(--primary); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.ev-comment input { font-size: 15px; }
+.ev-who { display: flex; flex-direction: column; gap: 8px; }
+.ev-who .home-h4 { margin: 8px 0 0; }
+.ev-remind { display: flex; flex-wrap: wrap; gap: 8px; }
+.ev-person { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+.ev-person .who small { display: block; color: var(--muted); font-size: 13px; }
+.event-form .seg-row { display: flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+.event-form .seg-row label { flex: 1 1 0; display: block; font-weight: 600; }
+.event-form .seg-row input { position: absolute; opacity: 0; pointer-events: none; }
+.event-form .seg-row span { display: block; text-align: center; padding: 10px 6px; font-size: 14px; cursor: pointer; }
+.event-form .seg-row input:checked + span { background: var(--primary); color: #fff; }
+.event-form .seg-row input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: -2px; }
+.event-form #ev-match-fields { display: flex; flex-direction: column; gap: 10px; }
+.event-form #ev-match-fields.hidden { display: none; }
+.form-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.form-row label { min-width: 0; }
+.form-row input { width: 100%; min-width: 0; }
+.form label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; }
+.form textarea { font: inherit; font-size: 15px; }
+#modal-event .modal-box { max-height: 94vh; overflow-y: auto; }
+@media (max-width: 520px) { .form-row { grid-template-columns: 1fr 1fr; } .form-row label:first-child { grid-column: 1 / -1; } }
+
 /* ---------- Pages « Bientôt » et Compte ---------- */
 .soon-card { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 24px 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 560px; width: 100%; margin: 12px auto 0; }
 .soon-card h2 { margin: 0; font-size: 22px; }

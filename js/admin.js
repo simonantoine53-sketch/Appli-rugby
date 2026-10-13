@@ -209,7 +209,7 @@
   }
   const TOOL_LABEL = id => { const t = window.RugbyPalette && window.RugbyPalette.TOOLS[id]; return t ? t.label : id; };
   const GROUP_LABEL = { formations: 'Formations', shapes: 'Formes', equip: 'Équipement', players: 'Joueurs' };
-  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »', interest: 'Intérêt « bientôt »', home_action: 'Action depuis l’accueil', invite: 'Invitation envoyée', open_link: 'Ouverture depuis une notification' };
+  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »', interest: 'Intérêt « bientôt »', home_action: 'Action depuis l’accueil', invite: 'Invitation envoyée', open_link: 'Ouverture depuis une notification', event_create: 'Événement créé', rsvp: 'Réponse à une convocation', event_reminder: 'Relance convocation', event_ics: 'Ajout au calendrier' };
   async function renderOverview() {
     const o = must(await sb.rpc('admin_overview'));
     cache.feedbackNew = o.feedback_new; cache.pending = o.members_pending;
@@ -242,7 +242,7 @@
     );
     // Intérêt pour les fonctionnalités à venir (clics « Ça m'intéresse »)
     const { data: interest } = await sb.from('events').select('props, user_id').eq('name', 'interest').gte('created_at', new Date(Date.now() - 90 * 864e5).toISOString());
-    const FEAT = { agenda: 'Agenda et convocations', seances: 'Séances d’entraînement', compos: 'Compositions et feuille de match' };
+    const FEAT = { agenda: 'Agenda et convocations (avant sa sortie)', seances: 'Séances d’entraînement', compos: 'Compositions et feuille de match' };
     const byFeat = {}; (interest || []).forEach(e => { const f = (e.props && e.props.feature) || '?'; (byFeat[f] = byFeat[f] || new Set()).add(e.user_id); });
     charts.prepend(bars('Demande pour les fonctions à venir (comptes, 90 j)', Object.entries(byFeat).map(([k, v]) => ({ name: k, n: v.size })).sort((a, b) => b.n - a.n), k => FEAT[k] || k));
     return [grid, charts];

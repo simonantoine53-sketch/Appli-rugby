@@ -7,6 +7,7 @@
   const E = window.RugbyEditor;
   const A = window.RugbyAccount;
   const P = () => window.RugbyPush;
+  const AG = () => window.RugbyAgenda;
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const active = !!(A && A.isActive());
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -88,7 +89,8 @@
     // Onglets
     const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
     const cur = view === 'soon' ? 'home' : view;
-    const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0 };
+    const unanswered = data && data.agenda && !data.staff ? data.agenda.events.filter(e => !e.mine).length : 0;
+    const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
       if (cur === id) b.setAttribute('aria-current', 'page');
@@ -142,7 +144,10 @@
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
     slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
     let d;
-    try { d = await A.homeData(); } catch (e) { d = null; }
+    try {
+      const [hd, ag] = await Promise.all([A.homeData(), AG() ? AG().upcoming(team).catch(() => null) : null]);
+      d = hd; if (d) d.agenda = ag || { events: [], total: 0 };
+    } catch (e) { d = null; }
     if (my !== seq) return;
     data = d; renderChrome();
     slot.replaceChildren();
@@ -161,7 +166,8 @@
     const steps = [
       { done: true, label: 'Créer ton équipe' },
       { done: players >= 5, label: `Inviter tes joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
-      { done: d.published.length > 0, label: 'Publier ta première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() }
+      { done: d.published.length > 0, label: 'Publier ta première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
+      { done: d.agenda.total > 0, label: 'Créer ton premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
     ];
     const push = P();
     if (push && push.canAsk && push.canAsk()) steps.push({ done: notifOn, label: 'Activer les notifications sur ce téléphone', action: 'Activer', fn: () => push.enable().then(() => renderHome()) });
@@ -183,11 +189,21 @@
   function todo(d, notifOn, staff) {
     const items = [];
     const go = (item, fn) => () => { track('home_action', { item }); fn(); };
+    const ag = d.agenda || { events: [], total: 0 };
+    const soon = Date.now() + 7 * 864e5;
     if (staff) {
+      // Convocations : les plus proches d'abord
+      ag.events.filter(ev => new Date(ev.starts_at) < soon && ev.sum.none).forEach(ev => items.push({ text: `${esc(AG().short(ev))} : <strong>${plural(ev.sum.none, 'joueur', 'joueurs')} sans réponse</strong>`, action: 'Relancer', primary: true, fn: go('event-remind', () => AG().remind(ev)) }));
       if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => { A.setTeamTab('members'); E.go('team'); }) });
       if (d.proposals) items.push({ text: `<strong>${plural(d.proposals, 'proposition', 'propositions')}</strong> de joueur à regarder`, action: 'Voir', fn: go('proposals', () => { A.setTeamTab('proposed'); E.go('team'); }) });
       d.lowViews.slice(0, 2).forEach(r => items.push({ text: `« ${esc(r.title)} » : <strong>${r.viewers}/${r.audience} ont vu</strong>`, action: 'Relancer', fn: go('low-views', () => A.openViews(r)) }));
+      if (!ag.events.length) items.push({ text: 'Aucun match ni entraînement prévu', action: 'Créer', fn: go('event-create', () => AG().openForm()) });
     } else {
+      // Convocations sans réponse : on répond directement depuis l'accueil
+      ag.events.filter(ev => !ev.mine).forEach(ev => items.push({
+        text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>tu viens ?</strong>`,
+        buttons: [['Oui', 'primary', 'yes'], ['Non', 'outline', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(st === 'yes' ? 'Super, à bientôt !' : 'Réponse envoyée : absent.'); renderHome(); } })])
+      }));
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
       const push = P();
@@ -198,7 +214,8 @@
     if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Tu es à jour.'));
     items.slice(0, 3).forEach(it => {
       const row = el('div', 'todo-row', `<span class="grow">${it.text}</span>`);
-      row.appendChild(btn(it.action, it.primary ? 'primary small' : 'outline small', it.fn));
+      if (it.buttons) it.buttons.forEach(([l, cls, fn]) => row.appendChild(btn(l, cls + ' small', fn)));
+      else row.appendChild(btn(it.action, it.primary ? 'primary small' : 'outline small', it.fn));
       card.appendChild(row);
     });
     if (items.length > 3) card.appendChild(el('p', 'muted small', `+ ${items.length - 3} autre${items.length - 3 > 1 ? 's' : ''}`));
@@ -217,16 +234,23 @@
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));
       tile('team', 'Effectif', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => { A.setTeamTab('members'); E.go('team'); }, { badge: d.pending });
       tile('invite', 'Inviter', `Code ${esc(d.team.join_code)}`, () => A.shareCode());
-      tile('agenda', 'Agenda', 'Matchs, entraînements, présences', () => E.go('agenda'), { soon: true });
+      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'));
       tile('seances', 'Séances', 'Préparer l’entraînement', () => E.go('soon', 'seances'), { soon: true });
       tile('compos', 'Compositions', 'Feuille de match', () => E.go('soon', 'compos'), { soon: true });
     } else {
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
       tile('team', 'Mon équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
-      tile('agenda', 'Agenda', 'Matchs et présences', () => E.go('agenda'), { soon: true });
+      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => !e.mine).length });
       tile('account', 'Mon compte', 'Notifications, avis', () => E.go('account'));
     }
     return grid;
+  }
+
+  /** Info vivante de la tuile Agenda : le prochain rendez-vous. */
+  function nextLabel(d) {
+    const ev = d.agenda && d.agenda.events[0];
+    if (!ev) return d.staff ? 'Créer un match ou un entraînement' : 'Rien de prévu';
+    return `${ev.kind === 'match' ? 'Match' : ev.kind === 'training' ? 'Entraînement' : esc(ev.title)} ${AG().dayShort(ev.starts_at)} · ${AG().time(ev.starts_at)}`;
   }
 
   /* ---------- Changement de page ---------- */
@@ -235,7 +259,7 @@
     view = v;
     renderChrome();
     if (v === 'home') renderHome();
-    else if (v === 'agenda') renderSoon('agenda', '#hub-agenda');
+    else if (v === 'agenda') { if (AG()) AG().render($('#hub-agenda'), location.hash.split('/')[2] || ''); else renderSoon('agenda', '#hub-agenda'); }
     else if (v === 'soon') renderSoon(location.hash.split('/')[2] || 'agenda', '#hub-soon');
     else if (v === 'account' && active) A.renderAccountPage();
   }

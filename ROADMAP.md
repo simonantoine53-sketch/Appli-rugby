@@ -47,7 +47,13 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Accueil : guide « Démarrer avec ton équipe » pour le staff (créer, inviter 5 joueurs, publier, notifications), bandeau « À faire » (3 actions au plus : demandes d'adhésion, propositions, stratégies peu vues ; côté joueur : stratégies à regarder, notifications), tuiles avec info vivante.
 - Agenda, Séances, Compositions : pages « Bientôt » avec « Ça m'intéresse » (compté dans le back-office pour prioriser).
 - Notifications : lien direct vers la stratégie (#/d/<id>) ; un joueur qui ouvre une stratégie du coach voit l'animation démarrer.
-- Prochaine étape : Agenda et convocations (remplit le bandeau « À faire » : réponses manquantes, rappels).
+
+## Agenda et convocations : fait le 13 octobre 2026 (inspiré de Spond et SportEasy)
+- Événements : entraînement, match (adversaire, domicile / extérieur) ou autre ; date, début, heure de rendez-vous, lieu (lien carte), infos pour l'équipe ; entraînements répétés chaque semaine ; modifier, annuler (membres prévenus), supprimer.
+- Convocation de tous les joueurs actifs : Présent / Peut-être / Absent en un appui, commentaire facultatif ; le staff peut saisir la réponse d'un joueur ; liste par statut visible par toute l'équipe.
+- Relance push des seuls joueurs sans réponse, message WhatsApp à copier, notification à la création ; « Ajouter à mon agenda » (.ics).
+- Accueil : le coach voit « X joueurs sans réponse [Relancer] », le joueur répond « Oui / Non » directement ; tuile et onglet Agenda avec le prochain rendez-vous et le nombre de réponses à donner.
+- Plus tard : rappel automatique la veille (tâche planifiée), convocation d'une sélection pour les matchs, lien vers la compo, statistiques de présence par joueur.
 
 ## Modèle économique (hypothèse)
 - Dessiner et prévisualiser : gratuit.

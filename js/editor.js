@@ -1046,8 +1046,8 @@
     return { strategies: 'strats', agenda: 'agenda', soon: 'soon', team: 'team', account: 'account', admin: 'admin' }[k] || 'home';
   }
   const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
-  /** go('soon', 'seances') ouvre la page d'une fonctionnalité à venir. */
-  function go(view, arg) { const h = view === 'soon' ? '#/soon/' + (arg || '') : ROUTES[view] || '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  /** go('soon', 'seances') ouvre la page d'une fonctionnalité à venir ; go('agenda', id) le détail d'un événement. */
+  function go(view, arg) { const h = view === 'soon' ? '#/soon/' + (arg || '') : view === 'agenda' && arg ? '#/agenda/' + arg : ROUTES[view] || '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
     const active = acc && acc.isActive();

@@ -1,6 +1,7 @@
 // Envoi de notifications push (Web Push) aux membres d'une équipe.
 // Appelée par le navigateur après une publication (kind = "published") ou une proposition (kind = "proposed"),
 // ou par le staff pour relancer les membres qui n'ont pas encore ouvert une stratégie publiée (kind = "reminder").
+// Agenda : nouvel événement (event_new), relance des membres sans réponse (event_reminder), annulation (event_cancelled).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -23,10 +24,11 @@ Deno.serve(async (req) => {
     const { data: { user } } = await asUser.auth.getUser();
     if (!user) return json({ error: "non connecté" }, 401);
 
-    const { drawing_id, kind } = await req.json();
+    const { drawing_id, event_id, kind } = await req.json();
+    const admin = createClient(url, serviceKey);
+    if (["event_new", "event_reminder", "event_cancelled"].includes(kind)) return await eventPush(admin, user.id, event_id, kind);
     if (!drawing_id || !["published", "proposed", "reminder"].includes(kind)) return json({ error: "paramètres invalides" }, 400);
 
-    const admin = createClient(url, serviceKey);
     const { data: drawing } = await admin.from("drawings").select("id, title, team_id, owner_id, visibility").eq("id", drawing_id).maybeSingle();
     if (!drawing || !drawing.team_id) return json({ error: "dessin introuvable" }, 404);
     const expected = kind === "proposed" ? "proposed" : "team";
@@ -51,10 +53,7 @@ Deno.serve(async (req) => {
       .map((m) => m.user_id);
     if (!recipients.length) return json({ sent: 0, recipients: 0 });
 
-    const { data: secrets } = await admin.from("app_secrets").select("key, value");
-    const sec = Object.fromEntries((secrets || []).map((s) => [s.key, s.value]));
-    if (!sec.vapid_public || !sec.vapid_private) return json({ error: "clés VAPID absentes" }, 500);
-    webpush.setVapidDetails("mailto:simonantoine53@gmail.com", sec.vapid_public, sec.vapid_private);
+    if (!(await setVapid(admin))) return json({ error: "clés VAPID absentes" }, 500);
 
     const { data: team } = await admin.from("teams").select("name").eq("id", drawing.team_id).maybeSingle();
     const { data: sender } = await admin.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
@@ -68,23 +67,75 @@ Deno.serve(async (req) => {
       tag: `drawing-${drawing.id}`,
     });
 
-    const { data: subs } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").in("user_id", recipients);
-    let sent = 0;
-    const dead: string[] = [];
-    await Promise.all((subs || []).map(async (s) => {
-      try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
-        sent++;
-      } catch (e) {
-        const code = (e as { statusCode?: number }).statusCode;
-        if (code === 404 || code === 410) dead.push(s.id);
-        else console.error("push", code, (e as Error).message);
-      }
-    }));
-    if (dead.length) await admin.from("push_subscriptions").delete().in("id", dead);
-    return json({ sent, removed: dead.length, recipients: recipients.length });
+    return json(await send(admin, recipients, payload));
   } catch (e) {
     console.error(e);
     return json({ error: (e as Error).message }, 500);
   }
 });
+
+// deno-lint-ignore no-explicit-any
+type Admin = any;
+
+async function send(admin: Admin, recipients: string[], payload: string) {
+  const { data: subs } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").in("user_id", recipients);
+  let sent = 0;
+  const dead: string[] = [];
+  await Promise.all((subs || []).map(async (s: { id: string; endpoint: string; p256dh: string; auth: string }) => {
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
+      sent++;
+    } catch (e) {
+      const code = (e as { statusCode?: number }).statusCode;
+      if (code === 404 || code === 410) dead.push(s.id);
+      else console.error("push", code, (e as Error).message);
+    }
+  }));
+  if (dead.length) await admin.from("push_subscriptions").delete().in("id", dead);
+  return { sent, removed: dead.length, recipients: recipients.length };
+}
+
+async function setVapid(admin: Admin) {
+  const { data: secrets } = await admin.from("app_secrets").select("key, value");
+  const sec = Object.fromEntries((secrets || []).map((s: { key: string; value: string }) => [s.key, s.value]));
+  if (!sec.vapid_public || !sec.vapid_private) return false;
+  webpush.setVapidDetails("mailto:simonantoine53@gmail.com", sec.vapid_public, sec.vapid_private);
+  return true;
+}
+
+const DAYS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+function when(iso: string) {
+  // Heure de Paris (les clubs sont en France)
+  const d = new Date(new Date(iso).toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} à ${d.getHours()}h${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Notifications de l'agenda : envoyées par le staff de l'équipe. */
+async function eventPush(admin: Admin, senderId: string, eventId: string, kind: string) {
+  if (!eventId) return json({ error: "paramètres invalides" }, 400);
+  const { data: ev } = await admin.from("team_events").select("id, team_id, kind, title, opponent, home, starts_at, cancelled").eq("id", eventId).maybeSingle();
+  if (!ev) return json({ error: "événement introuvable" }, 404);
+  const { data: members } = await admin.from("team_members").select("user_id, role").eq("team_id", ev.team_id).eq("status", "active");
+  const me = (members || []).find((m: { user_id: string }) => m.user_id === senderId);
+  if (!me || (me.role !== "coach" && me.role !== "admin")) return json({ error: "réservé au staff" }, 403);
+  let recipients = (members || []).map((m: { user_id: string }) => m.user_id).filter((id: string) => id !== senderId);
+  if (kind === "event_reminder") {
+    // Relance : les joueurs qui n'ont pas encore répondu (le staff n'est pas relancé)
+    const { data: answers } = await admin.from("event_responses").select("user_id").eq("event_id", ev.id);
+    const answered = new Set((answers || []).map((a: { user_id: string }) => a.user_id));
+    const players = new Set((members || []).filter((m: { role: string }) => m.role === "player").map((m: { user_id: string }) => m.user_id));
+    recipients = recipients.filter((id: string) => players.has(id) && !answered.has(id));
+  }
+  if (!recipients.length) return json({ sent: 0, recipients: 0 });
+  if (!(await setVapid(admin))) return json({ error: "clés VAPID absentes" }, 500);
+  const { data: team } = await admin.from("teams").select("name").eq("id", ev.team_id).maybeSingle();
+  const label = ev.kind === "match" ? `Match ${ev.home === false ? "à" : "contre"} ${ev.opponent || ev.title}` : ev.title;
+  const payload = JSON.stringify({
+    title: kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Tu viens ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
+    body: kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : `${label}, ${when(ev.starts_at)}. Réponds présent ou absent.`,
+    url: `#/agenda/${ev.id}`,
+    tag: `event-${ev.id}`,
+  });
+  return json(await send(admin, recipients, payload));
+}
