@@ -339,7 +339,6 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .inline-form { display: flex; gap: 8px; }
 .inline-form input { flex: 1; min-width: 0; }
 .lib-card .card-btns { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px; }
-.lib-card .card-btns .btn.small { padding: 5px 9px; font-size: 12px; }
 .vis-badge { font-size: 12px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: #eceff1; color: #455a64; }
 .vis-badge.team { background: #e3f2e6; color: #2e7d32; }
 .vis-badge.proposed { background: #fff3e0; color: #ef6c00; }
@@ -372,7 +371,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .todo-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 15px; min-height: 52px; }
 .todo-head + .todo-row, .progress-line + .todo-row { border-top: none; }
 .todo-row .grow { flex: 1 1 auto; min-width: 0; }
-.todo-row .btn { flex: 0 0 auto; min-height: 40px; }
+.todo-row .btn { flex: 0 0 auto; }
 .todo-row.done { color: var(--muted); }
 .todo-row.done .grow { text-decoration: line-through; }
 .todo-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; flex: 0 0 auto; font-weight: 800; font-size: 13px; color: #fff; }
@@ -557,7 +556,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .hero ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 16px; color: #333; }
 .hero li::before { content: '✓'; color: var(--field); font-weight: 800; margin-right: 8px; }
 .hero .hero-btns { display: flex; flex-wrap: wrap; gap: 10px; }
-.hero .hero-btns .btn { padding: 12px 20px; font-size: 15px; }
+.hero .hero-btns .btn { padding: 0 22px; font-size: 16px; min-height: 48px; }
 .hero small { color: var(--muted); font-size: 14px; }
 .link { color: var(--primary); font-weight: 600; }
 @media (max-width: 900px) { .hero { padding: 18px; } .hero h1 { font-size: 22px; } .hero .hero-btns .btn { flex: 1 1 100%; justify-content: center; } }
@@ -581,7 +580,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .announce { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: #e8f0fe; color: #1558b8; font-size: 14px; border-bottom: 1px solid #c6dafc; }
 .announce.warning { background: #fff3e0; color: #a14e00; border-bottom-color: #ffcc80; }
 .announce span { flex: 1 1 auto; }
-.announce .btn { padding: 2px 8px; color: inherit; }
+.announce .btn { color: inherit; }
 
 /* ---------- Avis ---------- */
 .admin-textarea { font: inherit; font-size: 15px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; width: 100%; }
@@ -618,7 +617,6 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .admin-filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .admin-search { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; width: 100%; max-width: 480px; }
 .admin-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.admin-actions .btn.small { padding: 5px 9px; font-size: 12px; }
 .admin-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .admin-form input { font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; flex: 1 1 160px; min-width: 0; }
 .admin-table-wrap { overflow-x: auto; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; }
@@ -644,7 +642,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .zoom { display: none; }
   .hint { display: none; position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: #1f2933; color: #fff; font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
   .hint.tool-on { display: block; }
-  .btn-back { width: 32px; height: 32px; flex: 0 0 auto; }
+  .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
   .title-wrap { flex: 1 1 auto; min-width: 0; }
   .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 4px 6px; }
   .actions { margin-left: 0; gap: 4px; flex: 0 0 auto; }
@@ -655,9 +653,8 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .home-bar { gap: 8px; }
   .home-bar .brand { gap: 6px; flex: 1 1 auto; min-width: 0; }
   .home-bar .brand strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .home-bar .actions .btn { flex-direction: row; padding: 8px; font-size: 14px; gap: 6px; }
+  .home-bar .actions .btn { flex-direction: row; padding: 0 12px; font-size: 14px; gap: 6px; }
   .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .home-bar .actions .btn.account { padding: 8px 6px; }
   .home-bar #home-new .long, .home-bar #home-team .long, .home-bar #home-feedback .long { display: none; }
   .hub-tabs { display: none; }
   .app-nav { display: flex; flex: 0 0 auto; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -698,7 +695,6 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .lib-card { min-width: 0; }
   .lib-card .thumb svg { width: 100%; height: 100%; }
   .lib-card .thumb { aspect-ratio: 2/1; }
-  .lib-card .card-btns .btn.small { flex: 1 1 auto; justify-content: center; }
   .menu { min-width: 250px; }
   .menu button span { display: block; }
 
@@ -738,7 +734,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 
   .preview-canvas { padding: 8px; }
   .preview-controls { flex-wrap: wrap; gap: 6px; padding: 10px; }
-  .preview-controls .btn { padding: 8px 10px; font-size: 13px; }
+  .preview-controls .btn { padding: 0 12px; font-size: 14px; }
 }
 
 @media (max-width: 700px) {
@@ -752,3 +748,66 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .kpi strong { font-size: 20px; }
 }
+
+/* =====================================================================
+   Système commun : tailles des boutons, champs et espacements
+   (une seule règle pour toute l'appli, mobile et ordinateur)
+   ===================================================================== */
+:root { --tap: 44px; --tap-sm: 40px; --gap: 8px; --radius-btn: 10px; }
+@media (pointer: fine) { :root { --tap: 40px; --tap-sm: 36px; } }
+
+/* Boutons : texte centré, marges intérieures identiques des deux côtés */
+.btn { min-height: var(--tap); padding: 0 18px; font-size: 15px; line-height: 1.2; border-radius: var(--radius-btn); justify-content: center; text-align: center; gap: 8px; }
+.btn.small { min-height: var(--tap-sm); padding: 0 14px; font-size: 14px; }
+.btn.icon-only { width: var(--tap); padding: 0; }
+.btn.ghost.back-link { min-height: var(--tap-sm); padding: 0 12px 0 4px; justify-content: flex-start; }
+.btn-close { width: var(--tap-sm); height: var(--tap-sm); }
+.ev-quick { min-height: var(--tap-sm); padding: 0 12px; }
+.announce .btn { min-height: 32px; padding: 0 10px; }
+button:focus-visible, .btn:focus-visible, a:focus-visible, label.btn:focus-within { outline: 3px solid rgba(26,115,232,.45); outline-offset: 2px; }
+
+/* Champs de saisie : même hauteur partout, 16 px (pas de zoom automatique sur iPhone) */
+.form input, .inline-form input, .admin-search, .admin-form input, .sheet-field input, .sheet-row input, .list-row input,
+.ev-comment input, .filter-bar input[type=search], #comments-input, .step-opts input[type=text] { min-height: var(--tap); font-size: 16px; }
+.select { min-height: var(--tap); font-size: 15px; }
+.select.small { min-height: var(--tap-sm); font-size: 14px; }
+.hub-team { min-height: var(--tap-sm); }
+
+/* Groupes de boutons : même écart partout */
+.sheet-actions, .ev-tools, .card-btns, .admin-actions, .row-wrap, .agenda-acts, .ev-remind, .hero-btns, .choice-panel .row,
+.preview-controls, .admin-filters, .actions, .rsvp, .day-chips, .frame-btns { gap: var(--gap); }
+
+/* « À faire » : boutons de même largeur, alignés à droite */
+.todo-row .btn { min-width: 112px; }
+.todo-row .btn.pair { min-width: 64px; }
+
+/* Feuille de match : lignes et repères plus aérés */
+.sheet-rows { gap: 8px; }
+.sheet-marks { gap: 6px; }
+.sheet-mark { width: var(--tap-sm); height: var(--tap-sm); }
+
+/* Éditeur : boutons des étapes et options */
+.step-card .card-actions { gap: 6px; }
+.step-card .card-actions button { width: 36px; height: 36px; }
+.step-card { grid-template-columns: 18px 1fr 36px; }
+.step-opts-row select { min-height: 36px; }
+.group-head .mini { min-height: var(--tap-sm); padding: 0 12px; }
+.title-input { min-height: 40px; }
+
+/* Liens d'action dans le détail d'un événement */
+.ev-lines a.link { display: inline-flex; align-items: center; min-height: var(--tap-sm); }
+
+/* Menu « ⋯ » des cartes */
+.card-more { position: relative; margin-left: auto; }
+.card-menu { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 20; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; min-width: 220px; display: flex; flex-direction: column; }
+.card-menu .btn { justify-content: flex-start; font-weight: 500; }
+.card-menu button { text-align: left; border: none; background: none; min-height: var(--tap-sm); padding: 0 12px; border-radius: 8px; font-size: 15px; color: var(--text); }
+.card-menu button:hover { background: #f1f3f5; }
+.card-menu button.danger { color: #c62828; }
+.lib-card { overflow: visible; }
+.lib-card .thumb { border-radius: 9px 9px 0 0; overflow: hidden; }
+
+/* Logo / nom en haut à gauche : retour à l'accueil */
+.hub-bar .brand.home-link { cursor: pointer; border-radius: 10px; padding: 4px 6px; margin-left: -6px; }
+.hub-bar .brand.home-link:hover { background: #f1f3f5; }
+.todo-more { align-self: flex-start; margin-top: 4px; color: var(--primary); padding: 0 8px; }

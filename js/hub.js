@@ -65,7 +65,7 @@
   async function loadLogo(team) {
     logos[team.id] = null;
     const { data } = await A.sb.from('teams').select('logo:sheet_settings->>logo').eq('id', team.id).maybeSingle();
-    logos[team.id] = (data && data.logo) || null;
+    logos[team.id] = data && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(data.logo || '') ? data.logo : null;
     renderChrome();
   }
   function logoChanged(teamId, url) { logos[teamId] = url || null; renderChrome(); }
@@ -114,6 +114,11 @@
     $('#hub-tabs').replaceChildren(...make(false));
     $('#app-nav').replaceChildren(...make(true));
   }
+  // Logo et nom en haut à gauche : retour à l'accueil (convention des applis)
+  const brand = $('#hub-bar .brand');
+  brand.classList.add('home-link'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Accueil'; brand.setAttribute('aria-label', 'Retour à l’accueil');
+  brand.addEventListener('click', e => { if (e.target.closest('#hub-team')) return; E.go('home'); });
+  brand.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('#hub-team')) { e.preventDefault(); E.go('home'); } });
   $('#hub-account').onclick = () => { if (A.isLoggedIn()) E.go('account'); else A.openAuth('login'); };
   $('#hub-team').onchange = e => { A.selectTeam(e.target.value); data = null; E.refreshView(); };
 
@@ -217,7 +222,7 @@
       // Convocations sans réponse : on répond directement depuis l'accueil
       ag.events.filter(ev => !ev.mine).forEach(ev => items.push({
         text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>tu viens ?</strong>`,
-        buttons: [['Oui', 'primary', 'yes'], ['Non', 'outline', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(st === 'yes' ? 'Super, à bientôt !' : 'Réponse envoyée : absent.'); renderHome(); } })])
+        buttons: [['Oui', 'primary pair', 'yes'], ['Non', 'outline pair', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(st === 'yes' ? 'Super, à bientôt !' : 'Réponse envoyée : absent.'); renderHome(); } })])
       }));
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
@@ -228,13 +233,18 @@
     const card = el('div', 'todo-card');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
     if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Tu es à jour.'));
-    items.slice(0, 3).forEach(it => {
+    const addRow = it => {
       const row = el('div', 'todo-row', `<span class="grow">${it.text}</span>`);
       if (it.buttons) it.buttons.forEach(([l, cls, fn]) => row.appendChild(btn(l, cls + ' small', fn)));
       else row.appendChild(btn(it.action, it.primary ? 'primary small' : 'outline small', it.fn));
-      card.appendChild(row);
-    });
-    if (items.length > 3) card.appendChild(el('p', 'muted small', `+ ${items.length - 3} autre${items.length - 3 > 1 ? 's' : ''}`));
+      return row;
+    };
+    items.slice(0, 3).forEach(it => card.appendChild(addRow(it)));
+    if (items.length > 3) {
+      // Les actions moins urgentes restent accessibles d'un appui
+      const more = btn(`Voir ${items.length - 3 > 1 ? 'les ' + (items.length - 3) + ' autres' : 'l’autre'}`, 'ghost small todo-more', () => { more.replaceWith(...items.slice(3).map(addRow)); });
+      card.appendChild(more);
+    }
     return card;
   }
 

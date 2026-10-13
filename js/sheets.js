@@ -41,6 +41,10 @@
     const d = DEFAULTS(), s = Object.assign({}, d, raw || {});
     delete s.__share;
     if (!TEMPLATES.find(t => t.id === s.template)) s.template = 'classic';
+    // Sécurité : le logo doit être une vraie image et les couleurs des couleurs (ils sont insérés dans la page)
+    if (s.logo && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s.logo)) s.logo = null;
+    if (!/^#[0-9a-f]{6}$/i.test(s.primary)) s.primary = d.primary;
+    if (!/^#[0-9a-f]{6}$/i.test(s.accent)) s.accent = d.accent;
     ['fields', 'squads', 'squadFields', 'marks'].forEach(k => { if (!Array.isArray(s[k])) s[k] = d[k]; });
     s.fields = s.fields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: (/^arbitre de touche \(jaune\)$/i.test(f.label) ? 'Adjoint terrain (jaune)' : String(f.label)).slice(0, 40) }));
     s.squadFields = s.squadFields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: String(f.label).slice(0, 40) }));

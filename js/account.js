@@ -568,32 +568,53 @@
       E.toast(visibility === 'team' ? `Publié dans « ${S.team.name} » : toute l’équipe peut la voir.` : visibility === 'proposed' ? `Proposé au coach de « ${S.team.name} ».` : 'Retiré, redevenu privé.');
       refresh();
     };
-    if (mine || coachHere) btns.appendChild(btn('Ouvrir', 'outline', () => loadCloud(row)));
-    btns.appendChild(btn('Dupliquer', 'outline', async () => {
+    // Une action principale visible ; le reste dans le menu « ⋯ » (la carte s'ouvre d'un appui)
+    const menu = [];
+    const duplicate = async () => {
       const copy = E.clone(row.data || {}); copy.id = crypto.randomUUID(); copy.title = row.title + ' (copie)';
       const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
       if (error) return E.toast(errMsg(error)); track('duplicate'); E.toast('Copie créée dans « Mes dessins ».'); libTab = 'mine'; refresh();
-    }));
-    if (isCoach() && row.visibility !== 'team' && (mine || coachHere)) btns.appendChild(btn(`Publier à l’équipe${S.teams.length > 1 ? ' « ' + S.team.name + ' »' : ''}`, 'primary', () => setVis('team')));
-    if (isCoach() && row.visibility === 'team' && coachHere) btns.appendChild(btn('Retirer de l’équipe', 'outline', () => setVis('private')));
-    if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary', () => setVis('proposed')));
-    if (!isCoach() && mine && row.visibility === 'proposed') btns.appendChild(btn('Annuler la proposition', 'outline', () => setVis('private')));
+    };
+    if (isCoach() && row.visibility !== 'team' && (mine || coachHere)) btns.appendChild(btn(row.visibility === 'proposed' ? 'Publier la proposition' : 'Publier à l’équipe', 'primary small', () => setVis('team')));
+    if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary small', () => setVis('proposed')));
     if (row.visibility === 'team') {
       const vc = viewCounts[row.id];
-      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience} ont vu`, vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline', () => openViews(row)));
+      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
       const n = commentCounts[row.id] || 0;
-      btns.appendChild(btn(`💬 ${n ? n + ' ' : ''}Commentaires`, 'outline', () => openComments(row, refresh)));
-      if (mine || coachHere) {
-        if (row.share_token) { btns.appendChild(btn('🔗 Copier le lien', 'secondary', () => shareLink(row))); btns.appendChild(btn('Arrêter le partage', 'outline', () => toggleShare(row, false).then(refresh))); }
-        else btns.appendChild(btn('🔗 Lien public', 'secondary', () => toggleShare(row, true).then(refresh)));
-      }
+      btns.appendChild(btn(`💬 ${n}`, 'outline small', () => openComments(row, refresh))).title = 'Commentaires';
     }
-    if (mine || coachHere) btns.appendChild(btn('Supprimer', 'outline danger', async () => {
+    menu.push(['Ouvrir', () => loadCloud(row)]);
+    menu.push(['Dupliquer', duplicate]);
+    if (row.visibility === 'team' && (mine || coachHere)) {
+      if (row.share_token) { menu.push(['🔗 Copier le lien public', () => shareLink(row)]); menu.push(['Arrêter le partage public', () => toggleShare(row, false).then(refresh)]); }
+      else menu.push(['🔗 Créer un lien public (WhatsApp)', () => toggleShare(row, true).then(refresh)]);
+    }
+    if (isCoach() && row.visibility === 'team' && coachHere) menu.push(['Retirer de l’équipe', () => setVis('private')]);
+    if (!isCoach() && mine && row.visibility === 'proposed') menu.push(['Annuler la proposition', () => setVis('private')]);
+    if (mine || coachHere) menu.push(['Supprimer', async () => {
       if (!confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
       if (error) return E.toast(errMsg(error)); refresh();
-    }));
+    }, 'danger']);
+    btns.appendChild(moreMenu(menu));
     return c;
+  }
+
+  /** Bouton « ⋯ » qui ouvre un petit menu d'actions secondaires. */
+  function moreMenu(items) {
+    const wrap = el('div', 'card-more');
+    const b = btn('⋯', 'outline small', () => {
+      const open = wrap.querySelector('.card-menu');
+      document.querySelectorAll('.card-menu').forEach(m => m.remove());
+      if (open) return;
+      const m = el('div', 'card-menu');
+      items.forEach(([label, fn, cls]) => m.appendChild(btn(label, cls || '', () => { m.remove(); fn(); })));
+      wrap.appendChild(m);
+      setTimeout(() => document.addEventListener('click', function close(e) { if (!wrap.contains(e.target)) { m.remove(); document.removeEventListener('click', close); } }), 0);
+    });
+    b.title = 'Plus d’actions'; b.setAttribute('aria-label', 'Plus d’actions');
+    wrap.appendChild(b);
+    return wrap;
   }
 
   function loadCloud(row) {
