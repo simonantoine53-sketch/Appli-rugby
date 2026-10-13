@@ -15,6 +15,13 @@
     return;
   }
 
+  // Retour du lien de confirmation reçu par e-mail : lu avant que Supabase n'efface l'adresse
+  const authReturn = (() => {
+    const h = location.hash;
+    if (/access_token=/.test(h) && /type=signup/.test(h)) return 'confirmed';
+    if (/error_code=|error=access_denied/.test(h)) return 'link-error';
+    return '';
+  })();
   const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
   const S = { user: null, profile: null, teams: [], team: null, channel: null, unseen: 0, current: { visibility: 'private', team_id: null, owner_id: null } };
   const isUuid = v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || '');
@@ -32,7 +39,12 @@
   const roleBadge = r => `<span class="role-badge ${r}">${ROLE_LABEL[r] || r}</span>`;
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const errMsg = e => {
-    const m = (e && e.message) || String(e);
+    const m = (e && e.message) || String(e), code = (e && e.code) || '';
+    // Limites de Supabase : on dit pourquoi et combien de temps attendre
+    const wait = m.match(/after (\d+) seconds?/i);
+    if (wait) return `Patiente ${wait[1]} secondes avant de redemander un e-mail.`;
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessaie dans 1 heure environ. Si ton e-mail est déjà confirmé, tu peux te connecter normalement.';
+    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessaie dans 5 minutes.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
     if (/Email not confirmed/i.test(m)) return 'Confirmez votre e-mail (lien reçu par mail) avant de vous connecter.';
     if (/already registered/i.test(m)) return 'Cet e-mail a déjà un compte.';
@@ -57,6 +69,12 @@
   }
   sb.auth.getSession().then(({ data }) => refreshSession(data.session));
   sb.auth.onAuthStateChange((_evt, session) => { if ((session && session.user && session.user.id) !== (S.user && S.user.id)) refreshSession(session); });
+  // getSession attend que Supabase ait lu le jeton du lien : on peut ensuite nettoyer l'adresse
+  if (authReturn) sb.auth.getSession().then(({ data }) => {
+    history.replaceState(null, '', location.pathname + location.search + '#/');
+    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, tu es connecté !');
+    else { openAuth('login'); setAuthMsg('Ce lien de confirmation a expiré ou a déjà servi. Connecte-toi : si ton e-mail n’est pas encore confirmé, tu pourras recevoir un nouveau lien.', 'info'); }
+  });
 
   function refreshCurrentView() {
     if (!ready) return;   // la session n'est pas encore connue : on ne redirige pas
@@ -125,27 +143,71 @@
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
   function setAuthMode(mode) {
+    showPending(false);
     document.querySelectorAll('#modal-auth .tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     $('#auth-name').closest('label').classList.toggle('hidden', mode !== 'signup');
     $('#auth-submit').textContent = mode === 'login' ? 'Se connecter' : 'Créer mon compte';
-    $('#auth-form').dataset.mode = mode; $('#auth-error').textContent = '';
+    $('#auth-form').dataset.mode = mode; setAuthMsg('');
   }
+  /** Message sous le formulaire : rouge pour une erreur, neutre pour une information. */
+  function setAuthMsg(text, kind) { const m = $('#auth-error'); m.textContent = text || ''; m.classList.toggle('info', kind === 'info'); }
   document.querySelectorAll('#modal-auth .tab').forEach(t => t.onclick = () => setAuthMode(t.dataset.mode));
+
+  /* E-mail à confirmer : écran « vérifie ta boîte mail ». Dès que le lien est cliqué (ici ou sur un autre
+     appareil), on retente la connexion en silence pour connecter la personne sans qu'elle ait à le refaire. */
+  const pending = { email: '', password: '', timer: null, until: 0 };
+  function showPending(on) {
+    $('#auth-form').classList.toggle('hidden', on);
+    $('#auth-pending').classList.toggle('hidden', !on);
+    document.querySelector('#modal-auth .tabs').classList.toggle('hidden', on);
+  }
+  function startPending(email, password) {
+    Object.assign(pending, { email, password, until: Date.now() + 30 * 60 * 1000 });
+    $('#auth-pending-email').textContent = email;
+    $('#auth-pending-msg').textContent = '';
+    showPending(true);
+    clearInterval(pending.timer);
+    pending.timer = setInterval(tryPendingLogin, 20000);
+  }
+  function stopPending() { clearInterval(pending.timer); pending.timer = null; pending.password = ''; }
+  async function tryPendingLogin() {
+    if (!pending.password || S.user) return stopPending();
+    if (Date.now() > pending.until) return stopPending();
+    const { error } = await sb.auth.signInWithPassword({ email: pending.email, password: pending.password });
+    if (error) return;   // pas encore confirmé (ou limite atteinte) : on réessaiera
+    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, tu es connecté !');
+  }
+  // Retour sur l'onglet après avoir cliqué le lien dans la boîte mail : on vérifie tout de suite
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && pending.timer) tryPendingLogin(); });
+  $('#auth-resend').onclick = async () => {
+    const b = $('#auth-resend'); b.disabled = true;
+    const { error } = await sb.auth.resend({ type: 'signup', email: pending.email, options: { emailRedirectTo: location.origin + location.pathname } });
+    $('#auth-pending-msg').textContent = error ? errMsg(error) : 'Nouvel e-mail envoyé.';
+    $('#auth-pending-msg').classList.toggle('info', !error);
+    setTimeout(() => { b.disabled = false; }, 60000);
+  };
+  $('#auth-change').onclick = () => { stopPending(); setAuthMode('signup'); $('#auth-email').focus(); };
+
   $('#auth-form').onsubmit = async e => {
     e.preventDefault();
     const mode = e.target.dataset.mode, email = $('#auth-email').value.trim(), password = $('#auth-password').value, name = $('#auth-name').value.trim();
-    const b = $('#auth-submit'); b.disabled = true; $('#auth-error').textContent = '';
+    const b = $('#auth-submit'); b.disabled = true; setAuthMsg('');
     try {
       if (mode === 'signup') {
-        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name || email.split('@')[0] } } });
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name || email.split('@')[0] }, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
-        if (!data.session) { $('#auth-error').textContent = 'Compte créé. Confirmez votre e-mail via le lien reçu, puis connectez-vous.'; b.disabled = false; return; }
+        // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
+        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connecte-toi.', 'info'); b.disabled = false; return; }
+        if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.code === 'email_not_confirmed' || /Email not confirmed/i.test(error.message)) { startPending(email, password); b.disabled = false; return; }
+          throw error;
+        }
       }
       E.closeModal('modal-auth'); E.toast('Connecté.');
-    } catch (err) { $('#auth-error').textContent = errMsg(err); }
+    } catch (err) { setAuthMsg(errMsg(err)); }
     b.disabled = false;
   };
 
@@ -174,6 +236,20 @@
   }
   $('#btn-goto-team').onclick = () => E.go('team');
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
+  $('#btn-privacy').onclick = () => E.openModal('modal-privacy');
+  document.querySelectorAll('.link-privacy').forEach(a => { a.onclick = e => { e.preventDefault(); E.openModal('modal-privacy'); }; });
+  // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
+  $('#btn-delete-account').onclick = async () => {
+    const D = window.RugbyDialog;
+    if (!await D.confirm('Supprimer définitivement ton compte ? Tes dessins, formations, réponses aux convocations, ton profil et tes statistiques seront effacés, y compris les stratégies que tu as publiées dans une équipe. Si tu es le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
+    const typed = await D.prompt('Pour confirmer, tape SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
+    if (typed == null) return;
+    if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
+    const { error } = await sb.rpc('delete_my_account');
+    if (error) return E.toast(errMsg(error));
+    await sb.auth.signOut();
+    E.go('home'); E.toast('Ton compte et tes données ont été supprimés.');
+  };
 
   /* ---------- Équipes : actions ---------- */
   async function createTeam(name) {
@@ -185,6 +261,7 @@
   async function joinTeam(code) {
     const { data, error } = await sb.rpc('join_team', { p_code: code });
     if (error) return E.toast(errMsg(error));
+    if (!data || !data.id) return E.toast('Code d’équipe invalide.');
     await loadTeams();
     const t = S.teams.find(x => x.id === data.id);
     if (t) { setTeam(t); E.toast(`Vous êtes membre de « ${data.name} ».`); }
@@ -199,7 +276,7 @@
     box.appendChild(head);
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom de la nouvelle équipe" required minlength="2" maxlength="60"><button class="btn primary small" type="submit">Créer (je serai coach)</button>');
     f1.onsubmit = e => { e.preventDefault(); createTeam(f1.querySelector('input').value); };
-    const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’équipe (6 lettres)" required minlength="6" maxlength="6" style="text-transform:uppercase"><button class="btn secondary small" type="submit">Rejoindre (joueur)</button>');
+    const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’équipe" required minlength="6" maxlength="8" style="text-transform:uppercase"><button class="btn secondary small" type="submit">Rejoindre (joueur)</button>');
     f2.onsubmit = e => { e.preventDefault(); joinTeam(f2.querySelector('input').value); };
     box.append(f1, f2);
     box.appendChild(el('p', 'help', 'Une demande d’adhésion par code doit être validée par un coach ou un admin du club. Le coach publie les stratégies ; l’admin gère les membres et les demandes ; le joueur consulte l’équipe, garde ses dessins privés et peut les proposer au coach.'));

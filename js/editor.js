@@ -8,6 +8,8 @@
 
   const $ = s => document.querySelector(s);
   const uid = () => Math.random().toString(36).slice(2, 10);
+  // Échappe le texte saisi par les utilisateurs avant de l'insérer dans du HTML
+  const escHtml = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const clone = o => JSON.parse(JSON.stringify(o));
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const TOOL_GROUP = {}; TOOL_GROUPS.forEach(g => g.tools.forEach(t => { TOOL_GROUP[t.id] = g.id; }));
@@ -321,7 +323,7 @@
       const row = document.createElement('div'); row.className = 'saved-row';
       const n = (f.data && f.data.objects || []).length;
       row.innerHTML = `<div class="who"></div>`;
-      row.querySelector('.who').innerHTML = `<strong></strong><small>${n} objet${n > 1 ? 's' : ''}${f.team_name ? ' · ' + f.team_name : ''}${f.owner_name ? ' · ' + f.owner_name : ''}</small>`;
+      row.querySelector('.who').innerHTML = `<strong></strong><small>${n} objet${n > 1 ? 's' : ''}${f.team_name ? ' · ' + escHtml(f.team_name) : ''}${f.owner_name ? ' · ' + escHtml(f.owner_name) : ''}</small>`;
       row.querySelector('strong').textContent = f.name;
       const place = document.createElement('button'); place.className = 'btn primary small'; place.textContent = 'Placer';
       place.onclick = () => { closeModal('modal-saved-formations'); formation.opts = { type: 'custom', data: f.data, name: f.name }; setTool('formation'); };
@@ -1075,7 +1077,7 @@
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
     c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
     c.querySelector('.name').textContent = d.title;
-    c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${d.category}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${d.tags.replace(/[<>]/g, '')}` : '');
+    c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${escHtml(d.category)}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${escHtml(d.tags)}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
     c.querySelector('.del').onclick = async e => { e.stopPropagation(); if (await window.RugbyDialog.confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
