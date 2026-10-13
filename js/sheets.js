@@ -29,22 +29,27 @@
   const DEFAULTS = () => ({
     template: 'classic', primary: '#1f4f96', accent: '#ffffff', logo: null, showPositions: false,
     fields: [
-      { id: 'rouge', label: 'Entraîneur (rouge)' }, { id: 'blanc', label: 'Soigneur (blanc)' }, { id: 'jaune', label: 'Arbitre de touche (jaune)' },
+      { id: 'rouge', label: 'Entraîneur (rouge)' }, { id: 'blanc', label: 'Soigneur (blanc)' }, { id: 'jaune', label: 'Adjoint terrain (jaune)' },
       { id: 'ballons', label: 'Resp. ballons' }, { id: 'pharma', label: 'Resp. pharmacie' }
     ],
     squads: [{ id: 'a', label: 'Équipe A', size: 22 }, { id: 'b', label: 'Équipe B', size: 22 }],
     squadFields: [{ id: 'maillots', label: 'Resp. maillots' }],
-    marks: [{ code: '1', label: '1re ligne' }, { code: 'C', label: 'Capitaine' }, { code: 'D', label: 'Direct au stade' }]
+    // « Double » se coche tout seul quand un joueur figure dans deux équipes (il joue en B puis en A)
+    marks: [{ code: '1', label: '1re ligne' }, { code: 'C', label: 'Capitaine' }, { code: 'D', label: 'Double (joue en A et en B)', auto: 'double' }]
   });
   function normSettings(raw) {
     const d = DEFAULTS(), s = Object.assign({}, d, raw || {});
     if (!TEMPLATES.find(t => t.id === s.template)) s.template = 'classic';
     ['fields', 'squads', 'squadFields', 'marks'].forEach(k => { if (!Array.isArray(s[k])) s[k] = d[k]; });
-    s.fields = s.fields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: String(f.label).slice(0, 40) }));
+    s.fields = s.fields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: (/^arbitre de touche \(jaune\)$/i.test(f.label) ? 'Adjoint terrain (jaune)' : String(f.label)).slice(0, 40) }));
     s.squadFields = s.squadFields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: String(f.label).slice(0, 40) }));
     s.squads = s.squads.filter(q => q && q.label).slice(0, 3).map(q => ({ id: q.id || uid(), label: String(q.label).slice(0, 30), size: Math.min(30, Math.max(5, +q.size || 22)) }));
     if (!s.squads.length) s.squads = d.squads.slice(0, 1);
-    s.marks = s.marks.filter(m => m && m.code).slice(0, 6).map(m => ({ code: String(m.code).slice(0, 2), label: String(m.label || '').slice(0, 30) }));
+    s.marks = s.marks.filter(m => m && m.code).slice(0, 6).map(m => {
+      const out = { code: String(m.code).slice(0, 2), label: String(m.label || '').slice(0, 30) };
+      if (m.auto === 'double' || (out.code === 'D' && /^direct au stade$/i.test(out.label))) { out.auto = 'double'; if (/^direct au stade$/i.test(out.label)) out.label = 'Double (joue en A et en B)'; }
+      return out;
+    });
     return s;
   }
   async function loadSettings(teamId) {
@@ -335,7 +340,8 @@
     }
     const [members, present] = await Promise.all([loadMembers(team.id), loadPresent(ev.id)]);
     if (my !== seq) return;
-    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present };
+    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, markButtons: [] };
+    syncDoubles();
     buildEditor(root);
   }
   const fileName = ev => `feuille-de-match-${(ev.opponent || 'match').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-')}`;
@@ -419,18 +425,21 @@
     }));
     card.appendChild(head);
     const rows = el('div', 'sheet-rows');
+    cur.markButtons = cur.markButtons.filter(x => x.el.isConnected);
     list.forEach((p, i) => {
       const r = el('div', 'sheet-row' + (i === 15 ? ' bench-start' : ''));
       r.appendChild(el('span', 'sheet-num', String(i + 1)));
       const inp = el('input'); inp.value = p.name || ''; inp.maxLength = 40; inp.setAttribute('list', 'sheet-names');
       inp.placeholder = settings.showPositions && i < 15 ? POSITIONS[i] : i >= 15 ? 'Remplaçant' : 'Nom';
-      inp.oninput = () => { p.name = inp.value.trim(); const m = members.find(x => x.name === p.name); p.user_id = m ? m.id : null; queueSave(); };
+      inp.oninput = () => { p.name = inp.value.trim(); const m = members.find(x => x.name === p.name); p.user_id = m ? m.id : null; syncDoubles(); queueSave(); };
       r.appendChild(inp);
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
         b.type = 'button'; b.title = m.label;
-        b.onclick = () => { p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); queueSave(); };
+        if (m.auto === 'double') { b.classList.add('auto'); b.title = m.label + ' : se coche tout seul quand le joueur est dans deux équipes'; }
+        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mets le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); queueSave(); };
+        cur.markButtons.push({ p, code: m.code, el: b });
         marks.appendChild(b);
       });
       r.appendChild(marks);
@@ -446,6 +455,26 @@
     return card;
   }
   const html = () => sheetHtml(cur.settings, cur.sheet, cur.ev, cur.team, null);
+
+  /** Repère « double » : coché sur toutes les lignes d'un joueur présent dans au moins deux équipes. */
+  const nameKey = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  function syncDoubles() {
+    const mark = cur.settings.marks.find(m => m.auto === 'double');
+    if (!mark) return;
+    const squadsOf = {};
+    cur.settings.squads.forEach(q => cur.sheet.squads[q.id].forEach(p => {
+      const k = p.user_id || nameKey(p.name); if (!k) return;
+      (squadsOf[k] = squadsOf[k] || new Set()).add(q.id);
+    }));
+    cur.settings.squads.forEach(q => cur.sheet.squads[q.id].forEach(p => {
+      const k = p.user_id || nameKey(p.name);
+      const dbl = !!k && squadsOf[k] && squadsOf[k].size > 1;
+      const has = p.marks.includes(mark.code);
+      if (dbl && !has) p.marks = p.marks.concat(mark.code);
+      if (!dbl && has) p.marks = p.marks.filter(c => c !== mark.code);
+    }));
+    (cur.markButtons || []).forEach(x => x.el.classList.toggle('on', x.p.marks.includes(x.code)));
+  }
 
   function queueSave() {
     const st = $('#sheet-status'); if (st) st.textContent = 'Enregistrement…';
@@ -515,7 +544,7 @@
       brand.append(logo, right);
       body.appendChild(brand);
       // Listes éditables
-      body.appendChild(listEditor('Champs en haut de la feuille', 'Ex. Resp. ballons, Brassard rouge, Arbitre de touche…', s.fields, () => ({ id: uid(), label: '' }), 'label'));
+      body.appendChild(listEditor('Champs en haut de la feuille', 'Ex. Resp. ballons, Adjoint terrain, Soigneur…', s.fields, () => ({ id: uid(), label: '' }), 'label'));
       body.appendChild(squadEditor(s));
       body.appendChild(listEditor('Champs en bas de chaque équipe', 'Ex. Resp. maillots', s.squadFields, () => ({ id: uid(), label: '' }), 'label'));
       body.appendChild(marksEditor(s));

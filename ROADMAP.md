@@ -28,7 +28,7 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 
 ## Feuilles de match : fait le 13 octobre 2026 (sur le modèle de la feuille papier du SC Bernay)
 - Une feuille par match de l'agenda (page Compositions, tuile de l'accueil, bouton dans le détail du match).
-- Personnalisation par équipe : 3 modèles (Classique façon feuille papier, Moderne, Terrain), logo, couleurs, champs d'en-tête (brassards, responsables…), équipes A / B / C et nombre de joueurs, champs de bas d'équipe (resp. maillots), repères à côté des noms (1re ligne, capitaine, direct au stade…), postes affichables.
+- Personnalisation par équipe : 3 modèles (Classique façon feuille papier, Moderne, Terrain), logo, couleurs, champs d'en-tête (brassards, responsables…), équipes A / B / C et nombre de joueurs, champs de bas d'équipe (resp. maillots), repères à côté des noms (1re ligne, capitaine, « double » coché automatiquement quand un joueur joue en B puis en A…), postes affichables.
 - Remplissage : noms proposés depuis l'effectif, « Ajouter les présents » depuis la convocation, enregistrement automatique.
 - Sorties : impression / PDF (A4), image PNG partageable sur WhatsApp, publication aux joueurs (notification, leur ligne en surbrillance, « tu es n°12 » sur l'accueil).
 - Plus tard : glisser-déposer pour réordonner, copier la compo du match précédent, statistiques de sélection.
