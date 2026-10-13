@@ -205,15 +205,14 @@
     else E.toast('Code : ' + S.team.join_code);
   }
 
-  /* ---------- Page équipe ---------- */
-  let teamTab = 'strats';
+  /* ---------- Page équipe (les membres ; les stratégies sont dans la page Stratégies) ---------- */
   let teamSeq = 0;
   async function renderTeamPage() {
     const seq = ++teamSeq;
     const root = $('#team-page'); root.replaceChildren();
     const pend = pendingCard();
     if (!S.team) { if (pend) root.appendChild(pend); root.appendChild(teamForms()); return; }
-    const coach = isCoach(), staff = isStaff();
+    const staff = isStaff();
 
     const card = el('div', 'team-card');
     card.appendChild(el('h2', '', `${esc(S.team.name)} ${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role)}`));
@@ -224,16 +223,9 @@
     }
     root.appendChild(card);
 
-    const tabs = el('div', 'tabs small team-tabs');
-    const defs = [['strats', 'Stratégies'], ['members', 'Membres']];
-    if (coach) defs.push(['proposed', 'Propositions']);
-    defs.forEach(([id, label]) => { const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label; b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b); });
-    root.appendChild(tabs);
-
-    const list = el('div', 'library-list');
+    const list = el('div', 'member-list');
     root.appendChild(list);
-    if (teamTab === 'members') await renderMembers(list, staff, seq);
-    else await renderTeamDrawings(list, teamTab === 'proposed' ? 'proposed' : 'team', seq);
+    await renderMembers(list, staff, seq);
     if (seq !== teamSeq) return;
 
     if (pend) root.appendChild(pend);
@@ -296,21 +288,6 @@
       } else row.appendChild(el('span', 'role-badge ' + m.role, ROLE_LABEL[m.role] || m.role));
       list.appendChild(row);
     });
-  }
-
-  async function renderTeamDrawings(list, visibility, seq) {
-    if (visibility === 'team') markSeen();
-    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)')
-      .eq('team_id', S.team.id).eq('visibility', visibility).order(visibility === 'team' ? 'published_at' : 'updated_at', { ascending: false });
-    if (seq !== teamSeq) return;
-    if (error) { empty(list, 'Erreur : ' + errMsg(error)); return; }
-    if (visibility === 'team') { await Promise.all([loadCommentCounts(data.map(r => r.id)), loadViewCounts()]); if (seq !== teamSeq) return; }
-    if (!data.length) { empty(list, visibility === 'team' ? (isCoach() ? 'Aucune stratégie publiée. Ouvrez un de vos dessins depuis l’accueil et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié.') : 'Aucune proposition de joueur pour le moment.'); return; }
-    const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
-    if (visibility === 'team') list.appendChild(E.filterBar(renderTeamPage, E.countByCat(withMeta)));
-    const shown = visibility === 'team' ? E.filterDrawings(withMeta) : withMeta;
-    if (!shown.length) { empty(list, 'Aucune stratégie ne correspond à la recherche.'); return; }
-    shown.forEach(row => list.appendChild(cloudCard(row, renderTeamPage)));
   }
 
   /* ---------- Restrictions ---------- */
@@ -519,21 +496,38 @@
       return;
     }
     tabs.classList.remove('hidden');
-    const defs = [['mine', 'Mes dessins'], ['team', 'Équipe'], ['local', 'Sur cet appareil']];
-    defs.forEach(([id, label]) => { const b = el('button', 'tab' + (libTab === id ? ' active' : '')); b.textContent = label; if (id === 'team' && S.unseen) b.textContent += ` (${S.unseen})`; b.onclick = () => { libTab = id; renderStrats(); }; tabs.appendChild(b); });
+    // Propositions des joueurs : un onglet pour le coach (avec leur nombre)
+    let proposals = 0;
+    if (isCoach() && S.team) { const { count } = await sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('visibility', 'proposed'); proposals = count || 0; }
+    if (seq !== renderSeq) return;
+    if (libTab === 'proposed' && !isCoach()) libTab = 'mine';
+    const defs = [['mine', 'Mes dessins'], ['team', 'De l’équipe']];
+    if (isCoach()) defs.push(['proposed', 'Propositions']);
+    defs.push(['local', 'Sur cet appareil']);
+    defs.forEach(([id, label]) => {
+      const b = el('button', 'tab' + (libTab === id ? ' active' : '')); b.textContent = label;
+      const n = id === 'team' ? S.unseen : id === 'proposed' ? proposals : 0;
+      if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
+      b.onclick = () => { libTab = id; renderStrats(); }; tabs.appendChild(b);
+    });
     if (libTab === 'local') { renderLocal(root); return; }
-    if (libTab === 'team') {
-      if (!S.teams.length) { root.appendChild(teamForms()); return; }
-      markSeen();
+    if (libTab === 'team' || libTab === 'proposed') {
+      if (!S.team) { root.appendChild(teamForms()); return; }
+      if (libTab === 'team') markSeen();
     }
-    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)').order('updated_at', { ascending: false });
-    q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', 'team');
+    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
+    q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
     await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
-    if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Nouveau dessin », puis « Enregistrer le dessin » dans l’éditeur.' : (isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.')); return; }
+    if (!data.length) {
+      empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touchez « + Nouveau dessin », puis « Enregistrer » dans l’éditeur.'
+        : libTab === 'proposed' ? 'Aucune proposition de joueur pour le moment. Les joueurs proposent leurs dessins depuis « Mes dessins ».'
+        : isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et touchez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.');
+      return;
+    }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     root.appendChild(E.filterBar(renderStrats, E.countByCat(withMeta)));
     const shown = E.filterDrawings(withMeta);
@@ -646,7 +640,7 @@
     if (!S.teams.find(t => t.id === id)) await loadTeams();
     const t = S.teams.find(x => x.id === id);
     if (!t) return E.toast('Équipe introuvable.');
-    setTeam(t); teamTab = 'strats'; E.go('team');
+    setTeam(t); E.go('team');
   }
 
   /* ---------- Lien direct vers une stratégie (#/d/<id>, ouvert depuis une notification) ---------- */
@@ -688,6 +682,6 @@
   }
   function selectTeam(id) { const t = S.teams.find(x => x.id === id); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, team: () => S.team, teams: () => S.teams, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, setTeamTab: t => { teamTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, team: () => S.team, teams: () => S.teams, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

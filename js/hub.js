@@ -213,8 +213,8 @@
     if (staff) {
       // Convocations : les plus proches d'abord
       ag.events.filter(ev => new Date(ev.starts_at) < soon && ev.sum.none).forEach(ev => items.push({ text: `${esc(AG().short(ev))} : <strong>${plural(ev.sum.none, 'joueur', 'joueurs')} sans réponse</strong>`, action: 'Relancer', primary: true, fn: go('event-remind', () => AG().remind(ev)) }));
-      if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => { A.setTeamTab('members'); E.go('team'); }) });
-      if (d.proposals) items.push({ text: `<strong>${plural(d.proposals, 'proposition', 'propositions')}</strong> de joueur à regarder`, action: 'Voir', fn: go('proposals', () => { A.setTeamTab('proposed'); E.go('team'); }) });
+      if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => E.go('team')) });
+      if (d.proposals) items.push({ text: `<strong>${plural(d.proposals, 'proposition', 'propositions')}</strong> de joueur à regarder`, action: 'Voir', fn: go('proposals', () => { A.setLibTab('proposed'); E.go('strats'); }) });
       d.lowViews.slice(0, 2).forEach(r => items.push({ text: `« ${esc(r.title)} » : <strong>${r.viewers}/${r.audience} ont vu</strong>`, action: 'Relancer', fn: go('low-views', () => A.openViews(r)) }));
       (d.sheets || []).filter(m => new Date(m.starts_at) < soon && m.sheet !== 'published').slice(0, 1).forEach(m => items.push({ text: `Compo du match ${esc(AG().label(m).toLowerCase())} : <strong>${m.sheet === 'draft' ? 'à publier' : 'à faire'}</strong>`, action: m.sheet === 'draft' ? 'Finir' : 'Composer', primary: true, fn: go('sheet', () => E.go('compos', m.id)) }));
       if (!ag.events.length) items.push({ text: 'Aucun match ni entraînement prévu', action: 'Créer', fn: go('event-create', () => AG().openForm()) });
@@ -258,7 +258,7 @@
     };
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));
-      tile('team', 'Effectif', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => { A.setTeamTab('members'); E.go('team'); }, { badge: d.pending });
+      tile('team', 'Effectif', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => E.go('team'), { badge: d.pending });
       tile('invite', 'Inviter', `Code ${esc(d.team.join_code)}`, () => A.shareCode());
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'));
       tile('seances', 'Séances', 'Préparer l’entraînement', () => E.go('soon', 'seances'), { soon: true });
