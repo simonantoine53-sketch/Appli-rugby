@@ -289,6 +289,19 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .comments-form { padding: 10px 18px 16px; }
 .comments-form input { font-size: 16px; }
 
+/* ---------- Qui a vu ---------- */
+.views-list { max-height: 60vh; overflow-y: auto; }
+.views-head { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.views-bar { display: block; height: 10px; background: #f0f2f5; border-radius: 5px; overflow: hidden; }
+.views-bar i { display: block; height: 100%; background: var(--field); border-radius: 5px; }
+.view-row { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; flex-wrap: nowrap !important; }
+.view-row .who { min-width: 0; }
+.view-state { font-size: 13px; font-weight: 700; color: #2e7d32; white-space: nowrap; }
+.view-state.no { color: #c62828; }
+.views-actions { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 16px; }
+.views-actions:empty { display: none; }
+.views-actions .btn { justify-content: center; }
+
 /* ---------- Notifications push ---------- */
 .push-block { display: flex; flex-direction: column; gap: 6px; }
 .push-block .small { font-size: 12px; margin: 0; }

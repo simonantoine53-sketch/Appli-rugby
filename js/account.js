@@ -312,7 +312,7 @@
       .eq('team_id', S.team.id).eq('visibility', visibility).order(visibility === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     if (seq !== teamSeq) return;
     if (error) { empty(list, 'Erreur : ' + errMsg(error)); return; }
-    if (visibility === 'team') { await loadCommentCounts(data.map(r => r.id)); if (seq !== teamSeq) return; }
+    if (visibility === 'team') { await Promise.all([loadCommentCounts(data.map(r => r.id)), loadViewCounts()]); if (seq !== teamSeq) return; }
     if (!data.length) { empty(list, visibility === 'team' ? (isCoach() ? 'Aucune stratégie publiée. Ouvrez un de vos dessins depuis l’accueil et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié.') : 'Aucune proposition de joueur pour le moment.'); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
     if (visibility === 'team') list.appendChild(E.filterBar(renderTeamPage, E.countByCat(withMeta)));
@@ -398,6 +398,58 @@
     if (navigator.share) navigator.share({ title: row.title, text, url }).catch(() => {});
     else if (navigator.clipboard) { navigator.clipboard.writeText(url); E.toast('Lien copié : ' + url); }
     else prompt('Lien de partage :', url);
+  }
+
+  /* ---------- Qui a vu quoi ---------- */
+  // Chaque ouverture d'une stratégie publiée est enregistrée ; le staff voit qui l'a regardée.
+  const markViewed = (id, played) => { sb.rpc('mark_drawing_viewed', { p_drawing: id, p_played: !!played }).then(({ error }) => { if (error) console.warn('vue', error.message); }); };
+  function onPreview() {
+    if (S.user && S.current.visibility === 'team' && S.current.owner_id && S.current.owner_id !== S.user.id && isUuid(E.drawing.id)) markViewed(E.drawing.id, true);
+  }
+  let viewCounts = {};
+  async function loadViewCounts() {
+    viewCounts = {};
+    if (!S.team || !isStaff()) return;
+    const { data } = await sb.rpc('team_view_counts', { p_team: S.team.id });
+    (data || []).forEach(r => { viewCounts[r.drawing_id] = r; });
+  }
+  let viewsFor = null;
+  async function openViews(row) {
+    viewsFor = row;
+    $('#views-title').textContent = `Qui a vu · ${row.title}`;
+    E.openModal('modal-views');
+    const list = $('#views-list'); list.replaceChildren(el('p', 'muted', 'Chargement…'));
+    const { data, error } = await sb.rpc('drawing_view_stats', { p_drawing: row.id });
+    if (error) { list.replaceChildren(el('p', 'library-empty', errMsg(error))); return; }
+    const seen = data.filter(r => r.first_seen_at), notSeen = data.filter(r => !r.first_seen_at);
+    const pct = data.length ? Math.round(100 * seen.length / data.length) : 0;
+    list.replaceChildren();
+    const head = el('div', 'views-head', `<div><strong>${seen.length} sur ${data.length}</strong> ${seen.length > 1 ? 'ont' : 'a'} ouvert la stratégie</div><span class="views-bar"><i style="width:${pct}%"></i></span>`);
+    list.appendChild(head);
+    if (!data.length) { list.appendChild(el('p', 'muted', 'Aucun autre membre dans l’équipe pour le moment.')); return; }
+    const section = (title, rows, fn) => { if (!rows.length) return; list.appendChild(el('h4', 'home-h4', title)); rows.forEach(r => list.appendChild(fn(r))); };
+    const avatar = n => el('div', 'avatar', esc((n || '?').trim().slice(0, 1).toUpperCase() || '?'));
+    section(`Pas encore vu (${notSeen.length})`, notSeen, r => {
+      const row = el('div', 'member-row view-row no'); row.append(avatar(r.display_name), el('div', 'who', `${esc(r.display_name || 'Membre')}<small>${ROLE_LABEL[r.role] || r.role}</small>`), el('span', 'view-state no', 'Pas vu')); return row;
+    });
+    section(`Ont vu (${seen.length})`, seen.sort((a, b) => new Date(b.last_seen_at) - new Date(a.last_seen_at)), r => {
+      const detail = `Vu le ${fmtDate(r.first_seen_at)}${r.views > 1 ? ` · ${r.views} ouvertures` : ''}${r.played ? ' · animation lue' : ''}`;
+      const row = el('div', 'member-row view-row'); row.append(avatar(r.display_name), el('div', 'who', `${esc(r.display_name || 'Membre')}<small>${detail}</small>`), el('span', 'view-state', '✓ Vu')); return row;
+    });
+    const actions = $('#views-actions'); actions.replaceChildren();
+    if (notSeen.length) {
+      actions.appendChild(btn(`🔔 Relancer ${notSeen.length > 1 ? 'les ' + notSeen.length + ' joueurs' : 'le joueur'} qui n’${notSeen.length > 1 ? 'ont' : 'a'} pas vu`, 'primary', async () => {
+        const { data: res, error: err } = await sb.functions.invoke('push-notify', { body: { drawing_id: row.id, kind: 'reminder' } });
+        if (err) return E.toast('Relance impossible : ' + errMsg(err));
+        track('reminder', { recipients: res && res.recipients });
+        E.toast(res && res.sent ? `Rappel envoyé sur ${res.sent} téléphone${res.sent > 1 ? 's' : ''}.` : 'Aucun de ces joueurs n’a activé les notifications : utilisez « Copier la liste » pour WhatsApp.');
+      }));
+      actions.appendChild(btn('Copier la liste pour WhatsApp', 'outline', () => {
+        const text = `À regarder avant le match : « ${row.title} » dans l’appli. Pas encore vu : ${notSeen.map(r => r.display_name).join(', ')}.`;
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : collez-le dans le groupe WhatsApp.'));
+        else prompt('Message à copier :', text);
+      }));
+    }
   }
 
   /* ---------- Commentaires ---------- */
@@ -497,7 +549,7 @@
     const { data, error } = await q;
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
-    await loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id));
+    await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
     if (!data.length) { empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Cliquez « Nouveau dessin », puis « Enregistrer le dessin » dans l’éditeur.' : (isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et cliquez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.')); return; }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
@@ -545,6 +597,8 @@
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary', () => setVis('proposed')));
     if (!isCoach() && mine && row.visibility === 'proposed') btns.appendChild(btn('Annuler la proposition', 'outline', () => setVis('private')));
     if (row.visibility === 'team') {
+      const vc = viewCounts[row.id];
+      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience} ont vu`, vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline', () => openViews(row)));
       const n = commentCounts[row.id] || 0;
       btns.appendChild(btn(`💬 ${n ? n + ' ' : ''}Commentaires`, 'outline', () => openComments(row, refresh)));
       if (mine || coachHere) {
@@ -563,6 +617,7 @@
   function loadCloud(row) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
+    if (row.visibility === 'team' && row.owner_id !== S.user.id) markViewed(row.id, false);
     E.loadDrawing(d); E.go('editor');
     if (row.owner_id !== S.user.id && !isCoach()) E.toast('Stratégie du coach : vos modifications seront enregistrées comme copie personnelle.');
   }
@@ -590,6 +645,6 @@
     setTeam(t); teamTab = 'strats'; E.go('team');
   }
 
-  window.RugbyAccount = { sb, user: () => S.user, team: () => S.team, isSuper, openTeam, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, team: () => S.team, isSuper, openTeam, onPreview, openViews, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderHome, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

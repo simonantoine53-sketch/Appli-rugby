@@ -71,7 +71,15 @@
     renderOverlay();
     renderProps();
     // Sélection multiple et déplacement aligné : proposés seulement quand ils servent
-    $('.fab-left').classList.toggle('with-modes', !!selIds().length || state.multiMode || state.axisMode);
+    $('.fab-left').classList.toggle('with-modes', !!selIds().length || state.multiMode || state.axisMode);    placeFabHistory();
+  }
+  /** Annuler / rétablir passent sous la barre de propriétés quand elle est ouverte et les recouvrirait. */
+  function placeFabHistory() {
+    const box = $('#props'), fh = $('.fab-history');
+    fh.style.top = '';
+    if (box.classList.contains('hidden')) return;
+    const b = box.getBoundingClientRect(), f = fh.getBoundingClientRect();
+    if (b.left < f.right && b.right > f.left && b.top < f.bottom && b.bottom > f.top) fh.style.top = (box.offsetTop + box.offsetHeight + 8) + 'px';
   }
 
   function renderOverlay() {
@@ -172,7 +180,7 @@
     if (b.dataset.zoom === 'fit') { state.zoom = 1; fitZoom(); } else zoomCenter(b.dataset.zoom === 'in' ? 0.25 : -0.25);
   });
   wrap.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoomAt(state.zoom * (e.deltaY < 0 ? 1.1 : 0.9), e.clientX, e.clientY); }, { passive: false });
-  window.addEventListener('resize', fitZoom);
+  window.addEventListener('resize', () => { fitZoom(); placeFabHistory(); });
 
   // Pincement à deux doigts : zoom + déplacement
   const pointers = new Map();
@@ -790,6 +798,7 @@
     preview.step = state.step; preview.playing = false;
     openModal('modal-preview');
     track('preview', { steps: state.drawing.steps.length });
+    if (window.RugbyAccount && window.RugbyAccount.onPreview) window.RugbyAccount.onPreview();
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
   }

@@ -210,7 +210,7 @@
   }
   const TOOL_LABEL = id => { const t = window.RugbyPalette && window.RugbyPalette.TOOLS[id]; return t ? t.label : id; };
   const GROUP_LABEL = { formations: 'Formations', shapes: 'Formes', equip: 'Équipement', players: 'Joueurs' };
-  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin' };
+  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »' };
   async function renderOverview() {
     const o = must(await sb.rpc('admin_overview'));
     cache.feedbackNew = o.feedback_new; cache.pending = o.members_pending;
