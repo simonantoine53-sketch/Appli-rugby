@@ -1,4 +1,4 @@
-/* Formations complètes (15 contre 15) : mêlée et touche. Cotes en mètres, converties selon le terrain. */
+/* Formations prêtes à placer : mêlée, touche, ruck et engagement. Cotes en mètres, converties selon le terrain. */
 (function (global) {
   'use strict';
   const { M, PAD, fieldSpec } = global.RugbyField;
@@ -58,24 +58,72 @@
     D.push([10, 12, deep + 9], [12, 12, deep + 16], [13, 12, deep + 23], [11, 12, deep + 34], [14, 12, 8], [15, 25, deep + 18]);
     return { A, D, ball: [0, -0.4] };
   }
+  /* Ruck : le porteur plaqué au sol, deux soutiens liés au-dessus du ballon, le 9 au pied qui passe,
+     puis l'alignement des arrières en escalier côté ouvert. Défense en option. */
+  function ruckLayout() {
+    const A = [
+      [8, 0, 0, 'Plaqué'],
+      [6, 3.5, -1.8], [7, 3.5, 1.8],
+      [9, -5.4, 1.2],
+      [10, -10, 6], [12, -12, 12], [13, -14, 18], [14, -16, 25], [15, -20, 14]
+    ];
+    // Défense : les deux poteaux de part et d'autre du ruck, une ligne à plat derrière le hors-jeu, l'arrière en couverture
+    const D = [
+      [1, 6.5, -3.5], [3, 6.5, 3.5],
+      [10, 7, 9.5], [12, 7, 15.5], [13, 7, 21.5], [11, 7, 28], [14, 7, -10], [15, 22, 14]
+    ];
+    return { A, D, ball: [-2.6, 0], pass: [9, 10] };
+  }
+  /* Engagement en 4-4 : le botteur au centre de la ligne médiane, quatre avants de chaque côté pour la chasse ;
+     en face, deux paquets de quatre avants (sauteur, deux lifteurs, un 3e ligne derrière) et les arrières en profondeur. */
+  function kickoffLayout() {
+    const A = [
+      [10, -2.6, 0],
+      [2, -1.5, -5.5], [1, -1.5, -10], [4, -1.5, -14.5], [6, -1.5, -19],
+      [3, -1.5, 5.5], [8, -1.5, 10], [5, -1.5, 14.5], [7, -1.5, 19],
+      [12, -1.5, -25], [11, -1.5, -31], [13, -1.5, 25], [14, -1.5, 31],
+      [9, -6, -3], [15, -22, 0]
+    ];
+    const D = [
+      [1, 14, -18.5], [4, 14, -15], [2, 14, -11.5], [6, 17.5, -15],
+      [8, 14, 11.5], [5, 14, 15], [3, 14, 18.5], [7, 17.5, 15],
+      [9, 19, 0], [12, 18, -26], [13, 18, 26], [10, 27, -5], [11, 31, -23], [14, 31, 23], [15, 39, 4]
+    ];
+    return { A, D, ball: [0, 0] };
+  }
 
   /**
    * Génère les objets d'une formation.
-   * opts : { type:'scrum'|'lineout', attack:'blue', defense:'red', dir: 1|-1, size: 4|5|7, numbers:true, ball:true }
+   * opts : { type:'scrum'|'lineout'|'ruck'|'kickoff', attack:'blue', defense:'red', dir: 1|-1, size: 4|5|7, numbers:true, ball:true, withDefense:false }
+   * Pour l'engagement, le point touché est ignoré : tout se place au centre de la ligne médiane.
    * anchor : [X, Y] en coordonnées SVG (point touché sur le terrain).
    */
   function build(settings, opts, anchor) {
     const spec = fieldSpec(settings);
     const L = spec.lengthM, W = spec.widthM;
     const [ax, ay] = fromSvg(settings, anchor[0], anchor[1]);
-    const dir = opts.dir || 1;
+    let dir = opts.dir || 1;
     const objects = [];
-    const player = (num, color, mx, my) => {
+    const player = (num, color, mx, my, name) => {
+      if (opts.type === 'kickoff' && (mx < -3 || mx > L + 3)) return;   // demi-terrain : on ne garde que ce qui est visible
       const [X, Y] = toSvg(settings, Math.max(1, Math.min(L - 1, mx)), Math.max(1, Math.min(W - 1, my)));
-      objects.push({ id: uid(), type: 'player', color, jersey: false, x: Math.round(X), y: Math.round(Y), label: opts.numbers === false ? '' : String(num), scale: 0.9 });
+      const o = { id: uid(), type: 'player', color, jersey: false, x: Math.round(X), y: Math.round(Y), label: opts.numbers === false ? '' : String(num), scale: 0.9 };
+      if (name) o.name = name;
+      objects.push(o);
     };
     let lay, place;
-    if (opts.type === 'lineout') {
+    if (opts.type === 'kickoff') {
+      lay = kickoffLayout();
+      // Ligne médiane : au milieu du grand terrain, au bord du demi-terrain (on botte alors vers l'intérieur)
+      const mid = L >= 120 ? L / 2 : L;
+      if (L < 120) dir = -1;
+      place = (dx, dy) => [mid + dx * dir, W / 2 + dy];
+    } else if (opts.type === 'ruck') {
+      lay = ruckLayout();
+      if (!opts.withDefense) lay.D = [];
+      const open = ay < W / 2 ? 1 : -1;             // alignement vers le grand côté
+      place = (dx, dy) => [ax + dx * dir, ay + dy * open];
+    } else if (opts.type === 'lineout') {
       lay = lineoutLayout(opts.size || 7);
       const top = ay < W / 2;                       // ligne de touche la plus proche
       const base = top ? 0 : W, sgn = top ? 1 : -1; // d croît vers l'intérieur du terrain
@@ -85,8 +133,16 @@
       const open = ay < W / 2 ? 1 : -1;             // côté ouvert vers le grand côté
       place = (dx, dy) => [ax + dx * dir, ay + dy * open];
     }
-    lay.A.forEach(([n, dx, dy]) => { const [mx, my] = place(dx, dy); player(n, opts.attack || 'blue', mx, my); });
+    lay.A.forEach(([n, dx, dy, name]) => { const [mx, my] = place(dx, dy); player(n, opts.attack || 'blue', mx, my, name); });
     lay.D.forEach(([n, dx, dy]) => { const [mx, my] = place(dx, dy); player(n, opts.defense || 'red', mx, my); });
+    if (lay.pass) {
+      // Passe du 9 vers le 10 : flèche pointillée qui part et s'arrête au bord des pastilles
+      const at = n => lay.A.find(a => a[0] === n);
+      const [a, b] = lay.pass.map(n => place(at(n)[1], at(n)[2]));
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len;
+      const [X1, Y1] = toSvg(settings, a[0] + ux * 2, a[1] + uy * 2), [X2, Y2] = toSvg(settings, b[0] - ux * 2.2, b[1] - uy * 2.2);
+      objects.push({ id: uid(), type: 'line', style: 'straight', x1: Math.round(X1), y1: Math.round(Y1), x2: Math.round(X2), y2: Math.round(Y2), dashed: true, arrow: true, color: 'white', width: 3 });
+    }
     if (opts.ball !== false) {
       const [mx, my] = place(lay.ball[0], lay.ball[1]);
       const [X, Y] = toSvg(settings, mx, my);

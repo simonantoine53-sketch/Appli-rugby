@@ -164,7 +164,10 @@
     // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
     const join = $('#account-join'); join.replaceChildren();
     const pend = pendingCard(); if (pend) join.appendChild(pend);
-    const toggle = btn('Rejoindre ou créer une équipe', 'outline wide', () => { toggle.replaceWith(teamForms()); });
+    const toggle = btn('Rejoindre ou créer une équipe', 'outline wide', () => {
+      const forms = teamForms(() => { forms.replaceWith(toggle); toggle.focus(); });
+      toggle.replaceWith(forms);
+    });
     join.appendChild(toggle);
     if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
     $('#btn-admin').classList.toggle('hidden', !isSuper());
@@ -188,9 +191,12 @@
     else E.toast(`Demande envoyée à « ${data.name} ». Un coach ou un admin doit la valider.`);
     E.go('team'); renderTeamPage();
   }
-  function teamForms() {
+  /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
+  function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    box.appendChild(el('h4', '', S.teams.length ? 'Une autre équipe ?' : 'Commencer avec une équipe'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length ? 'Une autre équipe ?' : 'Commencer avec une équipe'));
+    if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
+    box.appendChild(head);
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom de la nouvelle équipe" required minlength="2" maxlength="60"><button class="btn primary small" type="submit">Créer (je serai coach)</button>');
     f1.onsubmit = e => { e.preventDefault(); createTeam(f1.querySelector('input').value); };
     const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’équipe (6 lettres)" required minlength="6" maxlength="6" style="text-transform:uppercase"><button class="btn secondary small" type="submit">Rejoindre (joueur)</button>');
@@ -287,9 +293,16 @@
   function teamSettings(staff) {
     const t = S.team;
     const grid = el('div', 'settings-grid');
-    const card = (title, cls) => { const c = el('div', 'team-forms-card set-card' + (cls ? ' ' + cls : '')); c.appendChild(el('h4', 'set-title', esc(title))); grid.appendChild(c); return c; };
+    // Toutes les cartes suivent le même plan : titre, explication, contenu, actions en bas
+    const card = (title, help, cls) => {
+      const c = el('div', 'team-forms-card set-card' + (cls ? ' ' + cls : ''));
+      c.appendChild(el('h4', 'set-title', esc(title)));
+      const p = el('p', 'set-help', help); c.appendChild(p); c.help = p;
+      c.foot = el('div', 'set-foot'); c.appendChild(c.foot);
+      grid.appendChild(c); return c;
+    };
     if (staff) {
-      const c = card('L’équipe');
+      const c = card('L’équipe', 'Le nom affiché à tous les membres, dans l’agenda et sur les feuilles de match.');
       const name = el('input', 'set-input'); name.value = t.name; name.maxLength = 60; name.setAttribute('aria-label', 'Nom de l’équipe');
       const save = btn('Enregistrer', 'outline small', async () => {
         const v = name.value.trim(); if (!v || v === t.name) return;
@@ -298,15 +311,14 @@
         S.teams.forEach(x => { if (x.id === t.id) x.name = v; }); t.name = v;
         track('team_rename'); E.toast('Nom enregistré.'); renderAccountButton(); renderTeamPage();
       });
-      c.append(el('label', 'set-label', 'Nom de l’équipe'), name, save);
+      name.onkeydown = e => { if (e.key === 'Enter') save.click(); };
+      c.foot.append(name, save);
     }
     // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
-    const code = card('Code d’invitation');
-    const row = el('div', 'set-code', `<span class="code-big">${esc(t.join_code)}</span>`);
-    row.appendChild(btn('Inviter', 'primary small', shareCode));
-    code.appendChild(row);
-    code.appendChild(el('p', 'set-help', staff ? 'Chaque nouvelle personne arrive « en attente » : tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.'));
-    if (staff) code.appendChild(btn('Générer un nouveau code', 'outline small', async () => {
+    const code = card('Code d’invitation', staff ? 'Chaque nouvelle personne arrive « en attente » : tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.');
+    code.insertBefore(el('div', 'code-big', esc(t.join_code)), code.foot);
+    code.foot.appendChild(btn('Inviter', 'primary small', shareCode));
+    if (staff) code.foot.appendChild(btn('Nouveau code', 'outline small', async () => {
       if (!await window.RugbyDialog.confirm(`Générer un nouveau code ? L’ancien (${t.join_code}) ne marchera plus.`, { ok: 'Nouveau code' })) return;
       const { data, error } = await sb.rpc('regenerate_join_code', { p_team: t.id });
       if (error) return E.toast(errMsg(error));
@@ -314,25 +326,24 @@
       track('team_new_code'); E.toast('Nouveau code : ' + data); renderTeamPage();
     }));
     if (staff) {
-      const share = shareDefaultCard(); share.classList.add('set-card'); grid.appendChild(share);
-      const sheet = card('Feuille de match');
-      sheet.appendChild(el('p', 'set-help', 'Logo, couleurs, modèle, champs et repères de la feuille de match.'));
-      sheet.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
+      const cur = t.share_default || 'public';
+      const share = card('Partage des stratégies', esc(SHARE[cur].desc) + ' Modifiable stratégie par stratégie.');
+      share.foot.appendChild(shareDefaultSelect(desc => { share.help.textContent = desc + ' Modifiable stratégie par stratégie.'; }));
+      const sheet = card('Feuille de match', 'Logo, couleurs, modèle, champs et repères imprimés sur la feuille de match.');
+      sheet.foot.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
-    const me = card('Mon appartenance');
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    me.appendChild(el('p', 'set-help', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`));
-    if (!t.superadmin) me.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
+    const me = card('Mon appartenance', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
+    if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
       if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`)) return;
       const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
       if (error) return E.toast(errMsg(error));
       teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
     }));
     if (staff) {
-      const z = card('Zone sensible', 'danger-zone');
-      z.appendChild(el('p', 'set-help', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.'));
-      z.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
+      const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
+      z.foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
         if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${t.name} », ses membres et ses stratégies publiées ?`)) return;
         const { error } = await sb.from('teams').delete().eq('id', t.id);
         if (error) return E.toast(errMsg(error));
@@ -342,24 +353,20 @@
     return grid;
   }
 
-  /** Réglage par défaut du partage des stratégies de l'équipe (staff). */
-  function shareDefaultCard() {
-    const box = el('div', 'team-forms-card share-card');
-    box.appendChild(el('h4', 'set-title', 'Partage des stratégies'));
+  /** Liste du partage par défaut des stratégies de l'équipe (staff). onDesc reçoit l'explication du mode choisi. */
+  function shareDefaultSelect(onDesc) {
     const cur = S.team.share_default || 'public';
     const sel = el('select', 'select'); sel.setAttribute('aria-label', 'Partage des stratégies par défaut');
     ['app', 'download', 'public'].forEach(m => { const o = el('option'); o.value = m; o.textContent = SHARE[m].label; o.selected = m === cur; sel.appendChild(o); });
-    const help = el('p', 'muted small', esc(SHARE[cur].desc) + ' Tu peux changer ce réglage pour une stratégie précise depuis son menu ⋯.');
     sel.onchange = async () => {
       const { error } = await sb.from('teams').update({ share_default: sel.value }).eq('id', S.team.id);
-      if (error) { E.toast(errMsg(error)); sel.value = cur; return; }
+      if (error) { E.toast(errMsg(error)); sel.value = S.team.share_default || 'public'; return; }
       S.team.share_default = sel.value; const t = S.teams.find(x => x.id === S.team.id); if (t) t.share_default = sel.value;
-      help.textContent = SHARE[sel.value].desc + ' Tu peux changer ce réglage pour une stratégie précise depuis son menu ⋯.';
+      onDesc(SHARE[sel.value].desc);
       track('share_default', { mode: sel.value });
       E.toast(`Par défaut : ${SHARE[sel.value].label.toLowerCase()}.`);
     };
-    box.append(sel, help);
-    return box;
+    return sel;
   }
 
   async function renderMembers(list, staff, seq) {

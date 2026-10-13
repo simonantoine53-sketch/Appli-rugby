@@ -988,13 +988,23 @@ select:disabled { opacity: .5; cursor: default; }
 .team-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .team-title h2 { margin: 0; font-size: 22px; }
 .members-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+/* Réglages : cartes de même largeur et, sur grand écran, de même hauteur ; les actions s'alignent en bas */
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: stretch; }
+@media (min-width: 700px) { .settings-grid { grid-auto-rows: 1fr; } }
 .set-card { gap: 10px; }
 .set-card .set-title { margin: 0; }
-.set-card > .btn { align-self: flex-start; }
+.set-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.set-foot .set-input { flex: 1 1 150px; width: auto; min-width: 0; }
+.set-foot .select { flex: 1 1 100%; max-width: none; }
 .set-label { font-size: 13px; font-weight: 600; color: var(--muted); }
-.set-code { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.code-big { font-size: 26px; font-weight: 800; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+.code-big { font-size: 26px; font-weight: 800; letter-spacing: 6px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.forms-head { display: flex; align-items: center; gap: 8px; }
 .set-card.danger-zone { border-color: #f3c7c7; }
 .set-card.danger-zone .set-title { color: #c62828; }
 .account-join { display: flex; flex-direction: column; gap: 10px; }
+
+/* Éditeur : formations en 2 colonnes, icône et nom côte à côte, toutes de la même taille */
+.tools.tools-formations { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tools-formations .tool.labeled { display: flex; align-items: center; justify-content: flex-start; gap: 6px; padding: 6px; min-height: var(--tap); min-width: 0; }
+.tools-formations .tool.labeled svg { width: 26px; height: 26px; flex: none; }
+.tools-formations .tool .cap { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }

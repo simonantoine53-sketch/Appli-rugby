@@ -219,7 +219,7 @@
   function buildPalette() {
     const root = $('#palette');
     TOOL_GROUPS.forEach((g, gi) => {
-      const grid = svgEl ? document.createElement('div') : null; grid.className = 'tools';
+      const grid = svgEl ? document.createElement('div') : null; grid.className = 'tools' + (g.id === 'formations' ? ' tools-formations' : '');
       g.tools.forEach(t => {
         const b = document.createElement('button');
         b.className = 'tool' + (t.kind === 'formation' ? ' labeled' : ''); b.dataset.tool = t.id; b.title = t.label + (t.key ? ` (raccourci ${t.key})` : '');
@@ -240,13 +240,26 @@
     $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
   }
 
-  /* ---------- Formations (15 contre 15) ---------- */
+  /* ---------- Formations prêtes à placer ---------- */
   const formation = { tool: null, opts: { attack: 'blue', defense: 'red' } };
+  const FORMATION_INFO = {
+    scrum: { name: 'Mêlée', title: 'Mêlée : 15 contre 15', help: 'Après validation, touchez le terrain à l’endroit de la mêlée : les 30 joueurs se placent d’un coup.' },
+    lineout: { name: 'Touche', title: 'Touche : 15 contre 15', help: 'Après validation, touchez le terrain : l’alignement se met sur la ligne de touche la plus proche du point touché.' },
+    ruck: { name: 'Ruck', masc: true, title: 'Ruck et alignement', help: 'Après validation, touchez le terrain à l’endroit du ruck : le plaqué, ses deux soutiens, le 9 et l’alignement des arrières se placent côté ouvert.' },
+    kickoff: { name: 'Engagement', masc: true, title: 'Engagement en 4-4 : 15 contre 15', help: 'Tout se place au centre de la ligne médiane : quatre avants de chaque côté du botteur, et en face deux paquets de quatre avants pour la réception.', a: 'Équipe qui engage', d: 'Équipe qui reçoit', dir: 'Sens du coup d’envoi', ok: 'Placer au centre du terrain' }
+  };
   function openFormation(t) {
     closeDrawer();
     formation.tool = t;
-    $('#formation-title').textContent = t.formation === 'lineout' ? 'Touche : 15 contre 15' : 'Mêlée : 15 contre 15';
+    const info = FORMATION_INFO[t.formation];
+    $('#formation-title').textContent = info.title;
+    $('#formation-help').textContent = info.help;
+    $('#formation-attack-label').textContent = info.a || 'Attaquants';
+    $('#formation-defense-label').textContent = info.d || 'Défenseurs';
+    $('#formation-dir-label').textContent = info.dir || 'Sens de l’attaque';
+    $('#formation-submit').textContent = info.ok || 'Placer sur le terrain';
     $('#formation-size-group').classList.toggle('hidden', t.formation !== 'lineout');
+    $('#formation-ruck-defense-row').classList.toggle('hidden', t.formation !== 'ruck');
     ['attack', 'defense'].forEach(side => {
       const box = $('#formation-' + side); box.replaceChildren();
       Object.keys(COLORS).filter(c => c !== 'white').forEach(c => {
@@ -266,7 +279,10 @@
     formation.opts.size = +document.querySelector('input[name=formation-size]:checked').value;
     formation.opts.numbers = $('#formation-numbers').checked;
     formation.opts.ball = $('#formation-ball').checked;
-    setTool('formation');
+    formation.opts.withDefense = $('#formation-ruck-defense').checked;
+    // L'engagement se joue toujours au centre : pas besoin de toucher le terrain
+    if (formation.opts.type === 'kickoff') placeFormation({ x: 0, y: 0 });
+    else setTool('formation');
   };
   /* ---------- Formations enregistrées ---------- */
   const FORM_KEY = 'rugby-formations-v1';
@@ -328,7 +344,8 @@
     commit(before);
     setTool(null);
     track('formation', { type: formation.opts.type });
-    toast((formation.opts.type === 'custom' ? `Formation « ${formation.opts.name} »` : formation.opts.type === 'lineout' ? 'Touche' : 'Mêlée') + ` placée : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
+    const info = formation.opts.type === 'custom' ? { name: `Formation « ${formation.opts.name} »` } : FORMATION_INFO[formation.opts.type] || FORMATION_INFO.scrum;
+    toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
   }
 
   function setTool(id) {

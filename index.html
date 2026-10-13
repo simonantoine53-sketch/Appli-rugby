@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610151400">
+  <link rel="stylesheet" href="css/style.css?v=202610151500">
 </head>
 <body>
 
@@ -324,15 +324,15 @@
     </div>
     <form id="formation-form" class="form">
       <div class="field-group">
-        <label class="label">Attaquants</label>
+        <label class="label" id="formation-attack-label">Attaquants</label>
         <div id="formation-attack" class="swatches"></div>
       </div>
       <div class="field-group">
-        <label class="label">Défenseurs</label>
+        <label class="label" id="formation-defense-label">Défenseurs</label>
         <div id="formation-defense" class="swatches"></div>
       </div>
-      <div class="field-group">
-        <label class="label">Sens de l'attaque</label>
+      <div class="field-group" id="formation-dir-group">
+        <label class="label" id="formation-dir-label">Sens de l'attaque</label>
         <div class="choice-row">
           <label><input type="radio" name="formation-dir" value="1" checked> Vers la droite →</label>
           <label><input type="radio" name="formation-dir" value="-1"> ← Vers la gauche</label>
@@ -350,10 +350,11 @@
         <div class="choice-row">
           <label><input type="checkbox" id="formation-numbers" checked> Numéros des joueurs</label>
           <label><input type="checkbox" id="formation-ball" checked> Ballon</label>
+          <label id="formation-ruck-defense-row" class="hidden"><input type="checkbox" id="formation-ruck-defense"> Ajouter la défense</label>
         </div>
       </div>
-      <button class="btn primary wide" type="submit">Placer sur le terrain</button>
-      <p class="help">Après validation, touchez le terrain à l'endroit voulu : les 30 joueurs se placent d'un coup. Pour la touche, l'alignement se met sur la ligne de touche la plus proche du point touché.</p>
+      <button class="btn primary wide" type="submit" id="formation-submit">Placer sur le terrain</button>
+      <p class="help" id="formation-help"></p>
     </form>
   </div>
 </div>
@@ -563,23 +564,23 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/selects.js?v=202610151400"></script>
-<script src="js/dialog.js?v=202610151400"></script>
-<script src="js/icons.js?v=202610151400"></script>
-<script src="js/field.js?v=202610151400"></script>
-<script src="js/formations.js?v=202610151400"></script>
-<script src="js/objects.js?v=202610151400"></script>
-<script src="js/export.js?v=202610151400"></script>
+<script src="js/selects.js?v=202610151500"></script>
+<script src="js/dialog.js?v=202610151500"></script>
+<script src="js/icons.js?v=202610151500"></script>
+<script src="js/field.js?v=202610151500"></script>
+<script src="js/formations.js?v=202610151500"></script>
+<script src="js/objects.js?v=202610151500"></script>
+<script src="js/export.js?v=202610151500"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610151400"></script>
-<script src="js/editor.js?v=202610151400"></script>
-<script src="js/account.js?v=202610151400"></script>
-<script src="js/push.js?v=202610151400"></script>
-<script src="js/profile.js?v=202610151400"></script>
-<script src="js/admin.js?v=202610151400"></script>
-<script src="js/agenda.js?v=202610151400"></script>
-<script src="js/calimport.js?v=202610151400"></script>
-<script src="js/sheets.js?v=202610151400"></script>
-<script src="js/hub.js?v=202610151400"></script>
+<script src="js/config.js?v=202610151500"></script>
+<script src="js/editor.js?v=202610151500"></script>
+<script src="js/account.js?v=202610151500"></script>
+<script src="js/push.js?v=202610151500"></script>
+<script src="js/profile.js?v=202610151500"></script>
+<script src="js/admin.js?v=202610151500"></script>
+<script src="js/agenda.js?v=202610151500"></script>
+<script src="js/calimport.js?v=202610151500"></script>
+<script src="js/sheets.js?v=202610151500"></script>
+<script src="js/hub.js?v=202610151500"></script>
 </body>
 </html>
