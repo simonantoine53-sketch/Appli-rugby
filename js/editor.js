@@ -189,6 +189,7 @@
     if (!drag) return;
     const d = drag; drag = null;
     if (d.mode === 'create') { removeObj(d.obj.id); state.selected = null; }
+    else if (d.mode === 'marquee') { state.multi = d.base.length > 1 ? d.base : []; state.selected = d.base.length ? d.baseSel : null; }
     else if (d.orig) Object.assign(d.obj, clone(d.orig));
     render();
   }
@@ -237,7 +238,7 @@
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
-    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, double-touchez un texte ou un joueur pour le modifier.'; };
+    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.'; };
   }
 
   /* ---------- Formations prêtes à placer ---------- */
@@ -363,7 +364,7 @@
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
     $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touchez un élément pour le déplacer ou le modifier';
     const touch = window.matchMedia('(pointer: coarse)').matches, name = t ? t.label.split(' (')[0] : '';
-    $('#hint').textContent = !t ? 'Mode sélection : cliquez un objet pour le déplacer, double-cliquez un texte ou un joueur pour le modifier.'
+    $('#hint').textContent = !t ? (touch ? 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.' : 'Mode sélection : cliquez un objet pour le déplacer, tirez un cadre dans le vide pour en sélectionner plusieurs.')
       : t.kind === 'formation' ? 'Touchez le terrain là où placer la formation.'
       : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glissez le doigt sur le terrain` : `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
       : touch ? `${name} : touchez le terrain pour placer` : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
@@ -466,8 +467,21 @@
       render();
       return;
     }
-    clearSelection(); render();
+    // Dans le vide : on tire un cadre pour sélectionner tout ce qu'il contient (Maj ou sélection multiple : on ajoute)
+    const add = e.shiftKey || state.multiMode;
+    drag = { mode: 'marquee', start: p, base: add ? selIds() : [], baseSel: state.selected, moved: false };
+    if (!add) clearSelection();
+    svg.setPointerCapture(e.pointerId);
+    render();
   });
+  /** Objets dont le centre est dans le cadre r. */
+  function inRect(r) {
+    return curObjects().filter(o => { const b = bounds(o), cx = b.x + b.w / 2, cy = b.y + b.h / 2; return cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h; }).map(o => o.id);
+  }
+  function drawMarquee(r) {
+    renderOverlay();
+    overlayG.appendChild(svgEl('rect', { class: 'marquee', x: r.x, y: r.y, width: r.w, height: r.h }));
+  }
 
   svg.addEventListener('pointermove', e => {
     if (!drag || pinch) return;
@@ -484,6 +498,14 @@
       const a = Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) * (Math.PI / 4);
       return { x: x0 + Math.cos(a) * len, y: y0 + Math.sin(a) * len };
     };
+    if (drag.mode === 'marquee') {
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      drag.moved = true;
+      const r = { x: Math.min(drag.start.x, p.x), y: Math.min(drag.start.y, p.y), w: Math.abs(dx), h: Math.abs(dy) };
+      const ids = drag.base.concat(inRect(r).filter(id => !drag.base.includes(id)));
+      state.multi = ids.length > 1 ? ids : []; state.selected = ids.length ? ids[ids.length - 1] : null;
+      drawMarquee(r); return;
+    }
     const o = drag.obj;
     if (drag.mode === 'frame') {
       const r = drag.orig, st = curStep();
@@ -530,6 +552,7 @@
     if (!drag) return;
     const d = drag; drag = null;
     if (d.mode === 'frame') return;   // validé avec le bouton « Valider le cadrage »
+    if (d.mode === 'marquee') { render(); return; }   // la sélection ne compte pas dans l'historique
     if (d.mode === 'create') {
       const o = d.obj;
       if (d.kind === 'shape' && (o.w < 6 || o.h < 6)) { o.w = o.h = 60; o.x = d.start.x - 30; o.y = d.start.y - 30; }
