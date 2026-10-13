@@ -1,7 +1,8 @@
 // Envoi de notifications push (Web Push) aux membres d'une équipe.
 // Appelée par le navigateur après une publication (kind = "published") ou une proposition (kind = "proposed"),
 // ou par le staff pour relancer les membres qui n'ont pas encore ouvert une stratégie publiée (kind = "reminder").
-// Agenda : nouvel événement (event_new), relance des membres sans réponse (event_reminder), annulation (event_cancelled).
+// Agenda : nouvel événement (event_new), relance des membres sans réponse (event_reminder), annulation (event_cancelled),
+// composition publiée (sheet_published).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
 
     const { drawing_id, event_id, kind } = await req.json();
     const admin = createClient(url, serviceKey);
-    if (["event_new", "event_reminder", "event_cancelled"].includes(kind)) return await eventPush(admin, user.id, event_id, kind);
+    if (["event_new", "event_reminder", "event_cancelled", "sheet_published"].includes(kind)) return await eventPush(admin, user.id, event_id, kind);
     if (!drawing_id || !["published", "proposed", "reminder"].includes(kind)) return json({ error: "paramètres invalides" }, 400);
 
     const { data: drawing } = await admin.from("drawings").select("id, title, team_id, owner_id, visibility").eq("id", drawing_id).maybeSingle();
@@ -132,9 +133,9 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
   const { data: team } = await admin.from("teams").select("name").eq("id", ev.team_id).maybeSingle();
   const label = ev.kind === "match" ? `Match ${ev.home === false ? "à" : "contre"} ${ev.opponent || ev.title}` : ev.title;
   const payload = JSON.stringify({
-    title: kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Tu viens ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
-    body: kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : `${label}, ${when(ev.starts_at)}. Réponds présent ou absent.`,
-    url: `#/agenda/${ev.id}`,
+    title: kind === "sheet_published" ? `Compo publiée · ${team?.name || "équipe"}` : kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Tu viens ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
+    body: kind === "sheet_published" ? `${label}, ${when(ev.starts_at)} : découvre la composition.` : kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : `${label}, ${when(ev.starts_at)}. Réponds présent ou absent.`,
+    url: kind === "sheet_published" ? `#/compos/${ev.id}` : `#/agenda/${ev.id}`,
     tag: `event-${ev.id}`,
   });
   return json(await send(admin, recipients, payload));

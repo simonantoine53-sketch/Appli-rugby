@@ -26,6 +26,13 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Chaque ouverture d'une stratégie publiée par un membre est enregistrée (table drawing_views : première / dernière ouverture, nombre d'ouvertures, animation lue).
 - Coach / admin : bouton « 👁 12/18 ont vu » sur chaque stratégie publiée, liste « Pas encore vu » / « Ont vu », relance par notification push des seuls joueurs qui n'ont pas vu, ou message à copier pour WhatsApp.
 
+## Feuilles de match : fait le 13 octobre 2026 (sur le modèle de la feuille papier du SC Bernay)
+- Une feuille par match de l'agenda (page Compositions, tuile de l'accueil, bouton dans le détail du match).
+- Personnalisation par équipe : 3 modèles (Classique façon feuille papier, Moderne, Terrain), logo, couleurs, champs d'en-tête (brassards, responsables…), équipes A / B / C et nombre de joueurs, champs de bas d'équipe (resp. maillots), repères à côté des noms (1re ligne, capitaine, direct au stade…), postes affichables.
+- Remplissage : noms proposés depuis l'effectif, « Ajouter les présents » depuis la convocation, enregistrement automatique.
+- Sorties : impression / PDF (A4), image PNG partageable sur WhatsApp, publication aux joueurs (notification, leur ligne en surbrillance, « tu es n°12 » sur l'accueil).
+- Plus tard : glisser-déposer pour réordonner, copier la compo du match précédent, statistiques de sélection.
+
 ## À noter pour l'éditeur
 - **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
 - **Cadrage par étape** : fait le 11 octobre 2026. Dans l'étape active, « Cadrer (zoomer sur une zone) » : on glisse le cadre, on tire un coin pour zoomer, on valide. Une nouvelle étape reprend le cadre ; « Tout le terrain » le retire. L'aperçu, le partage, le GIF, la vidéo, le PNG et la fiche PDF animent ou appliquent le cadrage.

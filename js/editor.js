@@ -1035,27 +1035,27 @@
 
   /* ---------- Navigation ---------- */
   // Pages de l'appli (en-tête et barre de navigation communs) ; l'éditeur et le partage public ont leur propre écran.
-  const HUB_VIEWS = ['home', 'strats', 'agenda', 'soon', 'team', 'account', 'admin'];
-  const ROUTES = { home: '#/', strats: '#/strategies', agenda: '#/agenda', team: '#/team', account: '#/account', admin: '#/admin', editor: '#/editor' };
+  const HUB_VIEWS = ['home', 'strats', 'agenda', 'compos', 'soon', 'team', 'account', 'admin'];
+  const ROUTES = { home: '#/', strats: '#/strategies', agenda: '#/agenda', compos: '#/compos', team: '#/team', account: '#/account', admin: '#/admin', editor: '#/editor' };
   function currentView() {
     const h = location.hash;
     if (h.startsWith('#/editor')) return 'editor';
     if (h.startsWith('#/s/')) return 'share';
     if (h.startsWith('#/d/')) return 'open';
     const k = h.replace(/^#\/?/, '').split(/[/?&]/)[0];
-    return { strategies: 'strats', agenda: 'agenda', soon: 'soon', team: 'team', account: 'account', admin: 'admin' }[k] || 'home';
+    return { strategies: 'strats', agenda: 'agenda', compos: 'compos', soon: 'soon', team: 'team', account: 'account', admin: 'admin' }[k] || 'home';
   }
   const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
   /** go('soon', 'seances') ouvre la page d'une fonctionnalité à venir ; go('agenda', id) le détail d'un événement. */
-  function go(view, arg) { const h = view === 'soon' ? '#/soon/' + (arg || '') : view === 'agenda' && arg ? '#/agenda/' + arg : ROUTES[view] || '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  function go(view, arg) { const h = view === 'soon' ? '#/soon/' + (arg || '') : (view === 'agenda' || view === 'compos') && arg ? `#/${view}/${arg}` : ROUTES[view] || '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
     const active = acc && acc.isActive();
     const waiting = active && !acc.isReady();   // session pas encore connue : on affiche l'accueil sans changer l'URL
-    if (['team', 'account', 'admin'].includes(view) && !(active && acc.isLoggedIn())) { view = 'home'; if (active && !waiting) acc.openAuth(); }
+    if (['team', 'account', 'admin', 'compos'].includes(view) && !(active && acc.isLoggedIn())) { view = 'home'; if (active && !waiting) acc.openAuth(); }
     if (view === 'admin' && !(active && acc.isSuper())) view = 'home';
     if (view === 'open') { view = 'strats'; if (active && !waiting && acc.openById) acc.openById(location.hash.slice(4).split(/[?&]/)[0]); }
-    ['home', 'strats', 'agenda', 'soon', 'team', 'account', 'admin', 'editor', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    ['home', 'strats', 'agenda', 'compos', 'soon', 'team', 'account', 'admin', 'editor', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
     const hub = HUB_VIEWS.includes(view);
     $('#hub-bar').classList.toggle('hidden', !hub); $('#app-nav').classList.toggle('hidden', !hub);
     if (view !== 'share' && preview.drawing) stopPreview();

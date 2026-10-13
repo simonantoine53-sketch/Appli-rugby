@@ -223,6 +223,7 @@
     info.appendChild(el('div', 'ev-lines', lines.map(l => `<div>${l}</div>`).join('')));
     if (ev.notes) info.appendChild(el('p', 'ev-notes', esc(ev.notes)));
     const tools = el('div', 'ev-tools');
+    if (ev.kind === 'match' && window.RugbySheets) tools.appendChild(btn(staff ? '📋 Feuille de match' : '📋 Voir la compo', 'secondary small', () => E.go('compos', ev.id)));
     tools.appendChild(btn('📅 Ajouter à mon agenda', 'outline small', () => downloadIcs(ev)));
     if (staff) {
       tools.appendChild(btn('Modifier', 'outline small', () => openForm(ev)));

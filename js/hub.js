@@ -8,6 +8,7 @@
   const A = window.RugbyAccount;
   const P = () => window.RugbyPush;
   const AG = () => window.RugbyAgenda;
+  const SH = () => window.RugbySheets;
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const active = !!(A && A.isActive());
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -88,7 +89,7 @@
     }
     // Onglets
     const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
-    const cur = view === 'soon' ? 'home' : view;
+    const cur = view === 'soon' || view === 'compos' ? 'home' : view;
     const unanswered = data && data.agenda && !data.staff ? data.agenda.events.filter(e => !e.mine).length : 0;
     const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
     const make = withIcon => items.map(([id, label]) => {
@@ -145,8 +146,8 @@
     slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
     let d;
     try {
-      const [hd, ag] = await Promise.all([A.homeData(), AG() ? AG().upcoming(team).catch(() => null) : null]);
-      d = hd; if (d) d.agenda = ag || { events: [], total: 0 };
+      const [hd, ag, sh] = await Promise.all([A.homeData(), AG() ? AG().upcoming(team).catch(() => null) : null, SH() ? SH().upcoming(team).catch(() => null) : null]);
+      d = hd; if (d) { d.agenda = ag || { events: [], total: 0 }; d.sheets = sh || []; }
     } catch (e) { d = null; }
     if (my !== seq) return;
     data = d; renderChrome();
@@ -197,6 +198,7 @@
       if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => { A.setTeamTab('members'); E.go('team'); }) });
       if (d.proposals) items.push({ text: `<strong>${plural(d.proposals, 'proposition', 'propositions')}</strong> de joueur à regarder`, action: 'Voir', fn: go('proposals', () => { A.setTeamTab('proposed'); E.go('team'); }) });
       d.lowViews.slice(0, 2).forEach(r => items.push({ text: `« ${esc(r.title)} » : <strong>${r.viewers}/${r.audience} ont vu</strong>`, action: 'Relancer', fn: go('low-views', () => A.openViews(r)) }));
+      (d.sheets || []).filter(m => new Date(m.starts_at) < soon && m.sheet !== 'published').slice(0, 1).forEach(m => items.push({ text: `Compo du match ${esc(AG().label(m).toLowerCase())} : <strong>${m.sheet === 'draft' ? 'à publier' : 'à faire'}</strong>`, action: m.sheet === 'draft' ? 'Finir' : 'Composer', primary: true, fn: go('sheet', () => E.go('compos', m.id)) }));
       if (!ag.events.length) items.push({ text: 'Aucun match ni entraînement prévu', action: 'Créer', fn: go('event-create', () => AG().openForm()) });
     } else {
       // Convocations sans réponse : on répond directement depuis l'accueil
@@ -206,6 +208,7 @@
       }));
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
+      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>tu es n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
       const push = P();
       if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Active les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
@@ -236,14 +239,22 @@
       tile('invite', 'Inviter', `Code ${esc(d.team.join_code)}`, () => A.shareCode());
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'));
       tile('seances', 'Séances', 'Préparer l’entraînement', () => E.go('soon', 'seances'), { soon: true });
-      tile('compos', 'Compositions', 'Feuille de match', () => E.go('soon', 'compos'), { soon: true });
+      tile('compos', 'Compositions', sheetLabel(d), () => E.go('compos'));
     } else {
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
       tile('team', 'Mon équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => !e.mine).length });
-      tile('account', 'Mon compte', 'Notifications, avis', () => E.go('account'));
+      tile('compos', 'Compositions', sheetLabel(d), () => E.go('compos'));
     }
     return grid;
+  }
+
+  /** Info vivante de la tuile Compositions : l'état de la feuille du prochain match. */
+  function sheetLabel(d) {
+    const m = (d.sheets || [])[0];
+    if (!m) return 'Aucun match à venir';
+    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `tu es n°${m.mine.num}` : 'compo publiée' }[m.sheet];
+    return `${AG().dayShort(m.starts_at)} · ${st}`;
   }
 
   /** Info vivante de la tuile Agenda : le prochain rendez-vous. */
@@ -259,6 +270,7 @@
     view = v;
     renderChrome();
     if (v === 'home') renderHome();
+    else if (v === 'compos') { if (SH()) SH().render($('#hub-compos'), location.hash.split('/')[2] || ''); }
     else if (v === 'agenda') { if (AG()) AG().render($('#hub-agenda'), location.hash.split('/')[2] || ''); else renderSoon('agenda', '#hub-agenda'); }
     else if (v === 'soon') renderSoon(location.hash.split('/')[2] || 'agenda', '#hub-soon');
     else if (v === 'account' && active) A.renderAccountPage();
