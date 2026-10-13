@@ -60,10 +60,23 @@
   let data = null;
   // Le compte est en haut à droite (avatar), pas dans la barre : 4 entrées seulement
   const NAV = [['home', 'Accueil'], ['agenda', 'Agenda'], ['strats', 'Stratégies'], ['team', 'Équipe']];
+  // Logo de l'équipe (celui des feuilles de match) à la place de l'icône générique
+  const logos = {};
+  async function loadLogo(team) {
+    logos[team.id] = null;
+    const { data } = await A.sb.from('teams').select('logo:sheet_settings->>logo').eq('id', team.id).maybeSingle();
+    logos[team.id] = (data && data.logo) || null;
+    renderChrome();
+  }
+  function logoChanged(teamId, url) { logos[teamId] = url || null; renderChrome(); }
   function renderChrome() {
     const logged = active && A.isLoggedIn();
     const teams = logged ? A.teams() : [];
     const team = logged ? A.team() : null;
+    if (team && !(team.id in logos)) loadLogo(team);
+    const logoUrl = team && logos[team.id];
+    $('#hub-logo').classList.toggle('hidden', !logoUrl); $('#hub-logo-default').classList.toggle('hidden', !!logoUrl);
+    if (logoUrl && $('#hub-logo').getAttribute('src') !== logoUrl) $('#hub-logo').src = logoUrl;
     // Équipe : sélecteur s'il y en a plusieurs, sinon son nom
     const sel = $('#hub-team'), title = $('#hub-title');
     if (teams.length > 1) {
@@ -276,7 +289,7 @@
     else if (v === 'account' && active) A.renderAccountPage();
   }
 
-  window.RugbyHub = { onView, renderChrome };
+  window.RugbyHub = { onView, renderChrome, logoChanged };
   // L'éditeur a affiché la première page avant le chargement de ce module : on la complète.
   const first = E.currentView();
   if (first !== 'editor' && first !== 'share') E.refreshView();

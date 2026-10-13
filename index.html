@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610132000">
+  <link rel="stylesheet" href="css/style.css?v=202610132100">
 </head>
 <body>
 
@@ -19,7 +19,8 @@
 <!-- ===== En-tête commun aux pages de l'appli (masqué dans l'éditeur et le partage public) ===== -->
 <header id="hub-bar" class="topbar home-bar hub-bar">
   <div class="brand">
-    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+    <svg id="hub-logo-default" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+    <img id="hub-logo" class="hub-logo hidden" alt="">
     <strong id="hub-title">Rugby Strat</strong>
     <select id="hub-team" class="hub-team hidden" aria-label="Changer d'équipe"></select>
   </div>
@@ -525,20 +526,20 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/icons.js?v=202610132000"></script>
-<script src="js/field.js?v=202610132000"></script>
-<script src="js/formations.js?v=202610132000"></script>
-<script src="js/objects.js?v=202610132000"></script>
-<script src="js/export.js?v=202610132000"></script>
+<script src="js/icons.js?v=202610132100"></script>
+<script src="js/field.js?v=202610132100"></script>
+<script src="js/formations.js?v=202610132100"></script>
+<script src="js/objects.js?v=202610132100"></script>
+<script src="js/export.js?v=202610132100"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610132000"></script>
-<script src="js/editor.js?v=202610132000"></script>
-<script src="js/account.js?v=202610132000"></script>
-<script src="js/push.js?v=202610132000"></script>
-<script src="js/admin.js?v=202610132000"></script>
-<script src="js/agenda.js?v=202610132000"></script>
-<script src="js/calimport.js?v=202610132000"></script>
-<script src="js/sheets.js?v=202610132000"></script>
-<script src="js/hub.js?v=202610132000"></script>
+<script src="js/config.js?v=202610132100"></script>
+<script src="js/editor.js?v=202610132100"></script>
+<script src="js/account.js?v=202610132100"></script>
+<script src="js/push.js?v=202610132100"></script>
+<script src="js/admin.js?v=202610132100"></script>
+<script src="js/agenda.js?v=202610132100"></script>
+<script src="js/calimport.js?v=202610132100"></script>
+<script src="js/sheets.js?v=202610132100"></script>
+<script src="js/hub.js?v=202610132100"></script>
 </body>
 </html>

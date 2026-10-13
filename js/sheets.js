@@ -39,6 +39,7 @@
   });
   function normSettings(raw) {
     const d = DEFAULTS(), s = Object.assign({}, d, raw || {});
+    delete s.__share;
     if (!TEMPLATES.find(t => t.id === s.template)) s.template = 'classic';
     ['fields', 'squads', 'squadFields', 'marks'].forEach(k => { if (!Array.isArray(s[k])) s[k] = d[k]; });
     s.fields = s.fields.filter(f => f && f.label).map(f => ({ id: f.id || uid(), label: (/^arbitre de touche \(jaune\)$/i.test(f.label) ? 'Adjoint terrain (jaune)' : String(f.label)).slice(0, 40) }));
@@ -369,6 +370,16 @@
     );
     root.appendChild(acts);
 
+    // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles
+    if (!settings.logo) {
+      const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
+      const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
+      f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
+      const l = el('label', 'btn primary small', '🖼 Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
+      call.append(l, f);
+      root.appendChild(call);
+    }
+
     // En-tête
     const top = el('div', 'sheet-card');
     top.appendChild(el('div', 'todo-head', 'En-tête'));
@@ -513,7 +524,34 @@
     const { error } = await sb.from('teams').update({ sheet_settings: s }).eq('id', A.team().id);
     if (error) { E.toast('Réglages non enregistrés : ' + error.message); return false; }
     track('sheet_settings', { template: s.template });
+    if (window.RugbyHub && window.RugbyHub.logoChanged) window.RugbyHub.logoChanged(A.team().id, s.logo);
     return true;
+  }
+  /** Autres équipes dont je suis coach ou admin (même club, en général). */
+  const otherStaffTeams = () => A.teams().filter(t => A.team() && t.id !== A.team().id && !t.superadmin && (t.role === 'coach' || t.role === 'admin'));
+  /** Met le logo (et les couleurs) sur d'autres équipes ; onlyEmpty : seulement celles qui n'ont pas encore de logo. */
+  async function shareLogo(s, onlyEmpty) {
+    let n = 0;
+    for (const t of otherStaffTeams()) {
+      const other = await loadSettings(t.id);
+      if (onlyEmpty && other.logo) continue;
+      other.logo = s.logo; other.primary = s.primary; other.accent = s.accent;
+      const { error } = await sb.from('teams').update({ sheet_settings: other }).eq('id', t.id);
+      if (!error) { n++; if (window.RugbyHub && window.RugbyHub.logoChanged) window.RugbyHub.logoChanged(t.id, s.logo); }
+    }
+    return n;
+  }
+  /** Ajout du logo depuis la feuille : une seule fois pour toutes les feuilles de l'équipe. */
+  async function quickLogo(file) {
+    try {
+      const url = await resizeLogo(file);
+      cur.settings.logo = url;
+      if (!(await saveSettings(cur.settings))) return;
+      const n = await shareLogo(cur.settings, true);
+      track('sheet_logo', { shared: n });
+      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'tes ' + n + ' autres équipes' : 'ton autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
+      E.refreshView();
+    } catch (e) { E.toast('Image illisible : essaie un PNG ou un JPG.'); }
   }
   async function openSettings() {
     const team = A.team();
@@ -543,6 +581,13 @@
       const right = el('div', 'brand-right'); right.append(logoBtns, colors);
       brand.append(logo, right);
       body.appendChild(brand);
+      const others = otherStaffTeams();
+      if (others.length && s.logo) {
+        const share = el('label', 'check', `<input type="checkbox"> Mettre aussi ce logo et ces couleurs sur ${others.length > 1 ? 'mes autres équipes' : 'mon autre équipe'} : ${others.map(t => esc(t.name)).join(', ')}`);
+        share.querySelector('input').checked = s.__share !== false;
+        share.querySelector('input').onchange = e => { s.__share = e.target.checked; };
+        body.appendChild(share);
+      }
       // Listes éditables
       body.appendChild(listEditor('Champs en haut de la feuille', 'Ex. Resp. ballons, Adjoint terrain, Soigneur…', s.fields, () => ({ id: uid(), label: '' }), 'label'));
       body.appendChild(squadEditor(s));
@@ -553,8 +598,14 @@
       body.appendChild(opt);
       const save = btn('Enregistrer pour toute l’équipe', 'primary wide', async b => {
         b.disabled = true;
+        const share = s.__share !== false && s.logo && otherStaffTeams().length;
         const clean = normSettings(s);
-        if (await saveSettings(clean)) { E.closeModal('modal-sheet-settings'); E.toast('Feuille personnalisée.'); E.refreshView(); }
+        if (await saveSettings(clean)) {
+          const n = share ? await shareLogo(clean, false) : 0;
+          E.closeModal('modal-sheet-settings');
+          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'ton autre équipe'}.` : 'Feuille personnalisée.');
+          E.refreshView();
+        }
         b.disabled = false;
       });
       body.appendChild(save);
