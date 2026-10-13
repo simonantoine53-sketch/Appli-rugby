@@ -344,6 +344,66 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .vis-badge.team { background: #e3f2e6; color: #2e7d32; }
 .vis-badge.proposed { background: #fff3e0; color: #ef6c00; }
 
+/* ---------- Coquille : en-tête, onglets, barre du bas ---------- */
+.hub-bar .brand { flex: 0 1 auto; min-width: 0; }
+.hub-bar #hub-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-team { font: inherit; font-size: 15px; font-weight: 700; padding: 6px 28px 6px 10px; border: 1.5px solid var(--border); border-radius: 999px; background: #fff; color: var(--text); max-width: 220px; }
+.hub-tabs { display: flex; gap: 4px; margin: 0 auto; height: 100%; }
+.hub-tabs .nav-item { border: none; background: none; padding: 0 14px; font-size: 15px; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; position: relative; display: flex; align-items: center; gap: 6px; }
+.hub-tabs .nav-item:hover { color: var(--text); }
+.hub-tabs .nav-item[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+.hub-bar .actions { margin-left: 0; }
+.hub-account { border: none; background: none; padding: 0; display: grid; place-items: center; min-width: 40px; height: 40px; border-radius: 999px; font-weight: 600; color: var(--primary); }
+.hub-account:not(.logged) { padding: 0 12px; border: 1.5px solid var(--border); }
+.hub-account .avatar-dot { width: 36px; height: 36px; border-radius: 50%; background: #e8f0fe; color: var(--primary); font-weight: 800; font-size: 16px; display: grid; place-items: center; border: 2px solid transparent; }
+.hub-account.on .avatar-dot { border-color: var(--primary); }
+.nav-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #e53935; color: #fff; font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; line-height: 1; }
+.app-nav { display: none; }
+
+/* ---------- Accueil connecté ---------- */
+.hub-hello h1 { margin: 4px 0 0; font-size: 24px; }
+.hub-hello p { margin: 2px 0 0; font-size: 15px; }
+.hub-slots { display: flex; flex-direction: column; gap: 12px; }
+.todo-card { background: #fff; border: 2px solid var(--primary); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.todo-card.onboarding { border-color: var(--field); }
+.todo-card.loading { border-color: var(--border); }
+.todo-head { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+.todo-card > p { margin: 0; }
+.todo-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 15px; min-height: 52px; }
+.todo-head + .todo-row, .progress-line + .todo-row { border-top: none; }
+.todo-row .grow { flex: 1 1 auto; min-width: 0; }
+.todo-row .btn { flex: 0 0 auto; min-height: 40px; }
+.todo-row.done { color: var(--muted); }
+.todo-row.done .grow { text-decoration: line-through; }
+.todo-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; flex: 0 0 auto; font-weight: 800; font-size: 13px; color: #fff; }
+.todo-row.done .todo-check { background: var(--field); border-color: var(--field); }
+.todo-empty { color: var(--muted); font-size: 15px; padding: 4px 0; }
+.progress-line { height: 8px; border-radius: 4px; background: #eceff1; overflow: hidden; margin: 2px 0 4px; }
+.progress-line i { display: block; height: 100%; background: var(--field); border-radius: 4px; }
+.hub-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hub-tile { position: relative; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 120px; color: var(--text); }
+.hub-tile:hover { border-color: var(--primary); }
+.hub-tile svg { width: 30px; height: 30px; color: var(--primary); }
+.hub-tile strong { font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.hub-tile small { color: var(--muted); font-size: 13px; line-height: 1.3; }
+.hub-tile.soon svg { color: #9aa3ad; }
+.hub-tile .soon-tag { position: absolute; top: 10px; right: 10px; }
+.soon-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #8d5b00; background: #fff3e0; border-radius: 6px; padding: 2px 6px; }
+
+/* ---------- Pages « Bientôt » et Compte ---------- */
+.soon-card { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 24px 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 560px; width: 100%; margin: 12px auto 0; }
+.soon-card h2 { margin: 0; font-size: 22px; }
+.soon-card p { margin: 0; font-size: 15px; line-height: 1.5; color: #333; }
+.soon-card p.muted { color: var(--muted); font-size: 13px; }
+.soon-icon svg { width: 40px; height: 40px; color: var(--primary); }
+.account-page { max-width: 560px; }
+.account-card h2 { margin: 0; font-size: 22px; }
+.account-card p { margin: 0; }
+.account-teams { display: flex; flex-direction: column; gap: 6px; }
+.account-team { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.account-actions { display: flex; flex-direction: column; gap: 10px; }
+.admin-refresh { align-self: flex-end; }
+
 /* ---------- Accueil visiteur ---------- */
 .hero { grid-column: 1 / -1; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .hero h1 { margin: 0; font-size: 26px; line-height: 1.2; }
@@ -452,6 +512,17 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
   .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-bar .actions .btn.account { padding: 8px 6px; }
   .home-bar #home-new .long, .home-bar #home-team .long, .home-bar #home-feedback .long { display: none; }
+  .hub-tabs { display: none; }
+  .app-nav { display: flex; flex: 0 0 auto; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .app-nav .nav-item { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); padding: 6px 0 8px; position: relative; min-height: 56px; }
+  .app-nav .nav-item svg { width: 24px; height: 24px; }
+  .app-nav .nav-item[aria-current="page"] { color: var(--primary); font-weight: 700; }
+  .app-nav .nav-badge { position: absolute; top: 4px; left: calc(50% + 6px); }
+  .hub-team { max-width: 170px; font-size: 14px; }
+  .hub-bar .actions { margin-left: auto; }
+  .hub-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .hub-tile { min-height: 112px; padding: 14px 12px; }
+  .todo-row { font-size: 14px; }
   .home-bar #home-feedback { padding: 8px 6px; }
   .home-bar .select { max-width: 150px; font-size: 13px; }
   .team-card h2 { font-size: 18px; }

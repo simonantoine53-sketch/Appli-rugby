@@ -793,7 +793,7 @@
   /* ---------- Aperçu animé ---------- */
   const preview = { playing: false, step: 0, raf: null, drawing: null, canvas: '#preview-canvas', label: '#preview-step', playBtn: '#preview-play' };
   const pd = () => preview.drawing || state.drawing;
-  function openPreview() {
+  function openPreview(autoplay) {
     preview.drawing = null; preview.canvas = '#preview-canvas'; preview.label = '#preview-step'; preview.playBtn = '#preview-play';
     preview.step = state.step; preview.playing = false;
     openModal('modal-preview');
@@ -801,6 +801,7 @@
     if (window.RugbyAccount && window.RugbyAccount.onPreview) window.RugbyAccount.onPreview();
     $('#preview-title').textContent = state.drawing.title;
     showPreviewStep(preview.step);
+    if (autoplay === true && state.drawing.steps.length > 1) setPlaying(true);
   }
   function showPreviewStep(i, objects, frame) {
     const d = pd(); const st = d.steps[i];
@@ -843,7 +844,7 @@
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
   const previewPrev = () => { setPlaying(false); animateTo((preview.step - 1 + pd().steps.length) % pd().steps.length); };
-  $('#btn-preview').onclick = openPreview;
+  $('#btn-preview').onclick = () => openPreview();
   $('#preview-play').onclick = () => setPlaying(!preview.playing);
   $('#preview-next').onclick = previewNext;
   $('#preview-prev').onclick = previewPrev;
@@ -1017,7 +1018,7 @@
     if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin ne correspond à la recherche.'; root.appendChild(p); }
     list.forEach(d => root.appendChild(localCard(d, () => { loadDrawing(clone(d)); go('editor'); }, () => {
       const c = clone(d); c.id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : uid(); c.title = d.title + ' (copie)'; c.updatedAt = Date.now();
-      const lib = readLib(); lib.unshift(c); writeLib(lib); renderHome(); toast('Dessin dupliqué.');
+      const lib = readLib(); lib.unshift(c); writeLib(lib); renderStrats(); toast('Dessin dupliqué.');
     })));
   }
   function localCard(d, onOpen, onDuplicate) {
@@ -1028,48 +1029,65 @@
     c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${d.category}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${d.tags.replace(/[<>]/g, '')}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
-    c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderHome(); } };
+    c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
     return c;
   }
 
-  /* ---------- Navigation accueil / éditeur ---------- */
-  function currentView() { return location.hash.startsWith('#/editor') ? 'editor' : location.hash.startsWith('#/team') ? 'team' : location.hash.startsWith('#/admin') ? 'admin' : location.hash.startsWith('#/s/') ? 'share' : 'home'; }
+  /* ---------- Navigation ---------- */
+  // Pages de l'appli (en-tête et barre de navigation communs) ; l'éditeur et le partage public ont leur propre écran.
+  const HUB_VIEWS = ['home', 'strats', 'agenda', 'soon', 'team', 'account', 'admin'];
+  const ROUTES = { home: '#/', strats: '#/strategies', agenda: '#/agenda', team: '#/team', account: '#/account', admin: '#/admin', editor: '#/editor' };
+  function currentView() {
+    const h = location.hash;
+    if (h.startsWith('#/editor')) return 'editor';
+    if (h.startsWith('#/s/')) return 'share';
+    if (h.startsWith('#/d/')) return 'open';
+    const k = h.replace(/^#\/?/, '').split(/[/?&]/)[0];
+    return { strategies: 'strats', agenda: 'agenda', soon: 'soon', team: 'team', account: 'account', admin: 'admin' }[k] || 'home';
+  }
   const shareToken = () => location.hash.startsWith('#/s/') ? location.hash.slice(4).split(/[?&]/)[0] : '';
-  function go(view) { const h = view === 'editor' ? '#/editor' : view === 'team' ? '#/team' : view === 'admin' ? '#/admin' : '#/'; if (location.hash === h) showView(view); else location.hash = h; }
+  /** go('soon', 'seances') ouvre la page d'une fonctionnalité à venir. */
+  function go(view, arg) { const h = view === 'soon' ? '#/soon/' + (arg || '') : ROUTES[view] || '#/'; if (location.hash === h) showView(view); else location.hash = h; }
   function showView(view) {
     const acc = window.RugbyAccount;
-    if (view === 'team' && !(acc && acc.isActive() && acc.isLoggedIn())) {
-      const waiting = acc && acc.isActive() && !acc.isReady();   // session pas encore connue : on affiche l'accueil sans changer l'URL
-      view = 'home';
-      if (!waiting && acc && acc.isActive()) acc.openAuth();
-    }
-    if (view === 'admin' && !(acc && acc.isActive() && acc.isLoggedIn() && acc.isSuper())) view = 'home';   // account.js redirige une fois la session connue
-    ['home', 'editor', 'team', 'share', 'admin'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    const active = acc && acc.isActive();
+    const waiting = active && !acc.isReady();   // session pas encore connue : on affiche l'accueil sans changer l'URL
+    if (['team', 'account', 'admin'].includes(view) && !(active && acc.isLoggedIn())) { view = 'home'; if (active && !waiting) acc.openAuth(); }
+    if (view === 'admin' && !(active && acc.isSuper())) view = 'home';
+    if (view === 'open') { view = 'strats'; if (active && !waiting && acc.openById) acc.openById(location.hash.slice(4).split(/[?&]/)[0]); }
+    ['home', 'strats', 'agenda', 'soon', 'team', 'account', 'admin', 'editor', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    const hub = HUB_VIEWS.includes(view);
+    $('#hub-bar').classList.toggle('hidden', !hub); $('#app-nav').classList.toggle('hidden', !hub);
     if (view !== 'share' && preview.drawing) stopPreview();
-    if (view === 'share') { closeDrawer(); openShare(shareToken()); return; }
-    if (view === 'editor') requestAnimationFrame(fitZoom);
-    else if (view === 'team') { closeDrawer(); acc.renderTeamPage(); }
-    else if (view === 'admin') { closeDrawer(); if (window.RugbyAdmin) window.RugbyAdmin.render(); }
-    else { closeDrawer(); renderHome(); }
+    if (view !== 'editor') closeDrawer();
+    if (view === 'share') { openShare(shareToken()); return; }
+    if (view === 'editor') { requestAnimationFrame(fitZoom); return; }
+    if (window.RugbyHub) window.RugbyHub.onView(view);
+    if (view === 'strats') renderStrats();
+    else if (view === 'team') acc.renderTeamPage();
+    else if (view === 'admin' && window.RugbyAdmin) window.RugbyAdmin.render();
   }
-  $('#team-back').onclick = () => go('home');
-  function renderHome() {
+  /** Ré-affiche la page courante (après connexion, changement d'équipe…). */
+  function refreshView() { const v = currentView(); if (v !== 'editor' && v !== 'share') showView(v); }
+  function renderStrats() {
     const d = state.drawing;
     const acc = window.RugbyAccount;
     const visitor = acc && acc.isActive() && !acc.isLoggedIn();
     const hasContent = d.steps.some(st => st.objects.length) && !(visitor && d.title === 'Nouveau dessin');   // pas de carte pour l'exemple de démarrage
     $('#home-current').classList.toggle('hidden', !hasContent);
     $('#home-current-title').textContent = d.title;
-    if (window.RugbyAccount && window.RugbyAccount.isActive()) window.RugbyAccount.renderHome(); else renderLocalHome();
+    if (acc && acc.isActive()) acc.renderStrats(); else renderLocalHome();
   }
   window.addEventListener('hashchange', () => showView(currentView()));
-  $('#home-resume').onclick = () => go('editor');
-  $('#home-new').onclick = () => {
+  function startNewDrawing() {
     track('new_drawing');
     const nd = newDrawing();
     if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) nd.settings.orientation = 'portrait';   // remplit l'écran du téléphone
-    loadDrawing(nd); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor'); };
-  $('#btn-library').onclick = () => go('home');
+    loadDrawing(nd); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor');
+  }
+  $('#home-resume').onclick = () => go('editor');
+  $('#home-new').onclick = startNewDrawing;
+  $('#btn-library').onclick = () => go('strats');
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
@@ -1082,7 +1100,7 @@
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, renderHome, localCard,
+    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, refreshView, currentView, startNewDrawing, renderStrats, localCard, openPreview,
     filterBar, filterDrawings, countByCat, CATEGORIES
   };
 

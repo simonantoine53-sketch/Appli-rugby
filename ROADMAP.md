@@ -42,9 +42,12 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - **Espace parents** (écoles de rugby) : très bonne idée, pour plus tard.
 - **Annotation vidéo** (flèches sur une vidéo de match, comme 360Player / Hudl) : reportée le 13 octobre 2026, trop complexe pour l'instant (stockage vidéo, export impossible avec YouTube, usage rare). Version légère possible plus tard : importer une capture de match comme fond de l'éditeur et dessiner dessus.
 
-## À décider : accueil global (13 octobre 2026)
-- Maquette cliquable : https://claude.ai/artifact/LzkCm2RoyRwonGjTdGvEbG
-- Proposition : accueil « cette semaine » (événements + actions), barre à 4 entrées (Accueil, Agenda, Stratégies, Équipe ; compte sur l'avatar), plusieurs équipes avec semaine regroupée. Séances et compos s'ouvrent depuis l'événement.
+## Accueil global : fait le 13 octobre 2026
+- Choix retenus (maquette : https://claude.ai/artifact/LzkCm2RoyRwonGjTdGvEbG) : accueil hybride, barre de navigation à 4 entrées (Accueil, Agenda, Stratégies, Équipe) avec le compte en avatar en haut à droite, une équipe à la fois avec le sélecteur dans l'en-tête.
+- Accueil : guide « Démarrer avec ton équipe » pour le staff (créer, inviter 5 joueurs, publier, notifications), bandeau « À faire » (3 actions au plus : demandes d'adhésion, propositions, stratégies peu vues ; côté joueur : stratégies à regarder, notifications), tuiles avec info vivante.
+- Agenda, Séances, Compositions : pages « Bientôt » avec « Ça m'intéresse » (compté dans le back-office pour prioriser).
+- Notifications : lien direct vers la stratégie (#/d/<id>) ; un joueur qui ouvre une stratégie du coach voit l'animation démarrer.
+- Prochaine étape : Agenda et convocations (remplit le bandeau « À faire » : réponses manquantes, rappels).
 
 ## Modèle économique (hypothèse)
 - Dessiner et prévisualiser : gratuit.

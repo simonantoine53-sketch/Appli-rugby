@@ -109,7 +109,6 @@
     lastUser = uid;
     loadAnnouncements(); loadFlags();
     if (uid) track('session_start', { view: view(), standalone: !!(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches) });
-    if (view() === 'admin') E.go(A.isSuper() ? 'admin' : 'home');
   }
 
   /* ---------- Retours utilisateurs ---------- */
@@ -117,7 +116,6 @@
   const STATUS = { new: 'Nouveau', seen: 'Vu', planned: 'Prévu', done: 'Fait', rejected: 'Écarté' };
   function openFeedback() {
     if (!loggedIn()) { A.openAuth(); E.toast('Connectez-vous pour donner votre avis.'); return; }
-    E.closeModal('modal-team');
     $('#feedback-error').textContent = '';
     E.openModal('modal-feedback');
     $('#feedback-message').focus();
@@ -171,7 +169,8 @@
       b.onclick = () => { tab = id; render(); };
       tabs.appendChild(b);
     });
-    root.appendChild(tabs);
+    const refresh = btn('↻ Actualiser', 'outline small', () => render()); refresh.classList.add('admin-refresh');
+    root.append(tabs, refresh);
     const body = el('div', 'admin-body');
     root.appendChild(body);
     body.appendChild(el('p', 'muted', 'Chargement…'));
@@ -210,7 +209,7 @@
   }
   const TOOL_LABEL = id => { const t = window.RugbyPalette && window.RugbyPalette.TOOLS[id]; return t ? t.label : id; };
   const GROUP_LABEL = { formations: 'Formations', shapes: 'Formes', equip: 'Équipement', players: 'Joueurs' };
-  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »' };
+  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »', interest: 'Intérêt « bientôt »', home_action: 'Action depuis l’accueil', invite: 'Invitation envoyée', open_link: 'Ouverture depuis une notification' };
   async function renderOverview() {
     const o = must(await sb.rpc('admin_overview'));
     cache.feedbackNew = o.feedback_new; cache.pending = o.members_pending;
@@ -241,6 +240,11 @@
       bars('Terrains utilisés', o.fields, f => f.replace('full', 'complet').replace('half', 'demi').replace('empty', 'vide').replace('landscape', 'paysage').replace('portrait', 'portrait')),
       bars('Catégories des dessins', o.categories)
     );
+    // Intérêt pour les fonctionnalités à venir (clics « Ça m'intéresse »)
+    const { data: interest } = await sb.from('events').select('props, user_id').eq('name', 'interest').gte('created_at', new Date(Date.now() - 90 * 864e5).toISOString());
+    const FEAT = { agenda: 'Agenda et convocations', seances: 'Séances d’entraînement', compos: 'Compositions et feuille de match' };
+    const byFeat = {}; (interest || []).forEach(e => { const f = (e.props && e.props.feature) || '?'; (byFeat[f] = byFeat[f] || new Set()).add(e.user_id); });
+    charts.prepend(bars('Demande pour les fonctions à venir (comptes, 90 j)', Object.entries(byFeat).map(([k, v]) => ({ name: k, n: v.size })).sort((a, b) => b.n - a.n), k => FEAT[k] || k));
     return [grid, charts];
   }
 
@@ -481,11 +485,8 @@
     return wrap;
   }
 
-  $('#admin-back').onclick = () => E.go('home');
-  $('#admin-refresh').onclick = () => render();
-  $('#home-feedback').onclick = openFeedback;
   $('#btn-feedback').onclick = openFeedback;
-  $('#btn-admin').onclick = () => { E.closeModal('modal-team'); E.go('admin'); };
+  $('#btn-admin').onclick = () => E.go('admin');
 
   window.RugbyTrack = { track, flush };
   window.RugbyAdmin = { onSession, render, flag, openFeedback };

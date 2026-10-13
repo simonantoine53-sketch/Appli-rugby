@@ -62,5 +62,9 @@
     catch (e) { console.warn('push-notify', e); }
   }
 
-  window.RugbyPush = { enable, disable, renderButton, notify, supported, b64url };
+  /** Notifications actives sur cet appareil (pour la liste de démarrage). */
+  async function isOn() { if (!supported()) return false; try { const sub = await current(); return !!sub && Notification.permission === 'granted'; } catch (e) { return false; } }
+  const canAsk = () => supported() && Notification.permission !== 'denied';
+
+  window.RugbyPush = { enable, disable, renderButton, notify, supported, b64url, isOn, canAsk, isIosNotInstalled };
 })();
