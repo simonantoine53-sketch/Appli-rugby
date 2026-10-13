@@ -64,13 +64,13 @@
   }
 
   async function loadTeams() {
-    const { data, error } = await sb.from('team_members').select('role, status, teams(id, name, join_code, created_by)').eq('user_id', S.user.id);
+    const { data, error } = await sb.from('team_members').select('role, status, teams(id, name, join_code, created_by, share_default)').eq('user_id', S.user.id);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
     S.pending = rows.filter(r => r.status === 'pending').map(r => r.teams);
     S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role }, r.teams));
     if (isSuper()) {
-      const { data: all } = await sb.from('teams').select('id, name, join_code, created_by').order('name');
+      const { data: all } = await sb.from('teams').select('id, name, join_code, created_by, share_default').order('name');
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
     }
     S.teams.sort((a, b) => a.name.localeCompare(b.name));
@@ -223,6 +223,7 @@
     }
     root.appendChild(card);
 
+    if (staff) root.appendChild(shareDefaultCard());
     const list = el('div', 'member-list');
     root.appendChild(list);
     await renderMembers(list, staff, seq);
@@ -244,6 +245,26 @@
     }));
     root.appendChild(foot);
     root.appendChild(teamForms());
+  }
+
+  /** Réglage par défaut du partage des stratégies de l'équipe (staff). */
+  function shareDefaultCard() {
+    const box = el('div', 'team-forms-card share-card');
+    box.appendChild(el('h4', '', 'Partage des stratégies par les joueurs'));
+    const cur = S.team.share_default || 'public';
+    const sel = el('select', 'select'); sel.setAttribute('aria-label', 'Partage des stratégies par défaut');
+    ['app', 'download', 'public'].forEach(m => { const o = el('option'); o.value = m; o.textContent = SHARE[m].label; o.selected = m === cur; sel.appendChild(o); });
+    const help = el('p', 'muted small', esc(SHARE[cur].desc) + ' Tu peux changer ce réglage pour une stratégie précise depuis son menu ⋯.');
+    sel.onchange = async () => {
+      const { error } = await sb.from('teams').update({ share_default: sel.value }).eq('id', S.team.id);
+      if (error) { E.toast(errMsg(error)); sel.value = cur; return; }
+      S.team.share_default = sel.value; const t = S.teams.find(x => x.id === S.team.id); if (t) t.share_default = sel.value;
+      help.textContent = SHARE[sel.value].desc + ' Tu peux changer ce réglage pour une stratégie précise depuis son menu ⋯.';
+      track('share_default', { mode: sel.value });
+      E.toast(`Par défaut : ${SHARE[sel.value].label.toLowerCase()}.`);
+    };
+    box.append(sel, help);
+    return box;
   }
 
   async function renderMembers(list, staff, seq) {
@@ -313,6 +334,7 @@
     E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
   }
   async function saveSmart() {
+    if (E.drawing.__share === 'app' && !isCoach()) { E.toast('Le coach a réservé cette stratégie à l’appli : elle ne peut pas être copiée.'); return; }
     if (S.user && S.current.owner_id && S.current.owner_id !== S.user.id && !(isCoach() && S.current.team_id === S.team.id)) {
       E.drawing.id = crypto.randomUUID(); S.current = { visibility: 'private', team_id: null, owner_id: S.user.id };
     }
@@ -345,6 +367,33 @@
   async function deleteFormation(id) {
     const { error } = await sb.from('formations').delete().eq('id', id);
     if (error) E.toast(errMsg(error));
+  }
+
+  /* ---------- Droits de partage (choisis par le coach) ---------- */
+  const SHARE = {
+    app: { label: 'Dans l’appli seulement', desc: 'Les joueurs regardent dans l’appli : pas de téléchargement, pas de copie, pas de lien public.' },
+    download: { label: 'Téléchargeable', desc: 'Les joueurs peuvent télécharger (image, GIF, vidéo, PDF) et en faire une copie. Pas de lien public.' },
+    public: { label: 'Partage libre', desc: 'Téléchargement, copie et lien public autorisés.' }
+  };
+  const teamDefault = teamId => ((S.teams.find(t => t.id === teamId) || {}).share_default) || 'public';
+  /** Mode effectif d'une stratégie : son propre réglage, sinon celui de l'équipe. */
+  const shareMode = row => row.share_mode || teamDefault(row.team_id);
+  async function setShareMode(row, mode, refresh) {
+    const patch = { share_mode: mode };
+    const eff = mode || teamDefault(row.team_id);
+    const revoke = eff !== 'public' && row.share_token;
+    if (revoke) patch.share_token = null;   // plus de lien public si le partage libre n'est plus autorisé
+    const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
+    if (error) return E.toast(errMsg(error));
+    track('share_mode', { mode: eff });
+    E.toast(`Partage : ${SHARE[eff].label.toLowerCase()}${revoke ? ', le lien public est désactivé' : ''}.`);
+    refresh();
+  }
+  function chooseShareMode(anchor, row, refresh) {
+    const cur = row.share_mode, def = teamDefault(row.team_id);
+    const items = [[`Réglage de l’équipe (${SHARE[def].label.toLowerCase()})${!cur ? ' ✓' : ''}`, () => setShareMode(row, null, refresh)]]
+      .concat(['app', 'download', 'public'].map(m => [`${SHARE[m].label}${cur === m ? ' ✓' : ''}`, () => setShareMode(row, m, refresh)]));
+    window.RugbySelect.openMenu(anchor, items, 'Partage de « ' + row.title + ' »');
   }
 
   /* ---------- Lien de partage public ---------- */
@@ -515,7 +564,7 @@
       if (!S.team) { root.appendChild(teamForms()); return; }
       if (libTab === 'team') markSeen();
     }
-    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
+    let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
@@ -547,7 +596,9 @@
     c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
     c.querySelector('.name').textContent = row.title;
     const cat = d.category ? `<span class="vis-badge cat">${esc(d.category)}</span> ` : '';
-    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${cat}${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}${d.tags ? ' · ' + esc(d.tags) : ''}`;
+    const mode = row.visibility === 'team' ? shareMode(row) : null;
+    const modeBadge = mode && mode !== 'public' ? `<span class="vis-badge share-${mode}">${SHARE[mode].label}</span> ` : '';
+    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}${d.tags ? ' · ' + esc(d.tags) : ''}`;
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
@@ -578,11 +629,15 @@
       btns.appendChild(btn(`💬 ${n}`, 'outline small', () => openComments(row, refresh))).title = 'Commentaires';
     }
     menu.push(['Ouvrir', () => loadCloud(row)]);
-    menu.push(['Dupliquer', duplicate]);
+    const canCopy = mine || isCoach() || mode !== 'app';
+    if (canCopy) menu.push(['Dupliquer', duplicate]);
     if (row.visibility === 'team' && (mine || coachHere)) {
-      if (row.share_token) { menu.push(['Copier le lien public', () => shareLink(row)]); menu.push(['Arrêter le partage public', () => toggleShare(row, false).then(refresh)]); }
-      else menu.push(['Créer un lien public', () => toggleShare(row, true).then(refresh)]);
-    }
+      menu.push([`Partage : ${SHARE[mode].label.toLowerCase()}…`, () => chooseShareMode(btns.querySelector('.card-more'), row, refresh)]);
+      if (mode === 'public') {
+        if (row.share_token) { menu.push(['Copier le lien public', () => shareLink(row)]); menu.push(['Arrêter le lien public', () => toggleShare(row, false).then(refresh)]); }
+        else menu.push(['Créer un lien public', () => toggleShare(row, true).then(refresh)]);
+      }
+    } else if (row.visibility === 'team' && mode === 'public' && row.share_token) menu.push(['Copier le lien public', () => shareLink(row)]);
     if (isCoach() && row.visibility === 'team' && coachHere) menu.push(['Retirer de l’équipe', () => setVis('private')]);
     if (!isCoach() && mine && row.visibility === 'proposed') menu.push(['Annuler la proposition', () => setVis('private')]);
     if (mine || coachHere) menu.push(['Supprimer', async () => {
@@ -603,6 +658,8 @@
 
   function loadCloud(row) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
+    // Joueur sur une stratégie du coach : on garde les droits choisis par le coach avec le dessin
+    if (row.owner_id !== S.user.id && !isCoach() && row.visibility === 'team') d.__share = shareMode(row); else delete d.__share;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
     if (row.visibility === 'team' && row.owner_id !== S.user.id) markViewed(row.id, false);
     E.loadDrawing(d); E.go('editor');
@@ -636,7 +693,7 @@
   /* ---------- Lien direct vers une stratégie (#/d/<id>, ouvert depuis une notification) ---------- */
   async function openById(id) {
     if (!isUuid(id)) { E.go('strats'); return; }
-    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id').eq('id', id).maybeSingle();
+    const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, share_token, share_mode').eq('id', id).maybeSingle();
     if (error || !data) { E.toast('Cette stratégie n’existe plus ou n’est plus partagée avec vous.'); E.go('strats'); return; }
     if (data.team_id && S.team && data.team_id !== S.team.id) { const t = S.teams.find(x => x.id === data.team_id); if (t) setTeam(t); }
     track('open_link');
@@ -649,7 +706,7 @@
     const t = S.team.id, staff = isStaff(), coach = isCoach();
     const [members, published, myViews, proposals, counts] = await Promise.all([
       sb.from('team_members').select('user_id, status').eq('team_id', t),
-      sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token').eq('team_id', t).eq('visibility', 'team').order('published_at', { ascending: false }),
+      sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode').eq('team_id', t).eq('visibility', 'team').order('published_at', { ascending: false }),
       sb.from('drawing_views').select('drawing_id').eq('user_id', S.user.id),
       coach ? sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', t).eq('visibility', 'proposed') : Promise.resolve({ count: 0 }),
       staff ? sb.rpc('team_view_counts', { p_team: t }) : Promise.resolve({ data: [] })

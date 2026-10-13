@@ -908,10 +908,13 @@
   function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
   /* ---------- Menu d'export & exports animés ---------- */
   const exportMenu = $('#export-menu');
-  $('#btn-export').onclick = e => { e.stopPropagation(); exportMenu.classList.toggle('hidden'); };
+  /** Stratégie que le coach a réservée à l'appli : ni export, ni fichier. */
+  const lockedByCoach = () => { if (state.drawing.__share !== 'app') return false; toast('Le coach a réservé cette stratégie à l’appli : pas de téléchargement.'); return true; };
+  $('#btn-export').onclick = e => { e.stopPropagation(); if (lockedByCoach()) return; exportMenu.classList.toggle('hidden'); };
   document.addEventListener('click', () => exportMenu.classList.add('hidden'));
   exportMenu.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
     exportMenu.classList.add('hidden');
+    if (lockedByCoach()) return;
     if (window.RugbyAccount && window.RugbyAccount.isActive() && !window.RugbyAccount.canUse('export')) return;
     const kind = b.dataset.export;
     track('export', { kind, steps: state.drawing.steps.length });
@@ -953,7 +956,7 @@
   }
 
   /* ---------- JSON import / export ---------- */
-  $('#btn-export-json').onclick = () => download(new Blob([snapshot()], { type: 'application/json' }), `${slug(state.drawing.title)}.json`);
+  $('#btn-export-json').onclick = () => !lockedByCoach() && download(new Blob([snapshot()], { type: 'application/json' }), `${slug(state.drawing.title)}.json`);
   $('#btn-import-json').onclick = () => $('#file-import').click();
   $('#file-import').onchange = e => {
     const f = e.target.files[0]; if (!f) return;

@@ -853,3 +853,7 @@ select:disabled { opacity: .5; cursor: default; }
 .step-opts { padding-top: 10px; }
 .card-more { margin-left: auto; min-width: var(--tap-sm); font-size: 18px; letter-spacing: 1px; }
 .rs-opt.danger { color: #c62828; }
+.vis-badge.share-app { background: #fdecea; color: #b71c1c; }
+.vis-badge.share-download { background: #e8f0fe; color: #1558b8; }
+.share-card .select { max-width: 320px; }
+.share-card p { margin: 0; }
