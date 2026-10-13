@@ -229,7 +229,7 @@
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<button class="mini" id="btn-list-formations" title="Placer ou enregistrer une formation réutilisable">Mes formations</button>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<button class="mini mini-block" id="btn-list-formations" title="Placer ou enregistrer une formation réutilisable">Mes formations</button>` : '');
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });

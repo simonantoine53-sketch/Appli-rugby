@@ -690,5 +690,5 @@
     });
   }
 
-  window.RugbySheets = { render, upcoming, sheetHtml, normSettings, normSheet, previewInto };
+  window.RugbySheets = { render, upcoming, sheetHtml, normSettings, normSheet, previewInto, openSettings };
 })();

@@ -980,3 +980,21 @@ select:disabled { opacity: .5; cursor: default; }
 .invite-icon.sms { color: #1a73e8; }
 .invite-icon.email { color: #5f6b7a; }
 .saved-help { margin: 0; }
+
+/* Éditeur : « Mes formations » sous le titre, en petit groupe */
+.group-head .mini.mini-block { flex: 1 1 100%; width: 100%; }
+
+/* Page Équipe */
+.team-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.team-title h2 { margin: 0; font-size: 22px; }
+.members-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; align-items: start; }
+.set-card { gap: 10px; }
+.set-card .set-title { margin: 0; }
+.set-card > .btn { align-self: flex-start; }
+.set-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.set-code { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.code-big { font-size: 26px; font-weight: 800; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+.set-card.danger-zone { border-color: #f3c7c7; }
+.set-card.danger-zone .set-title { color: #c62828; }
+.account-join { display: flex; flex-direction: column; gap: 10px; }

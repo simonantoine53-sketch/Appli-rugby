@@ -161,6 +161,11 @@
     S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
     $('#btn-goto-team').textContent = S.team ? `Voir l’équipe « ${S.team.name} »` : 'Créer ou rejoindre une équipe';
+    // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
+    const join = $('#account-join'); join.replaceChildren();
+    const pend = pendingCard(); if (pend) join.appendChild(pend);
+    const toggle = btn('Rejoindre ou créer une équipe', 'outline wide', () => { toggle.replaceWith(teamForms()); });
+    join.appendChild(toggle);
     if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
     $('#btn-admin').classList.toggle('hidden', !isSuper());
   }
@@ -247,52 +252,100 @@
     else window.RugbyDialog.copy(text);
   }
 
-  /* ---------- Page équipe (les membres ; les stratégies sont dans la page Stratégies) ---------- */
+  /* ---------- Page équipe : onglets Membres et Réglages (les stratégies sont dans la page Stratégies) ---------- */
   let teamSeq = 0;
+  let teamTab = 'members';
   async function renderTeamPage() {
     const seq = ++teamSeq;
     const root = $('#team-page'); root.replaceChildren();
-    const pend = pendingCard();
-    if (!S.team) { if (pend) root.appendChild(pend); root.appendChild(teamForms()); return; }
-    const staff = isStaff();
-
-    const card = el('div', 'team-card');
-    card.appendChild(el('h2', '', `${esc(S.team.name)} ${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role)}`));
-    if (staff) {
-      const code = el('div', 'code', `<span class="muted">Code d’invitation</span> <code>${esc(S.team.join_code)}</code>`);
-      code.appendChild(btn('Inviter', 'secondary small', shareCode));
-      card.appendChild(code);
+    if (!S.team) {
+      const pend = pendingCard(); if (pend) root.appendChild(pend);
+      root.appendChild(teamForms()); return;
     }
-    root.appendChild(card);
+    const staff = isStaff();
+    root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role)}`));
 
-    if (staff) root.appendChild(shareDefaultCard());
+    // Onglets (la pastille de Membres compte les demandes à valider pour le staff)
+    let pending = 0;
+    if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
+    if (seq !== teamSeq) return;
+    const tabs = el('div', 'tabs small page-tabs');
+    [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
+      const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
+      if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
+      b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
+    });
+    root.appendChild(tabs);
+
+    if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
     await renderMembers(list, staff, seq);
-    if (seq !== teamSeq) return;
+  }
 
-    if (pend) root.appendChild(pend);
-    const foot = el('div', 'team-forms-card');
-    foot.appendChild(btn('Quitter cette équipe', 'outline small', async () => {
-      if (!await window.RugbyDialog.confirm(`Quitter « ${S.team.name} » ?`)) return;
-      const { error } = await sb.from('team_members').delete().match({ team_id: S.team.id, user_id: S.user.id });
+  /** Onglet Réglages : l'équipe, le code d'invitation, le partage, la feuille, mon appartenance, la zone sensible. */
+  function teamSettings(staff) {
+    const t = S.team;
+    const grid = el('div', 'settings-grid');
+    const card = (title, cls) => { const c = el('div', 'team-forms-card set-card' + (cls ? ' ' + cls : '')); c.appendChild(el('h4', 'set-title', esc(title))); grid.appendChild(c); return c; };
+    if (staff) {
+      const c = card('L’équipe');
+      const name = el('input', 'set-input'); name.value = t.name; name.maxLength = 60; name.setAttribute('aria-label', 'Nom de l’équipe');
+      const save = btn('Enregistrer', 'outline small', async () => {
+        const v = name.value.trim(); if (!v || v === t.name) return;
+        const { error } = await sb.from('teams').update({ name: v }).eq('id', t.id);
+        if (error) return E.toast(errMsg(error));
+        S.teams.forEach(x => { if (x.id === t.id) x.name = v; }); t.name = v;
+        track('team_rename'); E.toast('Nom enregistré.'); renderAccountButton(); renderTeamPage();
+      });
+      c.append(el('label', 'set-label', 'Nom de l’équipe'), name, save);
+    }
+    // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
+    const code = card('Code d’invitation');
+    const row = el('div', 'set-code', `<span class="code-big">${esc(t.join_code)}</span>`);
+    row.appendChild(btn('Inviter', 'primary small', shareCode));
+    code.appendChild(row);
+    code.appendChild(el('p', 'set-help', staff ? 'Chaque nouvelle personne arrive « en attente » : tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.'));
+    if (staff) code.appendChild(btn('Générer un nouveau code', 'outline small', async () => {
+      if (!await window.RugbyDialog.confirm(`Générer un nouveau code ? L’ancien (${t.join_code}) ne marchera plus.`, { ok: 'Nouveau code' })) return;
+      const { data, error } = await sb.rpc('regenerate_join_code', { p_team: t.id });
       if (error) return E.toast(errMsg(error));
-      await loadTeams(); renderTeamPage();
+      S.teams.forEach(x => { if (x.id === t.id) x.join_code = data; }); t.join_code = data;
+      track('team_new_code'); E.toast('Nouveau code : ' + data); renderTeamPage();
     }));
-    if (staff) foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
-      if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${S.team.name} », ses membres et ses stratégies publiées ?`)) return;
-      const { error } = await sb.from('teams').delete().eq('id', S.team.id);
+    if (staff) {
+      const share = shareDefaultCard(); share.classList.add('set-card'); grid.appendChild(share);
+      const sheet = card('Feuille de match');
+      sheet.appendChild(el('p', 'set-help', 'Logo, couleurs, modèle, champs et repères de la feuille de match.'));
+      sheet.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
+    }
+    // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
+    const me = card('Mon appartenance');
+    const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
+    me.appendChild(el('p', 'set-help', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`));
+    if (!t.superadmin) me.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
+      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`)) return;
+      const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
       if (error) return E.toast(errMsg(error));
-      E.toast('Équipe supprimée.'); await loadTeams(); renderTeamPage();
+      teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
     }));
-    root.appendChild(foot);
-    root.appendChild(teamForms());
+    if (staff) {
+      const z = card('Zone sensible', 'danger-zone');
+      z.appendChild(el('p', 'set-help', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.'));
+      z.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
+        if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${t.name} », ses membres et ses stratégies publiées ?`)) return;
+        const { error } = await sb.from('teams').delete().eq('id', t.id);
+        if (error) return E.toast(errMsg(error));
+        teamTab = 'members'; E.toast('Équipe supprimée.'); await loadTeams(); renderTeamPage();
+      }));
+    }
+    return grid;
   }
 
   /** Réglage par défaut du partage des stratégies de l'équipe (staff). */
   function shareDefaultCard() {
     const box = el('div', 'team-forms-card share-card');
-    box.appendChild(el('h4', '', 'Partage des stratégies par les joueurs'));
+    box.appendChild(el('h4', 'set-title', 'Partage des stratégies'));
     const cur = S.team.share_default || 'public';
     const sel = el('select', 'select'); sel.setAttribute('aria-label', 'Partage des stratégies par défaut');
     ['app', 'download', 'public'].forEach(m => { const o = el('option'); o.value = m; o.textContent = SHARE[m].label; o.selected = m === cur; sel.appendChild(o); });
@@ -334,9 +387,10 @@
         row.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
         list.appendChild(row);
       });
-      list.appendChild(el('h4', 'home-h4', 'Membres'));
     }
-    list.appendChild(el('p', 'muted', `${members.length} membre${members.length > 1 ? 's' : ''}` + (staff ? ' · pour ajouter un joueur, partagez le code d’invitation puis validez sa demande ici.' : '')));
+    const head = el('div', 'members-head', `<span class="muted">${members.length} membre${members.length > 1 ? 's' : ''}</span>`);
+    head.appendChild(btn('Inviter', 'primary small', shareCode));
+    list.appendChild(head);
     members.forEach(m => {
       const name = nameOf(m);
       const row = el('div', 'member-row clickable');
