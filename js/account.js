@@ -119,6 +119,8 @@
     if (window.RugbyHub) window.RugbyHub.renderChrome();
   }
   accountButtons.forEach(b => { b.onclick = () => S.user ? openAccount() : openAuth(); });
+  /** Profils incomplets : pour l'invitation « Complète ton profil » de l'accueil. */
+  const profileIncomplete = () => !!(S.profile && (!S.profile.avatar || !(S.profile.positions || []).length));
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
@@ -153,6 +155,8 @@
     if (!S.user) return;
     $('#account-name').textContent = S.profile.display_name;
     $('#team-user').textContent = S.user.email;
+    const P = window.RugbyProfile;
+    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoute ta photo et ton poste pour que l’équipe te reconnaisse.'; }
     const box = $('#account-teams'); box.replaceChildren();
     S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
@@ -269,7 +273,7 @@
 
   async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, joined_at, profiles!team_members_user_profile_fk(display_name)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
@@ -297,9 +301,12 @@
     list.appendChild(el('p', 'muted', `${members.length} membre${members.length > 1 ? 's' : ''}` + (staff ? ' · pour ajouter un joueur, partagez le code d’invitation puis validez sa demande ici.' : '')));
     members.forEach(m => {
       const name = nameOf(m);
-      const row = el('div', 'member-row');
-      row.appendChild(el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>Depuis le ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
+      const row = el('div', 'member-row clickable');
+      const P = window.RugbyProfile, pr = m.profiles || {};
+      row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.title = 'Voir la fiche';
+      row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       if (staff && m.user_id !== S.user.id) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
@@ -729,6 +736,6 @@
   }
   function selectTeam(id) { const t = S.teams.find(x => x.id === id); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, team: () => S.team, teams: () => S.teams, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

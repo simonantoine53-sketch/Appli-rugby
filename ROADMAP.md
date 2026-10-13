@@ -38,6 +38,12 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Réglage par défaut dans la page Équipe, réglage par stratégie dans son menu ⋯ ; passer hors « Partage libre » désactive le lien public, et le serveur refuse tout lien public d'une stratégie non libre.
 - Limite : une capture d'écran reste possible, et un joueur voit les données de la stratégie dans l'appli ; c'est une restriction d'usage, pas une protection absolue.
 
+## Profil personnalisable (15 octobre 2026, inspiré de SportEasy)
+- Page Compte → « Modifier mon profil » : photo (recadrée et réduite), nom affiché, postes (4 au plus), numéro préféré, pied fort, taille, poids, présentation.
+- Infos privées (téléphone, date de naissance, contact d'urgence) visibles seulement par la personne et le staff de ses équipes (vérifié côté serveur).
+- Photos dans l'en-tête, la page Équipe (poste et numéro sous le nom, fiche au clic) et la liste « qui vient » de l'agenda ; « Complète ton profil » sur l'accueil du joueur.
+- Plus tard : licence et certificat médical (effectif), statistiques de présence sur la fiche.
+
 ## À noter pour l'éditeur
 - **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
 - **Cadrage par étape** : fait le 11 octobre 2026. Dans l'étape active, « Cadrer (zoomer sur une zone) » : on glisse le cadre, on tire un coin pour zoomer, on valide. Une nouvelle étape reprend le cadre ; « Tout le terrain » le retire. L'aperçu, le partage, le GIF, la vidéo, le PNG et la fiche PDF animent ou appliquent le cadrage.

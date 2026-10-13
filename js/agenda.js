@@ -40,8 +40,8 @@
 
   /* ---------- Données ---------- */
   async function members(teamId) {
-    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name)').eq('team_id', teamId).eq('status', 'active');
-    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || 'Membre' })).sort((a, b) => a.name.localeCompare(b.name));
+    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name, avatar)').eq('team_id', teamId).eq('status', 'active');
+    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || 'Membre', photo: m.profiles && m.profiles.avatar })).sort((a, b) => a.name.localeCompare(b.name));
   }
   async function responsesFor(ids) {
     if (!ids.length) return [];
@@ -278,7 +278,7 @@
     }
     const person = (m, r) => {
       const row = el('div', 'member-row ev-person');
-      row.appendChild(el('div', 'avatar', esc(m.name.trim().slice(0, 1).toUpperCase() || '?')));
+      row.appendChild(window.RugbyProfile ? window.RugbyProfile.avatar(m.name, m.photo) : el('div', 'avatar', esc(m.name.trim().slice(0, 1).toUpperCase() || '?')));
       const set = r && r.set_by && r.set_by !== m.id ? ' · saisi par le staff' : '';
       row.appendChild(el('div', 'who', `${esc(m.name)}${m.id === me ? ' (moi)' : ''}${m.role !== 'player' ? ` <span class="role-badge ${m.role}">${m.role === 'coach' ? 'Coach' : 'Admin'}</span>` : ''}${r && r.comment ? `<small>« ${esc(r.comment)} »</small>` : ''}${set ? `<small>${set.slice(3)}</small>` : ''}`));
       if (staff && m.id !== me && !ev.cancelled) {

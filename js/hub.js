@@ -96,7 +96,8 @@
       const initial = ((p && p.display_name) || '?').trim().slice(0, 1).toUpperCase() || '?';
       acc.classList.toggle('logged', !!logged);
       acc.classList.toggle('on', view === 'account' || view === 'admin');
-      acc.innerHTML = logged ? `<span class="avatar-dot">${esc(initial)}</span>` : '<span>Se connecter</span>';
+      const photo = logged && p && /^data:image\/(png|jpeg|webp);base64,/.test(p.avatar || '') ? p.avatar : null;
+      acc.innerHTML = logged ? (photo ? `<span class="avatar-dot photo"><img src="${photo}" alt=""></span>` : `<span class="avatar-dot">${esc(initial)}</span>`) : '<span>Se connecter</span>';
       acc.title = logged ? 'Mon compte' : 'Se connecter';
       acc.setAttribute('aria-label', acc.title);
     }
@@ -227,6 +228,7 @@
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
       (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>tu es n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
+      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complète ton profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
       const push = P();
       if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Active les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
