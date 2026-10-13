@@ -178,12 +178,15 @@
     const c = el('div', 'ev-card' + (ev.cancelled ? ' cancelled' : ''));
     c.appendChild(dateBlock(ev));
     const body = el('div', 'ev-body');
-    body.appendChild(el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`));
+    const meta = el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`);
+    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé
+    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'ghost ev-quick', () => setCancelled([ev], !ev.cancelled, refresh)));
+    body.appendChild(meta);
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
     if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
-    if (staff || sum.yes) body.appendChild(counts(sum));
+    if (!ev.cancelled && (staff || sum.yes)) body.appendChild(counts(sum));
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
     return c;
@@ -215,19 +218,19 @@
     tools.appendChild(btn('📅 Ajouter à mon agenda', 'outline small', () => downloadIcs(ev)));
     if (staff) {
       tools.appendChild(btn('Modifier', 'outline small', () => openForm(ev)));
-      tools.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler l’événement', 'outline small', async () => {
-        if (!ev.cancelled && !confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`)) return;
-        const { error: err } = await sb.from('team_events').update({ cancelled: !ev.cancelled }).eq('id', ev.id);
+      // Pour une séance d'un planning : « seulement celle-ci » ou « celle-ci et les suivantes »
+      const scope = (question, run) => async () => {
+        if (!ev.series_id) { if (confirm(question)) run([ev]); return; }
+        const next = await seriesFrom(ev);
+        choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
+      };
+      tools.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
+        : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))));
+      tools.appendChild(btn('Supprimer', 'outline small danger', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
+        const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
         if (err) return E.toast(err.message);
-        if (!ev.cancelled) notify(ev.id, 'event_cancelled');
-        E.toast(ev.cancelled ? 'Événement rétabli.' : 'Événement annulé, les membres sont prévenus.'); refresh();
-      }));
-      tools.appendChild(btn('Supprimer', 'outline small danger', async () => {
-        if (!confirm(`Supprimer définitivement « ${label(ev)} » et les réponses ?`)) return;
-        const { error: err } = await sb.from('team_events').delete().eq('id', ev.id);
-        if (err) return E.toast(err.message);
-        E.toast('Événement supprimé.'); E.go('agenda');
-      }));
+        E.toast(list.length > 1 ? `${list.length} séances supprimées.` : 'Événement supprimé.'); E.go('agenda');
+      })));
     }
     info.appendChild(tools);
     root.appendChild(info);
@@ -293,6 +296,32 @@
     root.appendChild(who);
   }
 
+  /** Séances d'un planning à partir de celle-ci (incluse), dans l'ordre. */
+  async function seriesFrom(ev) {
+    if (!ev.series_id) return [ev];
+    const { data } = await sb.from('team_events').select('*').eq('series_id', ev.series_id).gte('starts_at', ev.starts_at).order('starts_at');
+    return data && data.length ? data : [ev];
+  }
+  /** Annule (ou rétablit) des événements ; les membres sont prévenus d'une annulation isolée. */
+  async function setCancelled(list, cancelled, refresh) {
+    const { error } = await sb.from('team_events').update({ cancelled }).in('id', list.map(x => x.id));
+    if (error) return E.toast(error.message);
+    if (cancelled && list.length === 1) notify(list[0].id, 'event_cancelled');
+    track('event_cancel', { cancelled, count: list.length });
+    E.toast(!cancelled ? 'Séance rétablie.' : list.length > 1 ? `${list.length} séances annulées.` : 'Annulé, les membres sont prévenus.');
+    refresh();
+  }
+  /** Petit choix en ligne (les fenêtres du navigateur ne proposent que oui / non). */
+  function choose(container, question, options) {
+    const old = container.querySelector('.choice-panel'); if (old) old.remove();
+    const panel = el('div', 'choice-panel', `<p>${esc(question)}</p>`);
+    const row = el('div', 'row');
+    options.forEach(([l, fn], i) => row.appendChild(btn(l, i === 0 ? 'primary small' : 'outline small', () => { panel.remove(); fn(); })));
+    row.appendChild(btn('Retour', 'ghost small', () => panel.remove()));
+    panel.appendChild(row);
+    container.appendChild(panel);
+  }
+
   /* ---------- Ajout au calendrier du téléphone (.ics) ---------- */
   function downloadIcs(ev) {
     const z = d => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
@@ -330,12 +359,41 @@
     f.querySelectorAll('input[name=ev-home]').forEach(r => { r.checked = r.value === (ev && ev.home === false ? 'away' : 'home'); });
     $('#ev-location').value = ev ? ev.location || '' : lastLocation();
     $('#ev-notes').value = ev ? ev.notes || '' : '';
-    $('#ev-repeat').value = '';
+    $('#ev-recurring').checked = false;
+    $('#ev-repeat').value = toInputDate(seasonEnd(d));
+    document.querySelectorAll('input[name=ev-days]').forEach(c => { c.checked = +c.value === d.getDay(); });
+    $('#ev-series-field').classList.toggle('hidden', !(ev && ev.series_id));
+    $('#ev-apply-series').checked = false;
     $('#ev-notify').checked = !ev;
     $('#ev-error').textContent = '';
     syncKind();
+    syncRecur();
     E.openModal('modal-event');
   }
+  /** Fin de saison par défaut : 30 juin (de l'année suivante à partir de juillet). */
+  function seasonEnd(d) { const y = d.getMonth() >= 6 ? d.getFullYear() + 1 : d.getFullYear(); return new Date(y, 5, 30); }
+  const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  /** Dates du planning : chaque jour coché, de la date de départ jusqu'à la fin (150 séances au plus). */
+  function recurDates(start, days, until) {
+    const out = [];
+    const d = new Date(start);
+    while (d <= until && out.length < 150) { if (days.includes(d.getDay())) out.push(new Date(d)); d.setDate(d.getDate() + 1); }
+    return out;
+  }
+  function syncRecur() {
+    const on = $('#ev-recurring').checked;
+    $('#ev-recur-box').classList.toggle('hidden', !on);
+    if (!on) return;
+    const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
+    const date = $('#ev-date').value, t = $('#ev-time').value || '19:00', until = $('#ev-repeat').value;
+    if (!days.length) { $('#ev-recur-help').textContent = 'Coche au moins un jour.'; return; }
+    if (!date || !until) { $('#ev-recur-help').textContent = ''; return; }
+    const n = recurDates(new Date(`${date}T${t}`), days, new Date(`${until}T23:59`)).length;
+    const names = [1, 2, 3, 4, 5, 6, 0].filter(x => days.includes(x)).map(x => DAY_NAMES[x]);
+    $('#ev-recur-help').textContent = `${plural(n, 'entraînement', 'entraînements')} : chaque ${names.join(' et ')} à ${t.replace(':', 'h')}, jusqu’au ${new Date(until).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. Tu pourras annuler une séance (vacances, terrain gelé) en un appui.`;
+  }
+  ['#ev-recurring', '#ev-date', '#ev-time', '#ev-repeat'].forEach(sel => { $(sel).addEventListener('change', syncRecur); });
+  document.querySelectorAll('input[name=ev-days]').forEach(c => { c.onchange = syncRecur; });
   /** Proposition par défaut : demain à 19h. */
   function nextSlot() { const d = new Date(Date.now() + 864e5); d.setHours(19, 0, 0, 0); return d; }
   const LOC_KEY = 'rugby-last-location';
@@ -371,29 +429,45 @@
     const b = $('#ev-submit'); b.disabled = true;
     let firstId = null, n = 1;
     if (editing) {
-      const { error } = await sb.from('team_events').update(Object.assign(base, { starts_at: start.toISOString(), meet_at: meet ? meet.toISOString() : null })).eq('id', editing.id);
-      b.disabled = false;
-      if (error) { $('#ev-error').textContent = error.message; return; }
-      firstId = editing.id;
-      E.toast('Événement modifié.');
-    } else {
-      // Répétition hebdomadaire des entraînements (jusqu'à la date choisie, 30 au maximum)
-      const until = kind === 'training' && $('#ev-repeat').value ? new Date(`${$('#ev-repeat').value}T23:59`) : null;
-      const series = until ? crypto.randomUUID() : null;
-      const rows = [];
-      for (let i = 0; i < 30; i++) {
-        const s = new Date(start); s.setDate(s.getDate() + 7 * i);
-        if (i > 0 && (!until || s > until)) break;
-        const m = meet ? new Date(meet) : null; if (m) m.setDate(m.getDate() + 7 * i);
-        rows.push(Object.assign({}, base, { id: crypto.randomUUID(), starts_at: s.toISOString(), meet_at: m ? m.toISOString() : null, series_id: series, created_by: A.user().id }));
+      const { error } = await sb.from('team_events').update(Object.assign({}, base, { starts_at: start.toISOString(), meet_at: meet ? meet.toISOString() : null })).eq('id', editing.id);
+      if (error) { b.disabled = false; $('#ev-error').textContent = error.message; return; }
+      let extra = 0;
+      if (editing.series_id && $('#ev-apply-series').checked) {
+        // Mêmes horaires, lieu et infos pour les séances suivantes ; chaque séance garde sa date
+        const next = (await seriesFrom(editing)).filter(x => x.id !== editing.id);
+        const at = (iso, hhmm) => { const d = new Date(iso); const [h, m] = hhmm.split(':'); d.setHours(+h, +m, 0, 0); return d.toISOString(); };
+        const results = await Promise.all(next.map(x => sb.from('team_events').update({
+          title: base.title, location: base.location, notes: base.notes,
+          starts_at: at(x.starts_at, t), meet_at: meet ? at(x.starts_at, $('#ev-meet').value) : null
+        }).eq('id', x.id)));
+        const failed = results.filter(r => r.error).length;
+        extra = next.length - failed;
+        if (failed) E.toast(`${failed} séance(s) n’ont pas pu être modifiées.`);
       }
+      b.disabled = false;
+      firstId = editing.id;
+      E.toast(extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}.` : 'Événement modifié.');
+    } else {
+      // Planning de la saison : chaque jour coché, à la même heure, jusqu'à la date de fin
+      const recurring = kind === 'training' && $('#ev-recurring').checked;
+      let dates = [start];
+      if (recurring) {
+        const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
+        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Coche au moins un jour d’entraînement.'; return; }
+        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indique la date de fin du planning.'; return; }
+        dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
+        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
+      }
+      const series = dates.length > 1 ? crypto.randomUUID() : null;
+      const meetDelta = meet ? start - meet : 0;
+      const rows = dates.map(s => Object.assign({}, base, { id: crypto.randomUUID(), starts_at: s.toISOString(), meet_at: meet ? new Date(s - meetDelta).toISOString() : null, series_id: series, created_by: A.user().id }));
       const { error } = await sb.from('team_events').insert(rows);
       b.disabled = false;
       if (error) { $('#ev-error').textContent = error.message; return; }
       firstId = rows[0].id; n = rows.length;
       track('event_create', { kind, repeat: n });
       if ($('#ev-notify').checked) notify(firstId, 'event_new');
-      E.toast(n > 1 ? `${n} entraînements créés.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
+      E.toast(n > 1 ? `Planning créé : ${n} entraînements.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
     }
     E.closeModal('modal-event');
     if (location.hash === '#/agenda/' + firstId) E.refreshView(); else E.go('agenda', n > 1 ? '' : firstId);

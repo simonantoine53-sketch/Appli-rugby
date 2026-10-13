@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610131200">
+  <link rel="stylesheet" href="css/style.css?v=202610131400">
 </head>
 <body>
 
@@ -434,7 +434,23 @@
       </div>
       <label>Lieu<input id="ev-location" type="text" maxlength="120" placeholder="Ex. Stade municipal, terrain 2"></label>
       <label>Infos pour l’équipe<textarea id="ev-notes" class="admin-textarea" rows="2" maxlength="1000" placeholder="Tenue, matériel, covoiturage… (facultatif)"></textarea></label>
-      <label id="ev-repeat-field">Répéter chaque semaine jusqu’au<input id="ev-repeat" type="date"></label>
+      <div id="ev-repeat-field" class="recur">
+        <label class="check"><input id="ev-recurring" type="checkbox"> Toutes les semaines (planning de la saison)</label>
+        <div id="ev-recur-box" class="recur-box hidden">
+          <div class="day-chips" role="group" aria-label="Jours d'entraînement">
+            <label><input type="checkbox" name="ev-days" value="1"><span>Lun</span></label>
+            <label><input type="checkbox" name="ev-days" value="2"><span>Mar</span></label>
+            <label><input type="checkbox" name="ev-days" value="3"><span>Mer</span></label>
+            <label><input type="checkbox" name="ev-days" value="4"><span>Jeu</span></label>
+            <label><input type="checkbox" name="ev-days" value="5"><span>Ven</span></label>
+            <label><input type="checkbox" name="ev-days" value="6"><span>Sam</span></label>
+            <label><input type="checkbox" name="ev-days" value="0"><span>Dim</span></label>
+          </div>
+          <label>Jusqu’au<input id="ev-repeat" type="date"></label>
+          <p id="ev-recur-help" class="help"></p>
+        </div>
+      </div>
+      <label id="ev-series-field" class="check hidden"><input id="ev-apply-series" type="checkbox"> Appliquer aussi aux séances suivantes de ce planning</label>
       <label class="check"><input id="ev-notify" type="checkbox" checked> Prévenir l’équipe par notification</label>
       <p id="ev-error" class="form-error"></p>
       <button id="ev-submit" class="btn primary wide" type="submit">Enregistrer</button>
@@ -471,18 +487,18 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/icons.js?v=202610131200"></script>
-<script src="js/field.js?v=202610131200"></script>
-<script src="js/formations.js?v=202610131200"></script>
-<script src="js/objects.js?v=202610131200"></script>
-<script src="js/export.js?v=202610131200"></script>
+<script src="js/icons.js?v=202610131400"></script>
+<script src="js/field.js?v=202610131400"></script>
+<script src="js/formations.js?v=202610131400"></script>
+<script src="js/objects.js?v=202610131400"></script>
+<script src="js/export.js?v=202610131400"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610131200"></script>
-<script src="js/editor.js?v=202610131200"></script>
-<script src="js/account.js?v=202610131200"></script>
-<script src="js/push.js?v=202610131200"></script>
-<script src="js/admin.js?v=202610131200"></script>
-<script src="js/agenda.js?v=202610131200"></script>
-<script src="js/hub.js?v=202610131200"></script>
+<script src="js/config.js?v=202610131400"></script>
+<script src="js/editor.js?v=202610131400"></script>
+<script src="js/account.js?v=202610131400"></script>
+<script src="js/push.js?v=202610131400"></script>
+<script src="js/admin.js?v=202610131400"></script>
+<script src="js/agenda.js?v=202610131400"></script>
+<script src="js/hub.js?v=202610131400"></script>
 </body>
 </html>

@@ -53,6 +53,8 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Convocation de tous les joueurs actifs : Présent / Peut-être / Absent en un appui, commentaire facultatif ; le staff peut saisir la réponse d'un joueur ; liste par statut visible par toute l'équipe.
 - Relance push des seuls joueurs sans réponse, message WhatsApp à copier, notification à la création ; « Ajouter à mon agenda » (.ics).
 - Accueil : le coach voit « X joueurs sans réponse [Relancer] », le joueur répond « Oui / Non » directement ; tuile et onglet Agenda avec le prochain rendez-vous et le nombre de réponses à donner.
+- Planning de la saison (13 octobre 2026) : jours cochés (ex. mercredi et vendredi), même heure, jusqu'au 30 juin par défaut ; annulation en un appui depuis la liste ; pour une séance du planning, annuler / supprimer / modifier « seulement celle-ci » ou « celle-ci et les suivantes ».
+- Calendrier FFR : pas d'API publique trouvée. Piste : le lien de synchronisation agenda de l'appli Mon Club House (si c'est un flux iCal, import automatique quotidien des matchs côté serveur). En attente du lien.
 - Plus tard : rappel automatique la veille (tâche planifiée), convocation d'une sélection pour les matchs, lien vers la compo, statistiques de présence par joueur.
 
 ## Modèle économique (hypothèse)
