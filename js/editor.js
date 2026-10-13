@@ -229,7 +229,7 @@
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<button class="mini" id="btn-list-formations" title="Placer ou créer une formation réutilisable">Mes formations</button>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<button class="mini" id="btn-list-formations" title="Placer ou enregistrer une formation réutilisable">Mes formations</button>` : '');
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
@@ -279,7 +279,7 @@
     const objs = curObjects();
     if (!objs.length) { toast('Le terrain est vide : placez d’abord des joueurs.'); return; }
     if (acc() && !acc().canUse('save')) return;
-    const name = await window.RugbyDialog.prompt('Nom de la formation', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '', { title: 'Créer une formation', placeholder: 'Ex. Touche à 5 attaque, Mêlée 8 avants', ok: 'Enregistrer', maxLength: 60 });
+    const name = await window.RugbyDialog.prompt('Nom de la formation', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '', { title: 'Enregistrer la formation actuelle', placeholder: 'Ex. Touche à 5 attaque, Mêlée 8 avants', ok: 'Enregistrer', maxLength: 60 });
     if (!name) return;
     const data = window.RugbyFormations.capture(state.drawing.settings, objs);
     if (!data) { toast('Rien à enregistrer.'); return; }
@@ -292,10 +292,10 @@
     const root = $('#saved-formations-list'); root.replaceChildren();
     openModal('modal-saved-formations');
     // Créer une formation à partir des joueurs placés sur le terrain
-    const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = '+ Créer une formation avec le terrain actuel';
+    const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = 'Enregistrer la formation actuelle';
     create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
     root.appendChild(create);
-    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Place tes joueurs sur le terrain, puis enregistre-les : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistre les joueurs placés sur le terrain : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';
