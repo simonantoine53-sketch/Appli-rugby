@@ -215,16 +215,30 @@
     msg.value = `Salut ! Rejoins l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvre ${url}\n2. Crée ton compte (gratuit)\n3. Entre le code ${t.join_code}`;
     body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
-    const links = el('div', 'invite-links');
-    const link = (label, href, channel) => { const a = el('a', 'btn outline', esc(label)); a.href = href(); a.target = '_blank'; a.rel = 'noopener'; a.onclick = () => { a.href = href(); track('invite', { channel }); }; return a; };
+    const ICONS = {
+      whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.1 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.1.3 0 .5.6 1.1 1.5 2 2.6 2.6.2.1.4.1.5 0l.6-.5c.2-.1.4-.2.6-.1l1.6.7c.4.2.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.5.6-2.8.1-2.3-.9-4.2-2.8-5.1-5.1-.4-1.3-.2-2.3.2-2.7z" fill="currentColor"/></svg>',
+      sms: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="11" r="1.2" fill="currentColor"/><circle cx="12" cy="11" r="1.2" fill="currentColor"/><circle cx="16" cy="11" r="1.2" fill="currentColor"/></svg>',
+      email: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+      more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>'
+    };
+    const links = el('div', 'invite-icons');
+    const icon = (key, label, href) => {
+      const a = el('a', 'invite-icon ' + key, ICONS[key]); a.href = href(); a.target = '_blank'; a.rel = 'noopener'; a.title = label; a.setAttribute('aria-label', label);
+      a.onclick = () => { a.href = href(); track('invite', { channel: key }); };
+      return a;
+    };
     links.append(
-      link('WhatsApp', () => `https://wa.me/?text=${enc()}`, 'whatsapp'),
-      link('SMS', () => `sms:?&body=${enc()}`, 'sms'),
-      link('E-mail', () => `mailto:?subject=${encodeURIComponent('Rejoins l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`, 'email'),
-      btn('Copier le message', 'primary', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy'))
+      icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
+      icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent('Rejoins l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`)
     );
-    if (navigator.share) links.appendChild(btn('Autre application…', 'outline', () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugby Strat', text: msg.value }).catch(() => {}); }));
+    if (navigator.share) {
+      const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
+      more.onclick = () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugby Strat', text: msg.value }).catch(() => {}); };
+      links.appendChild(more);
+    }
     body.appendChild(links);
+    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy')));
     E.openModal('modal-invite');
   }
   function copy(text, ok, channel) {

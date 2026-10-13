@@ -229,11 +229,10 @@
         grid.appendChild(b);
       });
       const head = document.createElement('div'); head.className = 'group-head';
-      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<span class="mini-wrap"><button class="mini" id="btn-list-formations" title="Placer une formation que vous avez enregistrée">Mes formations</button><button class="mini" id="btn-save-formation" title="Enregistrer les joueurs du terrain comme formation réutilisable">+ Créer une formation</button></span>` : '');
+      head.innerHTML = `<h3>${g.title}</h3>` + (g.id === 'formations' ? `<button class="mini" id="btn-list-formations" title="Placer ou créer une formation réutilisable">Mes formations</button>` : '');
       const sec = document.createElement('section'); sec.className = 'group'; sec.append(head, grid);
       root.appendChild(sec);
     });
-    $('#btn-save-formation').onclick = saveCurrentFormation;
     $('#btn-list-formations').onclick = openSavedFormations;
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
@@ -292,10 +291,15 @@
     closeDrawer();
     const root = $('#saved-formations-list'); root.replaceChildren();
     openModal('modal-saved-formations');
+    // Créer une formation à partir des joueurs placés sur le terrain
+    const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = '+ Créer une formation avec le terrain actuel';
+    create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
+    root.appendChild(create);
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Place tes joueurs sur le terrain, puis enregistre-les : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';
-    if (!list.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'Aucune formation enregistrée. Placez des joueurs sur le terrain puis cliquez « Enregistrer » dans le groupe Formations.'; root.appendChild(p); return; }
+    if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucune formation enregistrée pour le moment.'; root.appendChild(p); return; }
     list.forEach(f => {
       const row = document.createElement('div'); row.className = 'saved-row';
       const n = (f.data && f.data.objects || []).length;

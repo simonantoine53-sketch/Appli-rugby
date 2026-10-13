@@ -119,16 +119,18 @@
     }
     if (eventId) return renderEvent(root, eventId, my);
     const staff = A.isStaff();
-    // Actions sur leur ligne, puis les onglets posés sur le trait de séparation
+    // Une seule barre : onglets à gauche posés sur le trait, actions à droite décollées du trait
+    const bar = el('div', 'page-bar');
+    const tabs = el('div', 'tabs small');
+    [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
+    bar.appendChild(tabs);
     if (staff) {
       const acts = el('div', 'page-actions');
-      if (window.RugbyAgenda.openImport) acts.appendChild(btn('Importer les matchs', 'outline', () => window.RugbyAgenda.openImport()));
-      acts.appendChild(btn('+ Nouvel événement', 'primary', () => openForm()));
-      root.appendChild(acts);
+      if (window.RugbyAgenda.openImport) acts.appendChild(btn('Importer les matchs', 'outline small', () => window.RugbyAgenda.openImport()));
+      acts.appendChild(btn('+ Nouvel événement', 'primary small', () => openForm()));
+      bar.appendChild(acts);
     }
-    const tabs = el('div', 'tabs small page-tabs');
-    [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
-    root.appendChild(tabs);
+    root.appendChild(bar);
     const list = el('div', 'agenda-list'); root.appendChild(list);
     list.appendChild(el('p', 'muted', 'Chargement…'));
     const now = new Date();

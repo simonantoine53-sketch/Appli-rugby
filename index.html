@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610151220">
+  <link rel="stylesheet" href="css/style.css?v=202610151300">
 </head>
 <body>
 
@@ -225,55 +225,51 @@
       <p class="help">La nouvelle étape reprend les joueurs là où ils sont. Déplacez-les : l'aperçu animera le mouvement.</p>
     </div>
 
-    <div id="tab-settings" class="tab-content hidden">
-      <div class="field-group">
-        <label class="label">Terrain</label>
-        <div class="choice-row">
-          <label><input type="radio" name="field" value="full" checked> Complet</label>
-          <label><input type="radio" name="field" value="half"> Demi-terrain</label>
-          <label><input type="radio" name="field" value="empty"> Vide</label>
+    <div id="tab-settings" class="tab-content hidden settings-pane">
+      <section class="set-section">
+        <h4 class="set-title">Terrain</h4>
+        <div class="segmented" role="radiogroup" aria-label="Type de terrain">
+          <label><input type="radio" name="field" value="full" checked><span>Complet</span></label>
+          <label><input type="radio" name="field" value="half"><span>Demi</span></label>
+          <label><input type="radio" name="field" value="empty"><span>Vide</span></label>
         </div>
-      </div>
-      <div class="field-group">
-        <label class="label">Orientation</label>
-        <div class="choice-row">
-          <label><input type="radio" name="orientation" value="landscape" checked> Paysage</label>
-          <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+        <div class="segmented" role="radiogroup" aria-label="Orientation du terrain">
+          <label><input type="radio" name="orientation" value="landscape" checked><span>Paysage</span></label>
+          <label><input type="radio" name="orientation" value="portrait"><span>Portrait</span></label>
         </div>
-      </div>
-      <div class="field-group">
-        <label class="label">Catégorie</label>
-        <div class="choice-row">
-          <select id="drawing-category" class="select">
-            <option value="">— aucune —</option>
-            <option>Attaque</option><option>Défense</option><option>Touche</option><option>Mêlée</option><option>Jeu au pied</option><option>Physique</option><option>Entraînement</option><option>Match</option><option>Autre</option>
-          </select>
-          <input id="drawing-tags" type="text" class="select" placeholder="Mots-clés (ex. U16, côté fermé)" maxlength="80">
+      </section>
+      <section class="set-section">
+        <h4 class="set-title">Classement</h4>
+        <select id="drawing-category" class="select" aria-label="Catégorie">
+          <option value="">Sans catégorie</option>
+          <option>Attaque</option><option>Défense</option><option>Touche</option><option>Mêlée</option><option>Jeu au pied</option><option>Physique</option><option>Entraînement</option><option>Match</option><option>Autre</option>
+        </select>
+        <input id="drawing-tags" type="text" class="set-input" placeholder="Mots-clés (ex. U16, côté fermé)" maxlength="80" aria-label="Mots-clés">
+      </section>
+      <section class="set-section">
+        <h4 class="set-title">Animation</h4>
+        <div class="set-range">
+          <input type="range" id="step-duration" min="400" max="3000" step="100" value="1200" aria-label="Temps par étape">
+          <output id="step-duration-val" for="step-duration">1,2 s</output>
         </div>
-      </div>
-      <div class="field-group">
-        <label class="label">Aide au placement</label>
-        <div class="choice-row">
-          <label><input type="checkbox" id="snap-toggle"> Aimanter les joueurs aux lignes du terrain</label>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="label">Vitesse de l'animation (temps par étape)</label>
-        <div class="choice-row">
-          <input type="range" id="step-duration" min="400" max="3000" step="100" value="1200">
-          <span id="step-duration-val">1,2 s</span>
-        </div>
-      </div>
-      <details class="field-group advanced">
-        <summary class="label">Options avancées</summary>
-        <p class="help">Sauvegarder le dessin dans un fichier, ou en ouvrir un reçu d'un autre coach.</p>
-        <div class="choice-row">
-          <button id="btn-export-json" class="btn outline small">Télécharger le fichier</button>
+        <p class="set-help">Temps passé sur chaque étape dans l’aperçu et les vidéos.</p>
+      </section>
+      <section class="set-section">
+        <label class="switch-row">
+          <span><strong>Aimanter aux lignes</strong><small>Les joueurs s’accrochent aux lignes du terrain.</small></span>
+          <input type="checkbox" id="snap-toggle" class="switch">
+        </label>
+      </section>
+      <details class="set-section set-details">
+        <summary>Fichier du dessin</summary>
+        <p class="set-help">Sauvegarder le dessin dans un fichier, ou ouvrir celui d’un autre coach.</p>
+        <div class="set-btns">
+          <button id="btn-export-json" class="btn outline small">Télécharger</button>
           <button id="btn-import-json" class="btn outline small">Ouvrir un fichier</button>
         </div>
       </details>
-      <div class="field-group shortcuts-group">
-        <label class="label">Raccourcis clavier</label>
+      <details class="set-section set-details shortcuts-group">
+        <summary>Raccourcis clavier</summary>
         <ul class="shortcuts">
           <li><kbd>V</kbd> ou <kbd>Échap</kbd> : sélection</li>
           <li><kbd>1</kbd>–<kbd>0</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd>, <kbd>T</kbd> : outils de forme</li>
@@ -281,11 +277,11 @@
           <li><kbd>Ctrl</kbd>+<kbd>D</kbd> : dupliquer</li>
           <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> : annuler / rétablir</li>
           <li><kbd>Flèches</kbd> : déplacer l'objet (Maj = plus vite)</li>
-          <li><kbd>Maj</kbd> + clic : ajouter à la sélection (puis déplacer, aligner, dupliquer, supprimer le groupe) ; <kbd>Ctrl</kbd>+<kbd>A</kbd> : tout sélectionner</li>
-          <li><kbd>Maj</kbd> + glisser : déplacement aligné (horizontal ou vertical) ; sur une ligne, angle à 0°, 45° ou 90°</li>
+          <li><kbd>Maj</kbd> + clic : ajouter à la sélection ; <kbd>Ctrl</kbd>+<kbd>A</kbd> : tout sélectionner</li>
+          <li><kbd>Maj</kbd> + glisser : déplacement aligné ; sur une ligne, angle à 0°, 45° ou 90°</li>
           <li>Double-clic sur un texte ou un joueur pour le modifier</li>
         </ul>
-      </div>
+      </details>
     </div>
   </aside>
 </main>
@@ -566,23 +562,23 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/selects.js?v=202610151220"></script>
-<script src="js/dialog.js?v=202610151220"></script>
-<script src="js/icons.js?v=202610151220"></script>
-<script src="js/field.js?v=202610151220"></script>
-<script src="js/formations.js?v=202610151220"></script>
-<script src="js/objects.js?v=202610151220"></script>
-<script src="js/export.js?v=202610151220"></script>
+<script src="js/selects.js?v=202610151300"></script>
+<script src="js/dialog.js?v=202610151300"></script>
+<script src="js/icons.js?v=202610151300"></script>
+<script src="js/field.js?v=202610151300"></script>
+<script src="js/formations.js?v=202610151300"></script>
+<script src="js/objects.js?v=202610151300"></script>
+<script src="js/export.js?v=202610151300"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610151220"></script>
-<script src="js/editor.js?v=202610151220"></script>
-<script src="js/account.js?v=202610151220"></script>
-<script src="js/push.js?v=202610151220"></script>
-<script src="js/profile.js?v=202610151220"></script>
-<script src="js/admin.js?v=202610151220"></script>
-<script src="js/agenda.js?v=202610151220"></script>
-<script src="js/calimport.js?v=202610151220"></script>
-<script src="js/sheets.js?v=202610151220"></script>
-<script src="js/hub.js?v=202610151220"></script>
+<script src="js/config.js?v=202610151300"></script>
+<script src="js/editor.js?v=202610151300"></script>
+<script src="js/account.js?v=202610151300"></script>
+<script src="js/push.js?v=202610151300"></script>
+<script src="js/profile.js?v=202610151300"></script>
+<script src="js/admin.js?v=202610151300"></script>
+<script src="js/agenda.js?v=202610151300"></script>
+<script src="js/calimport.js?v=202610151300"></script>
+<script src="js/sheets.js?v=202610151300"></script>
+<script src="js/hub.js?v=202610151300"></script>
 </body>
 </html>
