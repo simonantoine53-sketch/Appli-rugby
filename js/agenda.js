@@ -123,7 +123,12 @@
     const tabs = el('div', 'tabs small');
     [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
     head.appendChild(tabs);
-    if (staff) head.appendChild(btn('+ Nouvel événement', 'primary', () => openForm()));
+    if (staff) {
+      const acts = el('div', 'agenda-acts');
+      if (window.RugbyAgenda.openImport) acts.appendChild(btn('📥 Importer les matchs', 'outline', () => window.RugbyAgenda.openImport()));
+      acts.appendChild(btn('+ Nouvel événement', 'primary', () => openForm()));
+      head.appendChild(acts);
+    }
     root.appendChild(head);
     const list = el('div', 'agenda-list'); root.appendChild(list);
     list.appendChild(el('p', 'muted', 'Chargement…'));
@@ -140,7 +145,10 @@
       const empty = el('div', 'soon-card agenda-empty', tab === 'next'
         ? (staff ? '<h2>Rien de prévu</h2><p>Crée le prochain entraînement ou match. Tes joueurs sont prévenus et répondent présent ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
         : '<h2>Aucun événement passé</h2>');
-      if (staff && tab === 'next') empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
+      if (staff && tab === 'next') {
+        empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
+        if (window.RugbyAgenda.openImport) empty.appendChild(btn('📥 Importer les matchs de la fédération (.ics)', 'outline', () => window.RugbyAgenda.openImport()));
+      }
       list.appendChild(empty); return;
     }
     let lastWeek = '';

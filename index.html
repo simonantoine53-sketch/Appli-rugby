@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610131400">
+  <link rel="stylesheet" href="css/style.css?v=202610131600">
 </head>
 <body>
 
@@ -458,6 +458,17 @@
   </div>
 </div>
 
+<!-- Import du calendrier des matchs (.ics) -->
+<div id="modal-import" class="modal hidden">
+  <div class="modal-box auth-box">
+    <div class="modal-head">
+      <strong>Importer les matchs</strong>
+      <button class="btn-close" data-close="modal-import" title="Fermer">✕</button>
+    </div>
+    <div id="import-body" class="team-body import-body"></div>
+  </div>
+</div>
+
 <!-- Donner mon avis -->
 <div id="modal-feedback" class="modal hidden">
   <div class="modal-box auth-box">
@@ -487,18 +498,19 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/icons.js?v=202610131400"></script>
-<script src="js/field.js?v=202610131400"></script>
-<script src="js/formations.js?v=202610131400"></script>
-<script src="js/objects.js?v=202610131400"></script>
-<script src="js/export.js?v=202610131400"></script>
+<script src="js/icons.js?v=202610131600"></script>
+<script src="js/field.js?v=202610131600"></script>
+<script src="js/formations.js?v=202610131600"></script>
+<script src="js/objects.js?v=202610131600"></script>
+<script src="js/export.js?v=202610131600"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610131400"></script>
-<script src="js/editor.js?v=202610131400"></script>
-<script src="js/account.js?v=202610131400"></script>
-<script src="js/push.js?v=202610131400"></script>
-<script src="js/admin.js?v=202610131400"></script>
-<script src="js/agenda.js?v=202610131400"></script>
-<script src="js/hub.js?v=202610131400"></script>
+<script src="js/config.js?v=202610131600"></script>
+<script src="js/editor.js?v=202610131600"></script>
+<script src="js/account.js?v=202610131600"></script>
+<script src="js/push.js?v=202610131600"></script>
+<script src="js/admin.js?v=202610131600"></script>
+<script src="js/agenda.js?v=202610131600"></script>
+<script src="js/calimport.js?v=202610131600"></script>
+<script src="js/hub.js?v=202610131600"></script>
 </body>
 </html>
