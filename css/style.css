@@ -503,6 +503,7 @@ kbd { background: #f1f3f5; border: 1px solid #d9dde3; border-bottom-width: 2px; 
 .sheet-rows { display: flex; flex-direction: column; gap: 4px; }
 .sheet-row { display: flex; align-items: center; gap: 8px; }
 .sheet-row.bench-start { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.sheet-row input.dup { border-color: #e53935; background: #fff5f5; }
 .sheet-num { width: 30px; text-align: right; font-weight: 800; color: var(--muted); flex: 0 0 auto; }
 .sheet-row input { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 16px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; }
 .sheet-marks { display: flex; gap: 4px; flex: 0 0 auto; }

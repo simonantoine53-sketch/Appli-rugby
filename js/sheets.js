@@ -439,14 +439,40 @@
       clearTimeout(saveTimer); saveSheet().then(() => E.refreshView());
     }));
     card.appendChild(head);
+    // Un joueur ne figure qu'une fois par équipe : dès qu'il est placé, il disparaît des suggestions de cette équipe
+    // (il reste proposé dans les autres équipes : c'est le cas du « double »)
+    const listId = 'sheet-names-' + q.id;
+    let dl = document.getElementById(listId); if (!dl) { dl = el('datalist'); dl.id = listId; document.body.appendChild(dl); }
+    const inputs = [];
+    const keyOf = p => p.user_id || nameKey(p.name);
+    const setName = (p, v) => { p.name = v.trim(); const m = p.name && members.find(x => nameKey(x.name) === nameKey(p.name)); p.user_id = m ? m.id : null; };
+    const refresh = () => {
+      const count = {}; list.forEach(p => { const k = keyOf(p); if (k) count[k] = (count[k] || 0) + 1; });
+      dl.replaceChildren(...members.filter(m => !count[m.id] && !count[nameKey(m.name)]).map(m => Object.assign(el('option'), { value: m.name })));
+      inputs.forEach(({ p, inp }) => { const dup = !!keyOf(p) && count[keyOf(p)] > 1; inp.classList.toggle('dup', dup); inp.title = dup ? `Déjà dans ${q.label}` : ''; });
+    };
     const rows = el('div', 'sheet-rows');
     cur.markButtons = cur.markButtons.filter(x => x.el.isConnected);
     list.forEach((p, i) => {
       const r = el('div', 'sheet-row' + (i === 15 ? ' bench-start' : ''));
       r.appendChild(el('span', 'sheet-num', String(i + 1)));
-      const inp = el('input'); inp.value = p.name || ''; inp.maxLength = 40; inp.setAttribute('list', 'sheet-names');
+      const inp = el('input'); inp.value = p.name || ''; inp.maxLength = 40; inp.setAttribute('list', listId);
       inp.placeholder = settings.showPositions && i < 15 ? POSITIONS[i] : i >= 15 ? 'Remplaçant' : 'Nom';
-      inp.oninput = () => { p.name = inp.value.trim(); const m = members.find(x => x.name === p.name); p.user_id = m ? m.id : null; syncDoubles(); queueSave(); };
+      let prev = p.name || '';
+      inp.onfocus = () => { prev = p.name || ''; };
+      inp.oninput = () => { setName(p, inp.value); refresh(); syncDoubles(); queueSave(); };
+      inp.onchange = () => {
+        const k = keyOf(p), other = k ? list.findIndex(x => x !== p && keyOf(x) === k) : -1;
+        if (other >= 0) {
+          // Doublon dans la même équipe : on refuse et on remet l'ancien nom
+          E.toast(`${list[other].name} est déjà dans ${q.label} (n° ${other + 1}).`);
+          inp.value = prev; setName(p, prev); refresh(); syncDoubles(); queueSave(); return;
+        }
+        const m = p.user_id && members.find(x => x.id === p.user_id);
+        if (m && inp.value !== m.name) { inp.value = p.name = m.name; queueSave(); }   // « simon a » → « Simon A. »
+        prev = p.name;
+      };
+      inputs.push({ p, inp });
       r.appendChild(inp);
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
@@ -461,6 +487,7 @@
       rows.appendChild(r);
     });
     card.appendChild(rows);
+    refresh();
     if (settings.squadFields.length) {
       const foot = el('div', 'sheet-grid');
       settings.squadFields.forEach(f => foot.appendChild(field(f.label, sheet.squadValues[q.id][f.id], v => { sheet.squadValues[q.id][f.id] = v; }, 'text', 'sheet-names')));
