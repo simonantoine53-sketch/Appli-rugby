@@ -280,7 +280,7 @@
     const objs = curObjects();
     if (!objs.length) { toast('Le terrain est vide : placez d’abord des joueurs.'); return; }
     if (acc() && !acc().canUse('save')) return;
-    const name = prompt('Nom de la formation (ex. « Touche à 5 attaque », « Mêlée 8 avants ») :', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '');
+    const name = await window.RugbyDialog.prompt('Nom de la formation', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '', { title: 'Créer une formation', placeholder: 'Ex. Touche à 5 attaque, Mêlée 8 avants', ok: 'Enregistrer', maxLength: 60 });
     if (!name) return;
     const data = window.RugbyFormations.capture(state.drawing.settings, objs);
     if (!data) { toast('Rien à enregistrer.'); return; }
@@ -307,7 +307,7 @@
       row.appendChild(place);
       if (f.canDelete !== false) {
         const del = document.createElement('button'); del.className = 'btn outline small danger'; del.textContent = 'Supprimer';
-        del.onclick = async () => { if (!confirm(`Supprimer « ${f.name} » ?`)) return; if (acc()) await acc().deleteFormation(f.id); else writeForms(readForms().filter(x => x.id !== f.id)); openSavedFormations(); };
+        del.onclick = async () => { if (!await window.RugbyDialog.confirm(`Supprimer « ${f.name} » ?`)) return; if (acc()) await acc().deleteFormation(f.id); else writeForms(readForms().filter(x => x.id !== f.id)); openSavedFormations(); };
         row.appendChild(del);
       }
       root.appendChild(row);
@@ -405,9 +405,11 @@
     if (t) {
       const obj = makeObject(t, (t.kind === 'player' || t.kind === 'equip') ? snapPoint(p) : p);
       if (t.kind === 'text') {
-        const txt = prompt('Texte à afficher :', 'Texte');
-        if (!txt) return;
-        obj.text = txt; curObjects().push(obj); state.selected = obj.id; commit(before); return;
+        window.RugbyDialog.prompt('Texte à afficher', '', { title: 'Ajouter un texte', placeholder: 'Ex. Zone de défense', ok: 'Ajouter', maxLength: 80 }).then(txt => {
+          if (!txt) return;
+          obj.text = txt; curObjects().push(obj); state.selected = obj.id; commit(before);
+        });
+        return;
       }
       curObjects().push(obj);
       state.selected = obj.id;
@@ -523,8 +525,8 @@
     const g = e.target.closest('[data-id]'); if (!g) return;
     const obj = findObj(g.dataset.id); if (!obj) return;
     const before = snapshot();
-    if (obj.type === 'text') { const t = prompt('Texte :', obj.text); if (t !== null) { obj.text = t; commit(before); } }
-    else if (obj.type === 'player') { const t = prompt('Numéro ou lettre du joueur :', obj.label || ''); if (t !== null) { obj.label = t.slice(0, 3); commit(before); } }
+    if (obj.type === 'text') window.RugbyDialog.prompt('Texte', obj.text, { title: 'Modifier le texte', maxLength: 80 }).then(t => { if (t !== null) { obj.text = t; commit(before); } });
+    else if (obj.type === 'player') window.RugbyDialog.prompt('Numéro ou lettre (3 caractères)', obj.label || '', { title: 'Joueur', maxLength: 3, required: false }).then(t => { if (t !== null) { obj.label = t.slice(0, 3); commit(before); } });
   });
 
   function removeObj(id) { const arr = curObjects(); const i = arr.findIndex(o => o.id === id); if (i >= 0) arr.splice(i, 1); }
@@ -663,7 +665,7 @@
       btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
     }
     if (obj.type === 'text') {
-      btn('Modifier', 'Modifier le texte', false, () => { const t = prompt('Texte :', obj.text); if (t !== null) obj.text = t; });
+      btn('Modifier', 'Modifier le texte', false, () => { window.RugbyDialog.prompt('Texte', obj.text, { title: 'Modifier le texte', maxLength: 80 }).then(t => { if (t !== null) { const s2 = snapshot(); obj.text = t; commit(s2); } }); });
       btn('A−', 'Réduire', false, () => { obj.size = Math.max(10, (obj.size || 18) - 2); });
       btn('A+', 'Agrandir', false, () => { obj.size = Math.min(60, (obj.size || 18) + 2); });
     }
@@ -730,10 +732,10 @@
       }
       card.onclick = () => { if (state.framing) endFraming(true); state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
       card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects), frame: st.frame ? clone(st.frame) : undefined }); state.step = i + 1; state.selected = null; commit(b); };
-      card.querySelector('.del').onclick = e => {
+      card.querySelector('.del').onclick = async e => {
         e.stopPropagation();
         if (state.drawing.steps.length === 1) { toast('Impossible de supprimer la seule étape.'); return; }
-        if (!confirm(`Supprimer l'étape ${i + 1} ?`)) return;
+        if (!await window.RugbyDialog.confirm(`Supprimer l'étape ${i + 1} ?`)) return;
         const b = snapshot(); state.drawing.steps.splice(i, 1); state.step = Math.max(0, Math.min(state.step, state.drawing.steps.length - 1)); state.selected = null; commit(b);
       };
       root.appendChild(card);
@@ -1032,7 +1034,7 @@
     c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${d.category}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${d.tags.replace(/[<>]/g, '')}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
-    c.querySelector('.del').onclick = e => { e.stopPropagation(); if (confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
+    c.querySelector('.del').onclick = async e => { e.stopPropagation(); if (await window.RugbyDialog.confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
     return c;
   }
 

@@ -893,3 +893,41 @@ select:disabled { opacity: .5; cursor: default; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8f0fe; color: var(--primary); font-weight: 700; display: grid; place-items: center; flex: 0 0 auto; }
 .profile-form .select { max-width: none; width: 100%; }
 .profile-form textarea { width: 100%; }
+
+/* Fenêtres de dialogue de l'appli (remplacent celles du navigateur) */
+.dialog-modal { z-index: 130; }
+.dialog-box { width: min(440px, 100%); }
+.dialog-form { gap: 14px; }
+.dialog-msg { margin: 0; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+.dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
+.dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden { display: none; }
+.dialog-text { font: inherit; font-size: 14px; width: 100%; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
+.btn.primary.danger-solid { background: #c62828; }
+.btn.primary.danger-solid:hover { background: #a91f1f; }
+@media (max-width: 600px) { .dialog-actions .btn { flex: 1 1 0; } }
+
+/* Fenêtres : le contenu défile toujours si la fenêtre est plus petite que lui */
+.modal-box > .team-body, .modal-box > .form, .modal-box > .preview-canvas { min-height: 0; overflow-y: auto; }
+.modal-box > .team-body, .modal-box > .form { flex: 1 1 auto; }
+#modal-profile .modal-box, #modal-member .modal-box { width: min(680px, 100%); }
+
+/* Onglets de page posés sur un trait de séparation (Agenda, comme Stratégies) */
+.tabs.small.page-tabs { border-bottom: 1px solid var(--border); }
+
+/* Éditeur : boutons du groupe Formations sur deux colonnes égales, texte jamais coupé */
+.group-head .mini-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); width: 100%; }
+.group-head .mini { white-space: normal; text-align: center; justify-content: center; line-height: 1.15; min-width: 0; }
+
+/* Invitation */
+.invite-body { gap: 12px; }
+.invite-code { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #f6f8fa; border-radius: 12px; padding: 12px 14px; }
+.invite-code span { flex: 1 0 100%; font-size: 13px; }
+.invite-code strong { font-size: 28px; letter-spacing: 6px; font-variant-numeric: tabular-nums; flex: 1 1 auto; }
+.invite-label { font-weight: 600; font-size: 13px; }
+.invite-msg { width: 100%; font-size: 15px; }
+.invite-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.invite-links .btn { width: 100%; text-decoration: none; }
+/* Une fenêtre ne dépasse jamais la hauteur de l'écran ; son contenu défile */
+.modal-box { max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: hidden; }
+@media (max-width: 900px) { .modal-box { max-height: 94vh; max-height: 94dvh; } }

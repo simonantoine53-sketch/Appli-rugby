@@ -281,7 +281,7 @@
           E.toast('Retour mis à jour.'); render();
         }),
         btn('Supprimer', 'outline small danger', async () => {
-          if (!confirm('Supprimer ce retour ?')) return;
+          if (!await window.RugbyDialog.confirm('Supprimer ce retour ?')) return;
           const { error } = await sb.from('feedback').delete().eq('id', f.id);
           if (error) return E.toast(error.message); render();
         }));
@@ -302,17 +302,17 @@
         actions.append(
           btn('Ouvrir', 'outline small', () => A.openTeam(r.id)),
           btn('Renommer', 'outline small', async () => {
-            const name = prompt('Nouveau nom de l’équipe :', r.name); if (!name || name.trim() === r.name) return;
+            const name = await window.RugbyDialog.prompt('Nouveau nom', r.name, { title: 'Renommer l’équipe', maxLength: 60 }); if (!name || name === r.name) return;
             const { error } = await sb.from('teams').update({ name: name.trim() }).eq('id', r.id);
             if (error) return E.toast(error.message); render();
           }),
           btn('Nouveau code', 'outline small', async () => {
-            if (!confirm(`Générer un nouveau code pour « ${r.name} » ? L’ancien (${r.join_code}) ne fonctionnera plus.`)) return;
+            if (!await window.RugbyDialog.confirm(`Générer un nouveau code pour « ${r.name} » ? L’ancien (${r.join_code}) ne fonctionnera plus.`)) return;
             const code = must(await sb.rpc('regenerate_join_code', { p_team: r.id }));
             E.toast('Nouveau code : ' + code); render();
           }),
           btn('Supprimer', 'outline small danger', async () => {
-            if (!confirm(`Supprimer définitivement « ${r.name} », ses membres et ses stratégies publiées ?`)) return;
+            if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${r.name} », ses membres et ses stratégies publiées ?`)) return;
             const { error } = await sb.from('teams').delete().eq('id', r.id);
             if (error) return E.toast(error.message); render();
           }));
@@ -341,7 +341,7 @@
         const me = A.user().id === r.id;
         const actions = el('div', 'admin-actions');
         actions.appendChild(btn(r.is_superadmin ? 'Retirer super-admin' : 'Passer super-admin', 'outline small' + (r.is_superadmin ? ' danger' : ''), async () => {
-          if (!confirm(r.is_superadmin ? `Retirer les droits super-admin de ${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
+          if (!await window.RugbyDialog.confirm(r.is_superadmin ? `Retirer les droits super-admin de ${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
           const { error } = await sb.rpc('admin_set_superadmin', { p_user: r.id, p_on: !r.is_superadmin });
           if (error) return E.toast(error.message); render();
         }));
@@ -384,7 +384,7 @@
           if (error) return E.toast(error.message); render();
         }),
         btn('Refuser', 'outline small danger', async () => {
-          if (!confirm(`Refuser la demande de ${r.user_name} pour « ${r.team_name} » ?`)) return;
+          if (!await window.RugbyDialog.confirm(`Refuser la demande de ${r.user_name} pour « ${r.team_name} » ?`)) return;
           const { error } = await sb.from('team_members').delete().match({ team_id: r.team_id, user_id: r.user_id });
           if (error) return E.toast(error.message); render();
         }));
@@ -399,7 +399,7 @@
     const head = el('div', 'admin-filters');
     head.appendChild(el('span', 'muted', `${rows.length} erreur${rows.length > 1 ? 's' : ''} (les 200 dernières)`));
     if (rows.length) head.appendChild(btn('Tout effacer', 'outline small danger', async () => {
-      if (!confirm('Effacer toutes les erreurs remontées ?')) return;
+      if (!await window.RugbyDialog.confirm('Effacer toutes les erreurs remontées ?')) return;
       const { error } = await sb.from('client_errors').delete().gte('id', 0);
       if (error) return E.toast(error.message); render();
     }));
@@ -441,7 +441,7 @@
       const actions = el('div', 'admin-actions');
       actions.append(
         btn(r.active ? 'Désactiver' : 'Réactiver', 'outline small', async () => { const { error } = await sb.from('announcements').update({ active: !r.active }).eq('id', r.id); if (error) return E.toast(error.message); loadAnnouncements(); render(); }),
-        btn('Supprimer', 'outline small danger', async () => { if (!confirm('Supprimer cette annonce ?')) return; const { error } = await sb.from('announcements').delete().eq('id', r.id); if (error) return E.toast(error.message); loadAnnouncements(); render(); }));
+        btn('Supprimer', 'outline small danger', async () => { if (!await window.RugbyDialog.confirm('Supprimer cette annonce ?')) return; const { error } = await sb.from('announcements').delete().eq('id', r.id); if (error) return E.toast(error.message); loadAnnouncements(); render(); }));
       return [esc(r.message), esc(teamName(r.team_id)), r.level === 'warning' ? 'Important' : 'Info', r.ends_at ? fmtDay(r.ends_at) : '—', r.active ? 'oui' : 'non', actions];
     })));
 
@@ -463,7 +463,7 @@
       const actions = el('div', 'admin-actions');
       actions.append(
         btn(r.enabled ? 'Désactiver' : 'Activer', 'outline small', async () => { const { error } = await sb.from('feature_flags').update({ enabled: !r.enabled }).eq('id', r.id); if (error) return E.toast(error.message); loadFlags(); render(); }),
-        btn('Supprimer', 'outline small danger', async () => { if (!confirm(`Supprimer l’option « ${r.key} » ?`)) return; const { error } = await sb.from('feature_flags').delete().eq('id', r.id); if (error) return E.toast(error.message); loadFlags(); render(); }));
+        btn('Supprimer', 'outline small danger', async () => { if (!await window.RugbyDialog.confirm(`Supprimer l’option « ${r.key} » ?`)) return; const { error } = await sb.from('feature_flags').delete().eq('id', r.id); if (error) return E.toast(error.message); loadFlags(); render(); }));
       return [`<code>${esc(r.key)}</code>`, esc(teamName(r.team_id)), r.enabled ? 'oui' : 'non', esc(r.note), actions];
     })));
     return [a, g];

@@ -228,7 +228,7 @@
       tools.appendChild(btn('Modifier', 'outline small', () => openForm(ev)));
       // Pour une séance d'un planning : « seulement celle-ci » ou « celle-ci et les suivantes »
       const scope = (question, run) => async () => {
-        if (!ev.series_id) { if (confirm(question)) run([ev]); return; }
+        if (!ev.series_id) { if (await window.RugbyDialog.confirm(question)) run([ev]); return; }
         const next = await seriesFrom(ev);
         choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
       };
@@ -272,7 +272,7 @@
       acts.appendChild(btn('Copier pour WhatsApp', 'outline', () => {
         const text = `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre dans l’appli. Pas encore de réponse : ${nonRep.map(p => p.name).join(', ')}.`;
         if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));
-        else prompt('Message à copier :', text);
+        else window.RugbyDialog.copy(text, { title: 'Message à copier' });
       }));
       who.appendChild(acts);
     }

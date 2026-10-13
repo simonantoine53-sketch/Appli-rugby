@@ -201,12 +201,36 @@
     S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} » : en attente de validation par un coach ou un admin du club.`)));
     return box;
   }
+  /** Inviter des joueurs : code à copier, message personnalisable, envoi par WhatsApp, SMS, e-mail ou copie. */
   function shareCode() {
-    track('invite');
-    const text = `Rejoins mon équipe « ${S.team.name} » sur Appli Rugby Strat avec le code ${S.team.join_code} : ${location.origin}${location.pathname}`;
-    if (navigator.share) navigator.share({ title: 'Appli Rugby Strat', text }).catch(() => {});
-    else if (navigator.clipboard) { navigator.clipboard.writeText(text); E.toast('Invitation copiée dans le presse-papiers.'); }
-    else E.toast('Code : ' + S.team.join_code);
+    const t = window.RugbyAccount.team();
+    if (!t) return;
+    track('invite_open');
+    const url = `${location.origin}${location.pathname}`;
+    const body = $('#invite-body'); body.replaceChildren();
+    const code = el('div', 'invite-code', `<span class="muted">Code de l’équipe</span><strong>${esc(t.join_code)}</strong>`);
+    code.appendChild(btn('Copier le code', 'outline small', () => copy(t.join_code, 'Code copié.', 'code')));
+    body.appendChild(code);
+    const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
+    msg.value = `Salut ! Rejoins l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvre ${url}\n2. Crée ton compte (gratuit)\n3. Entre le code ${t.join_code}`;
+    body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
+    const enc = () => encodeURIComponent(msg.value);
+    const links = el('div', 'invite-links');
+    const link = (label, href, channel) => { const a = el('a', 'btn outline', esc(label)); a.href = href(); a.target = '_blank'; a.rel = 'noopener'; a.onclick = () => { a.href = href(); track('invite', { channel }); }; return a; };
+    links.append(
+      link('WhatsApp', () => `https://wa.me/?text=${enc()}`, 'whatsapp'),
+      link('SMS', () => `sms:?&body=${enc()}`, 'sms'),
+      link('E-mail', () => `mailto:?subject=${encodeURIComponent('Rejoins l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`, 'email'),
+      btn('Copier le message', 'primary', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy'))
+    );
+    if (navigator.share) links.appendChild(btn('Autre application…', 'outline', () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugby Strat', text: msg.value }).catch(() => {}); }));
+    body.appendChild(links);
+    E.openModal('modal-invite');
+  }
+  function copy(text, ok, channel) {
+    track('invite', { channel });
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast(ok), () => window.RugbyDialog.copy(text));
+    else window.RugbyDialog.copy(text);
   }
 
   /* ---------- Page équipe (les membres ; les stratégies sont dans la page Stratégies) ---------- */
@@ -236,13 +260,13 @@
     if (pend) root.appendChild(pend);
     const foot = el('div', 'team-forms-card');
     foot.appendChild(btn('Quitter cette équipe', 'outline small', async () => {
-      if (!confirm(`Quitter « ${S.team.name} » ?`)) return;
+      if (!await window.RugbyDialog.confirm(`Quitter « ${S.team.name} » ?`)) return;
       const { error } = await sb.from('team_members').delete().match({ team_id: S.team.id, user_id: S.user.id });
       if (error) return E.toast(errMsg(error));
       await loadTeams(); renderTeamPage();
     }));
     if (staff) foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
-      if (!confirm(`Supprimer définitivement « ${S.team.name} », ses membres et ses stratégies publiées ?`)) return;
+      if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${S.team.name} », ses membres et ses stratégies publiées ?`)) return;
       const { error } = await sb.from('teams').delete().eq('id', S.team.id);
       if (error) return E.toast(errMsg(error));
       E.toast('Équipe supprimée.'); await loadTeams(); renderTeamPage();
@@ -281,7 +305,7 @@
     const members = rows.filter(m => m.status === 'active').sort((a, b) => (order[a.role] - order[b.role]) || nameOf(a).localeCompare(nameOf(b)));
     const pending = rows.filter(m => m.status === 'pending');
     const setMember = async (m, patch, confirmMsg) => {
-      if (confirmMsg && !confirm(confirmMsg)) return;
+      if (confirmMsg && !await window.RugbyDialog.confirm(confirmMsg)) return;
       const q = patch ? sb.from('team_members').update(patch) : sb.from('team_members').delete();
       const { error } = await q.match({ team_id: S.team.id, user_id: m.user_id });
       if (error) E.toast(errMsg(error)); renderTeamPage();
@@ -422,7 +446,7 @@
     const text = `Stratégie « ${row.title} » : ${url}`;
     if (navigator.share) navigator.share({ title: row.title, text, url }).catch(() => {});
     else if (navigator.clipboard) { navigator.clipboard.writeText(url); E.toast('Lien copié : ' + url); }
-    else prompt('Lien de partage :', url);
+    else window.RugbyDialog.copy(url, { title: 'Lien de partage' });
   }
 
   /* ---------- Qui a vu quoi ---------- */
@@ -472,7 +496,7 @@
       actions.appendChild(btn('Copier la liste pour WhatsApp', 'outline', () => {
         const text = `À regarder avant le match : « ${row.title} » dans l’appli. Pas encore vu : ${notSeen.map(r => r.display_name).join(', ')}.`;
         if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : collez-le dans le groupe WhatsApp.'));
-        else prompt('Message à copier :', text);
+        else window.RugbyDialog.copy(text, { title: 'Message à copier' });
       }));
     }
   }
@@ -501,7 +525,7 @@
     data.forEach(c => {
       const item = el('div', 'comment');
       const who = el('div', 'who', `<strong>${esc((c.author && c.author.display_name) || 'Membre')}</strong>${c.user_id === commentsFor.row.owner_id ? '<span class="role-badge coach">auteur</span>' : ''} <span>${fmtDate(c.created_at)}</span>`);
-      if (c.user_id === S.user.id || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
+      if (c.user_id === S.user.id || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!await window.RugbyDialog.confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
       item.appendChild(who); item.appendChild(el('div', 'body', esc(c.body)));
       list.appendChild(item);
     });
@@ -648,7 +672,7 @@
     if (isCoach() && row.visibility === 'team' && coachHere) menu.push(['Retirer de l’équipe', () => setVis('private')]);
     if (!isCoach() && mine && row.visibility === 'proposed') menu.push(['Annuler la proposition', () => setVis('private')]);
     if (mine || coachHere) menu.push(['Supprimer', async () => {
-      if (!confirm(`Supprimer « ${row.title} » ?`)) return;
+      if (!await window.RugbyDialog.confirm(`Supprimer « ${row.title} » ?`)) return;
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
       if (error) return E.toast(errMsg(error)); refresh();
     }, 'danger']);
