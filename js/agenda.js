@@ -119,17 +119,16 @@
     }
     if (eventId) return renderEvent(root, eventId, my);
     const staff = A.isStaff();
-    const head = el('div', 'agenda-head');
-    const tabs = el('div', 'tabs small');
-    [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
-    head.appendChild(tabs);
+    // Actions sur leur ligne, puis les onglets posés sur le trait de séparation
     if (staff) {
-      const acts = el('div', 'agenda-acts');
-      if (window.RugbyAgenda.openImport) acts.appendChild(btn('📥 Importer les matchs', 'outline', () => window.RugbyAgenda.openImport()));
+      const acts = el('div', 'page-actions');
+      if (window.RugbyAgenda.openImport) acts.appendChild(btn('Importer les matchs', 'outline', () => window.RugbyAgenda.openImport()));
       acts.appendChild(btn('+ Nouvel événement', 'primary', () => openForm()));
-      head.appendChild(acts);
+      root.appendChild(acts);
     }
-    root.appendChild(head);
+    const tabs = el('div', 'tabs small page-tabs');
+    [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
+    root.appendChild(tabs);
     const list = el('div', 'agenda-list'); root.appendChild(list);
     list.appendChild(el('p', 'muted', 'Chargement…'));
     const now = new Date();
@@ -147,7 +146,7 @@
         : '<h2>Aucun événement passé</h2>');
       if (staff && tab === 'next') {
         empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
-        if (window.RugbyAgenda.openImport) empty.appendChild(btn('📥 Importer les matchs de la fédération (.ics)', 'outline', () => window.RugbyAgenda.openImport()));
+        if (window.RugbyAgenda.openImport) empty.appendChild(btn('Importer les matchs de la fédération', 'outline', () => window.RugbyAgenda.openImport()));
       }
       list.appendChild(empty); return;
     }
@@ -219,12 +218,12 @@
     info.appendChild(el('h2', '', esc(label(ev))));
     const lines = [`<strong>${cap(dayLong(ev.starts_at))} · ${time(ev.starts_at)}</strong>`];
     if (ev.meet_at) lines.push(`Rendez-vous à ${time(ev.meet_at)}`);
-    if (ev.location) lines.push(`<a class="link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">📍 ${esc(ev.location)}</a>`);
+    if (ev.location) lines.push(`<a class="link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`);
     info.appendChild(el('div', 'ev-lines', lines.map(l => `<div>${l}</div>`).join('')));
     if (ev.notes) info.appendChild(el('p', 'ev-notes', esc(ev.notes)));
     const tools = el('div', 'ev-tools');
-    if (ev.kind === 'match' && window.RugbySheets) tools.appendChild(btn(staff ? '📋 Feuille de match' : '📋 Voir la compo', 'secondary small', () => E.go('compos', ev.id)));
-    tools.appendChild(btn('📅 Ajouter à mon agenda', 'outline small', () => downloadIcs(ev)));
+    if (ev.kind === 'match' && window.RugbySheets) tools.appendChild(btn(staff ? 'Feuille de match' : 'Voir la compo', 'secondary small', () => E.go('compos', ev.id)));
+    tools.appendChild(btn('Ajouter à mon agenda', 'outline small', () => downloadIcs(ev)));
     if (staff) {
       tools.appendChild(btn('Modifier', 'outline small', () => openForm(ev)));
       // Pour une séance d'un planning : « seulement celle-ci » ou « celle-ci et les suivantes »
@@ -269,7 +268,7 @@
     if (staff && sum.none && !ev.cancelled) {
       const nonRep = players.filter(p => !sum.byUser[p.id]);
       const acts = el('div', 'ev-remind');
-      acts.appendChild(btn(`🔔 Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev)));
+      acts.appendChild(btn(`Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev)));
       acts.appendChild(btn('Copier pour WhatsApp', 'outline', () => {
         const text = `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre dans l’appli. Pas encore de réponse : ${nonRep.map(p => p.name).join(', ')}.`;
         if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));

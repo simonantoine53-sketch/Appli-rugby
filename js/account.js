@@ -89,7 +89,7 @@
           const row = payload.new;
           if (!row || row.visibility !== 'team' || row.owner_id === S.user.id) return;
           const wasTeam = payload.old && payload.old.visibility === 'team';
-          if (payload.eventType === 'INSERT' || !wasTeam) { S.unseen++; renderAccountButton(); E.toast('📣 Nouvelle stratégie publiée : ' + row.title); }
+          if (payload.eventType === 'INSERT' || !wasTeam) { S.unseen++; renderAccountButton(); E.toast('Nouvelle stratégie publiée : ' + row.title); }
         }).subscribe();
       countUnseen(team.id);
     }
@@ -407,7 +407,7 @@
     });
     const actions = $('#views-actions'); actions.replaceChildren();
     if (notSeen.length) {
-      actions.appendChild(btn(`🔔 Relancer ${notSeen.length > 1 ? 'les ' + notSeen.length + ' joueurs' : 'le joueur'} qui n’${notSeen.length > 1 ? 'ont' : 'a'} pas vu`, 'primary', async () => {
+      actions.appendChild(btn(`Relancer ${notSeen.length > 1 ? 'les ' + notSeen.length + ' joueurs' : 'le joueur'} qui n’${notSeen.length > 1 ? 'ont' : 'a'} pas vu`, 'primary', async () => {
         const { data: res, error: err } = await sb.functions.invoke('push-notify', { body: { drawing_id: row.id, kind: 'reminder' } });
         if (err) return E.toast('Relance impossible : ' + errMsg(err));
         track('reminder', { recipients: res && res.recipients });
@@ -580,8 +580,8 @@
     menu.push(['Ouvrir', () => loadCloud(row)]);
     menu.push(['Dupliquer', duplicate]);
     if (row.visibility === 'team' && (mine || coachHere)) {
-      if (row.share_token) { menu.push(['🔗 Copier le lien public', () => shareLink(row)]); menu.push(['Arrêter le partage public', () => toggleShare(row, false).then(refresh)]); }
-      else menu.push(['🔗 Créer un lien public (WhatsApp)', () => toggleShare(row, true).then(refresh)]);
+      if (row.share_token) { menu.push(['Copier le lien public', () => shareLink(row)]); menu.push(['Arrêter le partage public', () => toggleShare(row, false).then(refresh)]); }
+      else menu.push(['Créer un lien public', () => toggleShare(row, true).then(refresh)]);
     }
     if (isCoach() && row.visibility === 'team' && coachHere) menu.push(['Retirer de l’équipe', () => setVis('private')]);
     if (!isCoach() && mine && row.visibility === 'proposed') menu.push(['Annuler la proposition', () => setVis('private')]);
@@ -590,25 +590,15 @@
       const { error } = await sb.from('drawings').delete().eq('id', row.id);
       if (error) return E.toast(errMsg(error)); refresh();
     }, 'danger']);
-    btns.appendChild(moreMenu(menu));
+    btns.appendChild(moreMenu(menu, row.title));
     return c;
   }
 
-  /** Bouton « ⋯ » qui ouvre un petit menu d'actions secondaires. */
-  function moreMenu(items) {
-    const wrap = el('div', 'card-more');
-    const b = btn('⋯', 'outline small', () => {
-      const open = wrap.querySelector('.card-menu');
-      document.querySelectorAll('.card-menu').forEach(m => m.remove());
-      if (open) return;
-      const m = el('div', 'card-menu');
-      items.forEach(([label, fn, cls]) => m.appendChild(btn(label, cls || '', () => { m.remove(); fn(); })));
-      wrap.appendChild(m);
-      setTimeout(() => document.addEventListener('click', function close(e) { if (!wrap.contains(e.target)) { m.remove(); document.removeEventListener('click', close); } }), 0);
-    });
-    b.title = 'Plus d’actions'; b.setAttribute('aria-label', 'Plus d’actions');
-    wrap.appendChild(b);
-    return wrap;
+  /** Bouton « ⋯ » qui ouvre le menu des actions secondaires (même composant que les listes déroulantes). */
+  function moreMenu(items, title) {
+    const b = btn('⋯', 'outline small card-more', () => window.RugbySelect.openMenu(b, items, title));
+    b.title = 'Plus d’actions'; b.setAttribute('aria-label', 'Plus d’actions'); b.setAttribute('aria-haspopup', 'menu');
+    return b;
   }
 
   function loadCloud(row) {

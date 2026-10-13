@@ -49,7 +49,7 @@
     block.classList.remove('hidden'); btn.classList.remove('hidden');
     const sub = await current();
     const on = !!sub && Notification.permission === 'granted';
-    btn.textContent = on ? '🔕 Désactiver les notifications' : '🔔 Activer les notifications';
+    btn.textContent = on ? 'Désactiver les notifications' : 'Activer les notifications';
     btn.classList.toggle('on', on);
     help.textContent = on ? 'Vous serez prévenu quand une stratégie est publiée ou proposée dans votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil à chaque nouvelle stratégie de votre équipe.';
     btn.onclick = () => (on ? disable() : enable()).catch(e => { console.warn(e); help.textContent = 'Erreur : ' + e.message; });

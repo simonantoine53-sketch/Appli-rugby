@@ -63,12 +63,13 @@
     cur = { sel, pop, back, onDoc, onScroll };
   }
 
-  /** Sous la liste, ou au-dessus s'il n'y a pas la place ; même largeur au minimum. */
-  function place(sel, pop) {
+  /** Sous la liste, ou au-dessus s'il n'y a pas la place ; jamais hors de l'écran. alignRight : aligné sur le bord droit (menus ⋯). */
+  function place(sel, pop, alignRight) {
     const r = sel.getBoundingClientRect();
-    const w = Math.max(r.width, 200);
+    const w = Math.min(innerWidth - 16, Math.max(r.width, alignRight ? 240 : 200));
     pop.style.width = w + 'px';
-    pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    const left = alignRight ? r.right - w : r.left;
+    pop.style.left = Math.max(8, Math.min(left, innerWidth - w - 8)) + 'px';
     const below = innerHeight - r.bottom - 12, above = r.top - 12;
     const h = Math.min(pop.scrollHeight, 320);
     if (below < h && above > below) { pop.style.maxHeight = Math.min(320, above) + 'px'; pop.style.top = (r.top - Math.min(h, above) - 6) + 'px'; }
@@ -124,9 +125,18 @@
     sel.focus({ preventScroll: true });
     open(sel);
   }, true);
+  // Au doigt : on ouvre sur un appui court (pas sur un glissement, pour laisser la page défiler) ;
+  // annuler la fin du toucher empêche aussi le sélecteur natif du téléphone de s'ouvrir.
+  let touch = null;
   document.addEventListener('touchstart', e => {
     const sel = e.target.closest && e.target.closest('select');
-    if (!usable(sel)) return;
+    touch = usable(sel) ? { sel, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
+  }, { capture: true, passive: true });
+  document.addEventListener('touchend', e => {
+    if (!touch) return;
+    const { sel, x, y } = touch; touch = null;
+    const p = e.changedTouches[0];
+    if (Math.hypot(p.clientX - x, p.clientY - y) > 10) return;   // c'était un défilement
     e.preventDefault();
     if (cur && cur.sel === sel) { close(true); return; }
     open(sel);
@@ -137,5 +147,44 @@
     if ([' ', 'Enter', 'ArrowDown', 'ArrowUp'].includes(e.key) || (e.altKey && e.key === 'ArrowDown')) { e.preventDefault(); e.stopPropagation(); open(sel); }
   }, true);
 
-  window.RugbySelect = { open, close };
+  /** Menu d'actions (bouton « ⋯ ») : même style que les listes ; items = [[libellé, action, 'danger'?], …]. */
+  function openMenu(anchor, items, title) {
+    const again = cur && cur.sel === anchor;
+    close(false);
+    if (again) return;
+    const sheet = isSheet();
+    const pop = document.createElement('div');
+    pop.className = 'rs-pop rs-menu' + (sheet ? ' sheet' : '');
+    pop.setAttribute('role', 'menu'); pop.tabIndex = -1;
+    if (sheet && title) pop.appendChild(Object.assign(document.createElement('div'), { className: 'rs-title', textContent: title }));
+    const list = document.createElement('div'); list.className = 'rs-list';
+    items.forEach(([label, fn, cls], i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'rs-opt' + (cls ? ' ' + cls : ''); b.setAttribute('role', 'menuitem'); b.dataset.i = i;
+      b.innerHTML = `<span>${esc(label)}</span>`;
+      b.onclick = e => { e.stopPropagation(); close(false); fn(); };
+      list.appendChild(b);
+    });
+    pop.appendChild(list);
+    let back = null;
+    if (sheet) { back = document.createElement('div'); back.className = 'rs-back'; back.onclick = () => close(true); document.body.appendChild(back); }
+    document.body.appendChild(pop);
+    anchor.setAttribute('aria-expanded', 'true');
+    if (!sheet) place(anchor, pop, true);
+    const first = list.querySelector('.rs-opt'); if (first) first.focus({ preventScroll: true });
+    const onDoc = e => { if (!pop.contains(e.target) && !anchor.contains(e.target)) close(false); };
+    const onScroll = e => { if (!pop.contains(e.target)) close(false); };
+    setTimeout(() => { document.addEventListener('pointerdown', onDoc, true); }, 0);
+    if (!sheet) { window.addEventListener('scroll', onScroll, true); window.addEventListener('resize', onScroll); }
+    pop.addEventListener('keydown', e => {
+      const opts = [...list.querySelectorAll('.rs-opt')], i = opts.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); (opts[i + 1] || opts[0]).focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); (opts[i - 1] || opts[opts.length - 1]).focus(); }
+      else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); close(true); }
+      e.stopPropagation();
+    });
+    cur = { sel: anchor, pop, back, onDoc, onScroll };
+  }
+
+  window.RugbySelect = { open, close, openMenu };
 })();

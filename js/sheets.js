@@ -293,7 +293,7 @@
     const staff = A.isStaff();
     const head = el('div', 'agenda-head');
     head.appendChild(el('h2', 'page-title', 'Compositions'));
-    if (staff) head.appendChild(btn('⚙️ Personnaliser la feuille', 'outline', () => openSettings()));
+    if (staff) head.appendChild(btn('Personnaliser la feuille', 'outline', () => openSettings()));
     root.appendChild(head);
     const list = await upcoming(team);
     if (my !== seq) return;
@@ -336,7 +336,7 @@
       const sheet = normSheet(row.data, settings, ev);
       const html = sheetHtml(settings, sheet, ev, team, A.user().id);
       const tools = el('div', 'sheet-actions');
-      tools.append(btn('📤 Image (WhatsApp)', 'primary', () => imageSheet(html, fileName(ev))), btn('🖨 Imprimer / PDF', 'outline', () => printSheet(html, 'Feuille de match')));
+      tools.append(btn('Partager en image', 'primary', () => imageSheet(html, fileName(ev))), btn('Imprimer / PDF', 'outline', () => printSheet(html, 'Feuille de match')));
       root.appendChild(tools);
       const frame = el('div', 'sheet-frame'); root.appendChild(frame);
       const fit = previewInto(frame, html); window.addEventListener('resize', fit, { once: true });
@@ -366,11 +366,11 @@
     TEMPLATES.forEach(t => tplSel.appendChild(Object.assign(el('option'), { value: t.id, textContent: 'Modèle : ' + t.name, selected: t.id === settings.template })));
     tplSel.onchange = async () => { settings.template = tplSel.value; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === tplSel.value).name} » choisi pour toute l’équipe.`); };
     acts.append(
-      btn('👁 Aperçu', 'outline', () => openPreview()),
-      btn('🖨 Imprimer / PDF', 'outline', () => printSheet(html(), 'Feuille de match')),
-      btn('📤 Image', 'outline', () => imageSheet(html(), fileName(ev))),
+      btn('Aperçu', 'outline', () => openPreview()),
+      btn('Imprimer / PDF', 'outline', () => printSheet(html(), 'Feuille de match')),
+      btn('Partager en image', 'outline', () => imageSheet(html(), fileName(ev))),
       tplSel,
-      btn('⚙️ Personnaliser', 'ghost', () => openSettings())
+      btn('Personnaliser', 'ghost', () => openSettings())
     );
     root.appendChild(acts);
 
@@ -379,7 +379,7 @@
       const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
-      const l = el('label', 'btn primary small', '🖼 Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
+      const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
       call.append(l, f);
       root.appendChild(call);
     }
@@ -411,7 +411,7 @@
     // Publication
     const pub = el('div', 'sheet-publish');
     const published = cur.row && cur.row.published;
-    pub.appendChild(btn(published ? '🔔 Republier (prévenir à nouveau)' : '📣 Publier la compo aux joueurs', 'primary wide', () => publish(true)));
+    pub.appendChild(btn(published ? 'Republier et prévenir à nouveau' : 'Publier la compo aux joueurs', 'primary wide', () => publish(true)));
     if (published) pub.appendChild(btn('Retirer la publication', 'outline wide', () => publish(false)));
     pub.appendChild(el('p', 'muted small center', 'Les joueurs voient la feuille et leur ligne en surbrillance. Tout est enregistré automatiquement.'));
     root.appendChild(pub);

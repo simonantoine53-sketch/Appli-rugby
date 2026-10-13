@@ -797,13 +797,6 @@ button:focus-visible, .btn:focus-visible, a:focus-visible, label.btn:focus-withi
 /* Liens d'action dans le détail d'un événement */
 .ev-lines a.link { display: inline-flex; align-items: center; min-height: var(--tap-sm); }
 
-/* Menu « ⋯ » des cartes */
-.card-more { position: relative; margin-left: auto; }
-.card-menu { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 20; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; min-width: 220px; display: flex; flex-direction: column; }
-.card-menu .btn { justify-content: flex-start; font-weight: 500; }
-.card-menu button { text-align: left; border: none; background: none; min-height: var(--tap-sm); padding: 0 12px; border-radius: 8px; font-size: 15px; color: var(--text); }
-.card-menu button:hover { background: #f1f3f5; }
-.card-menu button.danger { color: #c62828; }
 .lib-card { overflow: visible; }
 .lib-card .thumb { border-radius: 9px 9px 0 0; overflow: hidden; }
 
@@ -843,3 +836,20 @@ select:disabled { opacity: .5; cursor: default; }
 .rs-title { font-weight: 700; font-size: 16px; padding: 8px 12px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
 @keyframes rs-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .rs-pop.sheet { animation: none; } }
+
+/* En-tête des pages : 3 colonnes fixes, les onglets restent centrés quelle que soit l'action à droite */
+.hub-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-areas: "brand tabs actions"; }
+.hub-bar .brand { grid-area: brand; justify-self: start; max-width: 100%; }
+.hub-bar .hub-tabs { grid-area: tabs; margin: 0; }
+.hub-bar .actions { grid-area: actions; justify-self: end; }
+@media (max-width: 900px) { .hub-bar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand actions"; } }
+
+/* Boutons sous un trait de séparation ou au-dessus : jamais collés au trait */
+.agenda-head { padding-bottom: 12px; align-items: center; }
+.page-actions { display: flex; flex-wrap: wrap; gap: var(--gap); justify-content: flex-end; }
+.page-tabs { border-bottom: 1px solid var(--border); }
+@media (max-width: 600px) { .page-actions .btn { flex: 1 1 auto; } }
+.sheet-head { padding-bottom: 4px; }
+.step-opts { padding-top: 10px; }
+.card-more { margin-left: auto; min-width: var(--tap-sm); font-size: 18px; letter-spacing: 1px; }
+.rs-opt.danger { color: #c62828; }

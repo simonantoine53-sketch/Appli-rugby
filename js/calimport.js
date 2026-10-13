@@ -106,7 +106,7 @@
     body.appendChild(el('p', '', 'Récupère le calendrier de ta poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Ton téléphone ou ton ordinateur télécharge un fichier <strong>.ics</strong> : choisis-le ici.'));
     body.appendChild(el('p', 'muted small', 'Tout fichier agenda .ics fonctionne (ligue, comité, autre fédération). Réimporter le même calendrier plus tard met à jour les matchs déplacés, sans doublon.'));
     const input = el('input'); input.type = 'file'; input.accept = '.ics,text/calendar'; input.id = 'import-file'; input.className = 'file-input';
-    const label = el('label', 'btn primary wide file-btn', '📥 Choisir le fichier .ics');
+    const label = el('label', 'btn primary wide file-btn', 'Choisir le fichier .ics');
     label.htmlFor = 'import-file';
     input.onchange = () => { const f = input.files[0]; if (f) read(f); };
     body.append(label, input);

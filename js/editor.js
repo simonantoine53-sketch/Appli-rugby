@@ -660,7 +660,7 @@
       nameInp.onblur = () => { if (nameInp.dataset.before) commit(nameInp.dataset.before); };
       add(nameInp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
-      btn('🏉 Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
+      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
     }
     if (obj.type === 'text') {
       btn('Modifier', 'Modifier le texte', false, () => { const t = prompt('Texte :', obj.text); if (t !== null) obj.text = t; });
@@ -711,14 +711,14 @@
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
         <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
         <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-      </div><div class="meta">${[st.note ? '📝 consigne' : '', st.hold ? '⏸ pause' : '', st.duration ? (st.duration / 1000).toLocaleString('fr-FR') + ' s' : '', st.frame ? '🔍 cadrée' : ''].filter(Boolean).join(' · ')}</div>`;
+      </div><div class="meta">${[st.note ? 'consigne' : '', st.hold ? 'pause' : '', st.duration ? (st.duration / 1000).toLocaleString('fr-FR') + ' s' : '', st.frame ? 'cadrée' : ''].filter(Boolean).join(' · ')}</div>`;
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
         opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne pour les joueurs (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
           <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">normale</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
           <label title="L'animation s'arrête sur cette étape jusqu'à ce qu'on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
-          <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">🔍 ${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
+          <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
         opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
         const note = opts.querySelector('.step-note'); note.value = st.note || '';
         note.onfocus = () => { note.dataset.before = snapshot(); }; note.oninput = () => { st.note = note.value; }; note.onblur = () => { if (note.dataset.before) { commit(note.dataset.before); } };
@@ -837,9 +837,9 @@
     }, hold * 0.6);
   }
   function setPlaying(on) {
-    preview.playing = on; $(preview.playBtn).textContent = on ? '⏸ Pause' : '▶ Lire';
+    preview.playing = on; $(preview.playBtn).textContent = on ? 'Pause' : 'Lire';
     clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
-    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = '▶ Lire'; return; } playLoop(); }
+    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = 'Lire'; return; } playLoop(); }
     else showPreviewStep(preview.step);
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
@@ -853,12 +853,12 @@
   function setPresenting(on) {
     const m = $('#modal-preview');
     m.classList.toggle('presenting', on);
-    $('#preview-full').textContent = on ? '⛶ Quitter' : '⛶ Plein écran';
+    $('#preview-full').textContent = on ? 'Quitter le plein écran' : 'Plein écran';
     if (on && m.requestFullscreen && !document.fullscreenElement) m.requestFullscreen().catch(() => {});
     if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
   }
   $('#preview-full').onclick = () => { const on = !$('#modal-preview').classList.contains('presenting'); if (on) track('present'); setPresenting(on); };
-  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && $('#modal-preview').classList.contains('presenting')) $('#modal-preview').classList.remove('presenting'), $('#preview-full').textContent = '⛶ Plein écran'; });
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && $('#modal-preview').classList.contains('presenting')) $('#modal-preview').classList.remove('presenting'), $('#preview-full').textContent = 'Plein écran'; });
   $('#preview-canvas').addEventListener('click', () => { if ($('#modal-preview').classList.contains('presenting')) previewNext(); });
 
   /* ---------- Page « stratégie partagée » (lecture seule) ---------- */
