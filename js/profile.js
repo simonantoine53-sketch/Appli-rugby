@@ -92,7 +92,7 @@
     form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par toi et le staff de ton équipe.</span>'));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
-    const isoDay = d => d.toISOString().slice(0, 10);
+    const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
     const birth = input('date', v.birth_date || '', { min: '1920-01-02', max: isoDay(new Date(Date.now() - 86400000)) });
     const birthBox = el('div', 'birth-box'); birthBox.appendChild(birth);
     const clearBirth = el('button', 'btn ghost small', 'Effacer'); clearBirth.type = 'button'; clearBirth.onclick = () => { birth.value = ''; };
@@ -109,32 +109,41 @@
     form.append(err, save);
     form.onsubmit = async e => {
       e.preventDefault(); err.textContent = '';
-      const n = v2 => v2 === '' ? null : +v2;
-      const patch = { display_name: name.value.trim() || p.display_name, avatar: photo || null, positions, jersey_number: n(num.value), strong_foot: foot.value || null, height_cm: n(height.value), weight_kg: n(weight.value), bio: bio.value.trim() || null };
-      if (patch.jersey_number !== null && !(patch.jersey_number >= 1 && patch.jersey_number <= 99)) { err.textContent = 'Le numéro va de 1 à 99.'; return; }
-      if (patch.height_cm !== null && !(patch.height_cm >= 100 && patch.height_cm <= 230)) { err.textContent = 'Taille entre 100 et 230 cm.'; return; }
-      if (patch.weight_kg !== null && !(patch.weight_kg >= 30 && patch.weight_kg <= 200)) { err.textContent = 'Poids entre 30 et 200 kg.'; return; }
-      if (birth.value) {
+      // Chaque champ est facultatif et indépendant : une valeur vide ou invalide n'est pas enregistrée,
+      // tout le reste l'est quand même (on dit seulement ce qui a été laissé de côté).
+      const skipped = [];
+      const num2 = (inp, min, max, label) => {
+        if (inp.value === '') return null;
+        const x = Math.round(+inp.value);
+        if (x >= min && x <= max) return x;
+        skipped.push(`${label} (entre ${min} et ${max})`); return undefined;
+      };
+      const patch = { display_name: name.value.trim().slice(0, 60) || p.display_name, avatar: photo || null, positions: positions.slice(0, 4), strong_foot: foot.value || null, bio: bio.value.trim().slice(0, 200) || null };
+      [['jersey_number', num, 1, 99, 'numéro'], ['height_cm', height, 100, 230, 'taille'], ['weight_kg', weight, 30, 200, 'poids']].forEach(([k, inp, min, max, label]) => {
+        const x = num2(inp, min, max, label); if (x !== undefined) patch[k] = x;
+      });
+      const priv2 = { user_id: me.id, phone: phone.value.trim().slice(0, 30) || null, emergency_name: emName.value.trim().slice(0, 60) || null, emergency_phone: emPhone.value.trim().slice(0, 30) || null };
+      // Date de naissance : vide = pas renseignée. La date du jour (remplie toute seule sur iPhone) compte comme vide.
+      const today = isoDay(new Date());
+      if (!birth.value || birth.value === today) priv2.birth_date = null;
+      else {
         const bd = new Date(birth.value + 'T00:00:00'), age = (Date.now() - bd) / 31557600000;
-        if (!(bd.getFullYear() > 1920) || age < 0) { err.textContent = 'La date de naissance doit être dans le passé. Vérifie l’année, ou appuie sur « Effacer ».'; return; }
-        if (age < 3) { err.textContent = `Date de naissance à vérifier : ${bd.toLocaleDateString('fr-FR')} donnerait moins de 3 ans. Corrige l’année, ou appuie sur « Effacer ».`; return; }
+        if (bd.getFullYear() > 1920 && age >= 3) priv2.birth_date = birth.value;
+        else skipped.push('date de naissance (à vérifier)');
       }
       save.disabled = true;
-      const priv2 = { user_id: me.id, phone: phone.value.trim() || null, birth_date: birth.value || null, emergency_name: emName.value.trim() || null, emergency_phone: emPhone.value.trim() || null };
+      // Les deux parties sont enregistrées séparément : l'échec de l'une ne bloque pas l'autre
       const [r1, r2] = await Promise.all([sb.from('profiles').update(patch).eq('id', me.id), sb.from('profile_private').upsert(priv2)]);
       save.disabled = false;
-      if (r1.error || r2.error) {
-        const m = (r1.error || r2.error).message || '';
-        // Messages de la base traduits : jamais de jargon technique à l'écran
-        err.textContent = /birth_date/.test(m) ? 'La date de naissance n’est pas valide : elle doit être dans le passé.'
-          : /check constraint|violates/.test(m) ? 'Une des valeurs n’est pas valide : vérifie les champs du profil.'
-          : 'Enregistrement impossible, réessaie dans un instant.';
-        console.warn('profil', m);
-        return;
-      }
-      Object.assign(A.profile(), patch);
+      if (r1.error) console.warn('profil', r1.error.message);
+      if (r2.error) console.warn('profil privé', r2.error.message);
+      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifie ta connexion et réessaie.'; return; }
+      if (!r1.error) Object.assign(A.profile(), patch);
+      if (r1.error) skipped.push('profil sportif');
+      if (r2.error) skipped.push('infos privées');
       track('profile_save', { photo: !!photo, positions: positions.length });
-      E.closeModal('modal-profile'); E.toast('Profil enregistré.');
+      E.closeModal('modal-profile');
+      E.toast(skipped.length ? `Profil enregistré, sauf : ${skipped.join(', ')}.` : 'Profil enregistré.');
       if (window.RugbyHub) window.RugbyHub.renderChrome();
       E.refreshView();
     };
