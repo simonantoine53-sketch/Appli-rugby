@@ -1038,6 +1038,10 @@ select:disabled { opacity: .5; cursor: default; }
 .auth-pending p { margin: 0; line-height: 1.45; }
 .auth-pending-icon { font-size: 40px; line-height: 1; }
 
+/* Profil : date de naissance avec bouton « Effacer » */
+.birth-box { display: flex; gap: 6px; align-items: center; }
+.birth-box input { flex: 1; min-width: 0; }
+
 </style>
 </head>
 <body>
@@ -5032,8 +5036,13 @@ window.RUGBY_CONFIG = {
     // Infos privées
     form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par toi et le staff de ton équipe.</span>'));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
-    const birth = input('date', v.birth_date || '');
-    const row2 = el('div', 'form-row two'); row2.append(field('Téléphone', phone), field('Date de naissance', birth));
+    // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
+    const isoDay = d => d.toISOString().slice(0, 10);
+    const birth = input('date', v.birth_date || '', { min: '1920-01-02', max: isoDay(new Date(Date.now() - 86400000)) });
+    const birthBox = el('div', 'birth-box'); birthBox.appendChild(birth);
+    const clearBirth = el('button', 'btn ghost small', 'Effacer'); clearBirth.type = 'button'; clearBirth.onclick = () => { birth.value = ''; };
+    birthBox.appendChild(clearBirth);
+    const row2 = el('div', 'form-row two'); row2.append(field('Téléphone', phone), field('Date de naissance', birthBox));
     form.appendChild(row2);
     const emName = input('text', v.emergency_name, { maxLength: 60, placeholder: 'Nom' });
     const emPhone = input('tel', v.emergency_phone, { maxLength: 30, placeholder: 'Téléphone' });
@@ -5050,11 +5059,24 @@ window.RUGBY_CONFIG = {
       if (patch.jersey_number !== null && !(patch.jersey_number >= 1 && patch.jersey_number <= 99)) { err.textContent = 'Le numéro va de 1 à 99.'; return; }
       if (patch.height_cm !== null && !(patch.height_cm >= 100 && patch.height_cm <= 230)) { err.textContent = 'Taille entre 100 et 230 cm.'; return; }
       if (patch.weight_kg !== null && !(patch.weight_kg >= 30 && patch.weight_kg <= 200)) { err.textContent = 'Poids entre 30 et 200 kg.'; return; }
+      if (birth.value) {
+        const bd = new Date(birth.value + 'T00:00:00'), age = (Date.now() - bd) / 31557600000;
+        if (!(bd.getFullYear() > 1920) || age < 0) { err.textContent = 'La date de naissance doit être dans le passé. Vérifie l’année, ou appuie sur « Effacer ».'; return; }
+        if (age < 3) { err.textContent = `Date de naissance à vérifier : ${bd.toLocaleDateString('fr-FR')} donnerait moins de 3 ans. Corrige l’année, ou appuie sur « Effacer ».`; return; }
+      }
       save.disabled = true;
       const priv2 = { user_id: me.id, phone: phone.value.trim() || null, birth_date: birth.value || null, emergency_name: emName.value.trim() || null, emergency_phone: emPhone.value.trim() || null };
       const [r1, r2] = await Promise.all([sb.from('profiles').update(patch).eq('id', me.id), sb.from('profile_private').upsert(priv2)]);
       save.disabled = false;
-      if (r1.error || r2.error) { err.textContent = 'Enregistrement impossible : ' + ((r1.error || r2.error).message); return; }
+      if (r1.error || r2.error) {
+        const m = (r1.error || r2.error).message || '';
+        // Messages de la base traduits : jamais de jargon technique à l'écran
+        err.textContent = /birth_date/.test(m) ? 'La date de naissance n’est pas valide : elle doit être dans le passé.'
+          : /check constraint|violates/.test(m) ? 'Une des valeurs n’est pas valide : vérifie les champs du profil.'
+          : 'Enregistrement impossible, réessaie dans un instant.';
+        console.warn('profil', m);
+        return;
+      }
       Object.assign(A.profile(), patch);
       track('profile_save', { photo: !!photo, positions: positions.length });
       E.closeModal('modal-profile'); E.toast('Profil enregistré.');

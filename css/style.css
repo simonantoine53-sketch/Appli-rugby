@@ -1024,3 +1024,7 @@ select:disabled { opacity: .5; cursor: default; }
 .auth-pending h3 { margin: 0; font-size: 19px; }
 .auth-pending p { margin: 0; line-height: 1.45; }
 .auth-pending-icon { font-size: 40px; line-height: 1; }
+
+/* Profil : date de naissance avec bouton « Effacer » */
+.birth-box { display: flex; gap: 6px; align-items: center; }
+.birth-box input { flex: 1; min-width: 0; }
