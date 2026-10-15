@@ -134,7 +134,6 @@
       else { lbl.textContent = (S.profile && S.profile.display_name) || 'Mon compte'; b.classList.add('logged'); }
       b.title = S.user ? 'Mon compte' : 'Se connecter';
     });
-    ['#btn-library', '#mtab-library'].forEach(sel => { const e = $(sel); if (!e) return; e.classList.toggle('has-badge', S.unseen > 0); e.dataset.badge = S.unseen; });
     const mtab = $('#mtab-account span');
     if (mtab) mtab.textContent = S.user ? (S.profile && S.profile.display_name) || 'Compte' : 'Compte';
     if (window.RugbyHub) window.RugbyHub.renderChrome();

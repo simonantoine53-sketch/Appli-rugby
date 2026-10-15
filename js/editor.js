@@ -1121,24 +1121,21 @@
   /** Ré-affiche la page courante (après connexion, changement d'équipe…). */
   function refreshView() { const v = currentView(); if (v !== 'editor' && v !== 'share') showView(v); }
   function renderStrats() {
-    const d = state.drawing;
     const acc = window.RugbyAccount;
-    const visitor = acc && acc.isActive() && !acc.isLoggedIn();
-    const hasContent = d.steps.some(st => st.objects.length) && !(visitor && d.title === 'Nouveau dessin');   // pas de carte pour l'exemple de démarrage
-    $('#home-current').classList.toggle('hidden', !hasContent);
-    $('#home-current-title').textContent = d.title;
     if (acc && acc.isActive()) acc.renderStrats(); else renderLocalHome();
   }
-  window.addEventListener('hashchange', () => showView(currentView()));
+  // Dernière page de l'appli visitée avant l'éditeur, pour la flèche retour
+  let lastPage = !/^#\/(editor|s\/|d\/)/.test(location.hash) && location.hash ? location.hash : '#/';
+  window.addEventListener('hashchange', () => { const v = currentView(); if (!['editor', 'share', 'open'].includes(v)) lastPage = location.hash || '#/'; showView(v); });
   function startNewDrawing() {
     track('new_drawing');
     const nd = newDrawing();
     if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) nd.settings.orientation = 'portrait';   // remplit l'écran du téléphone
     loadDrawing(nd); if (window.RugbyAccount && window.RugbyAccount.onNewDrawing) window.RugbyAccount.onNewDrawing(); go('editor');
   }
-  $('#home-resume').onclick = () => go('editor');
   $('#home-new').onclick = startNewDrawing;
-  $('#btn-library').onclick = () => go('strats');
+  // Flèche de l'éditeur : retour à la page d'où l'on vient (Stratégies, Accueil, Agenda…), Accueil par défaut
+  $('#btn-library').onclick = () => { if (location.hash !== lastPage) location.hash = lastPage; else showView(currentView()); };
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
