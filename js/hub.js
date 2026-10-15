@@ -104,7 +104,7 @@
     // Onglets
     const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
     const cur = view === 'soon' ? 'home' : view;
-    const unanswered = data && data.agenda && !data.staff ? data.agenda.events.filter(e => !e.mine).length : 0;
+    const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
     const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
@@ -217,7 +217,14 @@
     const go = (item, fn) => () => { track('home_action', { item }); fn(); };
     const ag = d.agenda || { events: [], total: 0 };
     const soon = Date.now() + 7 * 864e5;
+    // Mes convocations sans réponse (joueur, ou coach / admin qui joue aussi) : réponse directe depuis l'accueil
+    const rsvpItems = () => ag.events.filter(ev => ev.convoked && !ev.mine).forEach(ev => items.push({
+      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
+      // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
+      buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
+    }));
     if (staff) {
+      rsvpItems();   // un coach ou un admin qui joue aussi répond d'abord pour lui-même
       // Convocations : les plus proches d'abord
       ag.events.filter(ev => new Date(ev.starts_at) < soon && ev.sum.none).forEach(ev => items.push({ text: `${esc(AG().short(ev))} : <strong>${plural(ev.sum.none, 'joueur', 'joueurs')} sans réponse</strong>`, action: 'Relancer', primary: true, fn: go('event-remind', () => AG().remind(ev)) }));
       if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => E.go('team')) });
@@ -226,12 +233,7 @@
       (d.sheets || []).filter(m => new Date(m.starts_at) < soon && m.sheet !== 'published').slice(0, 1).forEach(m => items.push({ text: `Compo du match ${esc(AG().label(m).toLowerCase())} : <strong>${m.sheet === 'draft' ? 'à publier' : 'à faire'}</strong>`, action: m.sheet === 'draft' ? 'Finir' : 'Composer', primary: true, fn: go('sheet', () => E.go('compos', m.id)) }));
       if (!ag.events.length) items.push({ text: 'Aucun match ni entraînement prévu', action: 'Créer', fn: go('event-create', () => AG().openForm()) });
     } else {
-      // Convocations sans réponse : on répond directement depuis l'accueil
-      ag.events.filter(ev => !ev.mine).forEach(ev => items.push({
-        text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
-        // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
-        buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
-      }));
+      rsvpItems();
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
       (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>vous êtes n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
@@ -275,7 +277,7 @@
     } else {
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
       tile('team', 'Équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
-      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => !e.mine).length });
+      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => e.convoked && !e.mine).length });
       tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
     }
     return grid;

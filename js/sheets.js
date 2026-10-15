@@ -258,8 +258,9 @@
 
   /* ---------- Données ---------- */
   async function loadMembers(teamId) {
-    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name)').eq('team_id', teamId).eq('status', 'active');
-    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || '' })).filter(m => m.name).sort((a, b) => a.name.localeCompare(b.name));
+    const { data } = await sb.from('team_members').select('user_id, role, status, plays, profiles!team_members_user_profile_fk(display_name)').eq('team_id', teamId).eq('status', 'active');
+    // Joueurs proposés dans la compo : les convoqués (joueurs + coach / admin qui joue aussi)
+    return (data || []).filter(m => m.role === 'player' || m.plays).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || '' })).filter(m => m.name).sort((a, b) => a.name.localeCompare(b.name));
   }
   async function loadPresent(eventId) {
     const { data } = await sb.from('event_responses').select('user_id, status').eq('event_id', eventId).eq('status', 'yes');

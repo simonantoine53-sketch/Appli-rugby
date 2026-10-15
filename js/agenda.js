@@ -40,21 +40,23 @@
 
   /* ---------- Données ---------- */
   async function members(teamId) {
-    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name, avatar)').eq('team_id', teamId).eq('status', 'active');
-    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || 'Membre', photo: m.profiles && m.profiles.avatar })).sort((a, b) => a.name.localeCompare(b.name));
+    const { data } = await sb.from('team_members').select('user_id, role, status, plays, profiles!team_members_user_profile_fk(display_name, avatar)').eq('team_id', teamId).eq('status', 'active');
+    // Convoqués : les joueurs, et le staff (coach, admin) qui « joue aussi »
+    return (data || []).map(m => ({ id: m.user_id, role: m.role, plays: !!m.plays, convoked: m.role === 'player' || !!m.plays, name: (m.profiles && m.profiles.display_name) || 'Membre', photo: m.profiles && m.profiles.avatar })).sort((a, b) => a.name.localeCompare(b.name));
   }
   async function responsesFor(ids) {
     if (!ids.length) return [];
     const { data } = await sb.from('event_responses').select('event_id, user_id, status, comment, set_by, updated_at').in('event_id', ids);
     return data || [];
   }
-  /** Compteurs : les joueurs sont les convoqués ; le staff peut répondre mais n'entre pas dans « sans réponse ». */
+  /** Compteurs : seuls les convoqués (joueurs + staff qui joue aussi) comptent ; le reste du staff n'est pas convoqué. */
   function summarize(ev, resp, team) {
-    const players = team.filter(m => m.role === 'player');
+    const players = team.filter(m => m.convoked);
     const mine = resp.filter(r => r.event_id === ev.id);
     const byUser = {}; mine.forEach(r => { byUser[r.user_id] = r; });
-    const count = s => mine.filter(r => r.status === s && team.find(m => m.id === r.user_id)).length;
-    return { yes: count('yes'), no: count('no'), maybe: count('maybe'), none: players.filter(p => !byUser[p.id]).length, players: players.length, byUser };
+    const count = s => mine.filter(r => r.status === s && players.find(m => m.id === r.user_id)).length;
+    const meConvoked = !!players.find(m => m.id === A.user().id);
+    return { yes: count('yes'), no: count('no'), maybe: count('maybe'), none: players.filter(p => !byUser[p.id]).length, players: players.length, byUser, meConvoked };
   }
 
   /** Événements à venir (14 jours) pour l'accueil. */
@@ -71,7 +73,7 @@
     const [resp, team_] = await Promise.all([responsesFor(list.map(e => e.id)), members(team.id)]);
     return {
       total: count || 0,
-      events: list.map(ev => { const s = summarize(ev, resp, team_); return Object.assign({}, ev, { sum: s, mine: s.byUser[me] ? s.byUser[me].status : null }); })
+      events: list.map(ev => { const s = summarize(ev, resp, team_); return Object.assign({}, ev, { sum: s, convoked: s.meConvoked, mine: s.byUser[me] ? s.byUser[me].status : null }); })
     };
   }
 
@@ -204,7 +206,7 @@
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
-    if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
+    if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
@@ -255,8 +257,8 @@
     info.appendChild(tools);
     root.appendChild(info);
 
-    // Ma réponse
-    if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
+    // Ma réponse (seulement si je suis convoqué)
+    if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
       box.appendChild(el('div', 'todo-head', 'Votre réponse'));
       // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
@@ -283,7 +285,7 @@
     }
 
     // Qui vient
-    const players = team_.filter(m => m.role === 'player'), staffList = team_.filter(m => m.role !== 'player');
+    const players = team_.filter(m => m.convoked), staffList = team_.filter(m => !m.convoked);
     const groups = [['yes', 'Présents'], ['maybe', 'Peut-être'], ['no', 'Absents']];
     const who = el('div', 'ev-who');
     who.appendChild(counts(sum));
@@ -303,7 +305,7 @@
       row.appendChild(window.RugbyProfile ? window.RugbyProfile.avatar(m.name, m.photo) : el('div', 'avatar', esc(m.name.trim().slice(0, 1).toUpperCase() || '?')));
       const set = r && r.set_by && r.set_by !== m.id ? ' · saisi par le staff' : '';
       row.appendChild(el('div', 'who', `${esc(m.name)}${m.id === me ? ' (moi)' : ''}${m.role !== 'player' ? ` <span class="role-badge ${m.role}">${m.role === 'coach' ? 'Coach' : 'Admin'}</span>` : ''}${r && r.comment ? `<small>« ${esc(r.comment)} »</small>` : ''}${set ? `<small>${set.slice(3)}</small>` : ''}`));
-      if (staff && m.id !== me && !ev.cancelled) {
+      if (staff && m.convoked && m.id !== me && !ev.cancelled) {
         const sel = el('select', 'select small');
         [['', '—'], ['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = (r ? r.status : '') === v; sel.appendChild(o); });
         sel.onclick = e => e.stopPropagation();
@@ -314,15 +316,14 @@
       return row;
     };
     groups.forEach(([s, l]) => {
-      const list = team_.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
+      const list = players.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
       if (!list.length) return;
       who.appendChild(el('h4', 'home-h4', `${l} (${list.length})`));
       list.forEach(m => who.appendChild(person(m, sum.byUser[m.id])));
     });
     const none = players.filter(p => !sum.byUser[p.id]);
     if (none.length) { who.appendChild(el('h4', 'home-h4', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
-    const staffNone = staffList.filter(m => !sum.byUser[m.id]);
-    if (staffNone.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff (${staffNone.length})`)); staffNone.forEach(m => who.appendChild(person(m, null))); }
+    if (staffList.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff non convoqué (${staffList.length})`)); staffList.forEach(m => who.appendChild(person(m, null))); }
     root.appendChild(who);
   }
 

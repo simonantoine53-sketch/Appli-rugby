@@ -117,15 +117,20 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
   if (!eventId) return json({ error: "paramètres invalides" }, 400);
   const { data: ev } = await admin.from("team_events").select("id, team_id, kind, title, opponent, home, starts_at, cancelled").eq("id", eventId).maybeSingle();
   if (!ev) return json({ error: "événement introuvable" }, 404);
-  const { data: members } = await admin.from("team_members").select("user_id, role").eq("team_id", ev.team_id).eq("status", "active");
+  const { data: members } = await admin.from("team_members").select("user_id, role, plays").eq("team_id", ev.team_id).eq("status", "active");
   const me = (members || []).find((m: { user_id: string }) => m.user_id === senderId);
   if (!me || (me.role !== "coach" && me.role !== "admin")) return json({ error: "réservé au staff" }, 403);
   let recipients = (members || []).map((m: { user_id: string }) => m.user_id).filter((id: string) => id !== senderId);
+  // Convocation : seulement les convoqués (joueurs + staff qui joue aussi) ; annulation et compo : tout le monde
+  if (kind === "event_new") {
+    const convoked = new Set((members || []).filter((m: { role: string; plays?: boolean }) => m.role === "player" || m.plays).map((m: { user_id: string }) => m.user_id));
+    recipients = recipients.filter((id: string) => convoked.has(id));
+  }
   if (kind === "event_reminder") {
-    // Relance : les joueurs qui n'ont pas encore répondu (le staff n'est pas relancé)
+    // Relance : les convoqués qui n'ont pas encore répondu (joueurs + staff qui joue aussi)
     const { data: answers } = await admin.from("event_responses").select("user_id").eq("event_id", ev.id);
     const answered = new Set((answers || []).map((a: { user_id: string }) => a.user_id));
-    const players = new Set((members || []).filter((m: { role: string }) => m.role === "player").map((m: { user_id: string }) => m.user_id));
+    const players = new Set((members || []).filter((m: { role: string; plays?: boolean }) => m.role === "player" || m.plays).map((m: { user_id: string }) => m.user_id));
     recipients = recipients.filter((id: string) => players.has(id) && !answered.has(id));
   }
   if (!recipients.length) return json({ sent: 0, recipients: 0 });

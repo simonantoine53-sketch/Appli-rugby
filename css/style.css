@@ -1112,3 +1112,10 @@ select:disabled { opacity: .5; cursor: default; }
 .tour-text { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text); }
 .tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .tour-grow { flex: 1; }
+
+/* Équipe : case « Joue aussi » (coach ou admin convoqué comme un joueur) */
+.plays-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap-sm); padding: 0 10px; border: 1.5px solid var(--border); border-radius: var(--radius-btn); background: var(--panel); font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.plays-toggle.on { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.plays-toggle input { margin: 0; accent-color: var(--primary); }
+.role-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.member-row .member-actions > .role-badges { flex: 0 0 auto; }

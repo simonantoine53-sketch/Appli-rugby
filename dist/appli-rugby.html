@@ -1126,6 +1126,13 @@ select:disabled { opacity: .5; cursor: default; }
 .tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .tour-grow { flex: 1; }
 
+/* Équipe : case « Joue aussi » (coach ou admin convoqué comme un joueur) */
+.plays-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--tap-sm); padding: 0 10px; border: 1.5px solid var(--border); border-radius: var(--radius-btn); background: var(--panel); font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.plays-toggle.on { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.plays-toggle input { margin: 0; accent-color: var(--primary); }
+.role-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.member-row .member-actions > .role-badges { flex: 0 0 auto; }
+
 </style>
 </head>
 <body>
@@ -4070,7 +4077,8 @@ window.RUGBY_CONFIG = {
   const isStaff = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.role === 'admin'));
   const isClubMember = () => isSuper() || S.teams.length > 0;
   const ROLE_LABEL = { coach: 'Coach', admin: 'Admin', player: 'Joueur' };
-  const roleBadge = r => `<span class="role-badge ${r}">${ROLE_LABEL[r] || r}</span>`;
+  // Rôle (droits) + fonction « joue aussi » : un coach qui joue affiche Coach + Joueur
+const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] || r}</span>${plays && r !== 'player' ? ' <span class="role-badge player">Joueur</span>' : ''}`;
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const errMsg = e => {
     const m = (e && e.message) || String(e), code = (e && e.code) || '';
@@ -4118,11 +4126,11 @@ window.RUGBY_CONFIG = {
   }
 
   async function loadTeams() {
-    const { data, error } = await sb.from('team_members').select('role, status, teams(id, name, join_code, created_by, share_default)').eq('user_id', S.user.id);
+    const { data, error } = await sb.from('team_members').select('role, status, plays, teams(id, name, join_code, created_by, share_default)').eq('user_id', S.user.id);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
     S.pending = rows.filter(r => r.status === 'pending').map(r => r.teams);
-    S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role }, r.teams));
+    S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role, plays: !!r.plays }, r.teams));
     if (isSuper()) {
       const { data: all } = await sb.from('teams').select('id, name, join_code, created_by, share_default').order('name');
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
@@ -4306,7 +4314,7 @@ window.RUGBY_CONFIG = {
     const P = window.RugbyProfile;
     if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
     const box = $('#account-teams'); box.replaceChildren();
-    S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
+    S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role, t.plays)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
     // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
     const join = $('#account-join'); join.replaceChildren();
@@ -4432,7 +4440,7 @@ window.RUGBY_CONFIG = {
       root.appendChild(teamForms()); return;
     }
     const staff = isStaff();
-    root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role)}`));
+    root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role, S.team.plays)}`));
 
     // Onglets (la pastille de Membres compte les demandes à valider pour le staff)
     let pending = 0;
@@ -4544,7 +4552,7 @@ window.RUGBY_CONFIG = {
 
   async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
@@ -4581,15 +4589,32 @@ window.RUGBY_CONFIG = {
       row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
+      // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)
+      const playsToggle = () => {
+        const l = el('label', 'plays-toggle' + (m.plays ? ' on' : ''), '<input type="checkbox"> Joue aussi');
+        const cb = l.querySelector('input'); cb.checked = !!m.plays;
+        l.title = 'Convoqué aux matchs et entraînements comme un joueur';
+        l.onclick = e => e.stopPropagation();
+        cb.onchange = () => setMember(m, { plays: cb.checked });
+        return l;
+      };
       if (staff && m.user_id !== S.user.id) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
         sel.onchange = () => setMember(m, { role: sel.value });
-        // Rôle et « Retirer » toujours regroupés, à la même place sur chaque ligne
+        // Rôle, « Joue aussi » et « Retirer » toujours regroupés, à la même place sur chaque ligne
         const acts = el('div', 'member-actions');
-        acts.append(sel, btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
+        acts.appendChild(sel);
+        if (m.role !== 'player') acts.appendChild(playsToggle());
+        acts.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
         row.appendChild(acts);
-      } else row.appendChild(el('span', 'role-badge ' + m.role, ROLE_LABEL[m.role] || m.role));
+      } else if (staff && m.role !== 'player') {
+        // Ma propre ligne de coach / admin : mon rôle + la case pour me convoquer moi-même
+        const acts = el('div', 'member-actions');
+        acts.appendChild(el('span', 'role-badges', roleBadge(m.role)));
+        acts.appendChild(playsToggle());
+        row.appendChild(acts);
+      } else row.appendChild(el('span', 'role-badges', roleBadge(m.role, m.plays)));
       list.appendChild(row);
     });
   }
@@ -5849,21 +5874,23 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Données ---------- */
   async function members(teamId) {
-    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name, avatar)').eq('team_id', teamId).eq('status', 'active');
-    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || 'Membre', photo: m.profiles && m.profiles.avatar })).sort((a, b) => a.name.localeCompare(b.name));
+    const { data } = await sb.from('team_members').select('user_id, role, status, plays, profiles!team_members_user_profile_fk(display_name, avatar)').eq('team_id', teamId).eq('status', 'active');
+    // Convoqués : les joueurs, et le staff (coach, admin) qui « joue aussi »
+    return (data || []).map(m => ({ id: m.user_id, role: m.role, plays: !!m.plays, convoked: m.role === 'player' || !!m.plays, name: (m.profiles && m.profiles.display_name) || 'Membre', photo: m.profiles && m.profiles.avatar })).sort((a, b) => a.name.localeCompare(b.name));
   }
   async function responsesFor(ids) {
     if (!ids.length) return [];
     const { data } = await sb.from('event_responses').select('event_id, user_id, status, comment, set_by, updated_at').in('event_id', ids);
     return data || [];
   }
-  /** Compteurs : les joueurs sont les convoqués ; le staff peut répondre mais n'entre pas dans « sans réponse ». */
+  /** Compteurs : seuls les convoqués (joueurs + staff qui joue aussi) comptent ; le reste du staff n'est pas convoqué. */
   function summarize(ev, resp, team) {
-    const players = team.filter(m => m.role === 'player');
+    const players = team.filter(m => m.convoked);
     const mine = resp.filter(r => r.event_id === ev.id);
     const byUser = {}; mine.forEach(r => { byUser[r.user_id] = r; });
-    const count = s => mine.filter(r => r.status === s && team.find(m => m.id === r.user_id)).length;
-    return { yes: count('yes'), no: count('no'), maybe: count('maybe'), none: players.filter(p => !byUser[p.id]).length, players: players.length, byUser };
+    const count = s => mine.filter(r => r.status === s && players.find(m => m.id === r.user_id)).length;
+    const meConvoked = !!players.find(m => m.id === A.user().id);
+    return { yes: count('yes'), no: count('no'), maybe: count('maybe'), none: players.filter(p => !byUser[p.id]).length, players: players.length, byUser, meConvoked };
   }
 
   /** Événements à venir (14 jours) pour l'accueil. */
@@ -5880,7 +5907,7 @@ window.RUGBY_CONFIG = {
     const [resp, team_] = await Promise.all([responsesFor(list.map(e => e.id)), members(team.id)]);
     return {
       total: count || 0,
-      events: list.map(ev => { const s = summarize(ev, resp, team_); return Object.assign({}, ev, { sum: s, mine: s.byUser[me] ? s.byUser[me].status : null }); })
+      events: list.map(ev => { const s = summarize(ev, resp, team_); return Object.assign({}, ev, { sum: s, convoked: s.meConvoked, mine: s.byUser[me] ? s.byUser[me].status : null }); })
     };
   }
 
@@ -6013,7 +6040,7 @@ window.RUGBY_CONFIG = {
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
-    if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
+    if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
@@ -6064,8 +6091,8 @@ window.RUGBY_CONFIG = {
     info.appendChild(tools);
     root.appendChild(info);
 
-    // Ma réponse
-    if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
+    // Ma réponse (seulement si je suis convoqué)
+    if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
       box.appendChild(el('div', 'todo-head', 'Votre réponse'));
       // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
@@ -6092,7 +6119,7 @@ window.RUGBY_CONFIG = {
     }
 
     // Qui vient
-    const players = team_.filter(m => m.role === 'player'), staffList = team_.filter(m => m.role !== 'player');
+    const players = team_.filter(m => m.convoked), staffList = team_.filter(m => !m.convoked);
     const groups = [['yes', 'Présents'], ['maybe', 'Peut-être'], ['no', 'Absents']];
     const who = el('div', 'ev-who');
     who.appendChild(counts(sum));
@@ -6112,7 +6139,7 @@ window.RUGBY_CONFIG = {
       row.appendChild(window.RugbyProfile ? window.RugbyProfile.avatar(m.name, m.photo) : el('div', 'avatar', esc(m.name.trim().slice(0, 1).toUpperCase() || '?')));
       const set = r && r.set_by && r.set_by !== m.id ? ' · saisi par le staff' : '';
       row.appendChild(el('div', 'who', `${esc(m.name)}${m.id === me ? ' (moi)' : ''}${m.role !== 'player' ? ` <span class="role-badge ${m.role}">${m.role === 'coach' ? 'Coach' : 'Admin'}</span>` : ''}${r && r.comment ? `<small>« ${esc(r.comment)} »</small>` : ''}${set ? `<small>${set.slice(3)}</small>` : ''}`));
-      if (staff && m.id !== me && !ev.cancelled) {
+      if (staff && m.convoked && m.id !== me && !ev.cancelled) {
         const sel = el('select', 'select small');
         [['', '—'], ['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = (r ? r.status : '') === v; sel.appendChild(o); });
         sel.onclick = e => e.stopPropagation();
@@ -6123,15 +6150,14 @@ window.RUGBY_CONFIG = {
       return row;
     };
     groups.forEach(([s, l]) => {
-      const list = team_.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
+      const list = players.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
       if (!list.length) return;
       who.appendChild(el('h4', 'home-h4', `${l} (${list.length})`));
       list.forEach(m => who.appendChild(person(m, sum.byUser[m.id])));
     });
     const none = players.filter(p => !sum.byUser[p.id]);
     if (none.length) { who.appendChild(el('h4', 'home-h4', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
-    const staffNone = staffList.filter(m => !sum.byUser[m.id]);
-    if (staffNone.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff (${staffNone.length})`)); staffNone.forEach(m => who.appendChild(person(m, null))); }
+    if (staffList.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff non convoqué (${staffList.length})`)); staffList.forEach(m => who.appendChild(person(m, null))); }
     root.appendChild(who);
   }
 
@@ -6788,8 +6814,9 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Données ---------- */
   async function loadMembers(teamId) {
-    const { data } = await sb.from('team_members').select('user_id, role, status, profiles!team_members_user_profile_fk(display_name)').eq('team_id', teamId).eq('status', 'active');
-    return (data || []).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || '' })).filter(m => m.name).sort((a, b) => a.name.localeCompare(b.name));
+    const { data } = await sb.from('team_members').select('user_id, role, status, plays, profiles!team_members_user_profile_fk(display_name)').eq('team_id', teamId).eq('status', 'active');
+    // Joueurs proposés dans la compo : les convoqués (joueurs + coach / admin qui joue aussi)
+    return (data || []).filter(m => m.role === 'player' || m.plays).map(m => ({ id: m.user_id, role: m.role, name: (m.profiles && m.profiles.display_name) || '' })).filter(m => m.name).sort((a, b) => a.name.localeCompare(b.name));
   }
   async function loadPresent(eventId) {
     const { data } = await sb.from('event_responses').select('user_id, status').eq('event_id', eventId).eq('status', 'yes');
@@ -7483,7 +7510,7 @@ window.RUGBY_CONFIG = {
     // Onglets
     const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
     const cur = view === 'soon' ? 'home' : view;
-    const unanswered = data && data.agenda && !data.staff ? data.agenda.events.filter(e => !e.mine).length : 0;
+    const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
     const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
@@ -7596,7 +7623,14 @@ window.RUGBY_CONFIG = {
     const go = (item, fn) => () => { track('home_action', { item }); fn(); };
     const ag = d.agenda || { events: [], total: 0 };
     const soon = Date.now() + 7 * 864e5;
+    // Mes convocations sans réponse (joueur, ou coach / admin qui joue aussi) : réponse directe depuis l'accueil
+    const rsvpItems = () => ag.events.filter(ev => ev.convoked && !ev.mine).forEach(ev => items.push({
+      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
+      // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
+      buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
+    }));
     if (staff) {
+      rsvpItems();   // un coach ou un admin qui joue aussi répond d'abord pour lui-même
       // Convocations : les plus proches d'abord
       ag.events.filter(ev => new Date(ev.starts_at) < soon && ev.sum.none).forEach(ev => items.push({ text: `${esc(AG().short(ev))} : <strong>${plural(ev.sum.none, 'joueur', 'joueurs')} sans réponse</strong>`, action: 'Relancer', primary: true, fn: go('event-remind', () => AG().remind(ev)) }));
       if (d.pending) items.push({ text: `<strong>${plural(d.pending, 'demande', 'demandes')}</strong> pour rejoindre l’équipe`, action: 'Valider', primary: true, fn: go('requests', () => E.go('team')) });
@@ -7605,12 +7639,7 @@ window.RUGBY_CONFIG = {
       (d.sheets || []).filter(m => new Date(m.starts_at) < soon && m.sheet !== 'published').slice(0, 1).forEach(m => items.push({ text: `Compo du match ${esc(AG().label(m).toLowerCase())} : <strong>${m.sheet === 'draft' ? 'à publier' : 'à faire'}</strong>`, action: m.sheet === 'draft' ? 'Finir' : 'Composer', primary: true, fn: go('sheet', () => E.go('compos', m.id)) }));
       if (!ag.events.length) items.push({ text: 'Aucun match ni entraînement prévu', action: 'Créer', fn: go('event-create', () => AG().openForm()) });
     } else {
-      // Convocations sans réponse : on répond directement depuis l'accueil
-      ag.events.filter(ev => !ev.mine).forEach(ev => items.push({
-        text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
-        // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
-        buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
-      }));
+      rsvpItems();
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
       (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>vous êtes n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
@@ -7654,7 +7683,7 @@ window.RUGBY_CONFIG = {
     } else {
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
       tile('team', 'Équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
-      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => !e.mine).length });
+      tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => e.convoked && !e.mine).length });
       tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
     }
     return grid;
