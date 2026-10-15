@@ -4466,7 +4466,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (data.kind === 'club') { E.toast(`Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id); }
     const t = S.teams.find(x => x.id === data.id);
     if (t) { setTeam(t); E.toast(`Vous êtes membre de « ${data.name} ».`); }
-    else E.toast(`Demande envoyée à « ${data.name} ». Un coach ou la direction du club doit la valider.`);
+    else { pushJoin('join_request', data.id); E.toast(`Demande envoyée à « ${data.name} ». Un coach ou la direction du club doit la valider.`); }
     E.go('team'); renderTeamPage();
   }
   /** Fenêtre « Quelles équipes rejoindre ? » : on coche ses équipes, comme joueur ou comme coach / encadrant. */
@@ -4500,6 +4500,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       for (const r of picked) {
         const { error: e } = await sb.rpc('request_team', { p_team: r.t.id, p_as: r.as.value });
         if (e) { go.disabled = false; return E.toast(`${r.t.name} : ${errMsg(e)}`); }
+        pushJoin('join_request', r.t.id);
       }
       track('club_request', { count: picked.length });
       E.closeModal('modal-club-teams'); await loadTeams();
@@ -4822,9 +4823,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.openModal('modal-strat-share');
   }
 
+  /** Notification push d'adhésion : nouvelle demande (au staff) ou demande acceptée (à la personne). */
+  const pushJoin = (kind, teamId, userId) => { if (sb.functions) sb.functions.invoke('push-notify', { body: { kind, team_id: teamId, user_id: userId } }).catch(() => {}); };
   async function requestTeam(t, as) {
     const { error } = await sb.rpc('request_team', { p_team: t.id, p_as: as });
     if (error) return E.toast(errMsg(error));
+    pushJoin('join_request', t.id);
     track('club_request', { count: 1 });
     E.toast(`Demande envoyée à « ${t.name} »${as === 'staff' ? ' comme coach / encadrant' : ''}.`);
     await loadTeams(); renderTeamPage();
@@ -4926,7 +4930,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (confirmMsg && !await window.RugbyDialog.confirm(confirmMsg)) return;
       const q = patch ? sb.from('team_members').update(patch) : sb.from('team_members').delete();
       const { error } = await q.match({ team_id: S.team.id, user_id: m.user_id });
-      if (error) E.toast(errMsg(error)); renderTeamPage();
+      if (error) E.toast(errMsg(error));
+      else if (patch && patch.status === 'active' && m.status === 'pending') pushJoin('join_accepted', S.team.id, m.user_id);
+      renderTeamPage();
     };
     if (staff && pending.length) {
       list.appendChild(el('h4', 'home-h4', `Demandes d’adhésion (${pending.length})`));

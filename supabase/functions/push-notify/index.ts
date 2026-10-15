@@ -2,7 +2,7 @@
 // Appelée par le navigateur après une publication (kind = "published") ou une proposition (kind = "proposed"),
 // ou par le staff pour relancer les membres qui n'ont pas encore ouvert une stratégie publiée (kind = "reminder").
 // Agenda : nouvel événement (event_new), relance des membres sans réponse (event_reminder), annulation (event_cancelled),
-// composition publiée (sheet_published).
+// composition publiée (sheet_published). Adhésion : nouvelle demande (join_request), demande acceptée (join_accepted).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -25,8 +25,9 @@ Deno.serve(async (req) => {
     const { data: { user } } = await asUser.auth.getUser();
     if (!user) return json({ error: "non connecté" }, 401);
 
-    const { drawing_id, event_id, kind } = await req.json();
+    const { drawing_id, event_id, team_id, user_id, kind } = await req.json();
     const admin = createClient(url, serviceKey);
+    if (kind === "join_request" || kind === "join_accepted") return await joinPush(admin, user.id, team_id, user_id, kind);
     if (["event_new", "event_reminder", "event_cancelled", "sheet_published"].includes(kind)) return await eventPush(admin, user.id, event_id, kind);
     if (!drawing_id || !["published", "proposed", "reminder"].includes(kind)) return json({ error: "paramètres invalides" }, 400);
 
@@ -156,5 +157,47 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
     url: kind === "sheet_published" ? `#/compos/${ev.id}` : `#/agenda/${ev.id}`,
     tag: `event-${ev.id}`,
   });
+  return json(await send(admin, recipients, payload));
+}
+
+/** Adhésion : le staff et la direction du club sont prévenus d'une demande ; la personne est prévenue quand elle est acceptée. */
+async function joinPush(admin: Admin, senderId: string, teamId: string, userId: string, kind: string) {
+  if (!teamId) return json({ error: "paramètres invalides" }, 400);
+  const { data: team } = await admin.from("teams").select("name, club_id").eq("id", teamId).maybeSingle();
+  if (!team) return json({ error: "équipe introuvable" }, 404);
+  const { data: sender } = await admin.from("profiles").select("display_name").eq("id", senderId).maybeSingle();
+  let recipients: string[] = [];
+  let payload: string;
+  if (kind === "join_request") {
+    // Seule la personne qui a une demande en attente peut prévenir le staff
+    const { data: mine } = await admin.from("team_members").select("status, requested_as").eq("team_id", teamId).eq("user_id", senderId).maybeSingle();
+    if (!mine || mine.status !== "pending") return json({ error: "aucune demande en attente" }, 403);
+    const { data: staff } = await admin.from("team_members").select("user_id").eq("team_id", teamId).eq("status", "active").in("role", ["coach", "admin"]);
+    const { data: heads } = team.club_id ? await admin.from("club_members").select("user_id").eq("club_id", team.club_id).eq("role", "responsable") : { data: [] };
+    recipients = [...new Set([...(staff || []), ...(heads || [])].map((m: { user_id: string }) => m.user_id))].filter((id) => id !== senderId);
+    payload = JSON.stringify({
+      title: `Demande d'adhésion · ${team.name}`,
+      body: `${sender?.display_name || "Quelqu'un"} demande à rejoindre l'équipe${mine.requested_as === "staff" ? " comme coach / encadrant" : ""}.`,
+      url: "#/team",
+      tag: `join-${teamId}-${senderId}`,
+    });
+  } else {
+    // Seul le staff de l'équipe (ou la direction du club) annonce une acceptation, à une personne désormais membre
+    if (!userId) return json({ error: "paramètres invalides" }, 400);
+    const { data: me } = await admin.from("team_members").select("role, status").eq("team_id", teamId).eq("user_id", senderId).maybeSingle();
+    const isStaff = me && me.status === "active" && (me.role === "coach" || me.role === "admin");
+    if (!isStaff && await clubRole(admin, teamId, senderId) !== "responsable") return json({ error: "réservé au staff" }, 403);
+    const { data: target } = await admin.from("team_members").select("status").eq("team_id", teamId).eq("user_id", userId).maybeSingle();
+    if (!target || target.status !== "active") return json({ error: "pas encore membre" }, 409);
+    recipients = [userId];
+    payload = JSON.stringify({
+      title: `Bienvenue · ${team.name}`,
+      body: `Votre demande est acceptée : vous faites partie de « ${team.name} ».`,
+      url: "#/",
+      tag: `join-${teamId}-${userId}`,
+    });
+  }
+  if (!recipients.length) return json({ sent: 0, recipients: 0 });
+  if (!(await setVapid(admin))) return json({ error: "clés VAPID absentes" }, 500);
   return json(await send(admin, recipients, payload));
 }

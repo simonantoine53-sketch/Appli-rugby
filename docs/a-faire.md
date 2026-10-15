@@ -7,11 +7,12 @@ Mis à jour le 15/10/2026.
 - [ ] Menu ⋯ d'une stratégie → « Partager… » : une seule fenêtre (droits des joueurs, lien public, copie pour une autre équipe du club). L'équipe d'où part la stratégie ne doit pas apparaître dans la liste des équipes destinataires.
 - [ ] Demande pour rejoindre une équipe : la page se met à jour toute seule, côté demandeur comme côté coach, sans rafraîchir (temps réel activé sur les membres).
 - [ ] Compte → « Rejoindre ou créer un club, une équipe » : trois blocs séparés (code, ajouter une équipe à votre club, nouveau club).
+- [ ] Notifications d'adhésion : une demande prévient le coach et la direction du club ; une acceptation prévient la personne (il faut avoir activé les notifications dans Compte).
 - [ ] Notifications de la direction du club (convocation, relance) depuis une équipe dont elle n'est pas membre.
 
 ## Données de test à garder ou supprimer
 
-- Club « Test RC » : équipe « Test U16 » et une stratégie partagée en proposition, créées pendant les tests.
+- Club « Test RC » : on le garde pour l'instant, on le supprimera plus tard. Il contient l'équipe « Test U16 » et une stratégie partagée en proposition, créées pendant les tests.
 - « Joueur Test » est à la direction de Test RC.
 
 ## Reporté (on en reparle avant de commencer)
