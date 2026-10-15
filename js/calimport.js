@@ -103,7 +103,7 @@
   }
   function renderStart(error) {
     const body = $('#import-body'); body.replaceChildren();
-    body.appendChild(el('p', '', 'Récupère le calendrier de ta poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Ton téléphone ou ton ordinateur télécharge un fichier <strong>.ics</strong> : choisis-le ici.'));
+    body.appendChild(el('p', '', 'Récupérez le calendrier de votre poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Votre téléphone ou votre ordinateur télécharge un fichier <strong>.ics</strong> : choisissez-le ici.'));
     body.appendChild(el('p', 'muted small', 'Tout fichier agenda .ics fonctionne (ligue, comité, autre fédération). Réimporter le même calendrier plus tard met à jour les matchs déplacés, sans doublon.'));
     const input = el('input'); input.type = 'file'; input.accept = '.ics,text/calendar'; input.id = 'import-file'; input.className = 'file-input';
     const label = el('label', 'btn primary wide file-btn', 'Choisir le fichier .ics');
@@ -150,7 +150,7 @@
   function renderPreview() {
     const body = $('#import-body'); body.replaceChildren();
     if (state.calName) body.appendChild(el('p', 'muted small', esc(state.calName)));
-    const f1 = el('label', 'import-field', 'Ton club dans ce calendrier');
+    const f1 = el('label', 'import-field', 'Votre club dans ce calendrier');
     const sel = el('select', 'select'); sel.id = 'import-club';
     sel.appendChild(Object.assign(el('option'), { value: '', textContent: 'Choisir…' }));
     state.clubs.forEach(c => sel.appendChild(Object.assign(el('option'), { value: c, textContent: c, selected: c === state.club })));
@@ -162,7 +162,7 @@
     meet.onchange = () => { state.meet = +meet.value; };
     f2.appendChild(meet);
     body.append(f1, f2);
-    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisis ton club pour voir ses matchs.')); return; }
+    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisissez votre club pour voir ses matchs.')); return; }
     const items = plan();
     const nNew = items.filter(i => i.state === 'new').length, nChg = items.filter(i => i.state === 'changed').length;
     body.appendChild(el('p', 'import-sum', items.length

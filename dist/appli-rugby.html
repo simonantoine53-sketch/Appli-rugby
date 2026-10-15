@@ -1042,6 +1042,36 @@ select:disabled { opacity: .5; cursor: default; }
 .birth-box { display: flex; gap: 6px; align-items: center; }
 .birth-box input { flex: 1; min-width: 0; }
 
+/* Connexion : liens « Mot de passe oublié ? » et « Retour » */
+.auth-link { font-size: 13px; color: #1a73e8; text-decoration: none; align-self: flex-start; margin-top: -4px; }
+.auth-link.center { align-self: center; margin-top: 0; }
+.auth-link:hover { text-decoration: underline; }
+
+/* Accueil : réponses aux convocations (mêmes boutons que l'Agenda), sous le texte sur mobile */
+.todo-row.stack { flex-wrap: wrap; }
+.todo-row.stack .grow { flex: 1 1 220px; }
+.todo-btns { display: flex; gap: 6px; flex: 1 1 auto; justify-content: flex-end; }
+.todo-btns .rsvp-btn { flex: 1 1 0; min-width: 0 !important; justify-content: center; background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+.todo-btns .rsvp-btn.yes { border-color: #2e7d32; color: #2e7d32; }
+.todo-btns .rsvp-btn.no { border-color: #c62828; color: #c62828; }
+.todo-btns .rsvp-btn.maybe { border-color: #ef6c00; color: #ef6c00; }
+@media (min-width: 700px) { .todo-btns { flex: 0 0 auto; } .todo-btns .rsvp-btn { min-width: 92px !important; } }
+
+/* Agenda : commentaire enregistré automatiquement */
+.ev-comment { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.ev-comment input { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; min-height: var(--tap); background: #fff; }
+.ev-comment-state { min-height: 1em; }
+
+/* Membres : actions (rôle, Retirer, Accepter, Refuser) groupées et alignées de la même façon sur chaque ligne */
+.member-row .who { overflow: hidden; text-overflow: ellipsis; }
+.member-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.member-actions .btn, .member-actions .select { min-width: 96px; justify-content: center; }
+@media (max-width: 560px) {
+  .member-row:has(.member-actions) { flex-wrap: wrap; }
+  .member-row .member-actions { flex: 1 1 100%; padding-left: 42px; }
+  .member-row .member-actions > * { flex: 1 1 0; }
+}
+
 </style>
 </head>
 <body>
@@ -1058,7 +1088,7 @@ select:disabled { opacity: .5; cursor: default; }
   </div>
   <nav id="hub-tabs" class="hub-tabs" aria-label="Navigation principale"></nav>
   <div class="actions">
-    <button id="home-new" class="btn primary hidden">+ Nouveau<span class="long"> dessin</span></button>
+    <button id="home-new" class="btn primary hidden" style="gap:0">+ Nouveau<span class="long"> dessin</span></button>
     <button id="hub-account" class="hub-account" aria-label="Mon compte"></button>
   </div>
 </header>
@@ -1437,23 +1467,27 @@ select:disabled { opacity: .5; cursor: default; }
 <div id="modal-auth" class="modal hidden">
   <div class="modal-box auth-box">
     <div class="modal-head">
-      <div class="tabs small"><button class="tab active" data-mode="login">Connexion</button><button class="tab" data-mode="signup">Inscription</button></div>
+      <div class="tabs small"><button class="tab active" data-mode="login">Connexion</button><button class="tab" data-mode="signup">Inscription</button></div><strong id="auth-title" class="hidden"></strong>
       <button class="btn-close" data-close="modal-auth" title="Fermer">✕</button>
     </div>
     <form id="auth-form" class="form" data-mode="login">
       <label class="hidden">Prénom / pseudo<input id="auth-name" type="text" autocomplete="nickname" maxlength="40"></label>
-      <label>E-mail<input id="auth-email" type="email" required autocomplete="email"></label>
-      <label>Mot de passe<input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
+      <p id="auth-intro" class="help hidden"></p>
+      <label id="auth-email-field">E-mail<input id="auth-email" type="email" required autocomplete="email"></label>
+      <label id="auth-password-field"><span id="auth-password-label">Mot de passe</span><input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
+      <p id="auth-pw-hint" class="help hidden">6 caractères minimum.</p>
+      <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
       <p id="auth-error" class="form-error"></p>
       <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
+      <a href="#" id="auth-back" class="auth-link center hidden">← Retour à la connexion</a>
       <p class="help">Gratuit. Votre compte garde vos dessins sur tous vos appareils et vous relie à votre équipe. <a href="#" class="link-privacy">Confidentialité</a></p>
     </form>
     <div id="auth-pending" class="auth-pending hidden">
       <div class="auth-pending-icon" aria-hidden="true">✉️</div>
-      <h3>Vérifie ta boîte mail</h3>
+      <h3>Vérifiez votre boîte mail</h3>
       <p>Un e-mail de confirmation a été envoyé à <strong id="auth-pending-email"></strong>.</p>
-      <p>Clique sur le lien qu’il contient : <strong>tu seras connecté automatiquement</strong>, même si tu l’ouvres sur un autre appareil.</p>
-      <p class="muted small">Rien reçu ? Regarde dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
+      <p>Cliquez sur le lien qu’il contient : <strong>vous serez connecté automatiquement</strong>, même si vous l’ouvrez sur un autre appareil.</p>
+      <p class="muted small">Rien reçu ? Regardez dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
       <p id="auth-pending-msg" class="form-error"></p>
       <button id="auth-resend" class="btn outline wide" type="button">Renvoyer l’e-mail</button>
       <button id="auth-change" class="btn ghost wide" type="button">Changer d’adresse e-mail</button>
@@ -3082,7 +3116,7 @@ window.RUGBY_CONFIG = {
     const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = 'Enregistrer la formation actuelle';
     create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
     root.appendChild(create);
-    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistre les joueurs placés sur le terrain : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistrez les joueurs placés sur le terrain : vous pourrez les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';
@@ -3971,6 +4005,7 @@ window.RUGBY_CONFIG = {
   const authReturn = (() => {
     const h = location.hash;
     if (/access_token=/.test(h) && /type=signup/.test(h)) return 'confirmed';
+    if (/access_token=/.test(h) && /type=recovery/.test(h)) return 'recovery';
     if (/error_code=|error=access_denied/.test(h)) return 'link-error';
     return '';
   })();
@@ -3994,12 +4029,13 @@ window.RUGBY_CONFIG = {
     const m = (e && e.message) || String(e), code = (e && e.code) || '';
     // Limites de Supabase : on dit pourquoi et combien de temps attendre
     const wait = m.match(/after (\d+) seconds?/i);
-    if (wait) return `Patiente ${wait[1]} secondes avant de redemander un e-mail.`;
-    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessaie dans 1 heure environ. Si ton e-mail est déjà confirmé, tu peux te connecter normalement.';
-    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessaie dans 5 minutes.';
+    if (wait) return `Patientez ${wait[1]} secondes avant de redemander un e-mail.`;
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessayez dans 1 heure environ. Si votre e-mail est déjà confirmé, vous pouvez vous connecter normalement.';
+    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessayez dans 5 minutes.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
     if (/Email not confirmed/i.test(m)) return 'Confirmez votre e-mail (lien reçu par mail) avant de vous connecter.';
     if (/already registered/i.test(m)) return 'Cet e-mail a déjà un compte.';
+    if (/different from the old/i.test(m)) return 'Le nouveau mot de passe doit être différent de l’ancien.';
     if (/Password should be/i.test(m)) return 'Mot de passe trop court (6 caractères minimum).';
     if (/row-level security/i.test(m)) return 'Action non autorisée pour votre rôle.';
     return m;
@@ -4024,8 +4060,9 @@ window.RUGBY_CONFIG = {
   // getSession attend que Supabase ait lu le jeton du lien : on peut ensuite nettoyer l'adresse
   if (authReturn) sb.auth.getSession().then(({ data }) => {
     history.replaceState(null, '', location.pathname + location.search + '#/');
-    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, tu es connecté !');
-    else { openAuth('login'); setAuthMsg('Ce lien de confirmation a expiré ou a déjà servi. Connecte-toi : si ton e-mail n’est pas encore confirmé, tu pourras recevoir un nouveau lien.', 'info'); }
+    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    else if (authReturn === 'recovery' && data.session) openAuth('reset');
+    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
   });
 
   function refreshCurrentView() {
@@ -4094,13 +4131,30 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
+  /** Modes : login, signup, forgot (demande du lien de réinitialisation), reset (nouveau mot de passe après le lien). */
   function setAuthMode(mode) {
     showPending(false);
+    const tabs = mode === 'login' || mode === 'signup';
+    document.querySelector('#modal-auth .tabs').classList.toggle('hidden', !tabs);
     document.querySelectorAll('#modal-auth .tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     $('#auth-name').closest('label').classList.toggle('hidden', mode !== 'signup');
-    $('#auth-submit').textContent = mode === 'login' ? 'Se connecter' : 'Créer mon compte';
+    $('#auth-email-field').classList.toggle('hidden', mode === 'reset');
+    $('#auth-email').required = mode !== 'reset';
+    $('#auth-password-field').classList.toggle('hidden', mode === 'forgot');
+    $('#auth-password').required = mode !== 'forgot';
+    $('#auth-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+    $('#auth-password-label').textContent = mode === 'reset' ? 'Nouveau mot de passe' : 'Mot de passe';
+    $('#auth-pw-hint').classList.toggle('hidden', mode !== 'signup' && mode !== 'reset');
+    $('#auth-forgot').classList.toggle('hidden', mode !== 'login');
+    $('#auth-back').classList.toggle('hidden', mode !== 'forgot');
+    $('#auth-title').textContent = { forgot: 'Mot de passe oublié', reset: 'Nouveau mot de passe' }[mode] || ''; $('#auth-title').classList.toggle('hidden', tabs);
+    const intro = { forgot: 'Indiquez l’adresse e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.', reset: 'Choisissez votre nouveau mot de passe.' }[mode];
+    $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
+    $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
   }
+  $('#auth-forgot').onclick = e => { e.preventDefault(); const em = $('#auth-email').value; setAuthMode('forgot'); $('#auth-email').value = em; $('#auth-email').focus(); };
+  $('#auth-back').onclick = e => { e.preventDefault(); setAuthMode('login'); };
   /** Message sous le formulaire : rouge pour une erreur, neutre pour une information. */
   function setAuthMsg(text, kind) { const m = $('#auth-error'); m.textContent = text || ''; m.classList.toggle('info', kind === 'info'); }
   document.querySelectorAll('#modal-auth .tab').forEach(t => t.onclick = () => setAuthMode(t.dataset.mode));
@@ -4127,7 +4181,7 @@ window.RUGBY_CONFIG = {
     if (Date.now() > pending.until) return stopPending();
     const { error } = await sb.auth.signInWithPassword({ email: pending.email, password: pending.password });
     if (error) return;   // pas encore confirmé (ou limite atteinte) : on réessaiera
-    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, tu es connecté !');
+    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
   }
   // Retour sur l'onglet après avoir cliqué le lien dans la boîte mail : on vérifie tout de suite
   document.addEventListener('visibilitychange', () => { if (!document.hidden && pending.timer) tryPendingLogin(); });
@@ -4145,11 +4199,24 @@ window.RUGBY_CONFIG = {
     const mode = e.target.dataset.mode, email = $('#auth-email').value.trim(), password = $('#auth-password').value, name = $('#auth-name').value.trim();
     const b = $('#auth-submit'); b.disabled = true; setAuthMsg('');
     try {
+      if (mode === 'forgot') {
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        if (error) throw error;
+        // Même message que le compte existe ou non : on ne révèle pas quelles adresses sont inscrites
+        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de vous être envoyé. Cliquez sur le lien qu’il contient pour choisir un nouveau mot de passe (pensez aux spams).`, 'info');
+        b.disabled = false; return;
+      }
+      if (mode === 'reset') {
+        const { error } = await sb.auth.updateUser({ password });
+        if (error) throw error;
+        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : vous êtes connecté.');
+        b.disabled = false; return;
+      }
       if (mode === 'signup') {
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name || email.split('@')[0] }, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
-        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connecte-toi.', 'info'); b.disabled = false; return; }
+        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -4170,7 +4237,7 @@ window.RUGBY_CONFIG = {
     $('#account-name').textContent = S.profile.display_name;
     $('#team-user').textContent = S.user.email;
     const P = window.RugbyProfile;
-    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoute ta photo et ton poste pour que l’équipe te reconnaisse.'; }
+    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
     const box = $('#account-teams'); box.replaceChildren();
     S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
@@ -4193,14 +4260,14 @@ window.RUGBY_CONFIG = {
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
     const D = window.RugbyDialog;
-    if (!await D.confirm('Supprimer définitivement ton compte ? Tes dessins, formations, réponses aux convocations, ton profil et tes statistiques seront effacés, y compris les stratégies que tu as publiées dans une équipe. Si tu es le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
-    const typed = await D.prompt('Pour confirmer, tape SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
+    if (!await D.confirm('Supprimer définitivement votre compte ? Vos dessins, formations, réponses aux convocations, votre profil et vos statistiques seront effacés, y compris les stratégies que vous avez publiées dans une équipe. Si vous êtes le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
+    const typed = await D.prompt('Pour confirmer, tapez SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
     if (typed == null) return;
     if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
     const { error } = await sb.rpc('delete_my_account');
     if (error) return E.toast(errMsg(error));
     await sb.auth.signOut();
-    E.go('home'); E.toast('Ton compte et tes données ont été supprimés.');
+    E.go('home'); E.toast('Votre compte et vos données ont été supprimés.');
   };
 
   /* ---------- Équipes : actions ---------- */
@@ -4252,8 +4319,8 @@ window.RUGBY_CONFIG = {
     code.appendChild(btn('Copier le code', 'outline small', () => copy(t.join_code, 'Code copié.', 'code')));
     body.appendChild(code);
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
-    msg.value = `Salut ! Rejoins l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvre ${url}\n2. Crée ton compte (gratuit)\n3. Entre le code ${t.join_code}`;
-    body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
+    msg.value = `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${t.join_code}`;
+    body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
       whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.1 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.1.3 0 .5.6 1.1 1.5 2 2.6 2.6.2.1.4.1.5 0l.6-.5c.2-.1.4-.2.6-.1l1.6.7c.4.2.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.5.6-2.8.1-2.3-.9-4.2-2.8-5.1-5.1-.4-1.3-.2-2.3.2-2.7z" fill="currentColor"/></svg>',
@@ -4270,7 +4337,7 @@ window.RUGBY_CONFIG = {
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
       icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
-      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent('Rejoins l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`)
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent('Rejoignez l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`)
     );
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
@@ -4278,7 +4345,7 @@ window.RUGBY_CONFIG = {
       links.appendChild(more);
     }
     body.appendChild(links);
-    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy')));
+    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
     E.openModal('modal-invite');
   }
   function copy(text, ok, channel) {
@@ -4344,7 +4411,7 @@ window.RUGBY_CONFIG = {
       c.foot.append(name, save);
     }
     // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
-    const code = card('Code d’invitation', staff ? 'Chaque nouvelle personne arrive « en attente » : tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.');
+    const code = card('Code d’invitation', staff ? 'Chaque nouvelle personne arrive « en attente » : vous validez sa demande dans Membres.' : 'Les personnes que vous invitez devront être acceptées par le staff.');
     code.insertBefore(el('div', 'code-big', esc(t.join_code)), code.foot);
     code.foot.appendChild(btn('Inviter', 'primary small', shareCode));
     if (staff) code.foot.appendChild(btn('Nouveau code', 'outline small', async () => {
@@ -4363,12 +4430,12 @@ window.RUGBY_CONFIG = {
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    const me = card('Mon appartenance', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
+    const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
     if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
-      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`)) return;
+      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`)) return;
       const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
       if (error) return E.toast(errMsg(error));
-      teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
+      teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
     }));
     if (staff) {
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
@@ -4419,8 +4486,10 @@ window.RUGBY_CONFIG = {
         const row = el('div', 'member-row pending');
         row.appendChild(el('div', 'avatar', esc(nameOf(m).trim().slice(0, 1).toUpperCase() || '?')));
         row.appendChild(el('div', 'who', `${esc(nameOf(m))}<small>Demande du ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
-        row.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
-        row.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        const acts = el('div', 'member-actions');
+        acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
+        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        row.appendChild(acts);
         list.appendChild(row);
       });
     }
@@ -4432,15 +4501,17 @@ window.RUGBY_CONFIG = {
       const row = el('div', 'member-row clickable');
       const P = window.RugbyProfile, pr = m.profiles || {};
       row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       if (staff && m.user_id !== S.user.id) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
         sel.onchange = () => setMember(m, { role: sel.value });
-        row.appendChild(sel);
-        row.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l'équipe ?`)));
+        // Rôle et « Retirer » toujours regroupés, à la même place sur chaque ligne
+        const acts = el('div', 'member-actions');
+        acts.append(sel, btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
+        row.appendChild(acts);
       } else row.appendChild(el('span', 'role-badge ' + m.role, ROLE_LABEL[m.role] || m.role));
       list.appendChild(row);
     });
@@ -5030,11 +5101,11 @@ window.RUGBY_CONFIG = {
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
     form.appendChild(field('Pied fort', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Un mot sur toi (facultatif)'; bio.value = p.bio || '';
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
-    form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par toi et le staff de ton équipe.</span>'));
+    form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par vous et le staff de votre équipe.</span>'));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
     const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
@@ -5082,7 +5153,7 @@ window.RUGBY_CONFIG = {
       save.disabled = false;
       if (r1.error) console.warn('profil', r1.error.message);
       if (r2.error) console.warn('profil privé', r2.error.message);
-      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifie ta connexion et réessaie.'; return; }
+      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifiez votre connexion et réessayez.'; return; }
       if (!r1.error) Object.assign(A.profile(), patch);
       if (r1.error) skipped.push('profil sportif');
       if (r2.error) skipped.push('infos privées');
@@ -5751,9 +5822,15 @@ window.RUGBY_CONFIG = {
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn()) return;
+    if (!A.isLoggedIn()) {
+      // Visiteur : on explique à quoi sert la page au lieu d'afficher une page vide
+      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouvez ici les matchs et entraînements de votre équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
+      box.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
+      box.appendChild(btn('J’ai déjà un compte', 'outline', () => A.openAuth('login')));
+      root.appendChild(box); return;
+    }
     if (!team) {
-      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoins ou crée ton équipe pour voir les matchs et entraînements.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
       box.appendChild(btn('Rejoindre ou créer mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
@@ -5784,7 +5861,7 @@ window.RUGBY_CONFIG = {
     list.replaceChildren();
     if (!evs.length) {
       const empty = el('div', 'soon-card agenda-empty', tab === 'next'
-        ? (staff ? '<h2>Rien de prévu</h2><p>Crée le prochain entraînement ou match. Tes joueurs sont prévenus et répondent présent ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
+        ? (staff ? '<h2>Rien de prévu</h2><p>Créez le prochain entraînement ou match. Vos joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
         : '<h2>Aucun événement passé</h2>');
       if (staff && tab === 'next') {
         empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
@@ -5804,12 +5881,13 @@ window.RUGBY_CONFIG = {
     const d = new Date(ev.starts_at);
     return el('div', 'ev-date ' + ev.kind, `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`);
   }
-  function rsvpButtons(ev, current, onDone, big) {
+  /** getComment (facultatif) : commentaire tapé avant d'avoir choisi une réponse, envoyé avec elle. */
+  function rsvpButtons(ev, current, onDone, big, getComment) {
     const row = el('div', 'rsvp' + (big ? ' big' : ''));
     [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
       const b = btn(l, 'rsvp-btn ' + s, async () => {
         if (ev.cancelled) return;
-        const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s);
+        const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s, undefined, getComment ? getComment() : undefined);
         if (ok) { E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
       });
       b.setAttribute('aria-pressed', String(current === s));
@@ -5829,7 +5907,10 @@ window.RUGBY_CONFIG = {
     const body = el('div', 'ev-body');
     const meta = el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`);
     // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé
-    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'ghost ev-quick', () => setCancelled([ev], !ev.cancelled, refresh)));
+    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
+      if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
+      setCancelled([ev], !ev.cancelled, refresh);
+    }));
     body.appendChild(meta);
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
@@ -5874,7 +5955,7 @@ window.RUGBY_CONFIG = {
         const next = await seriesFrom(ev);
         choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
       };
-      tools.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
+      tools.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
         : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))));
       tools.appendChild(btn('Supprimer', 'outline small danger', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
         const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
@@ -5888,16 +5969,26 @@ window.RUGBY_CONFIG = {
     // Ma réponse
     if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
-      box.appendChild(el('div', 'todo-head', 'Ta réponse'));
-      box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true));
-      const f = el('form', 'inline-form ev-comment');
-      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Un mot pour le coach (facultatif) : retard, blessure…'; input.value = (mine && mine.comment) || '';
-      f.append(input, Object.assign(el('button', 'btn outline small', 'Enregistrer'), { type: 'submit' }));
-      f.onsubmit = async e => {
-        e.preventDefault();
-        if (!mine) { E.toast('Choisis d’abord présent, peut-être ou absent.'); return; }
-        if (await answer(ev.id, mine.status, me, input.value.trim())) { E.toast('Commentaire enregistré.'); refresh(); }
+      box.appendChild(el('div', 'todo-head', 'Votre réponse'));
+      // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
+      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire (facultatif) : retard, blessure…'; input.value = (mine && mine.comment) || '';
+      box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true, () => input.value.trim()));
+      const f = el('div', 'ev-comment');
+      const state = el('small', 'muted ev-comment-state', '');
+      f.append(input, state);
+      let timer = null, saved = input.value.trim();
+      const saveComment = async () => {
+        clearTimeout(timer);
+        const v = input.value.trim();
+        if (v === saved) return;
+        if (!mine) { state.textContent = 'Envoyé avec votre réponse.'; return; }
+        state.textContent = 'Enregistrement…';
+        if (await answer(ev.id, mine.status, me, v)) { saved = v; mine.comment = v; state.textContent = 'Enregistré ✓'; }
+        else state.textContent = '';
       };
+      input.oninput = () => { state.textContent = ''; clearTimeout(timer); timer = setTimeout(saveComment, 1200); };
+      input.onblur = saveComment;
+      input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } };
       box.appendChild(f);
       root.appendChild(box);
     }
@@ -6036,7 +6127,7 @@ window.RUGBY_CONFIG = {
     if (!on) return;
     const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
     const date = $('#ev-date').value, t = $('#ev-time').value || '19:00', until = $('#ev-repeat').value;
-    if (!days.length) { $('#ev-recur-help').textContent = 'Coche au moins un jour.'; return; }
+    if (!days.length) { $('#ev-recur-help').textContent = 'Cochez au moins un jour.'; return; }
     if (!date || !until) { $('#ev-recur-help').textContent = ''; return; }
     const n = recurDates(new Date(`${date}T${t}`), days, new Date(`${until}T23:59`)).length;
     const names = [1, 2, 3, 4, 5, 6, 0].filter(x => days.includes(x)).map(x => DAY_NAMES[x]);
@@ -6061,12 +6152,12 @@ window.RUGBY_CONFIG = {
     const team = A.team(); if (!team) return;
     const kind = document.querySelector('input[name=ev-kind]:checked').value;
     const date = $('#ev-date').value, t = $('#ev-time').value;
-    if (!date || !t) { $('#ev-error').textContent = 'Indique la date et l’heure.'; return; }
+    if (!date || !t) { $('#ev-error').textContent = 'Indiquez la date et l’heure.'; return; }
     const start = new Date(`${date}T${t}`);
     const meet = $('#ev-meet').value ? new Date(`${date}T${$('#ev-meet').value}`) : null;
     if (meet && meet > start) { $('#ev-error').textContent = 'Le rendez-vous doit être avant le début.'; return; }
     const opponent = $('#ev-opponent').value.trim();
-    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indique l’adversaire.'; return; }
+    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indiquez l’adversaire.'; return; }
     const base = {
       team_id: team.id, kind,
       title: kind === 'match' ? 'Match' : ($('#ev-title').value.trim() || (kind === 'training' ? 'Entraînement' : 'Rendez-vous')),
@@ -6103,8 +6194,8 @@ window.RUGBY_CONFIG = {
       let dates = [start];
       if (recurring) {
         const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
-        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Coche au moins un jour d’entraînement.'; return; }
-        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indique la date de fin du planning.'; return; }
+        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
+        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
         if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
       }
@@ -6233,7 +6324,7 @@ window.RUGBY_CONFIG = {
   }
   function renderStart(error) {
     const body = $('#import-body'); body.replaceChildren();
-    body.appendChild(el('p', '', 'Récupère le calendrier de ta poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Ton téléphone ou ton ordinateur télécharge un fichier <strong>.ics</strong> : choisis-le ici.'));
+    body.appendChild(el('p', '', 'Récupérez le calendrier de votre poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Votre téléphone ou votre ordinateur télécharge un fichier <strong>.ics</strong> : choisissez-le ici.'));
     body.appendChild(el('p', 'muted small', 'Tout fichier agenda .ics fonctionne (ligue, comité, autre fédération). Réimporter le même calendrier plus tard met à jour les matchs déplacés, sans doublon.'));
     const input = el('input'); input.type = 'file'; input.accept = '.ics,text/calendar'; input.id = 'import-file'; input.className = 'file-input';
     const label = el('label', 'btn primary wide file-btn', 'Choisir le fichier .ics');
@@ -6280,7 +6371,7 @@ window.RUGBY_CONFIG = {
   function renderPreview() {
     const body = $('#import-body'); body.replaceChildren();
     if (state.calName) body.appendChild(el('p', 'muted small', esc(state.calName)));
-    const f1 = el('label', 'import-field', 'Ton club dans ce calendrier');
+    const f1 = el('label', 'import-field', 'Votre club dans ce calendrier');
     const sel = el('select', 'select'); sel.id = 'import-club';
     sel.appendChild(Object.assign(el('option'), { value: '', textContent: 'Choisir…' }));
     state.clubs.forEach(c => sel.appendChild(Object.assign(el('option'), { value: c, textContent: c, selected: c === state.club })));
@@ -6292,7 +6383,7 @@ window.RUGBY_CONFIG = {
     meet.onchange = () => { state.meet = +meet.value; };
     f2.appendChild(meet);
     body.append(f1, f2);
-    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisis ton club pour voir ses matchs.')); return; }
+    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisissez votre club pour voir ses matchs.')); return; }
     const items = plan();
     const nNew = items.filter(i => i.state === 'new').length, nChg = items.filter(i => i.state === 'changed').length;
     body.appendChild(el('p', 'import-sum', items.length
@@ -6629,18 +6720,18 @@ window.RUGBY_CONFIG = {
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoins ton équipe pour voir les compositions.')); return; }
+    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoignez votre équipe pour voir les compos.')); return; }
     if (eventId) return renderSheetPage(root, eventId, my);
     const staff = A.isStaff();
     const head = el('div', 'agenda-head');
-    head.appendChild(el('h2', 'page-title', 'Compositions'));
+    head.appendChild(el('h2', 'page-title', 'Compos'));
     if (staff) head.appendChild(btn('Personnaliser la feuille', 'outline', () => openSettings()));
     root.appendChild(head);
     const list = await upcoming(team);
     if (my !== seq) return;
     const shown = staff ? list : list.filter(e => e.sheet === 'published');
     if (!shown.length) {
-      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoute tes matchs dans l’Agenda (ou importe le calendrier de la fédération), puis prépare la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Tu recevras une notification.</p>');
+      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoutez vos matchs dans l’Agenda (ou importez le calendrier de la fédération), puis préparez la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Vous recevrez une notification.</p>');
       if (staff) box.appendChild(btn('Aller à l’agenda', 'primary', () => E.go('agenda')));
       root.appendChild(box); return;
     }
@@ -6650,7 +6741,7 @@ window.RUGBY_CONFIG = {
       const d = new Date(ev.starts_at);
       c.appendChild(el('div', 'ev-date match', `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`));
       const st = { none: '<span class="sheet-st none">À faire</span>', draft: '<span class="sheet-st draft">Brouillon</span>', published: '<span class="sheet-st pub">Publiée</span>' }[ev.sheet];
-      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Tu es n°${ev.mine.num}</div>` : ''}`);
+      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
       wrap.appendChild(c);
@@ -6671,9 +6762,9 @@ window.RUGBY_CONFIG = {
     if (my !== seq) return;
     if (!ev) { root.appendChild(el('p', 'library-empty', 'Ce match n’existe plus.')); return; }
     const staff = A.isStaff();
-    root.appendChild(btn('‹ Compositions', 'ghost back-link', () => E.go('compos')));
+    root.appendChild(btn('‹ Compos', 'ghost back-link', () => E.go('compos')));
     if (!staff) {
-      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Tu seras prévenu dès que le coach l’aura publiée.</p>')); return; }
+      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Vous serez prévenu dès que le coach l’aura publiée.</p>')); return; }
       const sheet = normSheet(row.data, settings, ev);
       const html = sheetHtml(settings, sheet, ev, team, A.user().id);
       const tools = el('div', 'sheet-actions');
@@ -6717,7 +6808,7 @@ window.RUGBY_CONFIG = {
 
     // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles
     if (!settings.logo) {
-      const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
+      const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
@@ -6921,7 +7012,7 @@ window.RUGBY_CONFIG = {
       if (!(await saveSettings(cur.settings))) return;
       const n = await shareLogo(cur.settings, true);
       track('sheet_logo', { shared: n });
-      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'tes ' + n + ' autres équipes' : 'ton autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
+      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'vos ' + n + ' autres équipes' : 'votre autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
       E.refreshView();
     } catch (e) { E.toast('Image illisible : essaie un PNG ou un JPG.'); }
   }
@@ -6975,7 +7066,7 @@ window.RUGBY_CONFIG = {
         if (await saveSettings(clean)) {
           const n = share ? await shareLogo(clean, false) : 0;
           E.closeModal('modal-sheet-settings');
-          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'ton autre équipe'}.` : 'Feuille personnalisée.');
+          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'votre autre équipe'}.` : 'Feuille personnalisée.');
           E.refreshView();
         }
         b.disabled = false;
@@ -7095,9 +7186,9 @@ window.RUGBY_CONFIG = {
 
   /* ---------- Fonctionnalités à venir ---------- */
   const SOON = {
-    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Crée tes matchs et entraînements. Tes joueurs répondent présent ou absent en un appui, reçoivent un rappel, et tu vois tout de suite qui manque.', player: 'Tous les matchs et entraînements de ton équipe. Tu réponds présent ou absent en un appui et tu reçois un rappel avant chaque rendez-vous.' },
-    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemble tes stratégies et tes exercices en une séance chronométrée, avec le matériel à prévoir, et rattache-la à l’entraînement.', player: '' },
-    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Place tes joueurs sur les 15 postes et les remplaçants, publie la compo à l’équipe et imprime la feuille de match aux couleurs du club.', player: '' }
+    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Créez vos matchs et entraînements. Vos joueurs répondent présent, peut-être ou absent en un appui, reçoivent un rappel, et vous voyez tout de suite qui manque.', player: 'Tous les matchs et entraînements de votre équipe. Vous répondez présent, peut-être ou absent en un appui et recevez un rappel avant chaque rendez-vous.' },
+    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemblez vos stratégies et vos exercices en une séance chronométrée, avec le matériel à prévoir, et rattachez-la à l’entraînement.', player: '' },
+    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Placez vos joueurs sur les 15 postes et les remplaçants, publiez la compo à l’équipe et imprimez la feuille de match aux couleurs du club.', player: '' }
   };
   const INTEREST_KEY = 'rugby-interest';
   const interested = () => { try { return JSON.parse(localStorage.getItem(INTEREST_KEY) || '[]'); } catch (e) { return []; } };
@@ -7124,7 +7215,7 @@ window.RUGBY_CONFIG = {
   let view = 'home';
   let data = null;
   // Le compte est en haut à droite (avatar), pas dans la barre : 4 entrées seulement
-  const NAV = [['home', 'Accueil'], ['agenda', 'Agenda'], ['strats', 'Stratégies'], ['team', 'Équipe']];
+  const NAV = [['home', 'Accueil'], ['agenda', 'Agenda'], ['strats', 'Stratégies'], ['compos', 'Compos'], ['team', 'Équipe']];
   // Logo de l'équipe (celui des feuilles de match) à la place de l'icône générique
   const logos = {};
   async function loadLogo(team) {
@@ -7168,7 +7259,7 @@ window.RUGBY_CONFIG = {
     }
     // Onglets
     const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
-    const cur = view === 'soon' || view === 'compos' ? 'home' : view;
+    const cur = view === 'soon' ? 'home' : view;
     const unanswered = data && data.agenda && !data.staff ? data.agenda.events.filter(e => !e.mine).length : 0;
     const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
     const make = withIcon => items.map(([id, label]) => {
@@ -7207,7 +7298,7 @@ window.RUGBY_CONFIG = {
   function hello(root, sub) {
     const p = A.profile();
     const name = ((p && p.display_name) || '').split(' ')[0];
-    root.appendChild(el('div', 'hub-hello', `<h1>Salut ${esc(name)}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}`));
+    root.appendChild(el('div', 'hub-hello', `<h1>Bonjour ${esc(name)}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}`));
   }
 
   async function renderHome() {
@@ -7217,7 +7308,7 @@ window.RUGBY_CONFIG = {
     const team = A.team();
     if (!team) {
       hello(root, 'Bienvenue sur Rugby Strat.');
-      const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoins ton club</div><p class="muted">Entre le code d’invitation donné par ton coach. Tu es coach ? Crée ton équipe, tu pourras inviter tes joueurs juste après.</p>');
+      const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez le code d’invitation donné par votre coach. Vous êtes coach ? Créez votre équipe, vous pourrez inviter vos joueurs juste après.</p>');
       root.appendChild(card);
       A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation par un coach.`)));
       root.appendChild(A.teamForms());
@@ -7249,10 +7340,10 @@ window.RUGBY_CONFIG = {
   function onboarding(d, notifOn) {
     const players = Math.max(0, d.members - 1);
     const steps = [
-      { done: true, label: 'Créer ton équipe' },
-      { done: players >= 5, label: `Inviter tes joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
-      { done: d.published.length > 0, label: 'Publier ta première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
-      { done: d.agenda.total > 0, label: 'Créer ton premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
+      { done: true, label: 'Créer votre équipe' },
+      { done: players >= 5, label: `Inviter vos joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
+      { done: d.published.length > 0, label: 'Publier votre première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
+      { done: d.agenda.total > 0, label: 'Créer votre premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
     ];
     const push = P();
     if (push && push.canAsk && push.canAsk()) steps.push({ done: notifOn, label: 'Activer les notifications sur ce téléphone', action: 'Activer', fn: () => push.enable().then(() => renderHome()) });
@@ -7260,7 +7351,7 @@ window.RUGBY_CONFIG = {
     const n = steps.filter(s => s.done).length;
     if (n === steps.length) return null;
     const card = el('div', 'todo-card onboarding');
-    card.appendChild(el('div', 'todo-head', `Démarrer avec ton équipe <span class="muted">${n}/${steps.length}</span>`));
+    card.appendChild(el('div', 'todo-head', `Démarrer avec votre équipe <span class="muted">${n}/${steps.length}</span>`));
     card.appendChild(el('div', 'progress-line', `<i style="width:${Math.round(100 * n / steps.length)}%"></i>`));
     steps.forEach((s, i) => {
       const row = el('div', 'todo-row' + (s.done ? ' done' : ''), `<span class="todo-check">${s.done ? '✓' : ''}</span><span class="grow">${s.label}</span>`);
@@ -7287,22 +7378,23 @@ window.RUGBY_CONFIG = {
     } else {
       // Convocations sans réponse : on répond directement depuis l'accueil
       ag.events.filter(ev => !ev.mine).forEach(ev => items.push({
-        text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>tu viens ?</strong>`,
-        buttons: [['Oui', 'primary pair', 'yes'], ['Non', 'outline pair', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(st === 'yes' ? 'Super, à bientôt !' : 'Réponse envoyée : absent.'); renderHome(); } })])
+        text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
+        // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
+        buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
       }));
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
-      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>tu es n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
-      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complète ton profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
+      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>vous êtes n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
+      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complétez votre profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
       const push = P();
-      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Active les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
+      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Activez les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
     const card = el('div', 'todo-card');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
-    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Tu es à jour.'));
+    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Vous êtes à jour.'));
     const addRow = it => {
-      const row = el('div', 'todo-row', `<span class="grow">${it.text}</span>`);
-      if (it.buttons) it.buttons.forEach(([l, cls, fn]) => row.appendChild(btn(l, cls + ' small', fn)));
+      const row = el('div', 'todo-row' + (it.buttons ? ' stack' : ''), `<span class="grow">${it.text}</span>`);
+      if (it.buttons) { const g = el('div', 'todo-btns'); it.buttons.forEach(([l, cls, fn]) => g.appendChild(btn(l, cls + ' small', fn))); row.appendChild(g); }
       else row.appendChild(btn(it.action, it.primary ? 'primary small' : 'outline small', it.fn));
       return row;
     };
@@ -7325,16 +7417,16 @@ window.RUGBY_CONFIG = {
     };
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));
-      tile('team', 'Effectif', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => E.go('team'), { badge: d.pending });
+      tile('team', 'Équipe', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => E.go('team'), { badge: d.pending });
       tile('invite', 'Inviter', `Code ${esc(d.team.join_code)}`, () => A.shareCode());
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'));
       tile('seances', 'Séances', 'Préparer l’entraînement', () => E.go('soon', 'seances'), { soon: true });
-      tile('compos', 'Compositions', sheetLabel(d), () => E.go('compos'));
+      tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
     } else {
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
-      tile('team', 'Mon équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
+      tile('team', 'Équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => !e.mine).length });
-      tile('compos', 'Compositions', sheetLabel(d), () => E.go('compos'));
+      tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
     }
     return grid;
   }
@@ -7343,7 +7435,7 @@ window.RUGBY_CONFIG = {
   function sheetLabel(d) {
     const m = (d.sheets || [])[0];
     if (!m) return 'Aucun match à venir';
-    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `tu es n°${m.mine.num}` : 'compo publiée' }[m.sheet];
+    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `vous êtes n°${m.mine.num}` : 'compo publiée' }[m.sheet];
     return `${AG().dayShort(m.starts_at)} · ${st}`;
   }
 

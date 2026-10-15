@@ -1028,3 +1028,33 @@ select:disabled { opacity: .5; cursor: default; }
 /* Profil : date de naissance avec bouton « Effacer » */
 .birth-box { display: flex; gap: 6px; align-items: center; }
 .birth-box input { flex: 1; min-width: 0; }
+
+/* Connexion : liens « Mot de passe oublié ? » et « Retour » */
+.auth-link { font-size: 13px; color: #1a73e8; text-decoration: none; align-self: flex-start; margin-top: -4px; }
+.auth-link.center { align-self: center; margin-top: 0; }
+.auth-link:hover { text-decoration: underline; }
+
+/* Accueil : réponses aux convocations (mêmes boutons que l'Agenda), sous le texte sur mobile */
+.todo-row.stack { flex-wrap: wrap; }
+.todo-row.stack .grow { flex: 1 1 220px; }
+.todo-btns { display: flex; gap: 6px; flex: 1 1 auto; justify-content: flex-end; }
+.todo-btns .rsvp-btn { flex: 1 1 0; min-width: 0 !important; justify-content: center; background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+.todo-btns .rsvp-btn.yes { border-color: #2e7d32; color: #2e7d32; }
+.todo-btns .rsvp-btn.no { border-color: #c62828; color: #c62828; }
+.todo-btns .rsvp-btn.maybe { border-color: #ef6c00; color: #ef6c00; }
+@media (min-width: 700px) { .todo-btns { flex: 0 0 auto; } .todo-btns .rsvp-btn { min-width: 92px !important; } }
+
+/* Agenda : commentaire enregistré automatiquement */
+.ev-comment { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.ev-comment input { width: 100%; font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; min-height: var(--tap); background: #fff; }
+.ev-comment-state { min-height: 1em; }
+
+/* Membres : actions (rôle, Retirer, Accepter, Refuser) groupées et alignées de la même façon sur chaque ligne */
+.member-row .who { overflow: hidden; text-overflow: ellipsis; }
+.member-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+.member-actions .btn, .member-actions .select { min-width: 96px; justify-content: center; }
+@media (max-width: 560px) {
+  .member-row:has(.member-actions) { flex-wrap: wrap; }
+  .member-row .member-actions { flex: 1 1 100%; padding-left: 42px; }
+  .member-row .member-actions > * { flex: 1 1 0; }
+}

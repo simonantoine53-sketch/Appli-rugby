@@ -111,9 +111,15 @@
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn()) return;
+    if (!A.isLoggedIn()) {
+      // Visiteur : on explique à quoi sert la page au lieu d'afficher une page vide
+      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouvez ici les matchs et entraînements de votre équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
+      box.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
+      box.appendChild(btn('J’ai déjà un compte', 'outline', () => A.openAuth('login')));
+      root.appendChild(box); return;
+    }
     if (!team) {
-      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoins ou crée ton équipe pour voir les matchs et entraînements.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
       box.appendChild(btn('Rejoindre ou créer mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
@@ -144,7 +150,7 @@
     list.replaceChildren();
     if (!evs.length) {
       const empty = el('div', 'soon-card agenda-empty', tab === 'next'
-        ? (staff ? '<h2>Rien de prévu</h2><p>Crée le prochain entraînement ou match. Tes joueurs sont prévenus et répondent présent ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
+        ? (staff ? '<h2>Rien de prévu</h2><p>Créez le prochain entraînement ou match. Vos joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
         : '<h2>Aucun événement passé</h2>');
       if (staff && tab === 'next') {
         empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
@@ -164,12 +170,13 @@
     const d = new Date(ev.starts_at);
     return el('div', 'ev-date ' + ev.kind, `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`);
   }
-  function rsvpButtons(ev, current, onDone, big) {
+  /** getComment (facultatif) : commentaire tapé avant d'avoir choisi une réponse, envoyé avec elle. */
+  function rsvpButtons(ev, current, onDone, big, getComment) {
     const row = el('div', 'rsvp' + (big ? ' big' : ''));
     [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
       const b = btn(l, 'rsvp-btn ' + s, async () => {
         if (ev.cancelled) return;
-        const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s);
+        const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s, undefined, getComment ? getComment() : undefined);
         if (ok) { E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
       });
       b.setAttribute('aria-pressed', String(current === s));
@@ -189,7 +196,10 @@
     const body = el('div', 'ev-body');
     const meta = el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`);
     // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé
-    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'ghost ev-quick', () => setCancelled([ev], !ev.cancelled, refresh)));
+    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
+      if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
+      setCancelled([ev], !ev.cancelled, refresh);
+    }));
     body.appendChild(meta);
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
@@ -234,7 +244,7 @@
         const next = await seriesFrom(ev);
         choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
       };
-      tools.appendChild(btn(ev.cancelled ? 'Rétablir' : 'Annuler', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
+      tools.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
         : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))));
       tools.appendChild(btn('Supprimer', 'outline small danger', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
         const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
@@ -248,16 +258,26 @@
     // Ma réponse
     if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
-      box.appendChild(el('div', 'todo-head', 'Ta réponse'));
-      box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true));
-      const f = el('form', 'inline-form ev-comment');
-      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Un mot pour le coach (facultatif) : retard, blessure…'; input.value = (mine && mine.comment) || '';
-      f.append(input, Object.assign(el('button', 'btn outline small', 'Enregistrer'), { type: 'submit' }));
-      f.onsubmit = async e => {
-        e.preventDefault();
-        if (!mine) { E.toast('Choisis d’abord présent, peut-être ou absent.'); return; }
-        if (await answer(ev.id, mine.status, me, input.value.trim())) { E.toast('Commentaire enregistré.'); refresh(); }
+      box.appendChild(el('div', 'todo-head', 'Votre réponse'));
+      // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
+      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire (facultatif) : retard, blessure…'; input.value = (mine && mine.comment) || '';
+      box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true, () => input.value.trim()));
+      const f = el('div', 'ev-comment');
+      const state = el('small', 'muted ev-comment-state', '');
+      f.append(input, state);
+      let timer = null, saved = input.value.trim();
+      const saveComment = async () => {
+        clearTimeout(timer);
+        const v = input.value.trim();
+        if (v === saved) return;
+        if (!mine) { state.textContent = 'Envoyé avec votre réponse.'; return; }
+        state.textContent = 'Enregistrement…';
+        if (await answer(ev.id, mine.status, me, v)) { saved = v; mine.comment = v; state.textContent = 'Enregistré ✓'; }
+        else state.textContent = '';
       };
+      input.oninput = () => { state.textContent = ''; clearTimeout(timer); timer = setTimeout(saveComment, 1200); };
+      input.onblur = saveComment;
+      input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } };
       box.appendChild(f);
       root.appendChild(box);
     }
@@ -396,7 +416,7 @@
     if (!on) return;
     const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
     const date = $('#ev-date').value, t = $('#ev-time').value || '19:00', until = $('#ev-repeat').value;
-    if (!days.length) { $('#ev-recur-help').textContent = 'Coche au moins un jour.'; return; }
+    if (!days.length) { $('#ev-recur-help').textContent = 'Cochez au moins un jour.'; return; }
     if (!date || !until) { $('#ev-recur-help').textContent = ''; return; }
     const n = recurDates(new Date(`${date}T${t}`), days, new Date(`${until}T23:59`)).length;
     const names = [1, 2, 3, 4, 5, 6, 0].filter(x => days.includes(x)).map(x => DAY_NAMES[x]);
@@ -421,12 +441,12 @@
     const team = A.team(); if (!team) return;
     const kind = document.querySelector('input[name=ev-kind]:checked').value;
     const date = $('#ev-date').value, t = $('#ev-time').value;
-    if (!date || !t) { $('#ev-error').textContent = 'Indique la date et l’heure.'; return; }
+    if (!date || !t) { $('#ev-error').textContent = 'Indiquez la date et l’heure.'; return; }
     const start = new Date(`${date}T${t}`);
     const meet = $('#ev-meet').value ? new Date(`${date}T${$('#ev-meet').value}`) : null;
     if (meet && meet > start) { $('#ev-error').textContent = 'Le rendez-vous doit être avant le début.'; return; }
     const opponent = $('#ev-opponent').value.trim();
-    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indique l’adversaire.'; return; }
+    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indiquez l’adversaire.'; return; }
     const base = {
       team_id: team.id, kind,
       title: kind === 'match' ? 'Match' : ($('#ev-title').value.trim() || (kind === 'training' ? 'Entraînement' : 'Rendez-vous')),
@@ -463,8 +483,8 @@
       let dates = [start];
       if (recurring) {
         const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
-        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Coche au moins un jour d’entraînement.'; return; }
-        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indique la date de fin du planning.'; return; }
+        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
+        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
         if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
       }

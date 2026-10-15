@@ -314,7 +314,7 @@
     const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = 'Enregistrer la formation actuelle';
     create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
     root.appendChild(create);
-    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistre les joueurs placés sur le terrain : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistrez les joueurs placés sur le terrain : vous pourrez les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';

@@ -19,6 +19,7 @@
   const authReturn = (() => {
     const h = location.hash;
     if (/access_token=/.test(h) && /type=signup/.test(h)) return 'confirmed';
+    if (/access_token=/.test(h) && /type=recovery/.test(h)) return 'recovery';
     if (/error_code=|error=access_denied/.test(h)) return 'link-error';
     return '';
   })();
@@ -42,12 +43,13 @@
     const m = (e && e.message) || String(e), code = (e && e.code) || '';
     // Limites de Supabase : on dit pourquoi et combien de temps attendre
     const wait = m.match(/after (\d+) seconds?/i);
-    if (wait) return `Patiente ${wait[1]} secondes avant de redemander un e-mail.`;
-    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessaie dans 1 heure environ. Si ton e-mail est déjà confirmé, tu peux te connecter normalement.';
-    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessaie dans 5 minutes.';
+    if (wait) return `Patientez ${wait[1]} secondes avant de redemander un e-mail.`;
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessayez dans 1 heure environ. Si votre e-mail est déjà confirmé, vous pouvez vous connecter normalement.';
+    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessayez dans 5 minutes.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
     if (/Email not confirmed/i.test(m)) return 'Confirmez votre e-mail (lien reçu par mail) avant de vous connecter.';
     if (/already registered/i.test(m)) return 'Cet e-mail a déjà un compte.';
+    if (/different from the old/i.test(m)) return 'Le nouveau mot de passe doit être différent de l’ancien.';
     if (/Password should be/i.test(m)) return 'Mot de passe trop court (6 caractères minimum).';
     if (/row-level security/i.test(m)) return 'Action non autorisée pour votre rôle.';
     return m;
@@ -72,8 +74,9 @@
   // getSession attend que Supabase ait lu le jeton du lien : on peut ensuite nettoyer l'adresse
   if (authReturn) sb.auth.getSession().then(({ data }) => {
     history.replaceState(null, '', location.pathname + location.search + '#/');
-    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, tu es connecté !');
-    else { openAuth('login'); setAuthMsg('Ce lien de confirmation a expiré ou a déjà servi. Connecte-toi : si ton e-mail n’est pas encore confirmé, tu pourras recevoir un nouveau lien.', 'info'); }
+    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    else if (authReturn === 'recovery' && data.session) openAuth('reset');
+    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
   });
 
   function refreshCurrentView() {
@@ -142,13 +145,30 @@
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
+  /** Modes : login, signup, forgot (demande du lien de réinitialisation), reset (nouveau mot de passe après le lien). */
   function setAuthMode(mode) {
     showPending(false);
+    const tabs = mode === 'login' || mode === 'signup';
+    document.querySelector('#modal-auth .tabs').classList.toggle('hidden', !tabs);
     document.querySelectorAll('#modal-auth .tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     $('#auth-name').closest('label').classList.toggle('hidden', mode !== 'signup');
-    $('#auth-submit').textContent = mode === 'login' ? 'Se connecter' : 'Créer mon compte';
+    $('#auth-email-field').classList.toggle('hidden', mode === 'reset');
+    $('#auth-email').required = mode !== 'reset';
+    $('#auth-password-field').classList.toggle('hidden', mode === 'forgot');
+    $('#auth-password').required = mode !== 'forgot';
+    $('#auth-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+    $('#auth-password-label').textContent = mode === 'reset' ? 'Nouveau mot de passe' : 'Mot de passe';
+    $('#auth-pw-hint').classList.toggle('hidden', mode !== 'signup' && mode !== 'reset');
+    $('#auth-forgot').classList.toggle('hidden', mode !== 'login');
+    $('#auth-back').classList.toggle('hidden', mode !== 'forgot');
+    $('#auth-title').textContent = { forgot: 'Mot de passe oublié', reset: 'Nouveau mot de passe' }[mode] || ''; $('#auth-title').classList.toggle('hidden', tabs);
+    const intro = { forgot: 'Indiquez l’adresse e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.', reset: 'Choisissez votre nouveau mot de passe.' }[mode];
+    $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
+    $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
   }
+  $('#auth-forgot').onclick = e => { e.preventDefault(); const em = $('#auth-email').value; setAuthMode('forgot'); $('#auth-email').value = em; $('#auth-email').focus(); };
+  $('#auth-back').onclick = e => { e.preventDefault(); setAuthMode('login'); };
   /** Message sous le formulaire : rouge pour une erreur, neutre pour une information. */
   function setAuthMsg(text, kind) { const m = $('#auth-error'); m.textContent = text || ''; m.classList.toggle('info', kind === 'info'); }
   document.querySelectorAll('#modal-auth .tab').forEach(t => t.onclick = () => setAuthMode(t.dataset.mode));
@@ -175,7 +195,7 @@
     if (Date.now() > pending.until) return stopPending();
     const { error } = await sb.auth.signInWithPassword({ email: pending.email, password: pending.password });
     if (error) return;   // pas encore confirmé (ou limite atteinte) : on réessaiera
-    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, tu es connecté !');
+    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
   }
   // Retour sur l'onglet après avoir cliqué le lien dans la boîte mail : on vérifie tout de suite
   document.addEventListener('visibilitychange', () => { if (!document.hidden && pending.timer) tryPendingLogin(); });
@@ -193,11 +213,24 @@
     const mode = e.target.dataset.mode, email = $('#auth-email').value.trim(), password = $('#auth-password').value, name = $('#auth-name').value.trim();
     const b = $('#auth-submit'); b.disabled = true; setAuthMsg('');
     try {
+      if (mode === 'forgot') {
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        if (error) throw error;
+        // Même message que le compte existe ou non : on ne révèle pas quelles adresses sont inscrites
+        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de vous être envoyé. Cliquez sur le lien qu’il contient pour choisir un nouveau mot de passe (pensez aux spams).`, 'info');
+        b.disabled = false; return;
+      }
+      if (mode === 'reset') {
+        const { error } = await sb.auth.updateUser({ password });
+        if (error) throw error;
+        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : vous êtes connecté.');
+        b.disabled = false; return;
+      }
       if (mode === 'signup') {
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name || email.split('@')[0] }, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
-        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connecte-toi.', 'info'); b.disabled = false; return; }
+        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -218,7 +251,7 @@
     $('#account-name').textContent = S.profile.display_name;
     $('#team-user').textContent = S.user.email;
     const P = window.RugbyProfile;
-    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoute ta photo et ton poste pour que l’équipe te reconnaisse.'; }
+    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
     const box = $('#account-teams'); box.replaceChildren();
     S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
@@ -241,14 +274,14 @@
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
     const D = window.RugbyDialog;
-    if (!await D.confirm('Supprimer définitivement ton compte ? Tes dessins, formations, réponses aux convocations, ton profil et tes statistiques seront effacés, y compris les stratégies que tu as publiées dans une équipe. Si tu es le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
-    const typed = await D.prompt('Pour confirmer, tape SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
+    if (!await D.confirm('Supprimer définitivement votre compte ? Vos dessins, formations, réponses aux convocations, votre profil et vos statistiques seront effacés, y compris les stratégies que vous avez publiées dans une équipe. Si vous êtes le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
+    const typed = await D.prompt('Pour confirmer, tapez SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
     if (typed == null) return;
     if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
     const { error } = await sb.rpc('delete_my_account');
     if (error) return E.toast(errMsg(error));
     await sb.auth.signOut();
-    E.go('home'); E.toast('Ton compte et tes données ont été supprimés.');
+    E.go('home'); E.toast('Votre compte et vos données ont été supprimés.');
   };
 
   /* ---------- Équipes : actions ---------- */
@@ -300,8 +333,8 @@
     code.appendChild(btn('Copier le code', 'outline small', () => copy(t.join_code, 'Code copié.', 'code')));
     body.appendChild(code);
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
-    msg.value = `Salut ! Rejoins l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvre ${url}\n2. Crée ton compte (gratuit)\n3. Entre le code ${t.join_code}`;
-    body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
+    msg.value = `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${t.join_code}`;
+    body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
       whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.1 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.1.3 0 .5.6 1.1 1.5 2 2.6 2.6.2.1.4.1.5 0l.6-.5c.2-.1.4-.2.6-.1l1.6.7c.4.2.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.5.6-2.8.1-2.3-.9-4.2-2.8-5.1-5.1-.4-1.3-.2-2.3.2-2.7z" fill="currentColor"/></svg>',
@@ -318,7 +351,7 @@
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
       icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
-      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent('Rejoins l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`)
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent('Rejoignez l’équipe ' + t.name + ' sur Rugby Strat')}&body=${enc()}`)
     );
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
@@ -326,7 +359,7 @@
       links.appendChild(more);
     }
     body.appendChild(links);
-    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy')));
+    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
     E.openModal('modal-invite');
   }
   function copy(text, ok, channel) {
@@ -392,7 +425,7 @@
       c.foot.append(name, save);
     }
     // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
-    const code = card('Code d’invitation', staff ? 'Chaque nouvelle personne arrive « en attente » : tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.');
+    const code = card('Code d’invitation', staff ? 'Chaque nouvelle personne arrive « en attente » : vous validez sa demande dans Membres.' : 'Les personnes que vous invitez devront être acceptées par le staff.');
     code.insertBefore(el('div', 'code-big', esc(t.join_code)), code.foot);
     code.foot.appendChild(btn('Inviter', 'primary small', shareCode));
     if (staff) code.foot.appendChild(btn('Nouveau code', 'outline small', async () => {
@@ -411,12 +444,12 @@
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    const me = card('Mon appartenance', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
+    const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
     if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
-      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`)) return;
+      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`)) return;
       const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
       if (error) return E.toast(errMsg(error));
-      teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
+      teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
     }));
     if (staff) {
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
@@ -467,8 +500,10 @@
         const row = el('div', 'member-row pending');
         row.appendChild(el('div', 'avatar', esc(nameOf(m).trim().slice(0, 1).toUpperCase() || '?')));
         row.appendChild(el('div', 'who', `${esc(nameOf(m))}<small>Demande du ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
-        row.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
-        row.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        const acts = el('div', 'member-actions');
+        acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
+        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        row.appendChild(acts);
         list.appendChild(row);
       });
     }
@@ -480,15 +515,17 @@
       const row = el('div', 'member-row clickable');
       const P = window.RugbyProfile, pr = m.profiles || {};
       row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       if (staff && m.user_id !== S.user.id) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
         sel.onchange = () => setMember(m, { role: sel.value });
-        row.appendChild(sel);
-        row.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l'équipe ?`)));
+        // Rôle et « Retirer » toujours regroupés, à la même place sur chaque ligne
+        const acts = el('div', 'member-actions');
+        acts.append(sel, btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
+        row.appendChild(acts);
       } else row.appendChild(el('span', 'role-badge ' + m.role, ROLE_LABEL[m.role] || m.role));
       list.appendChild(row);
     });

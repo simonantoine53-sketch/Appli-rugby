@@ -133,8 +133,8 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
   const { data: team } = await admin.from("teams").select("name").eq("id", ev.team_id).maybeSingle();
   const label = ev.kind === "match" ? `Match ${ev.home === false ? "à" : "contre"} ${ev.opponent || ev.title}` : ev.title;
   const payload = JSON.stringify({
-    title: kind === "sheet_published" ? `Compo publiée · ${team?.name || "équipe"}` : kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Tu viens ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
-    body: kind === "sheet_published" ? `${label}, ${when(ev.starts_at)} : découvre la composition.` : kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : `${label}, ${when(ev.starts_at)}. Réponds présent ou absent.`,
+    title: kind === "sheet_published" ? `Compo publiée · ${team?.name || "équipe"}` : kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Serez-vous là ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
+    body: kind === "sheet_published" ? `${label}, ${when(ev.starts_at)} : découvrez la composition.` : kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : `${label}, ${when(ev.starts_at)}. Répondez présent, peut-être ou absent.`,
     url: kind === "sheet_published" ? `#/compos/${ev.id}` : `#/agenda/${ev.id}`,
     tag: `event-${ev.id}`,
   });

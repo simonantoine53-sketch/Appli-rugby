@@ -85,11 +85,11 @@
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
     form.appendChild(field('Pied fort', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Un mot sur toi (facultatif)'; bio.value = p.bio || '';
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
-    form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par toi et le staff de ton équipe.</span>'));
+    form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par vous et le staff de votre équipe.</span>'));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
     const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
@@ -137,7 +137,7 @@
       save.disabled = false;
       if (r1.error) console.warn('profil', r1.error.message);
       if (r2.error) console.warn('profil privé', r2.error.message);
-      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifie ta connexion et réessaie.'; return; }
+      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifiez votre connexion et réessayez.'; return; }
       if (!r1.error) Object.assign(A.profile(), patch);
       if (r1.error) skipped.push('profil sportif');
       if (r2.error) skipped.push('infos privées');

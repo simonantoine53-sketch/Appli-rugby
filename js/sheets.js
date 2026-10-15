@@ -288,18 +288,18 @@
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoins ton équipe pour voir les compositions.')); return; }
+    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoignez votre équipe pour voir les compos.')); return; }
     if (eventId) return renderSheetPage(root, eventId, my);
     const staff = A.isStaff();
     const head = el('div', 'agenda-head');
-    head.appendChild(el('h2', 'page-title', 'Compositions'));
+    head.appendChild(el('h2', 'page-title', 'Compos'));
     if (staff) head.appendChild(btn('Personnaliser la feuille', 'outline', () => openSettings()));
     root.appendChild(head);
     const list = await upcoming(team);
     if (my !== seq) return;
     const shown = staff ? list : list.filter(e => e.sheet === 'published');
     if (!shown.length) {
-      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoute tes matchs dans l’Agenda (ou importe le calendrier de la fédération), puis prépare la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Tu recevras une notification.</p>');
+      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoutez vos matchs dans l’Agenda (ou importez le calendrier de la fédération), puis préparez la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Vous recevrez une notification.</p>');
       if (staff) box.appendChild(btn('Aller à l’agenda', 'primary', () => E.go('agenda')));
       root.appendChild(box); return;
     }
@@ -309,7 +309,7 @@
       const d = new Date(ev.starts_at);
       c.appendChild(el('div', 'ev-date match', `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`));
       const st = { none: '<span class="sheet-st none">À faire</span>', draft: '<span class="sheet-st draft">Brouillon</span>', published: '<span class="sheet-st pub">Publiée</span>' }[ev.sheet];
-      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Tu es n°${ev.mine.num}</div>` : ''}`);
+      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
       wrap.appendChild(c);
@@ -330,9 +330,9 @@
     if (my !== seq) return;
     if (!ev) { root.appendChild(el('p', 'library-empty', 'Ce match n’existe plus.')); return; }
     const staff = A.isStaff();
-    root.appendChild(btn('‹ Compositions', 'ghost back-link', () => E.go('compos')));
+    root.appendChild(btn('‹ Compos', 'ghost back-link', () => E.go('compos')));
     if (!staff) {
-      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Tu seras prévenu dès que le coach l’aura publiée.</p>')); return; }
+      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Vous serez prévenu dès que le coach l’aura publiée.</p>')); return; }
       const sheet = normSheet(row.data, settings, ev);
       const html = sheetHtml(settings, sheet, ev, team, A.user().id);
       const tools = el('div', 'sheet-actions');
@@ -376,7 +376,7 @@
 
     // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles
     if (!settings.logo) {
-      const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
+      const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
@@ -580,7 +580,7 @@
       if (!(await saveSettings(cur.settings))) return;
       const n = await shareLogo(cur.settings, true);
       track('sheet_logo', { shared: n });
-      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'tes ' + n + ' autres équipes' : 'ton autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
+      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'vos ' + n + ' autres équipes' : 'votre autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
       E.refreshView();
     } catch (e) { E.toast('Image illisible : essaie un PNG ou un JPG.'); }
   }
@@ -634,7 +634,7 @@
         if (await saveSettings(clean)) {
           const n = share ? await shareLogo(clean, false) : 0;
           E.closeModal('modal-sheet-settings');
-          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'ton autre équipe'}.` : 'Feuille personnalisée.');
+          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'votre autre équipe'}.` : 'Feuille personnalisée.');
           E.refreshView();
         }
         b.disabled = false;
