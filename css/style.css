@@ -1119,3 +1119,20 @@ select:disabled { opacity: .5; cursor: default; }
 .plays-toggle input { margin: 0; accent-color: var(--primary); }
 .role-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .member-row .member-actions > .role-badges { flex: 0 0 auto; }
+
+/* Club : choix des équipes, liste des équipes et membres du club */
+.club-teams-body { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+.club-teams-body > p { margin: 0; }
+.pick-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--panel); flex-wrap: wrap; }
+.pick-name { display: flex; align-items: center; gap: 8px; font-weight: 600; flex: 1 1 140px; min-width: 0; }
+.pick-name input { width: 20px; height: 20px; accent-color: var(--primary); margin: 0; }
+.inline-form.is-disabled { opacity: .55; }
+.club-card { background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.club-card h3 { margin: 0; font-size: 18px; }
+.club-card .row-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.club-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; font-weight: 700; letter-spacing: .08em; }
+.club-team-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--panel); flex-wrap: wrap; }
+.club-team-row .grow { flex: 1 1 140px; min-width: 0; }
+.club-team-row small { display: block; color: var(--muted); font-size: 12px; }
+.club-section { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }

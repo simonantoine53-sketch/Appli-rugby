@@ -155,7 +155,7 @@
   let tab = 'overview';
   let seq = 0;
   const cache = {};
-  const TABS = [['overview', 'Vue d’ensemble'], ['feedback', 'Retours'], ['teams', 'Équipes'], ['users', 'Comptes'], ['drawings', 'Stratégies'], ['requests', 'Demandes'], ['errors', 'Erreurs'], ['announce', 'Annonces & options']];
+  const TABS = [['overview', 'Vue d’ensemble'], ['feedback', 'Retours'], ['clubs', 'Clubs'], ['teams', 'Équipes'], ['users', 'Comptes'], ['drawings', 'Stratégies'], ['requests', 'Demandes'], ['errors', 'Erreurs'], ['announce', 'Annonces & options']];
 
   async function render() {
     const root = $('#admin-page'); if (!root) return;
@@ -175,7 +175,7 @@
     root.appendChild(body);
     body.appendChild(el('p', 'muted', 'Chargement…'));
     try {
-      const fn = { overview: renderOverview, feedback: renderFeedback, teams: renderTeams, users: renderUsers, drawings: renderDrawings, requests: renderRequests, errors: renderErrors, announce: renderAnnounce }[tab];
+      const fn = { overview: renderOverview, feedback: renderFeedback, clubs: renderClubs, teams: renderTeams, users: renderUsers, drawings: renderDrawings, requests: renderRequests, errors: renderErrors, announce: renderAnnounce }[tab];
       const content = await fn();
       if (my !== seq) return;
       body.replaceChildren(...[].concat(content));
@@ -291,6 +291,56 @@
       out.push(card);
     });
     return out;
+  }
+
+  /* --- Clubs : création (interrupteur), direction de chaque club --- */
+  async function renderClubs() {
+    const [rows, flags, users] = await Promise.all([
+      sb.rpc('admin_clubs').then(must),
+      sb.from('feature_flags').select('id, enabled').eq('key', 'club_creation').is('team_id', null).then(must),
+      sb.rpc('admin_users').then(must)
+    ]);
+    const flag = flags[0];
+    // Interrupteur : création de club libre (payant plus tard) ou sur invitation (par défaut)
+    const sw = el('div', 'admin-card wide');
+    sw.appendChild(el('h4', '', 'Création de clubs'));
+    const lab = el('label', 'row-wrap', `<input type="checkbox" class="switch"${flag && flag.enabled ? ' checked' : ''}> <span>${flag && flag.enabled ? 'Ouverte : tout le monde peut créer son club' : 'Sur invitation : seul le super-admin crée les clubs'}</span>`);
+    lab.querySelector('input').onchange = async e => {
+      const on = e.target.checked;
+      const res = flag ? await sb.from('feature_flags').update({ enabled: on }).eq('id', flag.id) : await sb.from('feature_flags').insert({ key: 'club_creation', enabled: on, note: 'Création de clubs ouverte à tous' });
+      if (res.error) { E.toast(res.error.message); e.target.checked = !on; return; }
+      E.toast(on ? 'Création de clubs ouverte à tous.' : 'Création de clubs sur invitation.'); render();
+    };
+    sw.appendChild(lab);
+    sw.appendChild(el('p', 'muted small', 'Fermée, le bouton « Créer un club » est grisé dans l’appli : les gens rejoignent un club existant avec son code.'));
+    const add = btn('+ Créer un club', 'primary small', async () => {
+      const name = await window.RugbyDialog.prompt('Nom du club', '', { title: 'Nouveau club', placeholder: 'Ex. SC Bernay', maxLength: 60 }); if (!name) return;
+      const first = await window.RugbyDialog.prompt('Première équipe (facultatif)', 'Séniors', { title: `Club « ${name} »`, maxLength: 60, required: false });
+      const { error } = await sb.rpc('create_club', { p_name: name, p_team: first || null });
+      if (error) return E.toast(error.message);
+      E.toast(`Club « ${name} » créé. Nommez sa direction ci-dessous.`); render();
+    });
+    const byName = users.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
+    const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Direction', ''], rows.map(r => {
+      const actions = el('div', 'admin-actions');
+      const nominate = btn('Nommer la direction', 'outline small', () => window.RugbySelect.openMenu(nominate,
+        byName.filter(u => !r.responsables.find(x => x.user_id === u.id)).map(u => [`${u.display_name} · ${u.email}`, async () => {
+          const { error } = await sb.rpc('set_club_role', { p_club: r.id, p_user: u.id, p_role: 'responsable' });
+          if (error) return E.toast(error.message); E.toast(`${u.display_name} dirige maintenant « ${r.name} ».`); render();
+        }]), `Direction de « ${r.name} »`));
+      actions.appendChild(nominate);
+      if (r.responsables.length) {
+        const removeBtn = btn('Retirer de la direction', 'outline small danger', () => window.RugbySelect.openMenu(removeBtn,
+          r.responsables.map(x => [x.name, async () => {
+            const { error } = await sb.rpc('set_club_role', { p_club: r.id, p_user: x.user_id, p_role: 'member' });
+            if (error) return E.toast(error.message); E.toast(`${x.name} ne fait plus partie de la direction.`); render();
+          }]), `Direction de « ${r.name} »`));
+        actions.appendChild(removeBtn);
+      }
+      return [esc(r.name), `<code>${esc(r.join_code)}</code>`, r.teams, r.members, r.responsables.length ? r.responsables.map(x => esc(x.name)).join(', ') : '<span class="muted">à nommer</span>', actions];
+    }));
+    const addRow = el('div', 'admin-actions'); addRow.appendChild(add);
+    return [sw, addRow, el('p', 'muted', `${rows.length} club${rows.length > 1 ? 's' : ''}`), t];
   }
 
   /* --- Équipes --- */

@@ -24,7 +24,7 @@
     return '';
   })();
   const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
-  const S = { user: null, profile: null, teams: [], team: null, channel: null, unseen: 0, current: { visibility: 'private', team_id: null, owner_id: null } };
+  const S = { user: null, profile: null, teams: [], clubs: [], team: null, channel: null, unseen: 0, current: { visibility: 'private', team_id: null, owner_id: null } };
   const isUuid = v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || '');
   const TEAM_KEY = 'rugby-current-team';
   const seenKey = t => 'rugby-seen-' + t;
@@ -33,8 +33,11 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
   const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
   const isSuper = () => !!(S.profile && S.profile.is_superadmin);
-  const isCoach = () => isSuper() || !!(S.team && S.team.role === 'coach');
-  const isStaff = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.role === 'admin'));
+  // La direction du club a les droits d'un coach dans toutes les équipes du club (vérifié aussi par la base)
+  const isCoach = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.clubAdmin));
+  const isStaff = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.role === 'admin' || S.team.clubAdmin));
+  const currentClub = () => (S.team && S.clubs.find(c => c.id === S.team.club_id)) || S.clubs[0] || null;
+  const isClubAdmin = clubId => isSuper() || !!S.clubs.find(c => c.id === clubId && c.myRole === 'responsable');
   const isClubMember = () => isSuper() || S.teams.length > 0;
   const ROLE_LABEL = { coach: 'Coach', admin: 'Admin', player: 'Joueur' };
   // Rôle (droits) + fonction « joue aussi » : un coach qui joue affiche Coach + Joueur
@@ -64,7 +67,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
       await loadTeams();
-    } else { S.profile = null; S.teams = []; setTeam(null); }
+    } else { S.profile = null; S.teams = []; S.clubs = []; setTeam(null); }
     renderAccountButton();
     ready = true;
     refreshCurrentView();
@@ -85,17 +88,30 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.refreshView();      // l'éditeur gère les pages réservées (connexion demandée) et les liens #/d/<id>
   }
 
+  const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id';
   async function loadTeams() {
-    const { data, error } = await sb.from('team_members').select('role, status, plays, teams(id, name, join_code, created_by, share_default)').eq('user_id', S.user.id);
+    const [{ data, error }, { data: cm }] = await Promise.all([
+      sb.from('team_members').select(`role, status, plays, teams(${TEAM_COLS})`).eq('user_id', S.user.id),
+      sb.from('club_members').select('role, clubs(id, name, join_code, season_start)').eq('user_id', S.user.id)
+    ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
     S.pending = rows.filter(r => r.status === 'pending').map(r => r.teams);
     S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role, plays: !!r.plays }, r.teams));
-    if (isSuper()) {
-      const { data: all } = await sb.from('teams').select('id, name, join_code, created_by, share_default').order('name');
-      (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
+    S.clubs = (cm || []).filter(r => r.clubs).map(r => Object.assign({ myRole: r.role }, r.clubs));
+    // Direction du club : toutes les équipes du club, avec les droits d'un coach
+    const adminClubs = S.clubs.filter(c => c.myRole === 'responsable').map(c => c.id);
+    if (adminClubs.length) {
+      const { data: ct } = await sb.from('teams').select(TEAM_COLS).in('club_id', adminClubs);
+      (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
-    S.teams.sort((a, b) => a.name.localeCompare(b.name));
+    if (isSuper()) {
+      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start').order('name')]);
+      (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
+      (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
+    }
+    S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; });
+    S.teams.sort((a, b) => a.clubName.localeCompare(b.clubName) || a.name.localeCompare(b.name));
     let wanted = null; try { wanted = localStorage.getItem(TEAM_KEY); } catch (e) { /* ignore */ }
     setTeam(S.teams.find(t => t.id === wanted) || S.teams[0] || null);
   }
@@ -306,41 +322,101 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   };
 
   /* ---------- Équipes : actions ---------- */
-  async function createTeam(name) {
-    const { data, error } = await sb.rpc('create_team', { p_name: name });
-    if (error) return E.toast(errMsg(error));
-    await loadTeams(); setTeam(S.teams.find(t => t.id === data.id));
-    E.toast(`Équipe créée. Code à partager : ${data.join_code}`); E.go('team'); renderTeamPage();
+  /* ---------- Club et équipes : créer, rejoindre par code, demander ses équipes ---------- */
+  let creationOpen = null;   // interrupteur du back-office « Création de clubs » (lu une fois)
+  async function clubCreationOpen() {
+    if (isSuper()) return true;
+    if (creationOpen === null) { const { data } = await sb.rpc('club_creation_open'); creationOpen = !!data; }
+    return creationOpen;
   }
-  async function joinTeam(code) {
-    const { data, error } = await sb.rpc('join_team', { p_code: code });
+  async function createClub(name) {
+    const first = await window.RugbyDialog.prompt('Nom de la première équipe', 'Séniors', { title: 'Créer le club « ' + name.trim() + ' »', placeholder: 'Ex. Séniors, U16…', ok: 'Créer', maxLength: 60 });
+    if (!first) return;
+    const { data, error } = await sb.rpc('create_club', { p_name: name, p_team: first });
     if (error) return E.toast(errMsg(error));
-    if (!data || !data.id) return E.toast('Code d’équipe invalide.');
     await loadTeams();
+    const t = S.teams.find(x => x.club_id === data.id); if (t) setTeam(t);
+    E.toast(`Club « ${data.name} » créé. Code du club : ${data.join_code}`); teamTab = 'club'; E.go('team'); renderTeamPage();
+  }
+  /** Un seul code : celui du club (on choisit ensuite ses équipes) ou celui d'une équipe (demande directe). */
+  async function joinWithCode(code) {
+    const { data, error } = await sb.rpc('join_with_code', { p_code: code });
+    if (error) return E.toast(errMsg(error));
+    if (!data || !data.kind) return E.toast('Code invalide : vérifiez-le auprès de votre club.');
+    await loadTeams();
+    if (data.kind === 'club') { E.toast(`Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id); }
     const t = S.teams.find(x => x.id === data.id);
     if (t) { setTeam(t); E.toast(`Vous êtes membre de « ${data.name} ».`); }
-    else E.toast(`Demande envoyée à « ${data.name} ». Un coach ou un admin doit la valider.`);
+    else E.toast(`Demande envoyée à « ${data.name} ». Un coach ou la direction du club doit la valider.`);
     E.go('team'); renderTeamPage();
+  }
+  /** Fenêtre « Quelles équipes rejoindre ? » : on coche ses équipes, comme joueur ou comme coach / encadrant. */
+  async function openTeamPicker(clubId) {
+    const club = S.clubs.find(c => c.id === clubId);
+    const { data: teams, error } = await sb.from('teams').select('id, name').eq('club_id', clubId).order('name');
+    if (error) return E.toast(errMsg(error));
+    const mine = new Set(S.teams.filter(t => !t.notMember).map(t => t.id)), asked = new Set((S.pending || []).map(t => t.id));
+    const body = $('#club-teams-body'); body.replaceChildren();
+    $('#club-teams-title').textContent = club ? `Rejoindre vos équipes · ${club.name}` : 'Rejoindre vos équipes';
+    body.appendChild(el('p', 'muted', 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou la direction du club.'));
+    const rows = [];
+    (teams || []).forEach(t => {
+      const row = el('div', 'pick-row');
+      if (mine.has(t.id) || asked.has(t.id)) {
+        row.innerHTML = `<span class="pick-name">${esc(t.name)}</span><span class="muted small">${mine.has(t.id) ? 'Déjà membre' : 'Demande envoyée'}</span>`;
+      } else {
+        const lab = el('label', 'pick-name', `<input type="checkbox"> ${esc(t.name)}`);
+        const as = el('select', 'select small'); as.setAttribute('aria-label', 'En tant que');
+        [['player', 'Comme joueur'], ['staff', 'Comme coach / encadrant']].forEach(([v, l]) => as.appendChild(Object.assign(el('option'), { value: v, textContent: l })));
+        row.append(lab, as);
+        rows.push({ t, cb: lab.querySelector('input'), as });
+      }
+      body.appendChild(row);
+    });
+    if (!(teams || []).length) body.appendChild(el('p', 'library-empty', 'Ce club n’a pas encore d’équipe.'));
+    const go = btn('Envoyer mes demandes', 'primary wide', async () => {
+      const picked = rows.filter(r => r.cb.checked);
+      if (!picked.length) return E.toast('Cochez au moins une équipe.');
+      go.disabled = true;
+      for (const r of picked) {
+        const { error: e } = await sb.rpc('request_team', { p_team: r.t.id, p_as: r.as.value });
+        if (e) { go.disabled = false; return E.toast(`${r.t.name} : ${errMsg(e)}`); }
+      }
+      track('club_request', { count: picked.length });
+      E.closeModal('modal-club-teams'); await loadTeams();
+      E.toast(picked.length > 1 ? `${picked.length} demandes envoyées.` : `Demande envoyée à « ${picked[0].t.name} ».`);
+      teamTab = 'club'; E.go('team'); renderTeamPage();
+    });
+    body.append(go, btn('Plus tard', 'ghost wide', () => { E.closeModal('modal-club-teams'); teamTab = 'club'; E.go('team'); renderTeamPage(); }));
+    E.openModal('modal-club-teams');
   }
   /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
   function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length ? 'Une autre équipe ?' : 'Commencer avec une équipe'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Un autre club ou une autre équipe ?' : 'Rejoindre votre club'));
     if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
     box.appendChild(head);
-    const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom de la nouvelle équipe" required minlength="2" maxlength="60"><button class="btn primary small" type="submit">Créer (je serai coach)</button>');
-    f1.onsubmit = e => { e.preventDefault(); createTeam(f1.querySelector('input').value); };
-    const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’équipe" required minlength="6" maxlength="8" style="text-transform:uppercase"><button class="btn secondary small" type="submit">Rejoindre (joueur)</button>');
-    f2.onsubmit = e => { e.preventDefault(); joinTeam(f2.querySelector('input').value); };
-    box.append(f1, f2);
-    box.appendChild(el('p', 'help', 'Une demande d’adhésion par code doit être validée par un coach ou un admin du club. Le coach publie les stratégies ; l’admin gère les membres et les demandes ; le joueur consulte l’équipe, garde ses dessins privés et peut les proposer au coach.'));
+    const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’invitation (club ou équipe)" required minlength="6" maxlength="8" style="text-transform:uppercase" aria-label="Code d’invitation"><button class="btn primary small" type="submit">Rejoindre</button>');
+    f2.onsubmit = e => { e.preventDefault(); joinWithCode(f2.querySelector('input').value); };
+    box.appendChild(f2);
+    box.appendChild(el('p', 'help', 'Le code vous est donné par votre club ou votre coach. Avec le code du club, vous choisissez ensuite vos équipes.'));
+    // Création de club : ouverte ou sur invitation selon l'interrupteur du back-office
+    const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom du nouveau club" required minlength="2" maxlength="60" aria-label="Nom du nouveau club"><button class="btn outline small" type="submit">Créer un club</button>');
+    f1.onsubmit = e => { e.preventDefault(); createClub(f1.querySelector('input').value); };
+    const note = el('p', 'help', '');
+    box.append(f1, note);
+    clubCreationOpen().then(open => {
+      f1.querySelectorAll('input, button').forEach(x => { x.disabled = !open; });
+      f1.classList.toggle('is-disabled', !open);
+      note.textContent = open ? 'Vous serez responsable du club et coach de sa première équipe.' : 'La création de club se fait sur invitation pour le moment. Demandez un code à votre club.';
+    });
     return box;
   }
   function pendingCard() {
     if (!S.pending || !S.pending.length) return null;
     const box = el('div', 'team-forms-card');
     box.appendChild(el('h4', '', 'Demandes en attente'));
-    S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} » : en attente de validation par un coach ou un admin du club.`)));
+    S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} » : en attente de validation par le coach ou la direction du club.`)));
     return box;
   }
   /** Inviter des joueurs : code à copier, message personnalisable, envoi par WhatsApp, SMS, e-mail ou copie. */
@@ -396,35 +472,183 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const seq = ++teamSeq;
     const root = $('#team-page'); root.replaceChildren();
     if (!S.team) {
+      // Membre d'un club sans équipe encore : les équipes du club pour faire ses demandes
       const pend = pendingCard(); if (pend) root.appendChild(pend);
+      if (S.clubs.length) { const box = el('div', 'club-pane'); root.appendChild(box); await renderClubTab(box, seq); }
       root.appendChild(teamForms()); return;
     }
     const staff = isStaff();
-    root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>' : roleBadge(S.team.role, S.team.plays)}`));
+    const badges = S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>'
+      : (S.team.notMember ? '' : roleBadge(S.team.role, S.team.plays)) + (S.team.clubAdmin ? ' <span class="role-badge coach">Direction du club</span>' : '');
+    if (S.team.clubName) root.appendChild(el('div', 'team-club muted small', esc(S.team.clubName)));
+    root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${badges}`));
 
     // Onglets (la pastille de Membres compte les demandes à valider pour le staff)
     let pending = 0;
     if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
     if (seq !== teamSeq) return;
-    // Les réglages de l'équipe ne concernent que le staff : un joueur n'a que la liste des membres
-    if (staff) {
-      const tabs = el('div', 'tabs small page-tabs');
-      [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
-        const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
-        if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
-        b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
-      });
-      root.appendChild(tabs);
-    } else teamTab = 'members';
+    // Onglets : Membres et Club pour tous ; les réglages de l'équipe pour le staff seulement
+    const tabList = [['members', 'Membres', pending]].concat(staff ? [['settings', 'Réglages', 0]] : [], [['club', 'Club', 0]]);
+    if (!tabList.find(([id]) => id === teamTab)) teamTab = 'members';
+    const tabs = el('div', 'tabs small page-tabs');
+    tabList.forEach(([id, label, n]) => {
+      const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
+      if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
+      b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
+    });
+    root.appendChild(tabs);
 
     if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
+    if (teamTab === 'club') { const box = el('div', 'club-pane'); root.appendChild(box); await renderClubTab(box, seq); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
     await renderMembers(list, staff, seq);
-    if (!staff && !S.team.superadmin && seq === teamSeq) {
+    if (!staff && !S.team.superadmin && !S.team.notMember && seq === teamSeq) {
       const leave = btn(`Quitter « ${S.team.name} »`, 'ghost small danger team-leave', () => leaveTeam(S.team));
       root.appendChild(leave);
     }
+  }
+
+  /* ---------- Onglet Club : équipes du club, demandes, et gestion pour la direction ---------- */
+  const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  async function renderClubTab(root, seq) {
+    const club = currentClub();
+    if (!club) { root.appendChild(el('p', 'library-empty', 'Cette équipe n’est rattachée à aucun club.')); return; }
+    const admin = isClubAdmin(club.id);
+    const refresh = async () => { await loadTeams(); renderTeamPage(); };
+    const [{ data: teams }, { data: heads }] = await Promise.all([
+      sb.from('teams').select('id, name').eq('club_id', club.id).order('name'),
+      sb.from('club_members').select('user_id, role, joined_at, profiles(display_name)').eq('club_id', club.id).order('joined_at')
+    ]);
+    if (seq !== teamSeq) return;
+    const teamIds = (teams || []).map(t => t.id);
+    let counts = {};
+    if (admin && teamIds.length) {
+      const { data: tm } = await sb.from('team_members').select('team_id, status').in('team_id', teamIds);
+      (tm || []).forEach(r => { const c = counts[r.team_id] = counts[r.team_id] || { active: 0, pending: 0 }; c[r.status === 'active' ? 'active' : 'pending']++; });
+      if (seq !== teamSeq) return;
+    }
+    const nameOf = r => (r.profiles && r.profiles.display_name) || 'Membre';
+    const direction = (heads || []).filter(r => r.role === 'responsable');
+
+    // En-tête : nom, direction, code du club et date de saison (direction seulement)
+    const card = el('div', 'club-card');
+    card.appendChild(el('h3', '', esc(club.name)));
+    card.appendChild(el('p', 'muted small', direction.length ? `Direction du club : ${direction.map(r => esc(nameOf(r))).join(', ')}` : 'Direction du club : pas encore nommée.'));
+    if (admin) {
+      const code = el('div', 'row-wrap', `<span class="muted small">Code du club</span><span class="club-code">${esc(club.join_code)}</span>`);
+      code.appendChild(btn('Copier', 'outline small', () => copy(club.join_code, 'Code du club copié.', 'club-code')));
+      code.appendChild(btn('Nouveau code', 'ghost small', async () => {
+        if (!await window.RugbyDialog.confirm(`Générer un nouveau code ? L’ancien (${club.join_code}) ne marchera plus.`, { ok: 'Nouveau code' })) return;
+        const { data, error } = await sb.rpc('regenerate_club_code', { p_club: club.id });
+        if (error) return E.toast(errMsg(error));
+        club.join_code = data; E.toast('Nouveau code : ' + data); renderTeamPage();
+      }));
+      card.appendChild(code);
+      card.appendChild(el('p', 'help', 'Avec ce code, une personne rejoint le club puis demande à rejoindre ses équipes.'));
+      const season = el('div', 'row-wrap', '<span class="muted small">La saison commence le 1er</span>');
+      const month = el('select', 'select small'); month.setAttribute('aria-label', 'Mois de début de saison');
+      MONTHS.forEach((m, i) => month.appendChild(Object.assign(el('option'), { value: String(i + 1).padStart(2, '0'), textContent: m, selected: (club.season_start || '07-01').slice(0, 2) === String(i + 1).padStart(2, '0') })));
+      month.onchange = async () => {
+        const { error } = await sb.from('clubs').update({ season_start: month.value + '-01' }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        club.season_start = month.value + '-01'; E.toast(`Début de saison : 1er ${MONTHS[+month.value - 1]}.`);
+      };
+      season.appendChild(month);
+      season.appendChild(btn('Renommer le club', 'ghost small', async () => {
+        const v = await window.RugbyDialog.prompt('Nom du club', club.name, { title: 'Renommer le club', ok: 'Renommer', maxLength: 60 });
+        if (!v || v.trim() === club.name) return;
+        const { error } = await sb.from('clubs').update({ name: v.trim() }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        E.toast('Club renommé.'); refresh();
+      }));
+      card.appendChild(season);
+    }
+    root.appendChild(card);
+
+    // Équipes du club
+    const sec = el('div', 'club-section');
+    const head = el('div', 'members-head', `<span class="muted">${teamIds.length} équipe${teamIds.length > 1 ? 's' : ''} dans le club</span>`);
+    if (admin) head.appendChild(btn('+ Créer une équipe', 'primary small', async () => {
+      const v = await window.RugbyDialog.prompt('Nom de l’équipe', '', { title: `Nouvelle équipe · ${club.name}`, placeholder: 'Ex. U16, Féminines, Réserve…', ok: 'Créer', maxLength: 60 });
+      if (!v) return;
+      const { data, error } = await sb.rpc('create_club_team', { p_club: club.id, p_name: v });
+      if (error) return E.toast(errMsg(error));
+      track('club_team_create'); E.toast(`Équipe « ${data.name} » créée. Ajoutez-y un coach depuis sa page Membres.`); refresh();
+    }));
+    else head.appendChild(btn('Rejoindre d’autres équipes', 'outline small', () => openTeamPicker(club.id)));
+    sec.appendChild(head);
+    const mine = new Set(S.teams.filter(t => !t.notMember && !t.superadmin).map(t => t.id)), asked = new Set((S.pending || []).map(t => t.id));
+    (teams || []).forEach(t => {
+      const row = el('div', 'club-team-row');
+      const c = counts[t.id];
+      row.appendChild(el('div', 'grow', `<strong>${esc(t.name)}</strong>${admin && c ? `<small>${c.active} membre${c.active > 1 ? 's' : ''}${c.pending ? ` · ${c.pending} en attente` : ''}</small>` : admin ? '<small>Aucun membre pour l’instant</small>' : ''}`));
+      if (mine.has(t.id)) row.appendChild(el('span', 'role-badge player', 'Mon équipe'));
+      else if (asked.has(t.id)) row.appendChild(el('span', 'vis-badge proposed', 'Demande envoyée'));
+      const open = S.teams.find(x => x.id === t.id);
+      if (open && (S.team && S.team.id !== t.id)) row.appendChild(btn('Ouvrir', 'outline small', () => { setTeam(open); teamTab = 'members'; renderTeamPage(); }));
+      if (!open && !asked.has(t.id)) {
+        const ask = btn('Demander à rejoindre', 'secondary small', () => window.RugbySelect.openMenu(ask, [
+          ['Comme joueur', () => requestTeam(t, 'player')], ['Comme coach / encadrant', () => requestTeam(t, 'staff')]
+        ], `Rejoindre « ${t.name} »`));
+        row.appendChild(ask);
+      }
+      sec.appendChild(row);
+    });
+    root.appendChild(sec);
+
+    // Membres du club (direction seulement) : rôle dans le club, retrait du club
+    if (admin) {
+      const ms = el('div', 'club-section');
+      ms.appendChild(el('div', 'members-head', `<span class="muted">${(heads || []).length} membre${(heads || []).length > 1 ? 's' : ''} du club</span>`));
+      (heads || []).forEach(r => {
+        const row = el('div', 'member-row');
+        row.appendChild(el('div', 'avatar', esc(nameOf(r).trim().slice(0, 1).toUpperCase() || '?')));
+        row.appendChild(el('div', 'who', `${esc(nameOf(r))}${r.user_id === S.user.id ? ' (moi)' : ''}<small>Membre du club depuis le ${new Date(r.joined_at).toLocaleDateString('fr-FR')}</small>`));
+        const acts = el('div', 'member-actions');
+        const sel = el('select', 'select small'); sel.setAttribute('aria-label', 'Rôle dans le club');
+        [['member', 'Membre'], ['responsable', 'Direction du club']].forEach(([v, l]) => sel.appendChild(Object.assign(el('option'), { value: v, textContent: l, selected: r.role === v })));
+        sel.onchange = async () => {
+          if (sel.value === 'member' && r.user_id === S.user.id && !await window.RugbyDialog.confirm('Vous retirer de la direction du club ? Vous perdrez l’accès à la gestion des autres équipes.')) { sel.value = r.role; return; }
+          const { error } = await sb.rpc('set_club_role', { p_club: club.id, p_user: r.user_id, p_role: sel.value });
+          if (error) { sel.value = r.role; return E.toast(errMsg(error)); }
+          E.toast(sel.value === 'responsable' ? `${nameOf(r)} rejoint la direction du club.` : `${nameOf(r)} n’est plus dans la direction du club.`); refresh();
+        };
+        acts.appendChild(sel);
+        if (r.user_id !== S.user.id) acts.appendChild(btn('Retirer du club', 'outline small danger', async () => {
+          if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Il quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
+          if (teamIds.length) { const { error: e1 } = await sb.from('team_members').delete().eq('user_id', r.user_id).in('team_id', teamIds); if (e1) return E.toast(errMsg(e1)); }
+          const { error } = await sb.from('club_members').delete().match({ club_id: club.id, user_id: r.user_id });
+          if (error) return E.toast(errMsg(error));
+          E.toast(`${nameOf(r)} ne fait plus partie du club.`); refresh();
+        }));
+        row.appendChild(acts);
+        ms.appendChild(row);
+      });
+      root.appendChild(ms);
+    }
+  }
+  /** Partage d'une stratégie : l'autre équipe du club reçoit une copie en proposition, l'original reste intact. */
+  async function shareToTeam(row, anchor) {
+    const club = currentClub();
+    const { data: teams, error } = await sb.from('teams').select('id, name').eq('club_id', S.team.club_id).neq('id', row.team_id).order('name');
+    if (error) return E.toast(errMsg(error));
+    if (!(teams || []).length) return E.toast('Aucune autre équipe dans le club.');
+    window.RugbySelect.openMenu(anchor, teams.map(t => [t.name, async () => {
+      const { data: nid, error: e } = await sb.rpc('share_drawing', { p_drawing: row.id, p_team: t.id });
+      if (e) return E.toast(errMsg(e));
+      if (window.RugbyPush) window.RugbyPush.notify(nid, 'proposed');
+      track('share_team');
+      E.toast(`Copie envoyée à « ${t.name} » : son coach la retrouve dans ses propositions. Votre original reste inchangé.`);
+    }]), `Partager « ${row.title} » avec…${club ? ' (' + club.name + ')' : ''}`);
+  }
+
+  async function requestTeam(t, as) {
+    const { error } = await sb.rpc('request_team', { p_team: t.id, p_as: as });
+    if (error) return E.toast(errMsg(error));
+    track('club_request', { count: 1 });
+    E.toast(`Demande envoyée à « ${t.name} »${as === 'staff' ? ' comme coach / encadrant' : ''}.`);
+    await loadTeams(); renderTeamPage();
   }
 
   async function leaveTeam(t) {
@@ -482,7 +706,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
     const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
     if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', () => leaveTeam(t)));
-    if (staff) {
+    if (isClubAdmin(t.club_id)) {   // supprimer une équipe : direction du club seulement
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
       z.foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
         if (!await window.RugbyDialog.confirm(`Supprimer définitivement « ${t.name} », ses membres et ses stratégies publiées ?`)) return;
@@ -512,7 +736,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
@@ -530,9 +754,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       pending.forEach(m => {
         const row = el('div', 'member-row pending');
         row.appendChild(el('div', 'avatar', esc(nameOf(m).trim().slice(0, 1).toUpperCase() || '?')));
-        row.appendChild(el('div', 'who', `${esc(nameOf(m))}<small>Demande du ${new Date(m.joined_at).toLocaleDateString('fr-FR')}</small>`));
+        const asStaff = m.requested_as === 'staff';
+        row.appendChild(el('div', 'who', `${esc(nameOf(m))}<small>Demande du ${new Date(m.joined_at).toLocaleDateString('fr-FR')} · ${asStaff ? 'comme coach / encadrant' : 'comme joueur'}</small>`));
         const acts = el('div', 'member-actions');
-        acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, { status: 'active' })));
+        // Une demande « comme coach / encadrant » acceptée donne le rôle Coach (modifiable ensuite)
+        acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, asStaff ? { status: 'active', role: 'coach' } : { status: 'active' })));
         acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
         row.appendChild(acts);
         list.appendChild(row);
@@ -906,6 +1132,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
     } else if (row.visibility === 'team' && mode === 'public' && row.share_token) menu.push(['Copier le lien public', () => shareLink(row)]);
     if (isCoach() && row.visibility === 'team' && coachHere) menu.push(['Retirer de l’équipe', () => setVis('private')]);
+    // Partager une copie avec une autre équipe du club (le staff de l'équipe d'origine seulement)
+    if (isStaff() && S.team && row.team_id === S.team.id) menu.push(['Partager avec une équipe du club…', () => shareToTeam(row, btns.querySelector('.card-more'))]);
     if (!isCoach() && mine && row.visibility === 'proposed') menu.push(['Annuler la proposition', () => setVis('private')]);
     if (mine || coachHere) menu.push(['Supprimer', async () => {
       if (!await window.RugbyDialog.confirm(`Supprimer « ${row.title} » ?`)) return;
@@ -996,6 +1224,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
   function selectTeam(id) { const t = S.teams.find(x => x.id === id); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

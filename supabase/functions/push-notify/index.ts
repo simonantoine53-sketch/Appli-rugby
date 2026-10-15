@@ -38,8 +38,11 @@ Deno.serve(async (req) => {
     // L'expéditeur doit être membre actif de l'équipe
     const { data: members } = await admin.from("team_members").select("user_id, role").eq("team_id", drawing.team_id).eq("status", "active");
     const me = (members || []).find((m) => m.user_id === user.id);
-    if (!me) return json({ error: "pas membre de l'équipe" }, 403);
-    if (kind === "reminder" && me.role !== "coach" && me.role !== "admin") return json({ error: "réservé au staff" }, 403);
+    // La direction du club a les droits du staff dans toutes ses équipes ; une proposition peut venir
+    // d'un autre membre du club (stratégie partagée par le coach d'une autre équipe)
+    const club = me ? null : await clubRole(admin, drawing.team_id, user.id);
+    if (!me && club !== "responsable" && !(kind === "proposed" && club)) return json({ error: "pas membre de l'équipe" }, 403);
+    if (kind === "reminder" && me?.role !== "coach" && me?.role !== "admin" && club !== "responsable") return json({ error: "réservé au staff" }, 403);
 
     // Relance : seulement ceux qui n'ont jamais ouvert la stratégie (l'auteur n'est pas relancé)
     let seen = new Set<string>();
@@ -104,6 +107,16 @@ async function setVapid(admin: Admin) {
   return true;
 }
 
+/** Rôle dans le club de l'équipe (« responsable » = direction du club), ou null ; un super-admin compte comme direction. */
+async function clubRole(admin: Admin, teamId: string, userId: string): Promise<string | null> {
+  const { data: prof } = await admin.from("profiles").select("is_superadmin").eq("id", userId).maybeSingle();
+  if (prof?.is_superadmin) return "responsable";
+  const { data: t } = await admin.from("teams").select("club_id").eq("id", teamId).maybeSingle();
+  if (!t?.club_id) return null;
+  const { data: cm } = await admin.from("club_members").select("role").eq("club_id", t.club_id).eq("user_id", userId).maybeSingle();
+  return cm?.role ?? null;
+}
+
 const DAYS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 function when(iso: string) {
@@ -119,7 +132,7 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
   if (!ev) return json({ error: "événement introuvable" }, 404);
   const { data: members } = await admin.from("team_members").select("user_id, role, plays").eq("team_id", ev.team_id).eq("status", "active");
   const me = (members || []).find((m: { user_id: string }) => m.user_id === senderId);
-  if (!me || (me.role !== "coach" && me.role !== "admin")) return json({ error: "réservé au staff" }, 403);
+  if ((!me || (me.role !== "coach" && me.role !== "admin")) && await clubRole(admin, ev.team_id, senderId) !== "responsable") return json({ error: "réservé au staff" }, 403);
   let recipients = (members || []).map((m: { user_id: string }) => m.user_id).filter((id: string) => id !== senderId);
   // Convocation : seulement les convoqués (joueurs + staff qui joue aussi) ; annulation et compo : tout le monde
   if (kind === "event_new") {

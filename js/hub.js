@@ -79,8 +79,9 @@
     if (logoUrl && $('#hub-logo').getAttribute('src') !== logoUrl) $('#hub-logo').src = logoUrl;
     // Équipe : sélecteur s'il y en a plusieurs, sinon son nom
     const sel = $('#hub-team'), title = $('#hub-title');
+    const multiClub = new Set(teams.map(t => t.club_id)).size > 1;   // le nom du club seulement s'il y en a plusieurs
     if (teams.length > 1) {
-      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = t.id; o.textContent = t.name + (t.superadmin ? ' · super-admin' : ''); o.selected = team && team.id === t.id; return o; }));
+      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = t.id; o.textContent = t.name + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · direction' : ''); o.selected = team && team.id === t.id; return o; }));
       sel.classList.remove('hidden'); title.classList.add('hidden');
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
@@ -152,6 +153,15 @@
     const team = A.team();
     if (!team) {
       hello(root, 'Bienvenue sur Rugby Strat.');
+      // Déjà membre d'un club : il ne reste qu'à choisir ses équipes
+      const club = A.clubs && A.clubs()[0];
+      if (club) {
+        const c = el('div', 'todo-card', `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou la direction du club validera votre demande.</p>`);
+        c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
+        root.appendChild(c);
+        A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation.`)));
+        return;
+      }
       const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez le code d’invitation donné par votre coach. Vous êtes coach ? Créez votre équipe, vous pourrez inviter vos joueurs juste après.</p>');
       root.appendChild(card);
       A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation par un coach.`)));
