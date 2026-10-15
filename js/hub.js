@@ -169,7 +169,7 @@
       return;
     }
     const staff = A.isStaff();
-    const roleLabel = team.superadmin ? 'super-admin' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
+    const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'direction du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)} · ${roleLabel}`);
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
     slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
@@ -185,7 +185,7 @@
     let notifOn = false;
     try { notifOn = P() && P().isOn ? await P().isOn() : false; } catch (e) { /* notifications indisponibles */ }
     if (my !== seq) return;
-    if (staff) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
+    if (staff && !team.notMember && !team.superadmin) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
     slot.appendChild(todo(d, notifOn, staff));
     slot.appendChild(tiles(d, staff));
     // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications

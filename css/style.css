@@ -1136,3 +1136,24 @@ select:disabled { opacity: .5; cursor: default; }
 .club-team-row small { display: block; color: var(--muted); font-size: 12px; }
 .club-section { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Rejoindre ou créer : blocs séparés (code, équipe du club, nouveau club) */
+.forms-part { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
+.forms-head + .forms-part { border-top: 0; padding-top: 0; }
+.forms-part-title { font-size: 14px; }
+.forms-part .help { margin: 0; }
+.club-card .club-rename { align-self: flex-start; }
+
+/* Fenêtre « Partager » d'une stratégie */
+.strat-share { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; }
+.share-part { display: flex; flex-direction: column; gap: 8px; }
+.share-part + .share-part { padding-top: 12px; border-top: 1px solid var(--border); }
+.share-part-title { font-size: 14px; }
+.share-part .help, .strat-share > .help { margin: 0; }
+.share-opt { display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--panel); color: inherit; font: inherit; cursor: pointer; }
+.share-opt strong { display: block; font-size: 14px; }
+.share-opt small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+.share-opt.active { border-color: var(--primary); background: var(--primary-soft); }
+.share-dot { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; border: 2px solid var(--border-strong); }
+.share-opt.active .share-dot { border: 5px solid var(--primary); }
+#strat-share-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
