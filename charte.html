@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charte des couleurs</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 24px 16px 48px; overflow: auto; height: auto; }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; } h2 { margin: 28px 0 10px; font-size: 18px; }
+  .lead { color: var(--muted); margin: 0 0 8px; }
+  .rule { background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .sw { background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .sw .chip { height: 56px; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0; }
+  .sw .info { padding: 8px 10px; font-size: 13px; }
+  .sw code { font-size: 12px; color: var(--muted); display: block; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Charte des couleurs</h1>
+  <p class="lead">Version provisoire. Les pastilles lisent directement les variables de <code>css/style.css</code> : cette page est toujours à jour.</p>
+  <div class="rule"><strong>Règle d'or : un seul bleu pour agir, des couleurs d'état pour informer.</strong> Vert = ça va, orange = attention, rouge = problème. Jamais de couleur en dur, toujours <code>var(--…)</code>.</div>
+  <div id="groups"></div>
+  <h2>Boutons</h2>
+  <div class="row">
+    <button class="btn primary">Enregistrer</button>
+    <button class="btn outline">Modifier</button>
+    <button class="btn ghost">Plus tard</button>
+    <button class="btn outline danger">Supprimer</button>
+    <button class="btn primary danger-solid">Supprimer mon compte</button>
+  </div>
+  <h2>Étiquettes</h2>
+  <div class="row">
+    <span class="ev-kind">Entraînement</span><span class="ev-kind match">Match</span><span class="ev-kind other">Autre</span>
+    <span class="vis-badge team">Publié</span><span class="vis-badge proposed">Proposé</span><span class="vis-badge">Privé</span><span class="vis-badge cat">Touche</span>
+    <span class="role-badge coach">Coach</span><span class="role-badge admin">Admin</span><span class="role-badge">Joueur</span>
+  </div>
+</main>
+<script>
+  const G = [
+    ['Neutres', [['--bg', 'Fond des pages'], ['--panel', 'Surfaces'], ['--subtle', 'Fond discret'], ['--border', 'Bordures'], ['--border-strong', 'Bordures fortes'], ['--text', 'Texte'], ['--muted', 'Texte secondaire']]],
+    ['Action (une seule couleur)', [['--primary', 'Action'], ['--primary-dark', 'Action foncée'], ['--primary-soft', 'Action claire']]],
+    ['États', [['--success', 'Succès'], ['--success-soft', 'Succès clair'], ['--warning', 'Attention'], ['--warning-soft', 'Attention clair'], ['--danger', 'Problème'], ['--danger-dark', 'Problème foncé'], ['--danger-soft', 'Problème clair']]],
+    ['Catégories', [['--match', 'Match'], ['--match-soft', 'Match clair'], ['--tag', 'Catégorie de stratégie'], ['--tag-soft', 'Catégorie claire'], ['--neutral', 'Neutre'], ['--neutral-soft', 'Neutre clair']]],
+    ['Terrain', [['--field', 'Terrain'], ['--field-highlight', 'Cadre en modification']]]
+  ];
+  const css = getComputedStyle(document.documentElement), root = document.getElementById('groups');
+  G.forEach(([title, items]) => {
+    const h = document.createElement('h2'); h.textContent = title; root.appendChild(h);
+    const grid = document.createElement('div'); grid.className = 'grid';
+    items.forEach(([v, label]) => {
+      const c = document.createElement('div'); c.className = 'sw';
+      c.innerHTML = `<div class="chip" style="background:var(${v})"></div><div class="info"><strong></strong><code></code></div>`;
+      c.querySelector('strong').textContent = label;
+      c.querySelector('code').textContent = `${v} · ${css.getPropertyValue(v).trim()}`;
+      grid.appendChild(c);
+    });
+    root.appendChild(grid);
+  });
+</script>
+</body>
+</html>
