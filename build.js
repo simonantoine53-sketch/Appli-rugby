@@ -6,6 +6,7 @@ const root = __dirname;
 const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 let src = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/\?v=[^"]*"/g, '?v=' + stamp + '"');
 fs.writeFileSync(path.join(root, 'index.html'), src);
+fs.writeFileSync(path.join(root, 'version.json'), JSON.stringify({ v: stamp }) + '\n');   // lu par js/update.js
 let html = src.replace(/\?v=[^"]*"/g, '"');
 html = html.replace(/<link rel="stylesheet" href="([^"?]+)[^"]*">/g, (m, href) =>
   '<style>\n' + fs.readFileSync(path.join(root, href), 'utf8') + '\n</style>');

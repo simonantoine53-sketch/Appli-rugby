@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Appli Rugby – Éditeur d'exercices</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
   <meta name="theme-color" content="#4a9e4f">
@@ -43,7 +43,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
+body { background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; font-size: 14px; padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
 button { font: inherit; cursor: pointer; }
 .hidden { display: none !important; }
 .muted { color: var(--muted); }
@@ -691,7 +691,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-bar #home-new .long, .home-bar #home-team .long, .home-bar #home-feedback .long { display: none; }
   .hub-tabs { display: none; }
-  .app-nav { display: flex; flex: 0 0 auto; background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .app-nav { display: flex; flex: 0 0 auto; background: #fff; border-top: 1px solid var(--border); padding-bottom: var(--bar-safe); }
   .app-nav .nav-item { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); padding: 6px 0 8px; position: relative; min-height: 56px; }
   .app-nav .nav-item svg { width: 24px; height: 24px; }
   .app-nav .nav-item[aria-current="page"] { color: var(--primary); font-weight: 700; }
@@ -739,7 +739,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .menu button span { display: block; }
 
   .layout { position: relative; }
-  .canvas-area { padding-bottom: 56px; }
+  .canvas-area { padding-bottom: calc(56px + var(--bar-safe)); }
   .canvas-wrap { padding: 8px; }
   #canvas { border-radius: 10px; }
   .props { top: 6px; left: 6px; right: 6px; transform: none; max-width: none; padding: 4px 6px; gap: 4px; }
@@ -747,7 +747,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .props .pbtn { padding: 5px 7px; }
 
   .sidebar, .panel {
-    position: fixed; left: 0; right: 0; bottom: 56px; width: auto; height: 46vh;
+    position: fixed; left: 0; right: 0; bottom: calc(56px + var(--bar-safe)); width: auto; height: 46vh;
     border: none; border-top: 1px solid var(--border); border-radius: 14px 14px 0 0;
     box-shadow: 0 -8px 24px rgba(0,0,0,.14); transform: translateY(120%); transition: transform .25s ease; z-index: 30;
   }
@@ -764,8 +764,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .fab-left.with-modes .fab-mode { display: grid; }
   .props .pbtn { padding: 6px 8px; }
   .mobile-bar {
-    display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 56px; z-index: 35;
-    background: #fff; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom);
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: calc(56px + var(--bar-safe)); z-index: 35;
+    background: #fff; border-top: 1px solid var(--border); padding-bottom: var(--bar-safe);
   }
   .mobile-bar button { flex: 1; border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); }
   .step-card .thumb { max-height: 120px; }
@@ -1157,19 +1157,31 @@ select:disabled { opacity: .5; cursor: default; }
 .forms-part .help { margin: 0; }
 .club-card .club-rename { align-self: flex-start; }
 
-/* Fenêtre « Partager » d'une stratégie */
-.strat-share { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; }
-.share-part { display: flex; flex-direction: column; gap: 8px; }
-.share-part + .share-part { padding-top: 12px; border-top: 1px solid var(--border); }
+#strat-share-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* Fenêtre « Partager » d'une stratégie : équipes du club (défilent sur le côté), interrupteurs */
+.strat-share { padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; }
+.share-what { margin: 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-part { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.share-part + .share-part { padding-top: 14px; border-top: 1px solid var(--border); }
 .share-part-title { font-size: 14px; }
 .share-part .help, .strat-share > .help { margin: 0; }
-.share-opt { display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--panel); color: inherit; font: inherit; cursor: pointer; }
-.share-opt strong { display: block; font-size: 14px; }
-.share-opt small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
-.share-opt.active { border-color: var(--primary); background: var(--primary-soft); }
-.share-dot { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; border-radius: 50%; border: 2px solid var(--border-strong); }
-.share-opt.active .share-dot { border: 5px solid var(--primary); }
-#strat-share-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.team-strip { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; margin-right: -18px; padding-right: 18px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.team-strip .chip { flex: 0 0 auto; scroll-snap-align: start; font-weight: 600; padding: 8px 14px; border: 1.5px solid var(--border-strong); background: var(--panel); color: var(--text); white-space: nowrap; }
+.team-strip .chip.sent { background: var(--primary-soft); border-color: var(--primary); color: var(--primary-dark); }
+.share-switch { display: flex; align-items: center; gap: 12px; }
+.share-switch strong { display: block; font-size: 14.5px; }
+.share-switch small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; line-height: 1.35; }
+button.switch { border: 0; padding: 0; }
+.switch[aria-checked="true"] { background: var(--primary); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+.switch:disabled { opacity: .45; cursor: not-allowed; }
+.share-copy { align-self: flex-start; }
+
+/* Barre du bas : marge sous les icônes. Navigateur : la zone de sécurité de l'appareil ;
+   appli installée (écran d'accueil) : au moins 14 px, pour ne pas toucher la barre d'accueil de l'iPhone */
+:root { --bar-safe: env(safe-area-inset-bottom, 0px); }
+@media (display-mode: standalone) { :root { --bar-safe: max(14px, env(safe-area-inset-bottom, 0px)); } }
 
 </style>
 </head>
@@ -1778,6 +1790,40 @@ select:disabled { opacity: .5; cursor: default; }
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
+<script>
+/* Mise à jour automatique : l'appli installée sur le téléphone reste ouverte en mémoire et ne recharge pas d'elle-même.
+   À chaque retour sur l'appli (et toutes les 30 min), on compare sa version à celle en ligne (version.json, écrit par build.js) ;
+   si elle a changé, on recharge, sauf pendant un dessin (on attend que la personne quitte l'éditeur). */
+(function () {
+  const link = document.querySelector('link[rel="stylesheet"][href*="?v="]');
+  const mine = link ? (link.getAttribute('href').split('?v=')[1] || '') : '';
+  if (!mine || !window.fetch) return;   // version hors ligne (dist) : pas de mise à jour à chercher
+  let latest = null, last = 0;
+  const busy = () => /^#\/(editor|d\/|s\/)/.test(location.hash) || !!document.querySelector('.modal:not(.hidden)');
+  function apply() {
+    if (!latest || latest === mine || busy()) return;
+    let tried = null; try { tried = sessionStorage.getItem('update-tried'); } catch (e) { /* ignore */ }
+    if (tried === latest) return;   // une seule tentative par version (évite une boucle si le serveur sert encore l'ancienne page)
+    try { sessionStorage.setItem('update-tried', latest); } catch (e) { /* ignore */ }
+    // Adresse différente pour contourner le cache de la page
+    location.replace(location.pathname + '?u=' + latest + location.hash);
+  }
+  async function check() {
+    if (Date.now() - last < 15000) return apply();
+    last = Date.now();
+    try {
+      const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) latest = (await r.json()).v || null;
+    } catch (e) { /* hors ligne */ }
+    apply();
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+  window.addEventListener('hashchange', check);   // sortie de l'éditeur : on applique une mise à jour en attente
+  setInterval(() => { if (!document.hidden) check(); }, 30 * 60 * 1000);
+  setTimeout(check, 5000);
+})();
+
+</script>
 <script>
 /* Listes déroulantes aux couleurs de l'appli, partout sur le site.
    Le <select> natif reste en place (valeur, événements, mise en page) : on remplace seulement le menu
@@ -4769,54 +4815,73 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       root.appendChild(ms);
     }
   }
-  /** Fenêtre « Partager » d'une stratégie : droits des joueurs, lien public, copie pour une autre équipe du club. */
+  /** Fenêtre « Partager » d'une stratégie : copie pour une autre équipe du club, lien public, téléchargement.
+      Deux interrupteurs remplacent les trois modes : rien = dans l'appli seulement, Téléchargement = téléchargeable,
+      Téléchargement + Lien public = partage libre. */
   async function openShare(row, refresh, canMode, canClub) {
     const body = $('#strat-share-body');
-    $('#strat-share-title').textContent = `Partager « ${row.title} »`;
+    $('#strat-share-title').textContent = 'Partager';
     let clubTeams = [];
     if (canClub && S.team.club_id) {
       const { data } = await sb.from('teams').select('id, name').eq('club_id', S.team.club_id).neq('id', row.team_id).order('name');
       clubTeams = data || [];
     }
-    const section = (title, help) => { const d = el('div', 'share-part'); d.appendChild(el('strong', 'share-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); body.appendChild(d); return d; };
+    const sent = new Set();
+    // Un seul enregistrement pour le mode et le lien (le lien public n'existe qu'en partage libre)
+    const apply = async (mode, link, msg) => {
+      const token = link ? (row.share_token || Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('')) : null;
+      const { error } = await sb.from('drawings').update({ share_mode: mode, share_token: token }).eq('id', row.id);
+      if (error) { E.toast(errMsg(error)); return draw(); }
+      row.share_mode = mode; row.share_token = token;
+      track('share_mode', { mode, link: !!token }); E.toast(msg); refresh(); draw();
+    };
+    const switchRow = (title, help, on, disabled, onToggle) => {
+      const r = el('div', 'share-switch');
+      r.appendChild(el('div', 'grow', `<strong>${esc(title)}</strong><small>${esc(help)}</small>`));
+      const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', String(on)); sw.setAttribute('aria-label', title); sw.disabled = disabled;
+      sw.onclick = () => { sw.disabled = true; onToggle(!on); };
+      r.appendChild(sw); return r;
+    };
     const draw = () => {
       body.replaceChildren();
-      if (canMode) {
-        const eff = shareMode(row), def = teamDefault(row.team_id);
-        const a = section('Ce que les joueurs peuvent faire', '');
-        const opts = [[null, `Comme le réglage de l’équipe`, `Actuellement : ${SHARE[def].label.toLowerCase()}.`]].concat(['app', 'download', 'public'].map(m => [m, SHARE[m].label, SHARE[m].desc]));
-        opts.forEach(([m, label, desc]) => {
-          const on = (row.share_mode || null) === m;
-          const o = el('button', 'share-opt' + (on ? ' active' : ''), `<span class="share-dot" aria-hidden="true"></span><span><strong>${esc(label)}</strong><small>${esc(desc)}</small></span>`);
-          o.type = 'button'; o.setAttribute('aria-pressed', String(on));
-          o.onclick = async () => { if (on) return; await setShareMode(row, m, refresh); row.share_mode = m; if (shareMode(row) !== 'public') row.share_token = null; draw(); };
-          a.appendChild(o);
-        });
-        const b = section('Lien public', eff === 'public' ? 'Toute personne qui a le lien voit la stratégie, même sans compte.' : 'Disponible seulement avec « Partage libre ».');
-        if (eff === 'public') {
-          const r = el('div', 'row-wrap');
-          if (row.share_token) r.append(btn('Copier le lien', 'primary small', () => shareLink(row)), btn('Arrêter le lien', 'outline small danger', async () => { await toggleShare(row, false); refresh(); draw(); }));
-          else r.appendChild(btn('Créer un lien public', 'outline small', async () => { await toggleShare(row, true); refresh(); draw(); }));
-          b.appendChild(r);
-        }
-      }
+      body.appendChild(el('p', 'share-what', esc(row.title)));
+      // 1. Copie pour une autre équipe du club (rangée qui défile quand le club a beaucoup d'équipes)
       if (canClub) {
-        const c = section('Envoyer une copie à une autre équipe du club', clubTeams.length ? 'Son coach la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.' : 'Votre club n’a pas encore d’autre équipe.');
+        const c = el('div', 'share-part');
+        c.appendChild(el('strong', 'share-part-title', 'Envoyer une copie à'));
         if (clubTeams.length) {
-          const r = el('div', 'row-wrap');
-          clubTeams.forEach(t => { const tb = btn(t.name, 'outline small', async () => {
-            tb.disabled = true;
-            const { data: nid, error: e } = await sb.rpc('share_drawing', { p_drawing: row.id, p_team: t.id });
-            if (e) { tb.disabled = false; return E.toast(errMsg(e)); }
-            if (window.RugbyPush) window.RugbyPush.notify(nid, 'proposed');
-            track('share_team');
-            tb.textContent = `✓ ${t.name}`;
-            E.toast(`Copie envoyée à « ${t.name} ».`);
-          }); r.appendChild(tb); });
-          c.appendChild(r);
-        }
+          const strip = el('div', 'team-strip');
+          clubTeams.forEach(t => {
+            const done = sent.has(t.id);
+            const tb = btn(done ? `✓ ${t.name}` : t.name, 'chip' + (done ? ' sent' : ''), async () => {
+              if (sent.has(t.id)) return;
+              tb.disabled = true;
+              const { data: nid, error: e } = await sb.rpc('share_drawing', { p_drawing: row.id, p_team: t.id });
+              tb.disabled = false;
+              if (e) return E.toast(errMsg(e));
+              if (window.RugbyPush) window.RugbyPush.notify(nid, 'proposed');
+              track('share_team'); sent.add(t.id);
+              tb.textContent = `✓ ${t.name}`; tb.classList.add('sent');
+              E.toast(`Copie envoyée à « ${t.name} ».`);
+            });
+            strip.appendChild(tb);
+          });
+          c.appendChild(strip);
+          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.'));
+        } else c.appendChild(el('p', 'help', 'Votre club n’a pas encore d’autre équipe.'));
+        body.appendChild(c);
       }
-      if (!canMode && canClub) body.appendChild(el('p', 'help', 'Pour la partager avec votre équipe, publiez-la d’abord (« Publier à l’équipe »).'));
+      // 2. Lien public et 3. téléchargement
+      if (canMode) {
+        const eff = shareMode(row), dl = eff !== 'app', link = eff === 'public' && !!row.share_token;
+        const p = el('div', 'share-part');
+        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Activez d’abord le téléchargement.', link, !dl,
+          on => apply(on ? 'public' : 'download', on, on ? 'Lien public activé.' : 'Lien public arrêté : il ne fonctionne plus.')));
+        if (link) p.appendChild(btn('Copier le lien', 'outline small share-copy', () => shareLink(row)));
+        p.appendChild(switchRow('Téléchargement', 'Les joueurs peuvent télécharger (image, vidéo, PDF) et copier la stratégie.', dl, false,
+          on => apply(on ? 'download' : 'app', false, on ? 'Téléchargement autorisé.' : `Dans l’appli seulement${link ? ', le lien public est arrêté' : ''}.`)));
+        body.appendChild(p);
+      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publiez d’abord la stratégie à l’équipe.'));
       body.appendChild(btn('Terminé', 'ghost wide', () => E.closeModal('modal-strat-share')));
     };
     draw();
@@ -5057,17 +5122,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const teamDefault = teamId => ((S.teams.find(t => t.id === teamId) || {}).share_default) || 'public';
   /** Mode effectif d'une stratégie : son propre réglage, sinon celui de l'équipe. */
   const shareMode = row => row.share_mode || teamDefault(row.team_id);
-  async function setShareMode(row, mode, refresh) {
-    const patch = { share_mode: mode };
-    const eff = mode || teamDefault(row.team_id);
-    const revoke = eff !== 'public' && row.share_token;
-    if (revoke) patch.share_token = null;   // plus de lien public si le partage libre n'est plus autorisé
-    const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
-    if (error) return E.toast(errMsg(error));
-    track('share_mode', { mode: eff });
-    E.toast(`Partage : ${SHARE[eff].label.toLowerCase()}${revoke ? ', le lien public est désactivé' : ''}.`);
-    refresh();
-  }
+
 
   /* ---------- Lien de partage public ---------- */
   async function fetchShared(token) {
@@ -5076,13 +5131,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return data;
   }
   const shareUrl = token => `${location.origin}${location.pathname}#/s/${token}`;
-  async function toggleShare(row, enable) {
-    const token = enable ? Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
-    const { error } = await sb.from('drawings').update({ share_token: token }).eq('id', row.id);
-    if (error) return E.toast(errMsg(error));
-    row.share_token = token;
-    if (token) { track('share_link'); shareLink(row); } else E.toast('Partage arrêté : le lien ne fonctionne plus.');
-  }
+
   function shareLink(row) {
     const url = shareUrl(row.share_token);
     const text = `Stratégie « ${row.title} » : ${url}`;

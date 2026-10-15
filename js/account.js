@@ -679,54 +679,73 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       root.appendChild(ms);
     }
   }
-  /** Fenêtre « Partager » d'une stratégie : droits des joueurs, lien public, copie pour une autre équipe du club. */
+  /** Fenêtre « Partager » d'une stratégie : copie pour une autre équipe du club, lien public, téléchargement.
+      Deux interrupteurs remplacent les trois modes : rien = dans l'appli seulement, Téléchargement = téléchargeable,
+      Téléchargement + Lien public = partage libre. */
   async function openShare(row, refresh, canMode, canClub) {
     const body = $('#strat-share-body');
-    $('#strat-share-title').textContent = `Partager « ${row.title} »`;
+    $('#strat-share-title').textContent = 'Partager';
     let clubTeams = [];
     if (canClub && S.team.club_id) {
       const { data } = await sb.from('teams').select('id, name').eq('club_id', S.team.club_id).neq('id', row.team_id).order('name');
       clubTeams = data || [];
     }
-    const section = (title, help) => { const d = el('div', 'share-part'); d.appendChild(el('strong', 'share-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); body.appendChild(d); return d; };
+    const sent = new Set();
+    // Un seul enregistrement pour le mode et le lien (le lien public n'existe qu'en partage libre)
+    const apply = async (mode, link, msg) => {
+      const token = link ? (row.share_token || Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('')) : null;
+      const { error } = await sb.from('drawings').update({ share_mode: mode, share_token: token }).eq('id', row.id);
+      if (error) { E.toast(errMsg(error)); return draw(); }
+      row.share_mode = mode; row.share_token = token;
+      track('share_mode', { mode, link: !!token }); E.toast(msg); refresh(); draw();
+    };
+    const switchRow = (title, help, on, disabled, onToggle) => {
+      const r = el('div', 'share-switch');
+      r.appendChild(el('div', 'grow', `<strong>${esc(title)}</strong><small>${esc(help)}</small>`));
+      const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-checked', String(on)); sw.setAttribute('aria-label', title); sw.disabled = disabled;
+      sw.onclick = () => { sw.disabled = true; onToggle(!on); };
+      r.appendChild(sw); return r;
+    };
     const draw = () => {
       body.replaceChildren();
-      if (canMode) {
-        const eff = shareMode(row), def = teamDefault(row.team_id);
-        const a = section('Ce que les joueurs peuvent faire', '');
-        const opts = [[null, `Comme le réglage de l’équipe`, `Actuellement : ${SHARE[def].label.toLowerCase()}.`]].concat(['app', 'download', 'public'].map(m => [m, SHARE[m].label, SHARE[m].desc]));
-        opts.forEach(([m, label, desc]) => {
-          const on = (row.share_mode || null) === m;
-          const o = el('button', 'share-opt' + (on ? ' active' : ''), `<span class="share-dot" aria-hidden="true"></span><span><strong>${esc(label)}</strong><small>${esc(desc)}</small></span>`);
-          o.type = 'button'; o.setAttribute('aria-pressed', String(on));
-          o.onclick = async () => { if (on) return; await setShareMode(row, m, refresh); row.share_mode = m; if (shareMode(row) !== 'public') row.share_token = null; draw(); };
-          a.appendChild(o);
-        });
-        const b = section('Lien public', eff === 'public' ? 'Toute personne qui a le lien voit la stratégie, même sans compte.' : 'Disponible seulement avec « Partage libre ».');
-        if (eff === 'public') {
-          const r = el('div', 'row-wrap');
-          if (row.share_token) r.append(btn('Copier le lien', 'primary small', () => shareLink(row)), btn('Arrêter le lien', 'outline small danger', async () => { await toggleShare(row, false); refresh(); draw(); }));
-          else r.appendChild(btn('Créer un lien public', 'outline small', async () => { await toggleShare(row, true); refresh(); draw(); }));
-          b.appendChild(r);
-        }
-      }
+      body.appendChild(el('p', 'share-what', esc(row.title)));
+      // 1. Copie pour une autre équipe du club (rangée qui défile quand le club a beaucoup d'équipes)
       if (canClub) {
-        const c = section('Envoyer une copie à une autre équipe du club', clubTeams.length ? 'Son coach la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.' : 'Votre club n’a pas encore d’autre équipe.');
+        const c = el('div', 'share-part');
+        c.appendChild(el('strong', 'share-part-title', 'Envoyer une copie à'));
         if (clubTeams.length) {
-          const r = el('div', 'row-wrap');
-          clubTeams.forEach(t => { const tb = btn(t.name, 'outline small', async () => {
-            tb.disabled = true;
-            const { data: nid, error: e } = await sb.rpc('share_drawing', { p_drawing: row.id, p_team: t.id });
-            if (e) { tb.disabled = false; return E.toast(errMsg(e)); }
-            if (window.RugbyPush) window.RugbyPush.notify(nid, 'proposed');
-            track('share_team');
-            tb.textContent = `✓ ${t.name}`;
-            E.toast(`Copie envoyée à « ${t.name} ».`);
-          }); r.appendChild(tb); });
-          c.appendChild(r);
-        }
+          const strip = el('div', 'team-strip');
+          clubTeams.forEach(t => {
+            const done = sent.has(t.id);
+            const tb = btn(done ? `✓ ${t.name}` : t.name, 'chip' + (done ? ' sent' : ''), async () => {
+              if (sent.has(t.id)) return;
+              tb.disabled = true;
+              const { data: nid, error: e } = await sb.rpc('share_drawing', { p_drawing: row.id, p_team: t.id });
+              tb.disabled = false;
+              if (e) return E.toast(errMsg(e));
+              if (window.RugbyPush) window.RugbyPush.notify(nid, 'proposed');
+              track('share_team'); sent.add(t.id);
+              tb.textContent = `✓ ${t.name}`; tb.classList.add('sent');
+              E.toast(`Copie envoyée à « ${t.name} ».`);
+            });
+            strip.appendChild(tb);
+          });
+          c.appendChild(strip);
+          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.'));
+        } else c.appendChild(el('p', 'help', 'Votre club n’a pas encore d’autre équipe.'));
+        body.appendChild(c);
       }
-      if (!canMode && canClub) body.appendChild(el('p', 'help', 'Pour la partager avec votre équipe, publiez-la d’abord (« Publier à l’équipe »).'));
+      // 2. Lien public et 3. téléchargement
+      if (canMode) {
+        const eff = shareMode(row), dl = eff !== 'app', link = eff === 'public' && !!row.share_token;
+        const p = el('div', 'share-part');
+        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Activez d’abord le téléchargement.', link, !dl,
+          on => apply(on ? 'public' : 'download', on, on ? 'Lien public activé.' : 'Lien public arrêté : il ne fonctionne plus.')));
+        if (link) p.appendChild(btn('Copier le lien', 'outline small share-copy', () => shareLink(row)));
+        p.appendChild(switchRow('Téléchargement', 'Les joueurs peuvent télécharger (image, vidéo, PDF) et copier la stratégie.', dl, false,
+          on => apply(on ? 'download' : 'app', false, on ? 'Téléchargement autorisé.' : `Dans l’appli seulement${link ? ', le lien public est arrêté' : ''}.`)));
+        body.appendChild(p);
+      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publiez d’abord la stratégie à l’équipe.'));
       body.appendChild(btn('Terminé', 'ghost wide', () => E.closeModal('modal-strat-share')));
     };
     draw();
@@ -967,17 +986,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const teamDefault = teamId => ((S.teams.find(t => t.id === teamId) || {}).share_default) || 'public';
   /** Mode effectif d'une stratégie : son propre réglage, sinon celui de l'équipe. */
   const shareMode = row => row.share_mode || teamDefault(row.team_id);
-  async function setShareMode(row, mode, refresh) {
-    const patch = { share_mode: mode };
-    const eff = mode || teamDefault(row.team_id);
-    const revoke = eff !== 'public' && row.share_token;
-    if (revoke) patch.share_token = null;   // plus de lien public si le partage libre n'est plus autorisé
-    const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
-    if (error) return E.toast(errMsg(error));
-    track('share_mode', { mode: eff });
-    E.toast(`Partage : ${SHARE[eff].label.toLowerCase()}${revoke ? ', le lien public est désactivé' : ''}.`);
-    refresh();
-  }
+
 
   /* ---------- Lien de partage public ---------- */
   async function fetchShared(token) {
@@ -986,13 +995,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return data;
   }
   const shareUrl = token => `${location.origin}${location.pathname}#/s/${token}`;
-  async function toggleShare(row, enable) {
-    const token = enable ? Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('') : null;
-    const { error } = await sb.from('drawings').update({ share_token: token }).eq('id', row.id);
-    if (error) return E.toast(errMsg(error));
-    row.share_token = token;
-    if (token) { track('share_link'); shareLink(row); } else E.toast('Partage arrêté : le lien ne fonctionne plus.');
-  }
+
   function shareLink(row) {
     const url = shareUrl(row.share_token);
     const text = `Stratégie « ${row.title} » : ${url}`;

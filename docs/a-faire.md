@@ -4,9 +4,11 @@ Mis à jour le 15/10/2026.
 
 ## À vérifier sur la vraie appli (après rechargement)
 
-- [ ] Menu ⋯ d'une stratégie → « Partager… » : une seule fenêtre (droits des joueurs, lien public, copie pour une autre équipe du club). L'équipe d'où part la stratégie ne doit pas apparaître dans la liste des équipes destinataires.
+- [x] Menu ⋯ d’une stratégie → « Partager… » : testé le 15/10 (copie bien reçue par l’autre équipe). Nouvelle fenêtre « interrupteurs » (style C) à revoir.
 - [ ] Demande pour rejoindre une équipe : la page se met à jour toute seule, côté demandeur comme côté coach, sans rafraîchir (temps réel activé sur les membres).
 - [ ] Compte → « Rejoindre ou créer un club, une équipe » : trois blocs séparés (code, ajouter une équipe à votre club, nouveau club).
+- [ ] iPhone, appli installée : la barre du bas est remontée au-dessus de la barre d'accueil (après une première mise à jour manuelle : fermer l'appli complètement puis la rouvrir).
+- [ ] Mises à jour automatiques : en revenant sur l'appli installée, elle se recharge toute seule quand une nouvelle version est en ligne.
 - [ ] Notifications d'adhésion : une demande prévient le coach et la direction du club ; une acceptation prévient la personne (il faut avoir activé les notifications dans Compte).
 - [ ] Notifications de la direction du club (convocation, relance) depuis une équipe dont elle n'est pas membre.
 
