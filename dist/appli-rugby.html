@@ -409,6 +409,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .progress-line { height: 8px; border-radius: 4px; background: var(--neutral-soft); overflow: hidden; margin: 2px 0 4px; }
 .progress-line i { display: block; height: 100%; background: var(--field); border-radius: 4px; }
 .hub-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.hub-tiles:has(> :nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* joueur : 4 tuiles sur une ligne */
 .hub-tile { position: relative; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 120px; color: var(--text); }
 .hub-tile:hover { border-color: var(--primary); }
 .hub-tile svg { width: 30px; height: 30px; color: var(--primary); }
@@ -442,6 +443,9 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .rsvp { display: flex; gap: 6px; margin-top: 6px; }
 .rsvp .rsvp-btn { flex: 1 1 0; justify-content: center; padding: 8px 6px; font-size: 14px; background: #fff; border: 1.5px solid var(--border); color: var(--text); min-height: 40px; }
 .rsvp.big .rsvp-btn { min-height: 48px; font-size: 15px; }
+.rsvp .rsvp-btn.yes { border-color: var(--success); color: var(--success); }
+.rsvp .rsvp-btn.maybe { border-color: var(--warning); color: var(--warning); }
+.rsvp .rsvp-btn.no { border-color: var(--danger); color: var(--danger); }
 .rsvp .rsvp-btn.yes[aria-pressed="true"] { background: var(--success); border-color: var(--success); color: #fff; }
 .rsvp .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning); border-color: var(--warning); color: #fff; }
 .rsvp .rsvp-btn.no[aria-pressed="true"] { background: var(--danger); border-color: var(--danger); color: #fff; }
@@ -694,7 +698,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .app-nav .nav-badge { position: absolute; top: 4px; left: calc(50% + 6px); }
   .hub-team { max-width: 170px; font-size: 14px; }
   .hub-bar .actions { margin-left: auto; }
-  .hub-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .hub-tiles, .hub-tiles:has(> :nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .hub-tile { min-height: 112px; padding: 14px 12px; }
   .todo-row { font-size: 14px; }
   .home-bar #home-feedback { padding: 8px 6px; }
