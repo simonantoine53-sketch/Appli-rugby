@@ -1138,7 +1138,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (libTab === 'proposed' && !isCoach()) libTab = 'mine';
     const defs = [['mine', 'Mes dessins'], ['team', 'De l’équipe']];
     if (isCoach()) defs.push(['proposed', 'Propositions']);
-    defs.push(['local', 'Sur cet appareil']);
+    // « Sur cet appareil » : seulement s'il reste des dessins faits sans compte (pour les envoyer dans le compte)
+    const localCount = E.readLib().length;
+    if (localCount) defs.push(['local', 'Sur cet appareil']); else if (libTab === 'local') libTab = 'mine';
     defs.forEach(([id, label]) => {
       const b = el('button', 'tab' + (libTab === id ? ' active' : '')); b.textContent = label;
       const n = id === 'team' ? S.unseen : id === 'proposed' ? proposals : 0;
