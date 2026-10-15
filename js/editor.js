@@ -763,7 +763,7 @@
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
-        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne pour les joueurs (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
+        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
           <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">normale</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
           <label title="L'animation s'arrête sur cette étape jusqu'à ce qu'on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
           <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;

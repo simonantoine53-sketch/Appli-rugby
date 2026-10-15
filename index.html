@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610151322">
+  <link rel="stylesheet" href="css/style.css?v=202610151329">
 </head>
 <body>
 
@@ -85,7 +85,6 @@
     </div>
     <div id="account-join" class="account-join"></div>
     <div class="account-actions">
-      <button id="btn-goto-team" class="btn outline wide">Voir mon équipe</button>
       <div id="push-block" class="push-block hidden">
         <button id="btn-push" class="btn outline wide">Activer les notifications</button>
         <p id="push-help" class="muted small"></p>
@@ -413,7 +412,7 @@
       <p id="auth-intro" class="help hidden"></p>
       <label id="auth-email-field">E-mail<input id="auth-email" type="email" required autocomplete="email"></label>
       <label id="auth-password-field"><span id="auth-password-label">Mot de passe</span><input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
-      <p id="auth-pw-hint" class="help hidden">6 caractères minimum.</p>
+      <div id="auth-pw-hint" class="pw-meter hidden"><div class="pw-bar"><i></i></div><span class="pw-label">6 caractères minimum.</span></div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
       <p id="auth-error" class="form-error"></p>
       <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
@@ -609,23 +608,23 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/selects.js?v=202610151322"></script>
-<script src="js/dialog.js?v=202610151322"></script>
-<script src="js/icons.js?v=202610151322"></script>
-<script src="js/field.js?v=202610151322"></script>
-<script src="js/formations.js?v=202610151322"></script>
-<script src="js/objects.js?v=202610151322"></script>
-<script src="js/export.js?v=202610151322"></script>
+<script src="js/selects.js?v=202610151329"></script>
+<script src="js/dialog.js?v=202610151329"></script>
+<script src="js/icons.js?v=202610151329"></script>
+<script src="js/field.js?v=202610151329"></script>
+<script src="js/formations.js?v=202610151329"></script>
+<script src="js/objects.js?v=202610151329"></script>
+<script src="js/export.js?v=202610151329"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
-<script src="js/config.js?v=202610151322"></script>
-<script src="js/editor.js?v=202610151322"></script>
-<script src="js/account.js?v=202610151322"></script>
-<script src="js/push.js?v=202610151322"></script>
-<script src="js/profile.js?v=202610151322"></script>
-<script src="js/admin.js?v=202610151322"></script>
-<script src="js/agenda.js?v=202610151322"></script>
-<script src="js/calimport.js?v=202610151322"></script>
-<script src="js/sheets.js?v=202610151322"></script>
-<script src="js/hub.js?v=202610151322"></script>
+<script src="js/config.js?v=202610151329"></script>
+<script src="js/editor.js?v=202610151329"></script>
+<script src="js/account.js?v=202610151329"></script>
+<script src="js/push.js?v=202610151329"></script>
+<script src="js/profile.js?v=202610151329"></script>
+<script src="js/admin.js?v=202610151329"></script>
+<script src="js/agenda.js?v=202610151329"></script>
+<script src="js/calimport.js?v=202610151329"></script>
+<script src="js/sheets.js?v=202610151329"></script>
+<script src="js/hub.js?v=202610151329"></script>
 </body>
 </html>

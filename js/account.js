@@ -159,6 +159,7 @@
     $('#auth-password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
     $('#auth-password-label').textContent = mode === 'reset' ? 'Nouveau mot de passe' : 'Mot de passe';
     $('#auth-pw-hint').classList.toggle('hidden', mode !== 'signup' && mode !== 'reset');
+    renderPwMeter();
     $('#auth-forgot').classList.toggle('hidden', mode !== 'login');
     $('#auth-back').classList.toggle('hidden', mode !== 'forgot');
     $('#auth-title').textContent = { forgot: 'Mot de passe oublié', reset: 'Nouveau mot de passe' }[mode] || ''; $('#auth-title').classList.toggle('hidden', tabs);
@@ -167,6 +168,26 @@
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
   }
+  /* Solidité du mot de passe : longueur, minuscules/majuscules, chiffres, symboles (indicatif, seul le minimum de 6 est imposé). */
+  function pwStrength(pw) {
+    if (!pw) return { level: 0, text: '6 caractères minimum.' };
+    if (pw.length < 6) return { level: 1, text: `Trop court : encore ${6 - pw.length} caractère${6 - pw.length > 1 ? 's' : ''}.` };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    if (/^(.)\1+$/.test(pw) || /^(123456|password|azerty|qwerty|motdepasse)/i.test(pw)) score = 0;
+    if (score <= 1) return { level: 2, text: 'Faible : ajoutez des chiffres, des majuscules ou des symboles.' };
+    if (score <= 3) return { level: 3, text: 'Moyen : un peu plus long ou avec un symbole, ce serait mieux.' };
+    return { level: 4, text: 'Solide ✓' };
+  }
+  function renderPwMeter() {
+    const st = pwStrength($('#auth-password').value), box = $('#auth-pw-hint');
+    box.dataset.level = st.level; box.querySelector('.pw-label').textContent = st.text;
+  }
+  $('#auth-password').addEventListener('input', renderPwMeter);
   $('#auth-forgot').onclick = e => { e.preventDefault(); const em = $('#auth-email').value; setAuthMode('forgot'); $('#auth-email').value = em; $('#auth-email').focus(); };
   $('#auth-back').onclick = e => { e.preventDefault(); setAuthMode('login'); };
   /** Message sous le formulaire : rouge pour une erreur, neutre pour une information. */
@@ -255,7 +276,6 @@
     const box = $('#account-teams'); box.replaceChildren();
     S.teams.filter(t => !t.superadmin).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role)}`)));
     if (isSuper()) box.appendChild(el('div', 'account-team', '<span class="role-badge admin">Super-admin</span> accès à toutes les équipes'));
-    $('#btn-goto-team').textContent = S.team ? `Voir l’équipe « ${S.team.name} »` : 'Créer ou rejoindre une équipe';
     // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
     const join = $('#account-join'); join.replaceChildren();
     const pend = pendingCard(); if (pend) join.appendChild(pend);
@@ -267,7 +287,6 @@
     if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
     $('#btn-admin').classList.toggle('hidden', !isSuper());
   }
-  $('#btn-goto-team').onclick = () => E.go('team');
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => E.openModal('modal-privacy');
   document.querySelectorAll('.link-privacy').forEach(a => { a.onclick = e => { e.preventDefault(); E.openModal('modal-privacy'); }; });

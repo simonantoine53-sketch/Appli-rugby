@@ -158,6 +158,7 @@
       root.appendChild(A.teamForms());
       return;
     }
+    if (window.RugbyPush && window.RugbyPush.maybeAsk) setTimeout(() => window.RugbyPush.maybeAsk(), 1200);
     const staff = A.isStaff();
     const roleLabel = team.superadmin ? 'super-admin' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)} · ${roleLabel}`);

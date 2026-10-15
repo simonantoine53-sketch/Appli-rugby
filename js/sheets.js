@@ -370,7 +370,7 @@
       btn('Imprimer / PDF', 'outline', () => printSheet(html(), 'Feuille de match')),
       btn('Partager en image', 'outline', () => imageSheet(html(), fileName(ev))),
       tplSel,
-      btn('Personnaliser', 'ghost', () => openSettings())
+      btn('Personnaliser la feuille', 'outline', () => openSettings())
     );
     root.appendChild(acts);
 

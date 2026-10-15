@@ -1058,3 +1058,18 @@ select:disabled { opacity: .5; cursor: default; }
   .member-row .member-actions { flex: 1 1 100%; padding-left: 42px; }
   .member-row .member-actions > * { flex: 1 1 0; }
 }
+
+/* Fenêtres de dialogue : les retours à la ligne du message sont respectés */
+.dialog-msg { white-space: pre-line; }
+
+/* Jauge de solidité du mot de passe */
+.pw-meter { display: flex; flex-direction: column; gap: 4px; margin-top: -4px; }
+.pw-bar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.pw-bar i { display: block; height: 100%; width: 0; border-radius: 3px; transition: width .2s, background .2s; }
+.pw-label { font-size: 13px; color: var(--muted); }
+.pw-meter[data-level="1"] .pw-bar i { width: 15%; background: #c62828; }
+.pw-meter[data-level="2"] .pw-bar i { width: 35%; background: #e53935; }
+.pw-meter[data-level="3"] .pw-bar i { width: 65%; background: #ef6c00; }
+.pw-meter[data-level="4"] .pw-bar i { width: 100%; background: #2e7d32; }
+.pw-meter[data-level="1"] .pw-label, .pw-meter[data-level="2"] .pw-label { color: #c62828; }
+.pw-meter[data-level="4"] .pw-label { color: #2e7d32; font-weight: 600; }

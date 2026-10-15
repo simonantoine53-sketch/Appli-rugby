@@ -51,7 +51,7 @@
     const on = !!sub && Notification.permission === 'granted';
     btn.textContent = on ? 'Désactiver les notifications' : 'Activer les notifications';
     btn.classList.toggle('on', on);
-    help.textContent = on ? 'Vous serez prévenu quand une stratégie est publiée ou proposée dans votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil à chaque nouvelle stratégie de votre équipe.';
+    help.textContent = on ? 'Vous serez prévenu des convocations, des compos et des nouvelles stratégies de votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil pour les convocations, les compos et les nouvelles stratégies.';
     btn.onclick = () => (on ? disable() : enable()).catch(e => { console.warn(e); help.textContent = 'Erreur : ' + e.message; });
   }
 
@@ -62,9 +62,31 @@
     catch (e) { console.warn('push-notify', e); }
   }
 
+  /* Première connexion (puis au plus une fois par semaine tant que la personne n'a pas choisi) :
+     on explique pourquoi les notifications comptent avant que le navigateur ne pose sa question. */
+  let asking = false;
+  async function maybeAsk() {
+    const A = acc(); if (asking || !A || !A.isLoggedIn() || !A.team()) return;
+    const key = 'push-asked-' + A.user().id;
+    let last = 0; try { last = +localStorage.getItem(key) || 0; } catch (e) {}
+    if (Date.now() - last < 7 * 86400000) return;
+    const iosTip = isIosNotInstalled();
+    if (!iosTip && (!supported() || Notification.permission !== 'default')) return;
+    if (!iosTip && await isOn()) return;
+    asking = true;
+    try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
+    const D = window.RugbyDialog;
+    const why = 'Vous serez prévenu dès qu’une convocation, une relance avant le match, une compo ou une nouvelle stratégie arrive. Sans notifications, vous risquez de rater un rendez-vous de l’équipe.';
+    if (iosTip) await D.confirm(why + '\n\nSur iPhone, ajoutez d’abord l’appli à l’écran d’accueil (bouton Partager → « Sur l’écran d’accueil »), ouvrez-la depuis cette icône, puis activez les notifications dans la page Compte.', { title: 'Restez informé', ok: 'Compris', cancel: 'Plus tard' });
+    else if (await D.confirm(why, { title: 'Activer les notifications ?', ok: 'Activer les notifications', cancel: 'Plus tard' })) {
+      try { await enable(); } catch (e) { console.warn(e); }
+    }
+    asking = false;
+  }
+
   /** Notifications actives sur cet appareil (pour la liste de démarrage). */
   async function isOn() { if (!supported()) return false; try { const sub = await current(); return !!sub && Notification.permission === 'granted'; } catch (e) { return false; } }
   const canAsk = () => supported() && Notification.permission !== 'denied';
 
-  window.RugbyPush = { enable, disable, renderButton, notify, supported, b64url, isOn, canAsk, isIosNotInstalled };
+  window.RugbyPush = { enable, disable, renderButton, notify, supported, b64url, isOn, canAsk, isIosNotInstalled, maybeAsk };
 })();

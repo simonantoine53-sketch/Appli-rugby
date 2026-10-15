@@ -260,7 +260,7 @@
       const box = el('div', 'ev-answer');
       box.appendChild(el('div', 'todo-head', 'Votre réponse'));
       // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
-      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire (facultatif) : retard, blessure…'; input.value = (mine && mine.comment) || '';
+      const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire : retard, blessure…'; input.value = (mine && mine.comment) || '';
       box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true, () => input.value.trim()));
       const f = el('div', 'ev-comment');
       const state = el('small', 'muted ev-comment-state', '');
