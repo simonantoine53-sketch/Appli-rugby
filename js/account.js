@@ -288,6 +288,8 @@
   }
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => E.openModal('modal-privacy');
+  // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée
+  $('#btn-tour').onclick = () => { E.go('home'); setTimeout(() => { if (window.RugbyTour) window.RugbyTour.start(isStaff() ? 'coach' : 'player'); }, 1200); };
   document.querySelectorAll('.link-privacy').forEach(a => { a.onclick = e => { e.preventDefault(); E.openModal('modal-privacy'); }; });
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
@@ -403,18 +405,33 @@
     let pending = 0;
     if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
     if (seq !== teamSeq) return;
-    const tabs = el('div', 'tabs small page-tabs');
-    [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
-      const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
-      if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
-      b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
-    });
-    root.appendChild(tabs);
+    // Les réglages de l'équipe ne concernent que le staff : un joueur n'a que la liste des membres
+    if (staff) {
+      const tabs = el('div', 'tabs small page-tabs');
+      [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
+        const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
+        if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
+        b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
+      });
+      root.appendChild(tabs);
+    } else teamTab = 'members';
 
     if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
     await renderMembers(list, staff, seq);
+    if (!staff && !S.team.superadmin && seq === teamSeq) {
+      const leave = btn(`Quitter « ${S.team.name} »`, 'ghost small danger team-leave', () => leaveTeam(S.team));
+      root.appendChild(leave);
+    }
+  }
+
+  async function leaveTeam(t) {
+    const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
+    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
+    const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
+    if (error) return E.toast(errMsg(error));
+    teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
   }
 
   /** Onglet Réglages : l'équipe, le code d'invitation, le partage, la feuille, mon appartenance, la zone sensible. */
@@ -463,12 +480,7 @@
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
     const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
-    if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
-      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`)) return;
-      const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
-      if (error) return E.toast(errMsg(error));
-      teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
-    }));
+    if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', () => leaveTeam(t)));
     if (staff) {
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
       z.foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
@@ -828,15 +840,14 @@
     const d = row.data || {}; const steps = (d.steps || []).length;
     const coachHere = isCoach() && S.team && row.team_id === S.team.id;
     const mine = row.owner_id === S.user.id;
-    const teamName = (S.teams.find(t => t.id === row.team_id) || {}).name;
-    const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' + (teamName ? ' · ' + esc(teamName) : '') }[row.visibility];
+    const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' }[row.visibility];
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span></div><div class="date"></div><div class="card-btns"></div>`;
     c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
     c.querySelector('.name').textContent = row.title;
     const cat = d.category ? `<span class="vis-badge cat">${esc(d.category)}</span> ` : '';
     const mode = row.visibility === 'team' ? shareMode(row) : null;
     const modeBadge = mode && mode !== 'public' ? `<span class="vis-badge share-${mode}">${SHARE[mode].label}</span> ` : '';
-    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}${d.tags ? ' · ' + esc(d.tags) : ''}`;
+    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${mine ? '' : esc((row.owner && row.owner.display_name) || '') + ' · '}${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}`;   // l'essentiel seulement : auteur (si ce n'est pas moi), étapes, date
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
@@ -864,7 +875,7 @@
       const vc = viewCounts[row.id];
       if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
       const n = commentCounts[row.id] || 0;
-      btns.appendChild(btn(`💬 ${n}`, 'outline small', () => openComments(row, refresh))).title = 'Commentaires';
+      btns.appendChild(btn(n ? `💬 ${n}` : '💬', 'outline small', () => openComments(row, refresh))).title = n ? 'Commentaires' : 'Commenter';
     }
     menu.push(['Ouvrir', () => loadCloud(row)]);
     const canCopy = mine || isCoach() || mode !== 'app';

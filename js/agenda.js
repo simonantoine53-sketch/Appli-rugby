@@ -205,7 +205,7 @@
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
     if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
-    if (!ev.cancelled && (staff || sum.yes)) body.appendChild(counts(sum));
+    if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
     return c;

@@ -28,7 +28,7 @@
   --primary-soft: #e8f0fe;  /* fonds légers (badges, sélection) */
   /* États : uniquement pour dire « ça va / attention / problème » */
   --success: #2e7d32;  --success-soft: #e3f2e6;   /* présent, publié, validé */
-  --warning: #ef6c00;  --warning-soft: #fff3e0;   /* peut-être, en attente, proposé */
+  --warning: #b34d00;  --warning-soft: #fff3e0;   /* peut-être, en attente, proposé */
   --danger: #c62828;   --danger-dark: #a91f1f;  --danger-soft: #fdecea;   /* absent, erreurs, supprimer, pastilles */
   /* Catégories (étiquettes d'information, jamais des boutons) */
   --match: #6a1b9a;    --match-soft: #f3e5f5;     /* matchs */
@@ -728,7 +728,13 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .library-list { grid-template-columns: 1fr; padding: 12px; gap: 10px; min-width: 0; }
   .lib-card { min-width: 0; }
   .lib-card .thumb svg { width: 100%; height: 100%; }
-  .lib-card .thumb { aspect-ratio: 2/1; }
+  /* Téléphone : carte en ligne, petite miniature à gauche, pour voir plusieurs stratégies d'un coup */
+  .lib-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-areas: "thumb body" "thumb date" "thumb btns"; align-items: start; }
+  .lib-card .thumb { grid-area: thumb; aspect-ratio: auto; height: 100%; min-height: 84px; border-radius: 9px 0 0 9px !important; }
+  .lib-card .thumb svg { object-fit: cover; }
+  .lib-card .body { grid-area: body; padding: 8px 10px 2px; }
+  .lib-card .date { grid-area: date; padding: 0 10px 6px; }
+  .lib-card .card-btns { grid-area: btns; padding: 0 10px 8px; }
   .menu { min-width: 250px; }
   .menu button span { display: block; }
 
@@ -1106,6 +1112,20 @@ select:disabled { opacity: .5; cursor: default; }
 .pw-meter[data-level="1"] .pw-label, .pw-meter[data-level="2"] .pw-label { color: var(--danger); }
 .pw-meter[data-level="4"] .pw-label { color: var(--success); font-weight: 600; }
 
+/* Équipe (joueur) : « Quitter l'équipe » discret sous la liste */
+.team-leave { margin: 18px auto 0; display: flex; }
+
+/* Tutoriel de première connexion : le bloc expliqué est découpé dans un voile sombre, la bulle l'accompagne */
+.tour { position: fixed; inset: 0; z-index: 3000; }
+.tour.centered { background: rgba(15, 23, 32, .55); display: grid; place-items: center; padding: 16px; }
+.tour-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(15, 23, 32, .55); outline: 3px solid var(--primary); transition: all .25s ease; pointer-events: none; }
+.tour-card { position: fixed; background: var(--panel); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 6px; transition: top .25s ease, left .25s ease; }
+.tour.centered .tour-card { position: static; width: min(420px, 100%); }
+.tour-title { font-size: 17px; }
+.tour-text { margin: 0; font-size: 15px; line-height: 1.45; color: var(--text); }
+.tour-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.tour-grow { flex: 1; }
+
 </style>
 </head>
 <body>
@@ -1184,6 +1204,7 @@ select:disabled { opacity: .5; cursor: default; }
       <button id="btn-feedback" class="btn outline wide">Signaler un bug ou proposer une idée</button>
       <button id="btn-admin" class="btn outline wide hidden">Back-office (super-admin)</button>
       <button id="btn-logout" class="btn outline wide">Se déconnecter</button>
+      <button id="btn-tour" class="btn ghost wide">Revoir le tutoriel</button>
       <button id="btn-privacy" class="btn ghost wide">Confidentialité et données personnelles</button>
       <button id="btn-delete-account" class="btn ghost wide danger">Supprimer mon compte</button>
     </div>
@@ -4300,6 +4321,8 @@ window.RUGBY_CONFIG = {
   }
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => E.openModal('modal-privacy');
+  // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée
+  $('#btn-tour').onclick = () => { E.go('home'); setTimeout(() => { if (window.RugbyTour) window.RugbyTour.start(isStaff() ? 'coach' : 'player'); }, 1200); };
   document.querySelectorAll('.link-privacy').forEach(a => { a.onclick = e => { e.preventDefault(); E.openModal('modal-privacy'); }; });
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
@@ -4415,18 +4438,33 @@ window.RUGBY_CONFIG = {
     let pending = 0;
     if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
     if (seq !== teamSeq) return;
-    const tabs = el('div', 'tabs small page-tabs');
-    [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
-      const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
-      if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
-      b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
-    });
-    root.appendChild(tabs);
+    // Les réglages de l'équipe ne concernent que le staff : un joueur n'a que la liste des membres
+    if (staff) {
+      const tabs = el('div', 'tabs small page-tabs');
+      [['members', 'Membres', pending], ['settings', 'Réglages', 0]].forEach(([id, label, n]) => {
+        const b = el('button', 'tab' + (teamTab === id ? ' active' : '')); b.textContent = label;
+        if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
+        b.onclick = () => { teamTab = id; renderTeamPage(); }; tabs.appendChild(b);
+      });
+      root.appendChild(tabs);
+    } else teamTab = 'members';
 
     if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
     await renderMembers(list, staff, seq);
+    if (!staff && !S.team.superadmin && seq === teamSeq) {
+      const leave = btn(`Quitter « ${S.team.name} »`, 'ghost small danger team-leave', () => leaveTeam(S.team));
+      root.appendChild(leave);
+    }
+  }
+
+  async function leaveTeam(t) {
+    const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
+    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
+    const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
+    if (error) return E.toast(errMsg(error));
+    teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
   }
 
   /** Onglet Réglages : l'équipe, le code d'invitation, le partage, la feuille, mon appartenance, la zone sensible. */
@@ -4475,12 +4513,7 @@ window.RUGBY_CONFIG = {
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
     const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
-    if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', async () => {
-      if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`)) return;
-      const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
-      if (error) return E.toast(errMsg(error));
-      teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
-    }));
+    if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', () => leaveTeam(t)));
     if (staff) {
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
       z.foot.appendChild(btn('Supprimer l’équipe', 'outline small danger', async () => {
@@ -4840,15 +4873,14 @@ window.RUGBY_CONFIG = {
     const d = row.data || {}; const steps = (d.steps || []).length;
     const coachHere = isCoach() && S.team && row.team_id === S.team.id;
     const mine = row.owner_id === S.user.id;
-    const teamName = (S.teams.find(t => t.id === row.team_id) || {}).name;
-    const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' + (teamName ? ' · ' + esc(teamName) : '') }[row.visibility];
+    const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' }[row.visibility];
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span></div><div class="date"></div><div class="card-btns"></div>`;
     c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
     c.querySelector('.name').textContent = row.title;
     const cat = d.category ? `<span class="vis-badge cat">${esc(d.category)}</span> ` : '';
     const mode = row.visibility === 'team' ? shareMode(row) : null;
     const modeBadge = mode && mode !== 'public' ? `<span class="vis-badge share-${mode}">${SHARE[mode].label}</span> ` : '';
-    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${esc((row.owner && row.owner.display_name) || '')} · ${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}${d.tags ? ' · ' + esc(d.tags) : ''}`;
+    c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${mine ? '' : esc((row.owner && row.owner.display_name) || '') + ' · '}${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}`;   // l'essentiel seulement : auteur (si ce n'est pas moi), étapes, date
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
@@ -4876,7 +4908,7 @@ window.RUGBY_CONFIG = {
       const vc = viewCounts[row.id];
       if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
       const n = commentCounts[row.id] || 0;
-      btns.appendChild(btn(`💬 ${n}`, 'outline small', () => openComments(row, refresh))).title = 'Commentaires';
+      btns.appendChild(btn(n ? `💬 ${n}` : '💬', 'outline small', () => openComments(row, refresh))).title = n ? 'Commentaires' : 'Commenter';
     }
     menu.push(['Ouvrir', () => loadCloud(row)]);
     const canCopy = mine || isCoach() || mode !== 'app';
@@ -5982,7 +6014,7 @@ window.RUGBY_CONFIG = {
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
     if (!ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
-    if (!ev.cancelled && (staff || sum.yes)) body.appendChild(counts(sum));
+    if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
     return c;
@@ -7220,6 +7252,131 @@ window.RUGBY_CONFIG = {
 
 </script>
 <script>
+/* Tutoriel de première connexion : visite guidée de l'accueil, bloc par bloc (coach ou joueur).
+   Affiché une seule fois par compte et par appareil ; « Revoir le tutoriel » dans la page Compte. */
+(function () {
+  const $ = s => document.querySelector(s);
+  const visible = e => !!e && e.offsetParent !== null && e.getBoundingClientRect().width > 0;
+  const nav = () => visible($('#app-nav')) ? '#app-nav' : '#hub-tabs';
+  const account = () => visible($('#hub-account')) ? '#hub-account' : '#btn-account';
+
+  const STEPS = {
+    coach: [
+      { title: 'Bienvenue dans Rugby Strat 👋', text: 'En une minute, voici ce que vous pouvez faire depuis l’accueil. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { sel: '.todo-card.onboarding', title: 'Démarrer avec votre équipe', text: 'Les premières étapes pour lancer votre équipe : inviter les joueurs, publier une stratégie, créer un match. Ce bloc disparaît quand tout est fait.' },
+      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Ce qui demande votre attention : joueurs sans réponse à relancer, demandes d’adhésion à valider, stratégies peu vues, compo à préparer.' },
+      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Dessinez vos combinaisons étape par étape, publiez-les à l’équipe et voyez qui les a regardées. Les joueurs peuvent aussi vous proposer leurs idées.' },
+      { sel: '[data-tile="team"]', title: 'Équipe', text: 'Les membres, leurs postes et leurs coordonnées, les demandes d’adhésion à accepter et les rôles (coach, admin, joueur).' },
+      { sel: '[data-tile="invite"]', title: 'Inviter', text: 'Partagez le code de l’équipe ou un message tout prêt par WhatsApp, SMS ou e-mail. Chaque nouvelle personne attend votre validation.' },
+      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Créez matchs et entraînements (ou importez le calendrier de la fédération). Les joueurs répondent Présent, Peut-être ou Absent, et vous relancez ceux qui n’ont pas répondu.' },
+      { sel: '[data-tile="compos"]', title: 'Compos', text: 'Préparez la feuille de match aux couleurs du club, publiez la compo à l’équipe, imprimez-la ou partagez-la en image.' },
+      { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui vous attend.' },
+      { sel: '#home-new', title: 'Nouveau dessin', text: 'Créez une nouvelle stratégie à tout moment.' },
+      { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
+    ],
+    player: [
+      { title: 'Bienvenue dans Rugby Strat 👋', text: 'En une minute, voici comment suivre votre équipe. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Répondez aux convocations d’un appui (Présent, Peut-être, Absent) et retrouvez les stratégies à regarder avant le match.' },
+      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Les combinaisons publiées par le coach, animées étape par étape. Vous pouvez aussi dessiner vos idées et les proposer au coach.' },
+      { sel: '[data-tile="team"]', title: 'Équipe', text: 'Tous les membres de l’équipe et leurs postes.' },
+      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Les matchs et entraînements à venir, qui vient, et votre réponse. Vous pouvez ajouter un commentaire (retard, blessure…).' },
+      { sel: '[data-tile="compos"]', title: 'Compos', text: 'La composition du prochain match, dès que le coach l’a publiée, avec votre numéro.' },
+      { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre. Les pastilles rouges signalent ce qui vous attend.' },
+      { sel: () => account(), title: 'Votre compte', text: 'Complétez votre profil (photo, poste) et activez les notifications pour ne rater aucune convocation.' }
+    ]
+  };
+
+  let layer = null, steps = [], i = 0, done = null;
+  const target = s => { if (!s.sel) return null; const q = typeof s.sel === 'function' ? s.sel() : s.sel; const e = $(q); return visible(e) ? e : null; };
+
+  function build() {
+    layer = document.createElement('div');
+    layer.className = 'tour';
+    layer.innerHTML = `<div class="tour-spot"></div>
+      <div class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+        <div class="tour-count muted small"></div>
+        <strong id="tour-title" class="tour-title"></strong>
+        <p class="tour-text"></p>
+        <div class="tour-actions">
+          <button type="button" class="btn ghost small tour-skip">Passer</button>
+          <span class="tour-grow"></span>
+          <button type="button" class="btn outline small tour-prev">Précédent</button>
+          <button type="button" class="btn primary small tour-next">Suivant</button>
+        </div>
+      </div>`;
+    document.body.appendChild(layer);
+    layer.querySelector('.tour-skip').onclick = () => finish();
+    layer.querySelector('.tour-prev').onclick = () => show(i - 1);
+    layer.querySelector('.tour-next').onclick = () => (i >= steps.length - 1 ? finish() : show(i + 1));
+    window.addEventListener('resize', place);
+    document.addEventListener('scroll', place, true);   // suit le défilement (scrollIntoView en douceur)
+    document.addEventListener('keydown', onKey);
+  }
+  function onKey(e) {
+    if (!layer) return;
+    if (e.key === 'Escape') finish();
+    else if (e.key === 'ArrowRight') layer.querySelector('.tour-next').click();
+    else if (e.key === 'ArrowLeft' && i > 0) show(i - 1);
+  }
+  function show(n) {
+    i = Math.max(0, Math.min(n, steps.length - 1));
+    const s = steps[i];
+    layer.querySelector('.tour-count').textContent = `${i + 1} / ${steps.length}`;
+    layer.querySelector('.tour-title').textContent = s.title;
+    layer.querySelector('.tour-text').textContent = s.text;
+    layer.querySelector('.tour-prev').classList.toggle('hidden', i === 0);
+    layer.querySelector('.tour-next').textContent = i === steps.length - 1 ? 'C’est parti !' : 'Suivant';
+    const t = target(s);
+    if (t) t.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    place(); if (t) { setTimeout(place, 350); setTimeout(place, 800); }
+  }
+  /** Met en valeur l'élément (découpe lumineuse) et place la bulle au-dessus ou en dessous. */
+  function place() {
+    if (!layer) return;
+    const s = steps[i], t = target(s), spot = layer.querySelector('.tour-spot'), card = layer.querySelector('.tour-card');
+    const W = window.innerWidth, H = window.innerHeight, pad = 6;
+    layer.classList.toggle('centered', !t);
+    if (!t) { spot.style.cssText = 'display:none'; card.style.cssText = ''; return; }
+    const r = t.getBoundingClientRect();
+    spot.style.cssText = `display:block; left:${r.left - pad}px; top:${r.top - pad}px; width:${r.width + 2 * pad}px; height:${r.height + 2 * pad}px`;
+    const cw = Math.min(360, W - 24), ch = card.offsetHeight || 180;
+    const below = r.bottom + pad + 12 + ch < H, above = r.top - pad - 12 - ch > 0;
+    const top = below ? r.bottom + pad + 12 : above ? r.top - pad - 12 - ch : Math.max(12, H - ch - 12);
+    const left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), W - cw - 12);
+    card.style.cssText = `width:${cw}px; left:${left}px; top:${top}px`;
+  }
+  function finish() {
+    if (!layer) return;
+    window.removeEventListener('resize', place);
+    document.removeEventListener('scroll', place, true);
+    document.removeEventListener('keydown', onKey);
+    layer.remove(); layer = null;
+    const cb = done; done = null;
+    if (cb) cb();
+  }
+
+  const key = uid => 'tour-done-' + uid;
+  /** Lance la visite ; onDone est appelée à la fin (ou si on la passe). */
+  function start(role, onDone) {
+    if (layer) return;
+    steps = (STEPS[role] || STEPS.player).filter(s => !s.sel || target(s));
+    done = onDone || null;
+    build(); show(0);
+  }
+  /** Première connexion : lance la visite si ce compte ne l'a jamais vue sur cet appareil. */
+  function maybeStart(uid, role, onDone) {
+    let seen = false;
+    try { seen = !!localStorage.getItem(key(uid)); localStorage.setItem(key(uid), '1'); } catch (e) { seen = true; }
+    if (seen) { if (onDone) onDone(); return false; }
+    start(role, onDone);
+    return true;
+  }
+
+  window.RugbyTour = { start, maybeStart };
+})();
+
+</script>
+<script>
 /* Coquille de l'appli : en-tête commun, navigation (onglets sur ordinateur, barre en bas sur mobile),
    accueil hybride (« À faire », démarrage, tuiles), pages « Bientôt » et page Compte. */
 (function () {
@@ -7380,7 +7537,6 @@ window.RUGBY_CONFIG = {
       root.appendChild(A.teamForms());
       return;
     }
-    if (window.RugbyPush && window.RugbyPush.maybeAsk) setTimeout(() => window.RugbyPush.maybeAsk(), 1200);
     const staff = A.isStaff();
     const roleLabel = team.superadmin ? 'super-admin' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)} · ${roleLabel}`);
@@ -7401,6 +7557,12 @@ window.RUGBY_CONFIG = {
     if (staff) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
     slot.appendChild(todo(d, notifOn, staff));
     slot.appendChild(tiles(d, staff));
+    // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
+    const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
+    setTimeout(() => {
+      if (my !== seq || E.currentView() !== 'home') return;
+      if (window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player', askPush); else askPush();
+    }, 600);
   }
 
   /** Liste de démarrage du staff, masquée quand tout est fait. */
@@ -7456,7 +7618,7 @@ window.RUGBY_CONFIG = {
       const push = P();
       if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Activez les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
-    const card = el('div', 'todo-card');
+    const card = el('div', 'todo-card week');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
     if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Vous êtes à jour.'));
     const addRow = it => {
@@ -7468,7 +7630,7 @@ window.RUGBY_CONFIG = {
     items.slice(0, 3).forEach(it => card.appendChild(addRow(it)));
     if (items.length > 3) {
       // Les actions moins urgentes restent accessibles d'un appui
-      const more = btn(`Voir ${items.length - 3 > 1 ? 'les ' + (items.length - 3) + ' autres' : 'l’autre'}`, 'ghost small todo-more', () => { more.replaceWith(...items.slice(3).map(addRow)); });
+      const more = btn(`Voir ${items.length - 3} autre${items.length - 3 > 1 ? 's' : ''} tâche${items.length - 3 > 1 ? 's' : ''}`, 'ghost small todo-more', () => { more.replaceWith(...items.slice(3).map(addRow)); });
       card.appendChild(more);
     }
     return card;
@@ -7480,7 +7642,7 @@ window.RUGBY_CONFIG = {
     const tile = (icon, title, sub, fn, opts) => {
       const o = opts || {};
       const t = el('button', 'hub-tile' + (o.soon ? ' soon' : ''), `${ico(icon)}<strong>${title}${o.badge ? ` <span class="nav-badge">${o.badge}</span>` : ''}</strong><small>${sub}</small>${o.soon ? '<span class="soon-tag">Bientôt</span>' : ''}`);
-      t.onclick = fn; grid.appendChild(t);
+      t.dataset.tile = icon; t.onclick = fn; grid.appendChild(t);
     };
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));

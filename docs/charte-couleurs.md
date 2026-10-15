@@ -28,7 +28,7 @@ Aperçu visuel : ouvrir `charte.html` (en ligne : `/Appli-rugby/charte.html`).
 | Action foncée | `--primary-dark` | `#1558b8` | Survol des boutons, texte bleu sur fond clair |
 | Action claire | `--primary-soft` | `#e8f0fe` | Fond des boutons secondaires bleus, badge Coach |
 | **Succès** | `--success` / `--success-soft` | `#2e7d32` / `#e3f2e6` | Présent, publié, validé, mot de passe solide |
-| **Attention** | `--warning` / `--warning-soft` | `#ef6c00` / `#fff3e0` | Peut-être, en attente, proposé, partage limité |
+| **Attention** | `--warning` / `--warning-soft` | `#b34d00` / `#fff3e0` | Peut-être, en attente, proposé, partage limité |
 | **Problème** | `--danger` / `--danger-soft` | `#c62828` / `#fdecea` | Absent, erreurs, Supprimer / Retirer / Refuser, pastilles de notification |
 | Problème foncé | `--danger-dark` | `#a91f1f` | Survol des boutons de suppression |
 | Match | `--match` / `--match-soft` | `#6a1b9a` / `#f3e5f5` | Étiquette et date des matchs (l'entraînement reste en bleu) |

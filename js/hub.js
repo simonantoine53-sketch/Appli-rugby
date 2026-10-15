@@ -158,7 +158,6 @@
       root.appendChild(A.teamForms());
       return;
     }
-    if (window.RugbyPush && window.RugbyPush.maybeAsk) setTimeout(() => window.RugbyPush.maybeAsk(), 1200);
     const staff = A.isStaff();
     const roleLabel = team.superadmin ? 'super-admin' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)} · ${roleLabel}`);
@@ -179,6 +178,12 @@
     if (staff) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
     slot.appendChild(todo(d, notifOn, staff));
     slot.appendChild(tiles(d, staff));
+    // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
+    const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
+    setTimeout(() => {
+      if (my !== seq || E.currentView() !== 'home') return;
+      if (window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player', askPush); else askPush();
+    }, 600);
   }
 
   /** Liste de démarrage du staff, masquée quand tout est fait. */
@@ -234,7 +239,7 @@
       const push = P();
       if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Activez les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
-    const card = el('div', 'todo-card');
+    const card = el('div', 'todo-card week');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
     if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Vous êtes à jour.'));
     const addRow = it => {
@@ -246,7 +251,7 @@
     items.slice(0, 3).forEach(it => card.appendChild(addRow(it)));
     if (items.length > 3) {
       // Les actions moins urgentes restent accessibles d'un appui
-      const more = btn(`Voir ${items.length - 3 > 1 ? 'les ' + (items.length - 3) + ' autres' : 'l’autre'}`, 'ghost small todo-more', () => { more.replaceWith(...items.slice(3).map(addRow)); });
+      const more = btn(`Voir ${items.length - 3} autre${items.length - 3 > 1 ? 's' : ''} tâche${items.length - 3 > 1 ? 's' : ''}`, 'ghost small todo-more', () => { more.replaceWith(...items.slice(3).map(addRow)); });
       card.appendChild(more);
     }
     return card;
@@ -258,7 +263,7 @@
     const tile = (icon, title, sub, fn, opts) => {
       const o = opts || {};
       const t = el('button', 'hub-tile' + (o.soon ? ' soon' : ''), `${ico(icon)}<strong>${title}${o.badge ? ` <span class="nav-badge">${o.badge}</span>` : ''}</strong><small>${sub}</small>${o.soon ? '<span class="soon-tag">Bientôt</span>' : ''}`);
-      t.onclick = fn; grid.appendChild(t);
+      t.dataset.tile = icon; t.onclick = fn; grid.appendChild(t);
     };
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));
