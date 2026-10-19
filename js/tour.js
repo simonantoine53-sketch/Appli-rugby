@@ -16,7 +16,7 @@
       { sel: '[data-tile="invite"]', title: 'Inviter', text: 'Partagez le code de l’équipe ou un message tout prêt par WhatsApp, SMS ou e-mail. Chaque nouvelle personne attend votre validation.' },
       { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Créez matchs et entraînements (ou importez le calendrier de la fédération). Les joueurs répondent Présent, Peut-être ou Absent, et vous relancez ceux qui n’ont pas répondu.' },
       { sel: '[data-tile="compos"]', title: 'Compos', text: 'Préparez la feuille de match aux couleurs du club, publiez la compo à l’équipe, imprimez-la ou partagez-la en image.' },
-      { club: true, title: 'Direction du club', text: 'Vous dirigez le club : vous avez les droits de coach dans toutes ses équipes. Dans Équipe, onglet Club, vous gérez le code du club, la date de début de saison, les équipes et la direction. Changez d’équipe avec le sélecteur en haut de l’accueil.' },
+      { club: true, title: 'Bureau du club', text: 'Vous êtes au bureau du club : vous avez les droits de coach dans toutes ses équipes. Dans Équipe, onglet Club, vous gérez le code du club, la date de début de saison, les équipes et les fonctions du bureau (présidente, secrétaire…). Changez d’équipe avec le sélecteur en haut de l’accueil.' },
       { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui vous attend.' },
       { sel: '#home-new', title: 'Nouveau dessin', text: 'Créez une nouvelle stratégie à tout moment.' },
       { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }

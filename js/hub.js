@@ -81,7 +81,7 @@
     const sel = $('#hub-team'), title = $('#hub-title');
     const multiClub = new Set(teams.map(t => t.club_id)).size > 1;   // le nom du club seulement s'il y en a plusieurs
     if (teams.length > 1) {
-      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = t.id; o.textContent = t.name + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · direction' : ''); o.selected = team && team.id === t.id; return o; }));
+      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = t.id; o.textContent = t.name + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : ''); o.selected = team && team.id === t.id; return o; }));
       sel.classList.remove('hidden'); title.classList.add('hidden');
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
@@ -103,7 +103,9 @@
       acc.setAttribute('aria-label', acc.title);
     }
     // Onglets
-    const items = active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats');
+    // Compos : pour les joueurs, seulement quand le coach en a publié une (sinon l'onglet reste caché)
+    const showCompos = !!(data && (data.staff || (data.sheets || []).some(m => m.sheet === 'published')));
+    const items = (active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats')).filter(([id]) => id !== 'compos' || showCompos);
     const cur = view === 'soon' ? 'home' : view;
     const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
     const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
@@ -169,7 +171,7 @@
       return;
     }
     const staff = A.isStaff();
-    const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'direction du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
+    const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'bureau du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)} · ${roleLabel}`);
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
     slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
@@ -280,7 +282,7 @@
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));
       tile('team', 'Équipe', plural(d.members, 'membre', 'membres') + (d.pending ? ` · ${d.pending} en attente` : ''), () => E.go('team'), { badge: d.pending });
-      tile('invite', 'Inviter', `Code ${esc(d.team.join_code)}`, () => A.shareCode());
+      tile('invite', 'Inviter', 'Joueurs, coachs, membres du club', () => A.shareCode());
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'));
       tile('seances', 'Séances', 'Préparer l’entraînement', () => E.go('soon', 'seances'), { soon: true });
       tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
@@ -288,7 +290,7 @@
       tile('strats', 'Stratégies', d.toWatch.length ? plural(d.toWatch.length, 'à regarder', 'à regarder') : plural(d.published.length, 'de l’équipe', 'de l’équipe'), () => { A.setLibTab('team'); E.go('strats'); }, { badge: d.toWatch.length });
       tile('team', 'Équipe', plural(d.members, 'membre', 'membres'), () => E.go('team'));
       tile('agenda', 'Agenda', nextLabel(d), () => E.go('agenda'), { badge: d.agenda.events.filter(e => e.convoked && !e.mine).length });
-      tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
+      if ((d.sheets || []).some(m => m.sheet === 'published')) tile('compos', 'Compos', sheetLabel(d), () => E.go('compos'));
     }
     return grid;
   }

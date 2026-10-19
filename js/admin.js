@@ -320,26 +320,29 @@
       const first = await window.RugbyDialog.prompt('Première équipe (facultatif)', 'Séniors', { title: `Club « ${name} »`, maxLength: 60, required: false });
       const { error } = await sb.rpc('create_club', { p_name: name, p_team: first || null });
       if (error) return E.toast(error.message);
-      E.toast(`Club « ${name} » créé. Nommez sa direction ci-dessous.`); render();
+      E.toast(`Club « ${name} » créé. Nommez son bureau ci-dessous.`); render();
     });
     const byName = users.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
-    const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Direction', ''], rows.map(r => {
+    const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Bureau', ''], rows.map(r => {
       const actions = el('div', 'admin-actions');
-      const nominate = btn('Nommer la direction', 'outline small', () => window.RugbySelect.openMenu(nominate,
-        byName.filter(u => !r.responsables.find(x => x.user_id === u.id)).map(u => [`${u.display_name} · ${u.email}`, async () => {
-          const { error } = await sb.rpc('set_club_role', { p_club: r.id, p_user: u.id, p_role: 'responsable' });
-          if (error) return E.toast(error.message); E.toast(`${u.display_name} dirige maintenant « ${r.name} ».`); render();
-        }]), `Direction de « ${r.name} »`));
+      // Nommer au bureau : la personne, puis sa fonction (Présidente, Secrétaire…), qui donne la gestion du club
+      const TITLES = ['Président', 'Présidente', 'Vice-président', 'Vice-présidente', 'Secrétaire', 'Trésorier', 'Trésorière', 'Membre du bureau'];
+      const nominate = btn('Nommer au bureau', 'outline small', () => window.RugbySelect.openMenu(nominate,
+        byName.filter(u => !r.responsables.find(x => x.user_id === u.id)).map(u => [`${u.display_name} · ${u.email}`, () => setTimeout(() => window.RugbySelect.openMenu(nominate,
+          TITLES.map(title => [title, async () => {
+            const { error } = await sb.rpc('set_club_function', { p_club: r.id, p_user: u.id, p_title: title });
+            if (error) return E.toast(error.message); E.toast(`${u.display_name} : ${title} de « ${r.name} ».`); render();
+          }]), `Fonction de ${u.display_name}`), 50)]), `Bureau de « ${r.name} »`));
       actions.appendChild(nominate);
       if (r.responsables.length) {
-        const removeBtn = btn('Retirer de la direction', 'outline small danger', () => window.RugbySelect.openMenu(removeBtn,
+        const removeBtn = btn('Retirer du bureau', 'outline small danger', () => window.RugbySelect.openMenu(removeBtn,
           r.responsables.map(x => [x.name, async () => {
             const { error } = await sb.rpc('set_club_role', { p_club: r.id, p_user: x.user_id, p_role: 'member' });
-            if (error) return E.toast(error.message); E.toast(`${x.name} ne fait plus partie de la direction.`); render();
-          }]), `Direction de « ${r.name} »`));
+            if (error) return E.toast(error.message); E.toast(`${x.name} ne fait plus partie du bureau.`); render();
+          }]), `Bureau de « ${r.name} »`));
         actions.appendChild(removeBtn);
       }
-      return [esc(r.name), `<code>${esc(r.join_code)}</code>`, r.teams, r.members, r.responsables.length ? r.responsables.map(x => esc(x.name)).join(', ') : '<span class="muted">à nommer</span>', actions];
+      return [esc(r.name), `<code>${esc(r.join_code)}</code>`, r.teams, r.members, r.responsables.length ? r.responsables.map(x => esc(x.name) + (x.title ? ` <span class="muted">(${esc(x.title)})</span>` : '')).join(', ') : '<span class="muted">à nommer</span>', actions];
     }));
     const addRow = el('div', 'admin-actions'); addRow.appendChild(add);
     return [sw, addRow, el('p', 'muted', `${rows.length} club${rows.length > 1 ? 's' : ''}`), t];

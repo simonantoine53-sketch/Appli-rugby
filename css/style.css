@@ -1203,3 +1203,8 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .form .auth-age label.radio { flex-direction: row; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; }
 .form .auth-extra input[type="checkbox"], .form .auth-extra input[type="radio"] { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
 .auth-terms { margin: 0; }
+@media (max-width: 760px) { .hub-tiles:has(> :nth-child(3):last-child) > :last-child { grid-column: span 2; } }
+.club-hint { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: 12px 14px; margin-top: 12px; border: 1.5px dashed var(--border-strong); border-radius: 12px; color: var(--muted); font-size: 13.5px; }
+.invite-scope { display: flex; flex-wrap: wrap; gap: 8px; }
+.invite-scope .chip { font-weight: 600; padding: 7px 14px; }
+.invite-explain { margin: 0; }
