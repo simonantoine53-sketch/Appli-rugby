@@ -23,11 +23,13 @@
   const view = () => location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'home';
   const loggedIn = () => A.isLoggedIn() && A.user();
   const teamId = () => { const t = A.team && A.team(); return t ? t.id : null; };
+  // Mesure d'usage (événements, temps passé) : seulement avec l'accord de la personne (bandeau de consentement)
+  const consentOk = () => !!(window.RugbyConsent && window.RugbyConsent.stats());
 
   /* ---------- Suivi d'usage : événements ---------- */
   const queue = [];
   function track(name, props) {
-    if (!loggedIn()) return;
+    if (!loggedIn() || !consentOk()) return;
     queue.push({ user_id: A.user().id, team_id: teamId(), name: String(name).slice(0, 40), props: props || {}, device: device() });
     if (queue.length >= 20) flush();
   }
@@ -43,14 +45,14 @@
   const sess = { id: null, user: null, seconds: 0, editor: 0, dirty: false };
   const TICK = 15;
   setInterval(() => {
-    if (!loggedIn() || document.visibilityState !== 'visible') return;
+    if (!loggedIn() || !consentOk() || document.visibilityState !== 'visible') return;
     if (sess.user !== A.user().id) Object.assign(sess, { id: crypto.randomUUID(), user: A.user().id, seconds: 0, editor: 0 });
     sess.seconds += TICK; if (view() === 'editor') sess.editor += TICK;
     sess.dirty = true;
     if (sess.seconds % 60 === 0) saveSession();
   }, TICK * 1000);
   async function saveSession() {
-    if (!sess.dirty || !sess.id || !loggedIn() || sess.user !== A.user().id) return;
+    if (!sess.dirty || !sess.id || !loggedIn() || !consentOk() || sess.user !== A.user().id) return;
     sess.dirty = false;
     const { error } = await sb.from('usage_sessions').upsert({ id: sess.id, user_id: sess.user, device: device(), build, seconds: Math.min(sess.seconds, 86399), editor_seconds: Math.min(sess.editor, sess.seconds, 86399), last_seen_at: new Date().toISOString() });
     if (error) console.warn('usage_sessions', error.message);

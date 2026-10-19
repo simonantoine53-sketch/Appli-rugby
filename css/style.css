@@ -1037,11 +1037,21 @@ select:disabled { opacity: .5; cursor: default; }
 .tools-formations .tool .cap { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* Confidentialité */
-.privacy-box { max-width: 560px; }
-.privacy-text { max-height: 65vh; overflow-y: auto; padding: 4px 18px 18px; font-size: 14px; line-height: 1.5; color: var(--text); }
-.privacy-text h4 { margin: 14px 0 4px; font-size: 15px; }
-.privacy-text ul { margin: 4px 0; padding-left: 18px; }
-.privacy-text li { margin: 3px 0; }
+.legal-box { width: min(680px, 100%); }
+.legal-tabs { padding: 0 14px; overflow-x: auto; flex: 0 0 auto; white-space: nowrap; }
+.legal-tabs .tab { flex: 0 0 auto; }
+.legal-body { overflow-y: auto; padding: 8px 18px 22px; font-size: 14px; line-height: 1.55; color: var(--text); min-height: 0; }
+.legal-body h4 { margin: 18px 0 6px; font-size: 15px; }
+.legal-body p { margin: 6px 0; }
+.legal-body ul { margin: 4px 0; padding-left: 18px; }
+.legal-body li { margin: 4px 0; }
+.legal-kid { background: var(--primary-soft); border-radius: 12px; padding: 12px 14px; margin-top: 6px; }
+.legal-kid ul { margin-top: 6px; }
+.legal-table-wrap { overflow-x: auto; margin: 6px 0; border: 1px solid var(--border); border-radius: 10px; }
+.legal-table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13px; }
+.legal-table th, .legal-table td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.legal-table th { background: var(--bg); font-weight: 700; }
+.legal-table tr:last-child td { border-bottom: 0; }
 
 /* Inscription : e-mail à confirmer */
 .form-error.info { color: var(--success); }
@@ -1169,3 +1179,27 @@ button.switch { border: 0; padding: 0; }
    appli installée (écran d'accueil) : au moins 14 px, pour ne pas toucher la barre d'accueil de l'iPhone */
 :root { --bar-safe: env(safe-area-inset-bottom, 0px); }
 @media (display-mode: standalone) { :root { --bar-safe: max(14px, env(safe-area-inset-bottom, 0px)); } }
+
+/* Bandeau de consentement (mesure d'usage) : non bloquant, au-dessus de la barre du bas */
+.consent-bar { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(12px + var(--bar-safe)); max-width: 520px; margin: 0 auto; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.consent-bar p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13.5px; }
+.consent-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 760px) { .consent-bar { bottom: calc(68px + var(--bar-safe)); } }
+
+/* Inscription : âge, accord parental, conditions */
+.auth-extra { display: flex; flex-direction: column; gap: 10px; }
+.auth-age { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.auth-age legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.auth-age label { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.auth-parent { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); }
+.auth-parent .help { margin: 0; }
+label.check { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.4; font-weight: 400; }
+label.check input { margin-top: 2px; flex: 0 0 auto; }
+#modal-legal { z-index: 90; }
+.terms-bar { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
+@media (max-width: 760px) { .terms-bar { bottom: auto; } }
+.consent-actions.single { grid-template-columns: 1fr; }
+.form .auth-extra label.check { align-items: flex-start; font-weight: 400; font-size: 13.5px; }
+.form .auth-age label.radio { flex-direction: row; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; }
+.form .auth-extra input[type="checkbox"], .form .auth-extra input[type="radio"] { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
+.auth-terms { margin: 0; }

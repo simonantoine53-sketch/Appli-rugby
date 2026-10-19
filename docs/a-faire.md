@@ -19,7 +19,7 @@ Mis à jour le 15/10/2026.
 
 ## Reporté (on en reparle avant de commencer)
 
-- **RGPD** : mentions légales, registre des traitements, durée de conservation, consentement. À faire ce soir ou dans la semaine.
+- **RGPD** : fait le 19/10 (confidentialité, cookies, conditions, mentions légales, accord parental, nettoyage automatique). Reste : adresse e-mail de contact dédiée (js/legal.js, champ email), coller la partie 2 de supabase/migrations/0018_rgpd.sql dans le SQL Editor, registre des traitements à tenir (document interne).
 - **Équipes jeunes** : catégories d'âge (montée automatique ou par le coach), profils parents et enfants, lien pour remettre son compte à l'enfant, RGPD des mineurs (accord parental).
 - Logo au niveau du club (aujourd'hui : par équipe, dans la feuille de match).
 - Mode sombre.

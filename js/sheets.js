@@ -233,7 +233,7 @@
     if (h2c) return h2c;
     h2c = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.src = 'vendor/html2canvas.min.js';
       s.onload = () => resolve(window.html2canvas); s.onerror = () => { h2c = null; reject(new Error('chargement')); };
       document.head.appendChild(s);
     });

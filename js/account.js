@@ -68,6 +68,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
       await loadTeams();
       watchMyMemberships();
+      checkTerms();
     } else { S.profile = null; S.teams = []; S.clubs = []; setTeam(null); watchMyMemberships(); }
     renderAccountButton();
     ready = true;
@@ -83,6 +84,18 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     else if (authReturn === 'recovery' && data.session) openAuth('reset');
     else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
   });
+
+  /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
+  async function checkTerms() {
+    const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
+    const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
+    if (data && data.terms_version === L.version) return;
+    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugby Strat (mineurs, durées de conservation, vos droits). <a href="#" data-legal="privacy">Les lire</a></p>`);
+    bar.setAttribute('role', 'dialog');
+    const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
+    const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
+    document.body.appendChild(bar);
+  }
 
   /* Demandes d'adhésion en temps réel : acceptée, refusée ou nouvelle demande à valider, sans recharger la page */
   let syncTimer = null, lastSync = 0;
@@ -191,12 +204,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
   /** Modes : login, signup, forgot (demande du lien de réinitialisation), reset (nouveau mot de passe après le lien). */
+  document.querySelectorAll('input[name="auth-age"]').forEach(r => r.addEventListener('change', () => {
+    $('#auth-parent').classList.toggle('hidden', !document.querySelector('input[name="auth-age"][value="u15"]').checked);
+  }));
   function setAuthMode(mode) {
     showPending(false);
     const tabs = mode === 'login' || mode === 'signup';
     document.querySelector('#modal-auth .tabs').classList.toggle('hidden', !tabs);
     document.querySelectorAll('#modal-auth .tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     $('#auth-name').closest('label').classList.toggle('hidden', mode !== 'signup');
+    $('#auth-signup-extra').classList.toggle('hidden', mode !== 'signup');
     $('#auth-email-field').classList.toggle('hidden', mode === 'reset');
     $('#auth-email').required = mode !== 'reset';
     $('#auth-password-field').classList.toggle('hidden', mode === 'forgot');
@@ -293,7 +310,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         b.disabled = false; return;
       }
       if (mode === 'signup') {
-        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name || email.split('@')[0] }, emailRedirectTo: location.origin + location.pathname } });
+        // Information et accord parental (moins de 15 ans) : enregistrés avec le compte, comme preuve
+        const u15 = (document.querySelector('input[name="auth-age"]:checked') || {}).value === 'u15';
+        const parentEmail = $('#auth-parent-email').value.trim();
+        if (u15 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(parentEmail)) { setAuthMsg('Indiquez l’e-mail d’un parent.'); b.disabled = false; return; }
+        if (u15 && parentEmail.toLowerCase() === email.toLowerCase()) { setAuthMsg('L’e-mail du parent doit être différent du vôtre.'); b.disabled = false; return; }
+        if (u15 && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord d’un parent.'); b.disabled = false; return; }
+        const meta = { display_name: name || email.split('@')[0], terms_version: window.RugbyLegal ? window.RugbyLegal.version : '', under_15: u15, parent_email: u15 ? parentEmail : '', parental_consent: u15 };
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
         if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
@@ -333,10 +357,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#btn-admin').classList.toggle('hidden', !isSuper());
   }
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
-  $('#btn-privacy').onclick = () => E.openModal('modal-privacy');
+  $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
+  $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);
   // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée
   $('#btn-tour').onclick = () => { E.go('home'); setTimeout(() => { if (window.RugbyTour) window.RugbyTour.start(isStaff() ? 'coach' : 'player'); }, 1200); };
-  document.querySelectorAll('.link-privacy').forEach(a => { a.onclick = e => { e.preventDefault(); E.openModal('modal-privacy'); }; });
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
     const D = window.RugbyDialog;
