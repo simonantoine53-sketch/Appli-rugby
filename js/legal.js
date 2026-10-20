@@ -6,7 +6,7 @@
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '20 octobre 2026',
+    updated: '20 octobre 2026 (nouveau nom : Rugbeo)',
     version: '2026-10-20'
   };
   const $ = s => document.querySelector(s);
@@ -28,7 +28,7 @@
       </div>
 
       <h4>1. Qui est responsable de vos données ?</h4>
-      <p>L’appli Rugby Strat est éditée par <strong>${LEGAL.owner}</strong>, qui est le responsable du traitement de vos données. Pour toute question ou demande : ${contact()}.</p>
+      <p>L’appli Rugbeo est éditée par <strong>${LEGAL.owner}</strong>, qui est le responsable du traitement de vos données. Pour toute question ou demande : ${contact()}.</p>
       <p>Les clubs et les coachs qui utilisent l’appli décident de ce qu’ils y mettent (stratégies, convocations, compositions) pour leur équipe. Ils doivent eux aussi respecter vos données (voir les Conditions d’utilisation).</p>
 
       <h4>2. Quelles données, pourquoi, et sur quelle base ?</h4>
@@ -108,7 +108,7 @@
       <p>Si cette politique change sur le fond, l’appli vous le signale à votre prochaine connexion. Dernière mise à jour : ${LEGAL.updated}.</p>` },
 
     cookies: { tab: 'Cookies', html: () => `
-      <p><strong>Rugby Strat n’utilise aucun cookie</strong>, ni publicitaire ni de réseau social, et aucun traceur d’une autre société : toutes les bibliothèques de l’appli sont hébergées avec elle.</p>
+      <p><strong>Rugbeo n’utilise aucun cookie</strong>, ni publicitaire ni de réseau social, et aucun traceur d’une autre société : toutes les bibliothèques de l’appli sont hébergées avec elle.</p>
       <h4>Ce que l’appli garde dans votre navigateur</h4>
       <p>Comme toute appli, elle range quelques informations dans le stockage de votre navigateur pour fonctionner. Elles sont <strong>strictement nécessaires</strong> et ne demandent donc pas votre accord :</p>
       <ul>
@@ -129,9 +129,9 @@
       <p>L’appli ne vous envoie des notifications que si vous l’acceptez, en deux temps : nous vous expliquons d’abord à quoi elles servent, puis votre appareil vous demande l’autorisation. Vous pouvez les couper à tout moment (Compte → Notifications, ou dans les réglages de votre appareil). Leur contenu est chiffré pendant le transport.</p>` },
 
     cgu: { tab: 'Conditions', html: () => `
-      <p>Ces conditions d’utilisation s’appliquent à toute personne qui crée un compte sur Rugby Strat. En créant un compte, vous les acceptez.</p>
+      <p>Ces conditions d’utilisation s’appliquent à toute personne qui crée un compte sur Rugbeo. En créant un compte, vous les acceptez.</p>
       <h4>1. Le service</h4>
-      <p>Rugby Strat aide les équipes et les clubs de rugby à dessiner et partager des stratégies, organiser les convocations et préparer les compositions. L’appli est gratuite pour le moment ; si une offre payante est créée, elle sera proposée clairement et jamais imposée sans votre accord.</p>
+      <p>Rugbeo aide les équipes et les clubs de rugby à dessiner et partager des stratégies, organiser les convocations et préparer les compositions. L’appli est gratuite pour le moment ; si une offre payante est créée, elle sera proposée clairement et jamais imposée sans votre accord.</p>
       <h4>2. Votre compte</h4>
       <ul>
         <li>Donnez des informations exactes et gardez votre mot de passe secret : vous êtes responsable de ce qui est fait avec votre compte.</li>
@@ -160,7 +160,7 @@
 
     legal: { tab: 'Mentions légales', html: () => `
       <h4>Éditeur</h4>
-      <p><strong>${LEGAL.owner}</strong>, particulier.<br>Contact : ${contact()}.</p>
+      <p>L’appli <strong>Rugbeo</strong> (l’appli des clubs de rugby) est éditée par <strong>${LEGAL.owner}</strong>, particulier.<br>Contact : ${contact()}.</p>
       <h4>Directeur de la publication</h4>
       <p>${LEGAL.owner}.</p>
       <h4>Hébergement</h4>
@@ -169,7 +169,7 @@
         <li><strong>Données des comptes</strong> : Supabase, Inc., hébergées sur des serveurs Amazon Web Services situés à Paris (France).</li>
       </ul>
       <h4>Propriété intellectuelle</h4>
-      <p>L’appli, son code, son nom et son design appartiennent à ${LEGAL.owner}. Les stratégies et dessins appartiennent à leurs auteurs.</p>
+      <p>L’appli Rugbeo, son code, son nom et son design appartiennent à ${LEGAL.owner}. Les stratégies et dessins appartiennent à leurs auteurs.</p>
       <h4>Données personnelles</h4>
       <p>Voir l’onglet Confidentialité. Pour exercer vos droits : ${contact()}.</p>` }
   };

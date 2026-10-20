@@ -993,7 +993,7 @@
       <style>body{font-family:Arial,Helvetica,sans-serif;margin:16mm;color:#1f2933}h1{margin:0 0 2px;font-size:22px}.sub{color:#666;margin:0 0 14px;font-size:13px}
       .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.step{break-inside:avoid;border:1px solid #ddd;border-radius:8px;padding:8px}.step h2{font-size:14px;margin:0 0 6px}.step svg{width:100%;height:auto;border-radius:6px}
       @media print{.noprint{display:none}}@page{margin:12mm}</style></head><body>
-      <h1>${esc(d.title)}</h1><p class="sub">${esc([d.category, d.tags].filter(Boolean).join(' · '))}${d.category || d.tags ? ' · ' : ''}${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · Appli Rugby Strat</p>
+      <h1>${esc(d.title)}</h1><p class="sub">${esc([d.category, d.tags].filter(Boolean).join(' · '))}${d.category || d.tags ? ' · ' : ''}${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · Rugbeo</p>
       <p class="noprint"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></p>
       <div class="grid">${steps}</div></body></html>`;
     const w = window.open('', '_blank');

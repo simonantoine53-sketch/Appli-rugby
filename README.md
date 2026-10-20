@@ -1,4 +1,6 @@
-# Appli Rugby – Éditeur d'exercices
+# Rugbeo – L'appli des clubs de rugby
+
+*De la convoc' au maillot, Rugbeo.*
 
 Outil web pour dessiner des exercices et des combinaisons de rugby, étape par étape, puis les partager en image, en GIF animé ou en vidéo.
 

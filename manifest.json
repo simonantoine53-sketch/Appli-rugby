@@ -1,7 +1,7 @@
 {
-  "name": "Appli Rugby Strat",
-  "short_name": "Rugby Strat",
-  "description": "Dessinez, animez et partagez vos stratégies de rugby avec votre équipe.",
+  "name": "Rugbeo",
+  "short_name": "Rugbeo",
+  "description": "L'appli des clubs de rugby. De la convoc' au maillot.",
   "start_url": "./index.html#/",
   "scope": "./",
   "display": "standalone",

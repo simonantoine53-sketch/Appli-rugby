@@ -85,7 +85,7 @@
       sel.classList.remove('hidden'); title.classList.add('hidden');
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
-      title.textContent = team ? team.name : 'Rugby Strat';
+      title.textContent = team ? team.name : 'Rugbeo';
     }
     // Une seule action principale : nouveau dessin (Stratégies, et accueil du staff)
     $('#home-new').classList.toggle('hidden', !(view === 'strats' || (view === 'home' && logged && A.isStaff() && team)));
@@ -129,8 +129,8 @@
   /* ---------- Accueil ---------- */
   let seq = 0;
   function hero(root) {
-    const box = el('div', 'hero', `<h1>Dessinez vos combinaisons de rugby, toute l’équipe les comprend.</h1>
-      <ul><li>Placez joueurs, courses et passes en quelques secondes</li><li>Animez étape par étape, zoomez sur une touche ou une mêlée</li><li>Publiez à l’équipe et voyez qui a regardé avant le match</li></ul>`);
+    const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>Dessinez vos combinaisons de rugby, toute l’équipe les comprend.</h1>
+      <ul><li>Placez joueurs, courses et passes en quelques secondes</li><li>Animez étape par étape, zoomez sur une touche ou une mêlée</li><li>Publiez à l’équipe et voyez qui a regardé avant le match</li></ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
     if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Essayer sans compte', 'outline', () => E.go('editor')));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));
@@ -154,7 +154,7 @@
     if (!active || !A.isLoggedIn()) { if (active && !A.isReady()) { root.appendChild(el('p', 'muted center', 'Chargement…')); return; } hero(root); return; }
     const team = A.team();
     if (!team) {
-      hello(root, 'Bienvenue sur Rugby Strat.');
+      hello(root, 'Bienvenue sur Rugbeo.');
       // Déjà membre d'un club : il ne reste qu'à choisir ses équipes
       const club = A.clubs && A.clubs()[0];
       if (club) {

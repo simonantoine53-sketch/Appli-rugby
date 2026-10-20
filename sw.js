@@ -5,7 +5,7 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch (_) { data = { body: e.data && e.data.text() }; }
-  const title = data.title || 'Appli Rugby Strat';
+  const title = data.title || 'Rugbeo';
   e.waitUntil(self.registration.showNotification(title, {
     body: data.body || '',
     icon: './icons/icon-192.png',

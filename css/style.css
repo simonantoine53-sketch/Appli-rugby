@@ -1249,3 +1249,10 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .dash-tip span { display: flex; align-items: center; gap: 6px; }
 .dash-big { font-size: 34px; font-weight: 700; margin: 4px 0 10px; font-variant-numeric: tabular-nums; }
 .bar-n small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+/* Nom et slogan : accueil (sans compte) et fenêtre de connexion */
+.hero-brand { margin: 0 0 6px; font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+.hero-brand strong { color: var(--field); font-size: 15px; letter-spacing: .01em; }
+.hero-slogan { margin: 4px 0 0; font-weight: 600; color: var(--text); }
+.auth-brand { margin: 0; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
+.auth-brand strong { color: var(--field); }

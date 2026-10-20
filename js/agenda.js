@@ -359,7 +359,7 @@
     const start = new Date(ev.meet_at || ev.starts_at), end = new Date(new Date(ev.starts_at).getTime() + (ev.kind === 'match' ? 2.5 : 1.5) * 3600e3);
     const txt = s => String(s || '').replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
     const team = A.team() ? A.team().name : '';
-    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rugby Strat//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rugbeo//FR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${ev.id}@rugby-strat`, `DTSTAMP:${z(new Date())}`, `DTSTART:${z(start)}`, `DTEND:${z(end)}`,
       `SUMMARY:${txt(`${team ? team + ' · ' : ''}${KIND[ev.kind]} ${ev.kind === 'match' ? label(ev).toLowerCase() : ''}`.trim())}`,
       ev.location ? `LOCATION:${txt(ev.location)}` : '', `DESCRIPTION:${txt([ev.meet_at ? 'Rendez-vous ' + time(ev.meet_at) + ', début ' + time(ev.starts_at) : '', ev.notes].filter(Boolean).join('\n'))}`,

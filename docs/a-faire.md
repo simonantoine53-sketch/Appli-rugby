@@ -1,4 +1,4 @@
-# Rugby Strat : à faire et idées gardées de côté
+# Rugbeo : à faire et idées gardées de côté
 
 Mis à jour le 15/10/2026.
 

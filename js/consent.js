@@ -21,7 +21,7 @@
     bar = document.createElement('div');
     bar.className = 'consent-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-labelledby', 'consent-title');
     bar.innerHTML = `<strong id="consent-title">Vos données, votre choix</strong>
-      <p>Rugby Strat n’utilise ni cookie ni publicité. Nous comptons les onglets ouverts de façon anonyme. Avec votre accord, nous mesurons aussi votre usage en détail (temps passé, fonctions utilisées) pour améliorer l’appli. Refuser ne change rien au fonctionnement. <a href="#" data-legal="cookies">En savoir plus</a></p>
+      <p>Rugbeo n’utilise ni cookie ni publicité. Nous comptons les onglets ouverts de façon anonyme. Avec votre accord, nous mesurons aussi votre usage en détail (temps passé, fonctions utilisées) pour améliorer l’appli. Refuser ne change rien au fonctionnement. <a href="#" data-legal="cookies">En savoir plus</a></p>
       <div class="consent-actions"><button type="button" class="btn outline" data-c="0">Refuser</button><button type="button" class="btn outline" data-c="1">Accepter</button></div>`;
     bar.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
       const ok = b.dataset.c === '1';

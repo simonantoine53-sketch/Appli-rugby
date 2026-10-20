@@ -3,14 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Appli Rugby – Éditeur d'exercices</title>
+  <title>Rugbeo – L’appli des clubs de rugby</title>
+  <meta name="description" content="Rugbeo, l’appli des clubs de rugby : stratégies animées, convocations, compos et feuilles de match. De la convoc’ au maillot, Rugbeo.">
+  <meta name="application-name" content="Rugbeo">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
   <meta name="theme-color" content="#4a9e4f">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610200224">
+  <meta name="apple-mobile-web-app-title" content="Rugbeo">
+  <link rel="stylesheet" href="css/style.css?v=202610200257">
 </head>
 <body>
 
@@ -21,7 +23,7 @@
   <div class="brand">
     <svg id="hub-logo-default" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
     <img id="hub-logo" class="hub-logo hidden" alt="">
-    <strong id="hub-title">Rugby Strat</strong>
+    <strong id="hub-title">Rugbeo</strong>
     <select id="hub-team" class="hub-team hidden" aria-label="Changer d'équipe"></select>
   </div>
   <nav id="hub-tabs" class="hub-tabs" aria-label="Navigation principale"></nav>
@@ -422,6 +424,7 @@
       <div class="tabs small"><button class="tab active" data-mode="login">Connexion</button><button class="tab" data-mode="signup">Inscription</button></div><strong id="auth-title" class="hidden"></strong>
       <button class="btn-close" data-close="modal-auth" title="Fermer">✕</button>
     </div>
+    <p class="auth-brand"><strong>Rugbeo</strong> · De la convoc’ au maillot.</p>
     <form id="auth-form" class="form" data-mode="login">
       <label class="hidden">Prénom / pseudo<input id="auth-name" type="text" autocomplete="nickname" maxlength="40"></label>
       <p id="auth-intro" class="help hidden"></p>
@@ -632,27 +635,27 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610200224"></script>
-<script src="js/legal.js?v=202610200224"></script>
-<script src="js/consent.js?v=202610200224"></script>
-<script src="js/selects.js?v=202610200224"></script>
-<script src="js/dialog.js?v=202610200224"></script>
-<script src="js/icons.js?v=202610200224"></script>
-<script src="js/field.js?v=202610200224"></script>
-<script src="js/formations.js?v=202610200224"></script>
-<script src="js/objects.js?v=202610200224"></script>
-<script src="js/export.js?v=202610200224"></script>
-<script src="vendor/supabase.min.js?v=202610200224"></script>
-<script src="js/config.js?v=202610200224"></script>
-<script src="js/editor.js?v=202610200224"></script>
-<script src="js/account.js?v=202610200224"></script>
-<script src="js/push.js?v=202610200224"></script>
-<script src="js/profile.js?v=202610200224"></script>
-<script src="js/admin.js?v=202610200224"></script>
-<script src="js/agenda.js?v=202610200224"></script>
-<script src="js/calimport.js?v=202610200224"></script>
-<script src="js/sheets.js?v=202610200224"></script>
-<script src="js/tour.js?v=202610200224"></script>
-<script src="js/hub.js?v=202610200224"></script>
+<script src="js/update.js?v=202610200257"></script>
+<script src="js/legal.js?v=202610200257"></script>
+<script src="js/consent.js?v=202610200257"></script>
+<script src="js/selects.js?v=202610200257"></script>
+<script src="js/dialog.js?v=202610200257"></script>
+<script src="js/icons.js?v=202610200257"></script>
+<script src="js/field.js?v=202610200257"></script>
+<script src="js/formations.js?v=202610200257"></script>
+<script src="js/objects.js?v=202610200257"></script>
+<script src="js/export.js?v=202610200257"></script>
+<script src="vendor/supabase.min.js?v=202610200257"></script>
+<script src="js/config.js?v=202610200257"></script>
+<script src="js/editor.js?v=202610200257"></script>
+<script src="js/account.js?v=202610200257"></script>
+<script src="js/push.js?v=202610200257"></script>
+<script src="js/profile.js?v=202610200257"></script>
+<script src="js/admin.js?v=202610200257"></script>
+<script src="js/agenda.js?v=202610200257"></script>
+<script src="js/calimport.js?v=202610200257"></script>
+<script src="js/sheets.js?v=202610200257"></script>
+<script src="js/tour.js?v=202610200257"></script>
+<script src="js/hub.js?v=202610200257"></script>
 </body>
 </html>

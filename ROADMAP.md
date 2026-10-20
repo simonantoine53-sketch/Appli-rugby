@@ -1,4 +1,4 @@
-# Feuille de route – Appli Rugby Strat
+# Feuille de route – Rugbeo
 
 Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'abord l'éditeur de stratégies avec les retours des coachs.
 

@@ -90,7 +90,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
     const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
     if (data && data.terms_version === L.version) return;
-    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugby Strat (mineurs, durées de conservation, vos droits). <a href="#" data-legal="privacy">Les lire</a></p>`);
+    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo (mineurs, durées de conservation, vos droits). <a href="#" data-legal="privacy">Les lire</a></p>`);
     bar.setAttribute('role', 'dialog');
     const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
     const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
@@ -521,8 +521,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Vous validez sa demande dans Équipe.`));
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
     msg.value = forClub
-      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}, puis choisissez vos équipes`
-      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugby Strat : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}`;
+      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}, puis choisissez vos équipes`
+      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}`;
     body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
@@ -540,11 +540,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
       icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
-      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoignez le club ' + club.name : 'Rejoignez l’équipe ' + t.name) + ' sur Rugby Strat')}&body=${enc()}`)
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoignez le club ' + club.name : 'Rejoignez l’équipe ' + t.name) + ' sur Rugbeo')}&body=${enc()}`)
     );
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
-      more.onclick = () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugby Strat', text: msg.value }).catch(() => {}); };
+      more.onclick = () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugbeo', text: msg.value }).catch(() => {}); };
       links.appendChild(more);
     }
     body.appendChild(links);
