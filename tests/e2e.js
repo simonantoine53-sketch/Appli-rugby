@@ -78,6 +78,7 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  â
     // Parent de deux jeunes
     page = await open(view, opts);
     await login(page, 'parent@exemple.test');
+    await page.waitForFunction(() => document.querySelectorAll('#hub-team option').length >= 2, null, { timeout: 20000 }).catch(() => {});
     const options = await page.$$eval('#hub-team option', os => os.map(o => o.textContent));
     check(options.some(o => o.includes('Tom')) && options.some(o => o.includes('Lina')) || (await page.textContent('#hub-title')).includes('U16'), 'parent : ses jeunes apparaissent dans le sÃ©lecteur');
     await shot(page, view, '06-parent-accueil');

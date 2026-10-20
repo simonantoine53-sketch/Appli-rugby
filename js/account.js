@@ -389,46 +389,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     b.disabled = false;
   };
 
-  /* ---------- Page Compte ---------- */
+  /* ---------- Page Compte : js/compte.js ---------- */
   function openAccount() { E.go('account'); }
-  function renderAccountPage() {
-    if (!S.user) return;
-    $('#account-name').textContent = S.profile.display_name;
-    $('#team-user').textContent = S.user.email;
-    const P = window.RugbyProfile;
-    if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
-    const box = $('#account-teams'); box.replaceChildren();
-    S.teams.filter(t => !t.superadmin && !t.notMember && !t.who).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role, t.plays)}`)));
-    S.clubs.filter(c => c.myRole === 'responsable').forEach(c => box.appendChild(el('div', 'account-team', `${esc(c.name)} <span class="role-badge coach">${esc(c.myTitle || 'Bureau du club')}</span>`)));
-    // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
-    const join = $('#account-join'); join.replaceChildren();
-    join.appendChild(kidsCard());
-    const pend = pendingCard(); if (pend) join.appendChild(pend);
-    const toggle = btn('Rejoindre ou créer un club, une équipe', 'outline wide', () => {
-      const forms = teamForms(() => { forms.replaceWith(toggle); toggle.focus(); });
-      toggle.replaceWith(forms);
-    });
-    join.appendChild(toggle);
-    if (window.RugbyPush) window.RugbyPush.renderButton(!!S.team);
-    $('#btn-admin').classList.toggle('hidden', !isSuper());
-  }
-  $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
-  $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
-  $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);
-  // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée
-  $('#btn-tour').onclick = () => { E.go('home'); setTimeout(() => { if (window.RugbyTour) window.RugbyTour.start(isStaff() ? 'coach' : 'player'); }, 1200); };
-  // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
-  $('#btn-delete-account').onclick = async () => {
-    const D = window.RugbyDialog;
-    if (!await D.confirm('Supprimer définitivement votre compte ? Vos dessins, formations, réponses aux convocations, votre profil et vos statistiques seront effacés, y compris les stratégies que vous avez publiées dans une équipe. Si vous êtes le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
-    const typed = await D.prompt('Pour confirmer, tapez SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
-    if (typed == null) return;
-    if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
-    const { error } = await sb.rpc('delete_my_account');
-    if (error) return E.toast(errMsg(error));
-    await sb.auth.signOut();
-    E.go('home'); E.toast('Votre compte et vos données ont été supprimés.');
-  };
+  const renderAccountPage = () => { if (window.RugbyCompte) window.RugbyCompte.render(); };
 
   /* ---------- Équipes : actions ---------- */
   /* ---------- Club et équipes : créer, rejoindre par code, demander ses équipes ---------- */
@@ -556,64 +519,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       note.textContent = open ? 'Vous serez au bureau du club et coach de sa première équipe.' : 'Sur invitation pour le moment : demandez le code de votre club.';
     });
     return box;
-  }
-  /** Mes jeunes (moins de 15 ans) : leurs équipes, leur profil, en ajouter ou en retirer. */
-  function kidsCard() {
-    const box = el('div', 'team-forms-card kids-card');
-    const P = window.RugbyProfile;
-    if (!S.kids.length) {
-      box.classList.add('kids-empty');
-      box.appendChild(el('p', 'help', 'Vous êtes parent d’un joueur de moins de 15 ans ? Gérez son compte depuis le vôtre : convocations, profil, équipes.'));
-    } else {
-      box.appendChild(el('h4', '', 'Mes jeunes'));
-      S.kids.forEach(k => {
-        const row = el('div', 'kid-row');
-        if (P) row.appendChild(P.avatar(k.display_name, k.avatar));
-        const teams = S.teams.filter(t => t.who === k.id).map(t => t.name).concat((S.pending || []).filter(t => t.who === k.id).map(t => t.name + ' (en attente)'));
-        row.appendChild(el('div', 'who', `${esc(k.display_name)}<small>${esc(teams.join(', ') || 'Pas encore d’équipe')}</small>`));
-        const acts = el('div', 'row-wrap');
-        acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
-        acts.appendChild(btn(S.kidLogins && S.kidLogins[k.id] ? 'Renvoyer le lien' : 'Lui donner son compte', 'outline small', () => handOver(k)));
-        acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
-          if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
-          const { error } = await sb.rpc('remove_child', { p_child: k.id });
-          if (error) return E.toast(errMsg(error));
-          await loadKids(); await loadTeams(); renderAccountPage(); E.toast(`${k.display_name} a été retiré de votre compte.`);
-        }));
-        row.appendChild(acts);
-        box.appendChild(row);
-        if (S.kidLogins && S.kidLogins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(S.kidLogins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
-      });
-    }
-    const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
-    f.onsubmit = async e => {
-      e.preventDefault();
-      const name = f.querySelector('input').value.trim();
-      const { error } = await sb.rpc('add_child', { p_name: name });
-      if (error) return E.toast(errMsg(error));
-      await loadKids(); await loadTeams(); watchMyMemberships(); renderAccountPage();
-      E.toast(`${name} est ajouté. Rejoignez son équipe avec le code du club, en choisissant « Pour ${name} ».`);
-    };
-    box.appendChild(f);
-    return box;
-  }
-  /** À 15 ans, le jeune peut avoir son propre compte : il reçoit un lien pour choisir son mot de passe.
-      Le parent garde la main jusqu'à la première connexion du jeune (claim_my_account). */
-  async function handOver(k) {
-    const D = window.RugbyDialog;
-    const first = (k.display_name || '').split(' ')[0];
-    const em = await D.prompt(`E-mail de ${first}`, (S.kidLogins && S.kidLogins[k.id]) || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
-    if (!em) return;
-    const again = await D.prompt('Retapez son adresse pour vérifier', '', { title: 'Lui donner son compte', placeholder: em.trim(), ok: 'Envoyer le lien', maxLength: 254 });
-    if (again == null) return;
-    if (again.trim().toLowerCase() !== em.trim().toLowerCase()) return E.toast('Les deux adresses ne sont pas identiques : rien n’a été envoyé.');
-    const { error } = await sb.rpc('handover_child', { p_child: k.id, p_email: em.trim() });
-    if (error) return E.toast(errMsg(error));
-    track('kid_handover');
-    const { error: e2 } = await sb.auth.resetPasswordForEmail(em.trim(), { redirectTo: location.origin + location.pathname });
-    await loadKids(); renderAccountPage();
-    if (e2) E.toast(`Compte transmis, mais l’e-mail n’est pas parti (${errMsg(e2)}). Réessayez avec « Renvoyer le lien ».`);
-    else E.toast(`Lien envoyé à ${em.trim()} : ${first} choisit son mot de passe et se connecte. Vous gérez son compte jusque-là.`);
   }
   function pendingCard() {
     if (!S.pending || !S.pending.length) return null;
@@ -1598,6 +1503,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
   function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, errMsg, roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
