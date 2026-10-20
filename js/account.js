@@ -85,6 +85,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     ready = true;
     refreshCurrentView();
     usePendingJoin(false);
+    // Sortie de la démo par « Créer mon compte »
+    let afterDemo = null; try { afterDemo = sessionStorage.getItem('rs-after-demo'); sessionStorage.removeItem('rs-after-demo'); } catch (e) { /* ignore */ }
+    if (afterDemo === 'signup' && !S.user) openAuth('signup');
     if (window.RugbyAdmin) window.RugbyAdmin.onSession();
   }
   sb.auth.getSession().then(({ data }) => refreshSession(data.session));

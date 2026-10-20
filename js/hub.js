@@ -137,7 +137,7 @@
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
-    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Essayer sans compte', 'outline', () => E.go('editor')));
+    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), btn('Essayer sans compte', 'ghost', () => E.go('editor')));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));
     box.appendChild(btns);
     if (active) {
@@ -168,6 +168,7 @@
     const cta = el('div', 'pres-cta');
     cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Créez votre compte en une minute.'));
     cta.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
+    cta.appendChild(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()));
     wrap.appendChild(cta);
     return wrap;
   }

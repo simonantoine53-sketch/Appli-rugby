@@ -66,6 +66,7 @@
      on explique pourquoi les notifications comptent avant que le navigateur ne pose sa question. */
   let asking = false;
   async function maybeAsk() {
+    if (window.RugbyDemo && window.RugbyDemo.isOn()) return;   // la démo ne demande pas les notifications
     const A = acc(); if (asking || !A || !A.isLoggedIn() || !A.team()) return;
     const key = 'push-asked-' + A.authUser().id;
     let last = 0; try { last = +localStorage.getItem(key) || 0; } catch (e) {}

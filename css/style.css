@@ -1347,3 +1347,8 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .qr-img svg { width: 100%; height: 100%; display: block; }
 .qr-acts { justify-content: center; }
 .auth-note { margin: 8px 18px 0; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); color: var(--text); font-size: 14px; }
+
+/* Mode démo : bandeau flottant, au-dessus de la barre de navigation du téléphone */
+.demo-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 4000; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; width: max-content; max-width: calc(100vw - 24px); padding: 8px 12px; border-radius: 14px; background: var(--text); color: var(--panel); box-shadow: var(--shadow); font-size: 14px; }
+.demo-banner .btn.ghost { color: var(--panel); }
+@media (max-width: 900px) { .demo-banner { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); } }
