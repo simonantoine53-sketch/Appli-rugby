@@ -245,6 +245,8 @@
     slot.appendChild(todo(d, notifOn, staff));
     kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
+    // Partenaires du club : bloc discret en bas de l'accueil
+    if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
     // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
     const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
     setTimeout(() => {

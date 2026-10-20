@@ -924,6 +924,9 @@
       preview.drawing = d; preview.canvas = '#share-canvas'; preview.label = '#share-step'; preview.playBtn = '#share-play'; preview.step = 0; preview.playing = false;
       showPreviewStep(0);
       if (d.steps.length > 1) setPlaying(true);
+      // Partenaires du club de l'équipe, en bas de page
+      const foot = $('#share-sponsors'); foot.replaceChildren();
+      if (row.sponsors && row.sponsors.length && window.RugbySponsors) foot.appendChild(window.RugbySponsors.strip(row.sponsors, { title: row.club_name ? `Partenaires de ${row.club_name}` : 'Partenaires du club' }));
     });
   }
   $('#share-play').onclick = () => setPlaying(!preview.playing);
