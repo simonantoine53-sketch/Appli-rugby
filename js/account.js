@@ -607,7 +607,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     }
   }
 
-  const CLUB_TITLES = ['Président', 'Présidente', 'Vice-président', 'Vice-présidente', 'Secrétaire', 'Trésorier', 'Trésorière', 'Membre du bureau'];
+  const CLUB_TITLES = ['Président', 'Présidente', 'Vice-président(e)', 'Secrétaire', 'Trésorier', 'Trésorière', 'Membre du bureau'];
   /* ---------- Onglet Club : équipes du club, demandes, et gestion pour la direction ---------- */
   const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   async function renderClubTab(root, seq) {

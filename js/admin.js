@@ -326,7 +326,7 @@
     const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Bureau', ''], rows.map(r => {
       const actions = el('div', 'admin-actions');
       // Nommer au bureau : la personne, puis sa fonction (Présidente, Secrétaire…), qui donne la gestion du club
-      const TITLES = ['Président', 'Présidente', 'Vice-président', 'Vice-présidente', 'Secrétaire', 'Trésorier', 'Trésorière', 'Membre du bureau'];
+      const TITLES = ['Président', 'Présidente', 'Vice-président(e)', 'Secrétaire', 'Trésorier', 'Trésorière', 'Membre du bureau'];
       const nominate = btn('Nommer au bureau', 'outline small', () => window.RugbySelect.openMenu(nominate,
         byName.filter(u => !r.responsables.find(x => x.user_id === u.id)).map(u => [`${u.display_name} · ${u.email}`, () => setTimeout(() => window.RugbySelect.openMenu(nominate,
           TITLES.map(title => [title, async () => {
