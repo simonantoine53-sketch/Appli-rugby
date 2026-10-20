@@ -29,6 +29,9 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
     await page.addInitScript(() => { const o = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return /^(tour-done-|push-asked-)/.test(k) ? '1' : o.call(this, k); }; });
     await page.goto(BASE + '#/');
     await page.waitForTimeout(1500);
+    // Premier passage : bandeau « Vos données, votre choix » (on refuse la mesure détaillée, comme un visiteur prudent)
+    const refuse = await page.$('.consent-bar button:has-text("Refuser")');
+    if (refuse) { await refuse.click(); await page.waitForTimeout(300); }
     return page;
   }
   async function login(page, email) {
@@ -39,6 +42,8 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
     await page.waitForFunction(() => window.RugbyAccount.isLoggedIn(), null, { timeout: 15000 });
     await page.waitForTimeout(2000);
   }
+  // Attend qu'un texte apparaisse (la vraie base répond moins vite qu'un faux serveur)
+  const waitText = (page, text, ms) => page.waitForFunction(t => document.body.innerText.includes(t), text, { timeout: ms || 20000 }).then(() => true, () => false);
   const shot = (page, view, name) => page.screenshot({ path: path.join(OUT, `${view}-${name}.png`) });
 
   for (const [view, opts] of views) {
@@ -53,19 +58,20 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
     // Coach
     await login(page, 'coach@exemple.test');
     check(await page.isVisible('.hub-hello'), 'coach : accueil affiché');
+    await waitText(page, 'sans réponse');
     await shot(page, view, '02-coach-accueil');
     await page.evaluate(() => { location.hash = '#/agenda'; }); await page.waitForTimeout(2000);
-    check((await page.$$('.ev-card, .agenda-card, [data-ev]')).length > 0 || (await page.textContent('body')).includes('US Vallée Verte'), 'coach : le match apparaît dans l’agenda');
+    check(await waitText(page, 'US Vallée Verte'), 'coach : le match apparaît dans l’agenda');
     await shot(page, view, '03-coach-agenda');
     await page.evaluate(() => { location.hash = '#/team'; }); await page.waitForTimeout(2000);
-    check((await page.textContent('body')).includes('Demandes d’adhésion'), 'coach : demande d’adhésion en attente visible');
+    check(await waitText(page, 'Demandes d’adhésion'), 'coach : demande d’adhésion en attente visible');
     await shot(page, view, '04-coach-equipe');
     await page.close();
 
     // Joueur
     page = await open(view, opts);
     await login(page, 'joueur@exemple.test');
-    check((await page.textContent('body')).includes('serez-vous là'), 'joueur : convocation à répondre sur l’accueil');
+    check(await waitText(page, 'serez-vous là'), 'joueur : convocation à répondre sur l’accueil');
     await shot(page, view, '05-joueur-accueil');
     await page.close();
 
@@ -76,7 +82,7 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
     check(options.some(o => o.includes('Tom')) && options.some(o => o.includes('Lina')) || (await page.textContent('#hub-title')).includes('U16'), 'parent : ses jeunes apparaissent dans le sélecteur');
     await shot(page, view, '06-parent-accueil');
     await page.evaluate(() => { location.hash = '#/account'; }); await page.waitForTimeout(1500);
-    check((await page.textContent('body')).includes('Mes jeunes'), 'parent : carte « Mes jeunes » dans Compte');
+    check(await waitText(page, 'Mes jeunes'), 'parent : carte « Mes jeunes » dans Compte');
     await shot(page, view, '07-parent-compte');
     await page.close();
   }
