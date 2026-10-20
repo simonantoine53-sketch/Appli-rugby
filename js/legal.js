@@ -6,8 +6,10 @@
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '20 octobre 2026 (nouveau nom : Rugbeo)',
-    version: '2026-10-22'
+    updated: '22 octobre 2026',
+    version: '2026-10-22',
+    changes: 'abonnement à l’agenda, rappels de la veille, réponse depuis la notification'   // résumé affiché aux comptes existants
+
   };
   const $ = s => document.querySelector(s);
   const contact = () => LEGAL.email
@@ -204,5 +206,5 @@
     e.preventDefault(); open(a.dataset.legal);
   });
 
-  window.RugbyLegal = { open, version: LEGAL.version, owner: LEGAL.owner };
+  window.RugbyLegal = { open, version: LEGAL.version, changes: LEGAL.changes, owner: LEGAL.owner };
 })();

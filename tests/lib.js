@@ -37,6 +37,9 @@ function harness() {
     await page.click('#auth-submit');
     await page.waitForFunction(() => window.RugbyAccount.isLoggedIn(), null, { timeout: 15000 });
     await page.waitForTimeout(2000);
+    // Conditions mises à jour (nouvelle « version » de js/legal.js) : bandeau à relire, on le ferme
+    const terms = await page.waitForSelector('.terms-bar button', { timeout: 4000 }).catch(() => null);
+    if (terms) { await terms.click(); await page.waitForTimeout(500); }
   }
   // Attend qu'un texte apparaisse (la vraie base répond moins vite qu'un faux serveur)
   const waitText = (page, text, ms) => page.waitForFunction(t => document.body.innerText.includes(t), text, { timeout: ms || 20000 }).then(() => true, () => false);
