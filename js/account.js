@@ -24,7 +24,7 @@
     return '';
   })();
   const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
-  const S = { user: null, profile: null, teams: [], clubs: [], team: null, channel: null, unseen: 0, current: { visibility: 'private', team_id: null, owner_id: null } };
+  const S = { user: null, profile: null, kids: [], teams: [], clubs: [], team: null, channel: null, unseen: 0, current: { visibility: 'private', team_id: null, owner_id: null } };
   const isUuid = v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || '');
   const TEAM_KEY = 'rugby-current-team';
   const seenKey = t => 'rugby-seen-' + t;
@@ -33,6 +33,12 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
   const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
   const isSuper = () => !!(S.profile && S.profile.is_superadmin);
+  // Espace parent : un compte gère aussi des jeunes ; l'équipe choisie dit pour qui on agit (moi ou un jeune)
+  const actorId = () => (S.team && S.team.who) || (S.user && S.user.id);
+  const actorProfile = () => (S.team && S.team.who && S.kids.find(k => k.id === S.team.who)) || S.profile;
+  const forArg = id => (id && S.user && id !== S.user.id ? { p_for: id } : {});
+  const kidName = id => { const k = S.kids.find(x => x.id === id); return k ? k.display_name : ''; };
+  const teamKey = t => t.id + (t.who ? '|' + t.who : '');
   // La direction du club a les droits d'un coach dans toutes les équipes du club (vérifié aussi par la base)
   const isCoach = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.clubAdmin));
   const isStaff = () => isSuper() || !!(S.team && (S.team.role === 'coach' || S.team.role === 'admin' || S.team.clubAdmin));
@@ -66,10 +72,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.user) {
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
+      await loadKids();
       await loadTeams();
       watchMyMemberships();
       checkTerms();
-    } else { S.profile = null; S.teams = []; S.clubs = []; setTeam(null); watchMyMemberships(); }
+    } else { S.profile = null; S.kids = []; S.teams = []; S.clubs = []; setTeam(null); watchMyMemberships(); }
     renderAccountButton();
     ready = true;
     refreshCurrentView();
@@ -84,6 +91,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     else if (authReturn === 'recovery' && data.session) openAuth('reset');
     else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
   });
+
+  async function loadKids() {
+    const { data } = await sb.from('profiles').select('*').eq('guardian_id', S.user.id).order('created_at');
+    S.kids = data || [];
+  }
 
   /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
   async function checkTerms() {
@@ -116,7 +128,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.meChannel) { sb.removeChannel(S.meChannel); S.meChannel = null; }
     if (!S.user) return;
     S.meChannel = sb.channel('me-' + S.user.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: 'user_id=eq.' + S.user.id }, syncTeams)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: S.kids.length ? `user_id=in.(${[S.user.id, ...S.kids.map(k => k.id)].join(',')})` : 'user_id=eq.' + S.user.id }, syncTeams)
       .subscribe();
   }
   // Retour sur l'appli (téléphone déverrouillé, onglet repris) : on remet les équipes à jour
@@ -129,42 +141,48 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id';
   async function loadTeams() {
+    const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
-      sb.from('team_members').select(`role, status, plays, teams(${TEAM_COLS})`).eq('user_id', S.user.id),
-      sb.from('club_members').select('role, title, clubs(id, name, join_code, season_start)').eq('user_id', S.user.id)
+      sb.from('team_members').select(`user_id, role, status, plays, teams(${TEAM_COLS})`).in('user_id', ids),
+      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start)').in('user_id', ids)
     ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
-    S.pending = rows.filter(r => r.status === 'pending').map(r => r.teams);
-    S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role, plays: !!r.plays }, r.teams));
-    S.clubs = (cm || []).filter(r => r.clubs).map(r => Object.assign({ myRole: r.role, myTitle: r.title || '' }, r.clubs));
+    // Équipe d'un jeune : on retient pour qui (who) et son prénom
+    const whoOf = r => (r.user_id === S.user.id ? {} : { who: r.user_id, kidName: kidName(r.user_id) });
+    S.pending = rows.filter(r => r.status === 'pending').map(r => Object.assign(whoOf(r), r.teams));
+    S.teams = rows.filter(r => r.status === 'active').map(r => Object.assign({ role: r.role, plays: !!r.plays }, whoOf(r), r.teams));
+    // Clubs : mes lignes d'abord (ma fonction), puis les clubs de mes jeunes
+    const cmRows = (cm || []).filter(r => r.clubs).sort((a, b) => (a.user_id === S.user.id ? 0 : 1) - (b.user_id === S.user.id ? 0 : 1));
+    S.clubs = [];
+    cmRows.forEach(r => { if (!S.clubs.find(c => c.id === r.clubs.id)) S.clubs.push(Object.assign({ myRole: r.user_id === S.user.id ? r.role : 'member', myTitle: r.user_id === S.user.id ? r.title || '' : '' }, r.clubs)); });
     // Direction du club : toutes les équipes du club, avec les droits d'un coach
     const adminClubs = S.clubs.filter(c => c.myRole === 'responsable').map(c => c.id);
     if (adminClubs.length) {
       const { data: ct } = await sb.from('teams').select(TEAM_COLS).in('club_id', adminClubs);
-      (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
+      (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id && !x.who); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
     if (isSuper()) {
       const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start').order('name')]);
-      (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
+      (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id && !x.who)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
       (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
     }
     S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; });
-    S.teams.sort((a, b) => a.clubName.localeCompare(b.clubName) || a.name.localeCompare(b.name));
+    S.teams.sort((a, b) => a.clubName.localeCompare(b.clubName) || a.name.localeCompare(b.name) || (a.kidName || '').localeCompare(b.kidName || ''));
     let wanted = null; try { wanted = localStorage.getItem(TEAM_KEY); } catch (e) { /* ignore */ }
-    setTeam(S.teams.find(t => t.id === wanted) || S.teams[0] || null);
+    setTeam(S.teams.find(t => teamKey(t) === wanted) || S.teams.find(t => t.id === wanted) || S.teams[0] || null);
   }
 
   function setTeam(team) {
     S.team = team;
-    try { if (team) localStorage.setItem(TEAM_KEY, team.id); } catch (e) { /* ignore */ }
+    try { if (team) localStorage.setItem(TEAM_KEY, teamKey(team)); } catch (e) { /* ignore */ }
     if (S.channel) { sb.removeChannel(S.channel); S.channel = null; }
     S.unseen = 0;
     if (team) {
       S.channel = sb.channel('drawings-' + team.id)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'drawings', filter: 'team_id=eq.' + team.id }, payload => {
           const row = payload.new;
-          if (!row || row.visibility !== 'team' || row.owner_id === S.user.id) return;
+          if (!row || row.visibility !== 'team' || row.owner_id === actorId()) return;
           const wasTeam = payload.old && payload.old.visibility === 'team';
           if (payload.eventType === 'INSERT' || !wasTeam) { S.unseen++; renderAccountButton(); E.toast('Nouvelle stratégie publiée : ' + row.title); }
         })
@@ -179,7 +197,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function countUnseen(teamId) {
     let since = null; try { since = localStorage.getItem(seenKey(teamId)); } catch (e) { /* ignore */ }
-    let q = sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', teamId).eq('visibility', 'team').neq('owner_id', S.user.id);
+    let q = sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', teamId).eq('visibility', 'team').neq('owner_id', actorId());
     if (since) q = q.gt('published_at', since);
     const { count } = await q;
     S.unseen = count || 0; renderAccountButton();
@@ -199,14 +217,38 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
   accountButtons.forEach(b => { b.onclick = () => S.user ? openAccount() : openAuth(); });
   /** Profils incomplets : pour l'invitation « Complète ton profil » de l'accueil. */
-  const profileIncomplete = () => !!(S.profile && (!S.profile.avatar || !(S.profile.positions || []).length));
+  const profileIncomplete = () => { const p = actorProfile(); return !!(p && (!p.avatar || !(p.positions || []).length)); };
 
   /* ---------- Connexion / inscription ---------- */
   function openAuth(mode) { E.openModal('modal-auth'); setAuthMode(mode || 'login'); }
   /** Modes : login, signup, forgot (demande du lien de réinitialisation), reset (nouveau mot de passe après le lien). */
-  document.querySelectorAll('input[name="auth-age"]').forEach(r => r.addEventListener('change', () => {
-    $('#auth-parent').classList.toggle('hidden', !document.querySelector('input[name="auth-age"][value="u15"]').checked);
-  }));
+  /* Inscription en deux étapes : qui crée le compte (15 ans et plus, ou parent d'un jeune), puis le formulaire adapté. */
+  let signupWho = '';   // '' (choix), 'adult' ou 'parent'
+  function addKidInput(value) {
+    const list = $('#auth-kid-list');
+    if (list.children.length >= 6) return E.toast('6 jeunes au maximum par compte.');
+    const i = el('input'); i.type = 'text'; i.maxLength = 60; i.className = 'auth-kid'; i.placeholder = 'Prénom et nom'; i.autocomplete = 'off'; i.value = value || '';
+    i.setAttribute('aria-label', 'Prénom et nom du jeune');
+    list.appendChild(i);
+    $('#auth-kids .auth-kids-label').textContent = list.children.length > 1 ? 'Prénom et nom des jeunes' : 'Prénom et nom du jeune';
+    return i;
+  }
+  $('#auth-kid-add').onclick = () => { const i = addKidInput(); if (i) i.focus(); };
+  function setSignupWho(who) {
+    signupWho = who;
+    const choose = !who, parent = who === 'parent';
+    $('#auth-who').classList.toggle('hidden', !choose);
+    $('#auth-form').classList.toggle('hidden', choose);
+    $('#auth-who-back').classList.toggle('hidden', choose);
+    $('#auth-kids').classList.toggle('hidden', !parent);
+    $('#auth-parent').classList.toggle('hidden', !parent);
+    $('#auth-name-label').textContent = parent ? 'Votre prénom et nom (parent)' : 'Prénom et nom';
+    $('#auth-submit').textContent = parent ? 'Créer le compte' : 'Créer mon compte';
+    if (parent && !$('#auth-kid-list').children.length) addKidInput();
+    setAuthMsg('');
+  }
+  document.querySelectorAll('#auth-who .who-card').forEach(b => { b.onclick = () => { setSignupWho(b.dataset.who); const f = b.dataset.who === 'parent' ? $('#auth-kid-list input') : $('#auth-name'); if (f) f.focus(); }; });
+  $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho(''); };
   function setAuthMode(mode) {
     showPending(false);
     const tabs = mode === 'login' || mode === 'signup';
@@ -229,16 +271,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
-    renderAuthPoints(mode);
-  }
-  /* Rappel de ce que fait l'appli, à l'inscription : stratégies si l'on vient d'un lien de stratégie, sinon toute l'appli. */
-  function renderAuthPoints(mode) {
-    let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
-    const pts = fromStrat ? ['Dessinez vos combinaisons', 'Animez-les étape par étape', 'Voyez qui les a regardées']
-      : ['Convocations en un appui', 'Stratégies animées', 'Feuille de match en quelques minutes'];
-    const ul = $('#auth-points');
-    ul.innerHTML = pts.map(t => `<li>${t}</li>`).join('');
-    ul.classList.toggle('hidden', mode !== 'signup');
+    if (mode === 'signup') setSignupWho('');
+    else { $('#auth-who').classList.add('hidden'); $('#auth-who-back').classList.add('hidden'); $('#auth-kids').classList.add('hidden'); $('#auth-form').classList.remove('hidden'); }
   }
   /* Solidité du mot de passe : longueur, minuscules/majuscules, chiffres, symboles (indicatif, seul le minimum de 6 est imposé). */
   function pwStrength(pw) {
@@ -320,13 +354,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         b.disabled = false; return;
       }
       if (mode === 'signup') {
-        // Information et accord parental (moins de 15 ans) : enregistrés avec le compte, comme preuve
-        const u15 = (document.querySelector('input[name="auth-age"]:checked') || {}).value === 'u15';
-        const parentEmail = $('#auth-parent-email').value.trim();
-        if (u15 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(parentEmail)) { setAuthMsg('Indiquez l’e-mail d’un parent.'); b.disabled = false; return; }
-        if (u15 && parentEmail.toLowerCase() === email.toLowerCase()) { setAuthMsg('L’e-mail du parent doit être différent du vôtre.'); b.disabled = false; return; }
-        if (u15 && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord d’un parent.'); b.disabled = false; return; }
-        const meta = { display_name: name || email.split('@')[0], terms_version: window.RugbyLegal ? window.RugbyLegal.version : '', under_15: u15, parent_email: u15 ? parentEmail : '', parental_consent: u15 };
+        // Parent : les jeunes sont créés avec le compte ; l'accord du parent est enregistré pour chacun, comme preuve
+        const parent = signupWho === 'parent';
+        const kids = parent ? [...document.querySelectorAll('#auth-kid-list input')].map(i => i.value.trim()).filter(Boolean) : [];
+        if (parent && !kids.length) { setAuthMsg('Indiquez le prénom et le nom du jeune.'); b.disabled = false; return; }
+        if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indiquez votre prénom et votre nom.'); b.disabled = false; return; }
+        if (parent && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord du parent.'); b.disabled = false; return; }
+        const meta = Object.assign({ display_name: name, terms_version: window.RugbyLegal ? window.RugbyLegal.version : '' }, parent ? { kids } : {});
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
@@ -353,10 +387,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const P = window.RugbyProfile;
     if (P) { $('#account-avatar').replaceChildren(P.avatar(S.profile.display_name, S.profile.avatar)); $('#account-summary').textContent = P.summary(S.profile) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
     const box = $('#account-teams'); box.replaceChildren();
-    S.teams.filter(t => !t.superadmin && !t.notMember).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role, t.plays)}`)));
+    S.teams.filter(t => !t.superadmin && !t.notMember && !t.who).forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)} ${roleBadge(t.role, t.plays)}`)));
     S.clubs.filter(c => c.myRole === 'responsable').forEach(c => box.appendChild(el('div', 'account-team', `${esc(c.name)} <span class="role-badge coach">${esc(c.myTitle || 'Bureau du club')}</span>`)));
     // Mes équipes : rejoindre ou créer une autre équipe (quitter se fait dans la page de l'équipe concernée)
     const join = $('#account-join'); join.replaceChildren();
+    join.appendChild(kidsCard());
     const pend = pendingCard(); if (pend) join.appendChild(pend);
     const toggle = btn('Rejoindre ou créer un club, une équipe', 'outline wide', () => {
       const forms = teamForms(() => { forms.replaceWith(toggle); toggle.focus(); });
@@ -402,26 +437,31 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.toast(`Club « ${data.name} » créé. Code du club : ${data.join_code}`); teamTab = 'club'; E.go('team'); renderTeamPage();
   }
   /** Un seul code : celui du club (on choisit ensuite ses équipes) ou celui d'une équipe (demande directe). */
-  async function joinWithCode(code) {
-    const { data, error } = await sb.rpc('join_with_code', { p_code: code });
+  async function joinWithCode(code, forId) {
+    forId = forId || S.user.id;
+    const { data, error } = await sb.rpc('join_with_code', Object.assign({ p_code: code }, forArg(forId)));
     if (error) return E.toast(errMsg(error));
     if (!data || !data.kind) return E.toast('Code invalide : vérifiez-le auprès de votre club.');
     await loadTeams();
-    if (data.kind === 'club') { E.toast(`Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id); }
-    const t = S.teams.find(x => x.id === data.id);
-    if (t) { setTeam(t); E.toast(`Vous êtes membre de « ${data.name} ».`); }
-    else { pushJoin('join_request', data.id); E.toast(`Demande envoyée à « ${data.name} ». Un coach ou le bureau du club doit la valider.`); }
+    const kid = forId !== S.user.id ? kidName(forId) : '';
+    if (data.kind === 'club') { E.toast(kid ? `${kid} entre au club « ${data.name} » !` : `Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id, forId); }
+    const t = S.teams.find(x => x.id === data.id && (x.who || S.user.id) === forId);
+    if (t) { setTeam(t); E.toast(`${kid || 'Vous'} ${kid ? 'est' : 'êtes'} membre de « ${data.name} ».`); }
+    else { pushJoin('join_request', data.id, undefined, forId); E.toast(`Demande envoyée à « ${data.name} »${kid ? ' pour ' + kid : ''}. Un coach ou le bureau du club doit la valider.`); }
     E.go('team'); renderTeamPage();
   }
   /** Fenêtre « Quelles équipes rejoindre ? » : on coche ses équipes, comme joueur ou comme coach / encadrant. */
-  async function openTeamPicker(clubId) {
+  async function openTeamPicker(clubId, forId) {
+    forId = forId || actorId();
+    const kid = forId !== S.user.id ? kidName(forId) : '';
     const club = S.clubs.find(c => c.id === clubId);
     const { data: teams, error } = await sb.from('teams').select('id, name').eq('club_id', clubId).order('name');
     if (error) return E.toast(errMsg(error));
-    const mine = new Set(S.teams.filter(t => !t.notMember).map(t => t.id)), asked = new Set((S.pending || []).map(t => t.id));
+    const isFor = t => (t.who || S.user.id) === forId;
+    const mine = new Set(S.teams.filter(t => !t.notMember && isFor(t)).map(t => t.id)), asked = new Set((S.pending || []).filter(isFor).map(t => t.id));
     const body = $('#club-teams-body'); body.replaceChildren();
-    $('#club-teams-title').textContent = club ? `Rejoindre vos équipes · ${club.name}` : 'Rejoindre vos équipes';
-    body.appendChild(el('p', 'muted', 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
+    $('#club-teams-title').textContent = (kid ? `Les équipes de ${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
+    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes de ${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
     (teams || []).forEach(t => {
       const row = el('div', 'pick-row');
@@ -430,7 +470,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       } else {
         const lab = el('label', 'pick-name', `<input type="checkbox"> ${esc(t.name)}`);
         const as = el('select', 'select small'); as.setAttribute('aria-label', 'En tant que');
-        [['player', 'Comme joueur'], ['staff', 'Comme coach / encadrant']].forEach(([v, l]) => as.appendChild(Object.assign(el('option'), { value: v, textContent: l })));
+        (kid ? [['player', 'Comme joueur']] : [['player', 'Comme joueur'], ['staff', 'Comme coach / encadrant']]).forEach(([v, l]) => as.appendChild(Object.assign(el('option'), { value: v, textContent: l })));
         row.append(lab, as);
         rows.push({ t, cb: lab.querySelector('input'), as });
       }
@@ -442,9 +482,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (!picked.length) return E.toast('Cochez au moins une équipe.');
       go.disabled = true;
       for (const r of picked) {
-        const { error: e } = await sb.rpc('request_team', { p_team: r.t.id, p_as: r.as.value });
+        const { error: e } = await sb.rpc('request_team', Object.assign({ p_team: r.t.id, p_as: r.as.value }, forArg(forId)));
         if (e) { go.disabled = false; return E.toast(`${r.t.name} : ${errMsg(e)}`); }
-        pushJoin('join_request', r.t.id);
+        pushJoin('join_request', r.t.id, undefined, forId);
       }
       track('club_request', { count: picked.length });
       E.closeModal('modal-club-teams'); await loadTeams();
@@ -464,8 +504,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
     // 1. Rejoindre : un seul champ pour le code du club ou de l'équipe
     const p1 = part('Rejoindre avec un code', 'Le code vous est donné par votre club ou votre coach. Avec le code du club, vous choisissez ensuite vos équipes.');
+    let forSel = null;
+    if (S.kids.length) {
+      forSel = el('select', 'select'); forSel.setAttribute('aria-label', 'Pour qui ?');
+      S.kids.forEach(k => forSel.appendChild(Object.assign(el('option'), { value: k.id, textContent: 'Pour ' + k.display_name })));
+      forSel.appendChild(Object.assign(el('option'), { value: S.user.id, textContent: 'Pour moi' }));
+      if (S.team && S.team.who) forSel.value = S.team.who;
+      p1.appendChild(forSel);
+    }
     const f2 = el('form', 'inline-form', '<input type="text" placeholder="Code d’invitation" required minlength="6" maxlength="8" style="text-transform:uppercase" aria-label="Code d’invitation"><button class="btn primary small" type="submit">Rejoindre</button>');
-    f2.onsubmit = e => { e.preventDefault(); joinWithCode(f2.querySelector('input').value); };
+    f2.onsubmit = e => { e.preventDefault(); joinWithCode(f2.querySelector('input').value, forSel ? forSel.value : S.user.id); };
     p1.appendChild(f2);
 
     // 2. Direction du club : ajouter une équipe à son club (le super-admin : au club de l'équipe ouverte)
@@ -497,11 +545,49 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     });
     return box;
   }
+  /** Mes jeunes (moins de 15 ans) : leurs équipes, leur profil, en ajouter ou en retirer. */
+  function kidsCard() {
+    const box = el('div', 'team-forms-card kids-card');
+    const P = window.RugbyProfile;
+    if (!S.kids.length) {
+      box.classList.add('kids-empty');
+      box.appendChild(el('p', 'help', 'Vous êtes parent d’un joueur de moins de 15 ans ? Gérez son compte depuis le vôtre : convocations, profil, équipes.'));
+    } else {
+      box.appendChild(el('h4', '', 'Mes jeunes'));
+      S.kids.forEach(k => {
+        const row = el('div', 'kid-row');
+        if (P) row.appendChild(P.avatar(k.display_name, k.avatar));
+        const teams = S.teams.filter(t => t.who === k.id).map(t => t.name).concat((S.pending || []).filter(t => t.who === k.id).map(t => t.name + ' (en attente)'));
+        row.appendChild(el('div', 'who', `${esc(k.display_name)}<small>${esc(teams.join(', ') || 'Pas encore d’équipe')}</small>`));
+        const acts = el('div', 'row-wrap');
+        acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
+        acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
+          if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
+          const { error } = await sb.rpc('remove_child', { p_child: k.id });
+          if (error) return E.toast(errMsg(error));
+          await loadKids(); await loadTeams(); renderAccountPage(); E.toast(`${k.display_name} a été retiré de votre compte.`);
+        }));
+        row.appendChild(acts);
+        box.appendChild(row);
+      });
+    }
+    const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const name = f.querySelector('input').value.trim();
+      const { error } = await sb.rpc('add_child', { p_name: name });
+      if (error) return E.toast(errMsg(error));
+      await loadKids(); await loadTeams(); watchMyMemberships(); renderAccountPage();
+      E.toast(`${name} est ajouté. Rejoignez son équipe avec le code du club, en choisissant « Pour ${name} ».`);
+    };
+    box.appendChild(f);
+    return box;
+  }
   function pendingCard() {
     if (!S.pending || !S.pending.length) return null;
     const box = el('div', 'team-forms-card');
     box.appendChild(el('h4', '', 'Demandes en attente'));
-    S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} » : en attente de validation par le coach ou le bureau du club.`)));
+    S.pending.forEach(t => box.appendChild(el('p', 'muted', `« ${esc(t.name)} »${t.who ? ` pour ${esc(t.kidName)}` : ''} : en attente de validation par le coach ou le bureau du club.`)));
     return box;
   }
   /** Inviter des joueurs : code à copier, message personnalisable, envoi par WhatsApp, SMS, e-mail ou copie. */
@@ -713,7 +799,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       (heads || []).forEach(r => {
         const row = el('div', 'member-row');
         row.appendChild(el('div', 'avatar', esc(nameOf(r).trim().slice(0, 1).toUpperCase() || '?')));
-        row.appendChild(el('div', 'who', `${esc(nameOf(r))}${r.user_id === S.user.id ? ' (moi)' : ''}<small>Membre du club depuis le ${new Date(r.joined_at).toLocaleDateString('fr-FR')}</small>`));
+        row.appendChild(el('div', 'who', `${esc(nameOf(r))}${r.user_id === actorId() ? ' (moi)' : ''}<small>Membre du club depuis le ${new Date(r.joined_at).toLocaleDateString('fr-FR')}</small>`));
         const acts = el('div', 'member-actions');
         // Fonction au bureau : donne les droits de gestion du club (toutes les équipes) ; « Membre » = aucun droit en plus
         const sel = el('select', 'select small'); sel.setAttribute('aria-label', 'Fonction au club');
@@ -721,13 +807,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const titles = CLUB_TITLES.includes(cur) || !cur ? CLUB_TITLES : CLUB_TITLES.concat([cur]);
         [['', 'Membre']].concat(titles.map(x => [x, x])).forEach(([v, l]) => sel.appendChild(Object.assign(el('option'), { value: v, textContent: l, selected: cur === v })));
         sel.onchange = async () => {
-          if (!sel.value && r.user_id === S.user.id && !await window.RugbyDialog.confirm('Vous retirer du bureau du club ? Vous perdrez la gestion des équipes du club.')) { sel.value = cur; return; }
+          if (!sel.value && r.user_id === actorId() && !await window.RugbyDialog.confirm('Vous retirer du bureau du club ? Vous perdrez la gestion des équipes du club.')) { sel.value = cur; return; }
           const { error } = await sb.rpc('set_club_function', { p_club: club.id, p_user: r.user_id, p_title: sel.value || null });
           if (error) { sel.value = cur; return E.toast(errMsg(error)); }
           E.toast(sel.value ? `${nameOf(r)} : ${sel.value}. Gère maintenant toutes les équipes du club.` : `${nameOf(r)} n’est plus au bureau du club.`); refresh();
         };
         acts.appendChild(sel);
-        if (r.user_id !== S.user.id) acts.appendChild(btn('Retirer du club', 'outline small danger', async () => {
+        if (r.user_id !== actorId()) acts.appendChild(btn('Retirer du club', 'outline small danger', async () => {
           if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Il quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
           if (teamIds.length) { const { error: e1 } = await sb.from('team_members').delete().eq('user_id', r.user_id).in('team_id', teamIds); if (e1) return E.toast(errMsg(e1)); }
           const { error } = await sb.from('club_members').delete().match({ club_id: club.id, user_id: r.user_id });
@@ -814,11 +900,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
 
   /** Notification push d'adhésion : nouvelle demande (au staff) ou demande acceptée (à la personne). */
-  const pushJoin = (kind, teamId, userId) => { if (sb.functions) sb.functions.invoke('push-notify', { body: { kind, team_id: teamId, user_id: userId } }).catch(() => {}); };
+  const pushJoin = (kind, teamId, userId, asUser) => { if (sb.functions) sb.functions.invoke('push-notify', { body: Object.assign({ kind, team_id: teamId, user_id: userId }, asUser && asUser !== S.user.id ? { as_user: asUser } : {}) }).catch(() => {}); };
   async function requestTeam(t, as) {
-    const { error } = await sb.rpc('request_team', { p_team: t.id, p_as: as });
+    const { error } = await sb.rpc('request_team', Object.assign({ p_team: t.id, p_as: as }, forArg(actorId())));
     if (error) return E.toast(errMsg(error));
-    pushJoin('join_request', t.id);
+    pushJoin('join_request', t.id, undefined, actorId());
     track('club_request', { count: 1 });
     E.toast(`Demande envoyée à « ${t.name} »${as === 'staff' ? ' comme coach / encadrant' : ''}.`);
     await loadTeams(); renderTeamPage();
@@ -827,7 +913,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function leaveTeam(t) {
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
     if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
-    const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: S.user.id });
+    const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: actorId() });
     if (error) return E.toast(errMsg(error));
     teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
   }
@@ -947,7 +1033,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const row = el('div', 'member-row clickable');
       const P = window.RugbyProfile, pr = m.profiles || {};
       row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === S.user.id ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)
@@ -959,7 +1045,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         cb.onchange = () => setMember(m, { plays: cb.checked });
         return l;
       };
-      if (staff && m.user_id !== S.user.id) {
+      if (staff && m.user_id !== actorId()) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
         sel.onchange = () => setMember(m, { role: sel.value });
@@ -994,18 +1080,18 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const d = E.drawing;
     if (!isUuid(d.id)) d.id = crypto.randomUUID();
     d.title = $('#title').value.trim() || 'Sans titre';
-    const row = { id: d.id, title: d.title, data: d, owner_id: S.current.owner_id || S.user.id, team_id: S.current.team_id || (S.team ? S.team.id : null), visibility: S.current.visibility || 'private' };
+    const row = { id: d.id, title: d.title, data: d, owner_id: S.current.owner_id || actorId(), team_id: S.current.team_id || (S.team ? S.team.id : null), visibility: S.current.visibility || 'private' };
     const { error } = await sb.from('drawings').upsert(row);
     if (error) { E.toast('Sauvegarde impossible : ' + errMsg(error)); return; }
-    S.current.owner_id = S.current.owner_id || S.user.id; S.current.team_id = row.team_id;
+    S.current.owner_id = S.current.owner_id || actorId(); S.current.team_id = row.team_id;
     E.afterChange();
     track('save', { steps: (d.steps || []).length, visibility: row.visibility });
     E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
   }
   async function saveSmart() {
     if (E.drawing.__share === 'app' && !isCoach()) { E.toast('Le coach a réservé cette stratégie à l’appli : elle ne peut pas être copiée.'); return; }
-    if (S.user && S.current.owner_id && S.current.owner_id !== S.user.id && !(isCoach() && S.current.team_id === S.team.id)) {
-      E.drawing.id = crypto.randomUUID(); S.current = { visibility: 'private', team_id: null, owner_id: S.user.id };
+    if (S.user && S.current.owner_id && S.current.owner_id !== actorId() && !(isCoach() && S.current.team_id === S.team.id)) {
+      E.drawing.id = crypto.randomUUID(); S.current = { visibility: 'private', team_id: null, owner_id: actorId() };
     }
     return save();
   }
@@ -1013,7 +1099,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   /* ---------- Formations enregistrées (par équipe) ---------- */
   async function saveFormation(name, data) {
-    const row = { owner_id: S.user.id, team_id: S.team ? S.team.id : null, name, data };
+    const row = { owner_id: actorId(), team_id: S.team ? S.team.id : null, name, data };
     const { error } = await sb.from('formations').insert(row);
     if (error) { E.toast('Enregistrement impossible : ' + errMsg(error)); return; }
     E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans votre compte.`);
@@ -1021,15 +1107,15 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function listFormations() {
     if (!S.user) { openAuth(); return { list: [], scope: '' }; }
     let q = sb.from('formations').select('id, name, data, team_id, owner_id, created_at, owner:profiles!formations_owner_id_fkey(display_name)').order('created_at', { ascending: false });
-    if (S.team) q = q.or(`team_id.eq.${S.team.id},owner_id.eq.${S.user.id}`);
-    else q = q.eq('owner_id', S.user.id);
+    if (S.team) q = q.or(`team_id.eq.${S.team.id},owner_id.eq.${actorId()}`);
+    else q = q.eq('owner_id', actorId());
     const { data, error } = await q;
     if (error) { E.toast(errMsg(error)); return { list: [], scope: '' }; }
     const list = (data || []).map(f => ({
       id: f.id, name: f.name, data: f.data,
       team_name: f.team_id ? ((S.teams.find(t => t.id === f.team_id) || {}).name || 'équipe') : 'perso',
       owner_name: f.owner && f.owner.display_name,
-      canDelete: f.owner_id === S.user.id || (isStaff() && S.team && f.team_id === S.team.id)
+      canDelete: f.owner_id === actorId() || (isStaff() && S.team && f.team_id === S.team.id)
     }));
     return { list, scope: S.team ? `Équipe « ${S.team.name} » et mes formations` : 'Mes formations' };
   }
@@ -1067,9 +1153,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   /* ---------- Qui a vu quoi ---------- */
   // Chaque ouverture d'une stratégie publiée est enregistrée ; le staff voit qui l'a regardée.
-  const markViewed = (id, played) => { sb.rpc('mark_drawing_viewed', { p_drawing: id, p_played: !!played }).then(({ error }) => { if (error) console.warn('vue', error.message); }); };
+  const markViewed = (id, played) => { sb.rpc('mark_drawing_viewed', Object.assign({ p_drawing: id, p_played: !!played }, forArg(actorId()))).then(({ error }) => { if (error) console.warn('vue', error.message); }); };
   function onPreview() {
-    if (S.user && S.current.visibility === 'team' && S.current.owner_id && S.current.owner_id !== S.user.id && isUuid(E.drawing.id)) markViewed(E.drawing.id, true);
+    if (S.user && S.current.visibility === 'team' && S.current.owner_id && S.current.owner_id !== actorId() && isUuid(E.drawing.id)) markViewed(E.drawing.id, true);
   }
   let viewCounts = {};
   async function loadViewCounts() {
@@ -1141,7 +1227,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     data.forEach(c => {
       const item = el('div', 'comment');
       const who = el('div', 'who', `<strong>${esc((c.author && c.author.display_name) || 'Membre')}</strong>${c.user_id === commentsFor.row.owner_id ? '<span class="role-badge coach">auteur</span>' : ''} <span>${fmtDate(c.created_at)}</span>`);
-      if (c.user_id === S.user.id || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!await window.RugbyDialog.confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
+      if (c.user_id === actorId() || isStaff()) { const del = el('button', 'del', '✕'); del.title = 'Supprimer'; del.onclick = async () => { if (!await window.RugbyDialog.confirm('Supprimer ce commentaire ?')) return; await sb.from('drawing_comments').delete().eq('id', c.id); renderComments(); }; who.appendChild(del); }
       item.appendChild(who); item.appendChild(el('div', 'body', esc(c.body)));
       list.appendChild(item);
     });
@@ -1150,7 +1236,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   $('#comments-form').onsubmit = async e => {
     e.preventDefault();
     const body = $('#comments-input').value.trim(); if (!body || !commentsFor) return;
-    const { error } = await sb.from('drawing_comments').insert({ drawing_id: commentsFor.row.id, user_id: S.user.id, body });
+    const { error } = await sb.from('drawing_comments').insert({ drawing_id: commentsFor.row.id, user_id: actorId(), body });
     if (error) return E.toast(errMsg(error));
     $('#comments-input').value = ''; track('comment', { coach: isCoach() }); await renderComments();
     commentCounts[commentsFor.row.id] = (commentCounts[commentsFor.row.id] || 0) + 1;
@@ -1214,7 +1300,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (libTab === 'team') markSeen();
     }
     let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
-    q = libTab === 'mine' ? q.eq('owner_id', S.user.id) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
+    q = libTab === 'mine' ? q.eq('owner_id', actorId()) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
     if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
@@ -1238,7 +1324,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const c = el('div', 'lib-card');
     const d = row.data || {}; const steps = (d.steps || []).length;
     const coachHere = isCoach() && S.team && row.team_id === S.team.id;
-    const mine = row.owner_id === S.user.id;
+    const mine = row.owner_id === actorId();
     const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' }[row.visibility];
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span></div><div class="date"></div><div class="card-btns"></div>`;
     c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
@@ -1265,7 +1351,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const menu = [];
     const duplicate = async () => {
       const copy = E.clone(row.data || {}); copy.id = crypto.randomUUID(); copy.title = row.title + ' (copie)';
-      const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
+      const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: actorId(), title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
       if (error) return E.toast(errMsg(error)); track('duplicate'); E.toast('Copie créée dans « Mes dessins ».'); libTab = 'mine'; refresh();
     };
     if (isCoach() && row.visibility !== 'team' && (mine || coachHere)) btns.appendChild(btn(row.visibility === 'proposed' ? 'Publier la proposition' : 'Publier à l’équipe', 'primary small', () => setVis('team')));
@@ -1305,12 +1391,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function loadCloud(row) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
     // Joueur sur une stratégie du coach : on garde les droits choisis par le coach avec le dessin
-    if (row.owner_id !== S.user.id && !isCoach() && row.visibility === 'team') d.__share = shareMode(row); else delete d.__share;
+    if (row.owner_id !== actorId() && !isCoach() && row.visibility === 'team') d.__share = shareMode(row); else delete d.__share;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
-    if (row.visibility === 'team' && row.owner_id !== S.user.id) markViewed(row.id, false);
+    if (row.visibility === 'team' && row.owner_id !== actorId()) markViewed(row.id, false);
     E.loadDrawing(d); E.go('editor');
     // Un joueur qui ouvre une stratégie du coach veut la regarder : l'animation démarre directement
-    if (row.owner_id !== S.user.id && !isCoach()) setTimeout(() => E.openPreview(true), 150);
+    if (row.owner_id !== actorId() && !isCoach()) setTimeout(() => E.openPreview(true), 150);
   }
 
   function renderLocal(root) {
@@ -1320,7 +1406,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const c = E.localCard(d, () => { S.current = { visibility: 'private', team_id: null, owner_id: null }; E.loadDrawing(E.clone(d)); E.go('editor'); });
       const b = btn('Envoyer dans mon compte', 'small secondary', async () => {
         const copy = E.clone(d); copy.id = crypto.randomUUID();
-        const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: S.user.id, title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
+        const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: actorId(), title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
         E.toast(error ? errMsg(error) : 'Copié dans votre compte.');
       });
       const wrap = el('div', 'card-btns'); wrap.appendChild(b); c.appendChild(wrap);
@@ -1353,7 +1439,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const [members, published, myViews, proposals, counts] = await Promise.all([
       sb.from('team_members').select('user_id, status').eq('team_id', t),
       sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode').eq('team_id', t).eq('visibility', 'team').order('published_at', { ascending: false }),
-      sb.from('drawing_views').select('drawing_id').eq('user_id', S.user.id),
+      sb.from('drawing_views').select('drawing_id').eq('user_id', actorId()),
       coach ? sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', t).eq('visibility', 'proposed') : Promise.resolve({ count: 0 }),
       staff ? sb.rpc('team_view_counts', { p_team: t }) : Promise.resolve({ data: [] })
     ]);
@@ -1367,14 +1453,15 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       members: rows.filter(m => m.status === 'active').length,
       pending: rows.filter(m => m.status === 'pending').length,
       published: pub,
-      toWatch: pub.filter(r => r.owner_id !== S.user.id && !seen.has(r.id)),
+      toWatch: pub.filter(r => r.owner_id !== actorId() && !seen.has(r.id)),
       proposals: proposals.count || 0,
       lowViews: pub.filter(r => { const c = byId[r.id]; return c && c.audience > 0 && c.viewers / c.audience < 0.7 && new Date(r.published_at || r.updated_at) > recent; })
         .map(r => Object.assign({ viewers: byId[r.id].viewers, audience: byId[r.id].audience }, r))
     };
   }
-  function selectTeam(id) { const t = S.teams.find(x => x.id === id); if (t) setTeam(t); }
+  /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
+  function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, user: () => S.user, profile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

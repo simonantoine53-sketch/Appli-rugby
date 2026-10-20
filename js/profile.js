@@ -28,8 +28,12 @@
   const summary = p => [(p.positions || []).join(', '), p.jersey_number ? `n°${p.jersey_number}` : ''].filter(Boolean).join(' · ');
 
   /* ---------- Mon profil ---------- */
-  async function openProfile() {
+  /** Mon profil, ou celui d'un jeune que je gère (forId). */
+  async function openProfile(forId) {
     const me = A.user(); if (!me) return;
+    if (typeof forId === 'string') me.id = forId;
+    const kid = (A.kids ? A.kids() : []).find(k => k.id === me.id);
+    $('#profile-title').textContent = kid ? `Profil de ${kid.display_name}` : 'Mon profil';
     const [{ data: prof }, { data: priv }] = await Promise.all([
       sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio').eq('id', me.id).maybeSingle(),
       sb.from('profile_private').select('phone, birth_date, emergency_name, emergency_phone').eq('user_id', me.id).maybeSingle()
@@ -89,7 +93,7 @@
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
-    form.appendChild(el('div', 'profile-private-head', '<strong>Infos privées</strong><span class="muted">Visibles seulement par vous et le staff de votre équipe.</span>'));
+    form.appendChild(el('div', 'profile-private-head', `<strong>Infos privées</strong><span class="muted">${kid ? 'Visibles seulement par vous et le staff de son équipe.' : 'Visibles seulement par vous et le staff de votre équipe.'}</span>`));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
     const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
@@ -105,7 +109,7 @@
     form.appendChild(row3);
 
     const err = el('p', 'form-error');
-    const save = el('button', 'btn primary wide', 'Enregistrer mon profil'); save.type = 'submit';
+    const save = el('button', 'btn primary wide', kid ? 'Enregistrer son profil' : 'Enregistrer mon profil'); save.type = 'submit';
     form.append(err, save);
     form.onsubmit = async e => {
       e.preventDefault(); err.textContent = '';
@@ -138,7 +142,7 @@
       if (r1.error) console.warn('profil', r1.error.message);
       if (r2.error) console.warn('profil privé', r2.error.message);
       if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifiez votre connexion et réessayez.'; return; }
-      if (!r1.error) Object.assign(A.profile(), patch);
+      if (!r1.error) Object.assign(kid || A.ownProfile(), patch);
       if (r1.error) skipped.push('profil sportif');
       if (r2.error) skipped.push('infos privées');
       track('profile_save', { photo: !!photo, positions: positions.length });
@@ -190,6 +194,6 @@
     });
   }
 
-  $('#btn-profile').onclick = openProfile;
+  $('#btn-profile').onclick = () => openProfile(A.authUser().id);
   window.RugbyProfile = { avatar, openProfile, viewMember, summary, POSTES };
 })();

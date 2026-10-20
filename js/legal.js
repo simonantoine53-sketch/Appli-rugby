@@ -7,7 +7,7 @@
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
     updated: '20 octobre 2026 (nouveau nom : Rugbeo)',
-    version: '2026-10-20'
+    version: '2026-10-21'
   };
   const $ = s => document.querySelector(s);
   const contact = () => LEGAL.email
@@ -22,7 +22,7 @@
           <li>On garde seulement ce qu’il faut pour que l’appli marche avec ton équipe.</li>
           <li>Pas de pub, on ne vend rien, on ne donne tes infos à personne pour faire du commerce.</li>
           <li>Ton téléphone et ta date de naissance : seulement toi et les coachs de ton équipe les voient.</li>
-          <li>Moins de 15 ans : un parent doit être d’accord.</li>
+          <li>Moins de 15 ans : c’est un parent qui crée et gère le compte.</li>
           <li>Tu peux tout effacer quand tu veux : Compte → « Supprimer mon compte ».</li>
         </ul>
       </div>
@@ -36,7 +36,7 @@
         <thead><tr><th>Données</th><th>À quoi elles servent</th><th>Base légale</th></tr></thead>
         <tbody>
           <tr><td><strong>Compte</strong> : e-mail, mot de passe (chiffré, illisible même pour nous), prénom ou pseudo</td><td>Vous connecter, vous relier à vos équipes, vous envoyer les e-mails de confirmation et de mot de passe oublié</td><td>Exécution du service (contrat)</td></tr>
-          <tr><td><strong>Âge et accord parental</strong> : « moins de 15 ans » ou non, e-mail d’un parent, date de l’accord et de l’acceptation des conditions</td><td>Respecter la loi sur les mineurs et pouvoir prouver l’accord</td><td>Obligation légale</td></tr>
+          <tr><td><strong>Âge et accord parental</strong> : compte d’un jeune de moins de 15 ans géré par un parent, e-mail du parent, date de l’accord et de l’acceptation des conditions</td><td>Respecter la loi sur les mineurs et pouvoir prouver l’accord</td><td>Obligation légale</td></tr>
           <tr><td><strong>Profil sportif</strong> (facultatif) : photo, postes, numéro, pied fort, taille, poids, présentation</td><td>Que vos coéquipiers et vos coachs vous reconnaissent, préparer les compositions</td><td>Votre consentement (vous choisissez de le remplir et pouvez l’effacer)</td></tr>
           <tr><td><strong>Infos privées</strong> (facultatif) : téléphone, date de naissance, contact d’urgence</td><td>Que le staff de votre équipe puisse vous joindre, ou joindre un proche en cas d’urgence</td><td>Votre consentement</td></tr>
           <tr><td><strong>Vie d’équipe</strong> : stratégies, formations, commentaires, agenda, réponses aux convocations, feuilles de match, demandes d’adhésion, qui a ouvert une stratégie</td><td>Le cœur de l’appli : partager les stratégies, organiser les matchs et entraînements</td><td>Exécution du service (contrat)</td></tr>
@@ -95,8 +95,8 @@
       <h4>7. Mineurs</h4>
       <ul>
         <li><strong>À partir de 15 ans</strong>, vous pouvez créer un compte seul (article 45 de la loi Informatique et Libertés).</li>
-        <li><strong>Avant 15 ans</strong>, l’accord d’un parent ou du représentant légal est obligatoire. À l’inscription, nous demandons l’e-mail d’un parent et sa confirmation qu’il est d’accord ; l’accord est daté et conservé.</li>
-        <li>Un parent peut à tout moment, pour son enfant de moins de 15 ans : consulter ses données, les faire corriger, retirer son accord et <strong>faire supprimer le compte</strong>, ${contact()}. Le compte est alors supprimé sans délai.</li>
+        <li><strong>Avant 15 ans</strong>, c’est un parent ou le représentant légal qui crée le compte du jeune, depuis son propre compte (un compte peut gérer plusieurs enfants). Le parent confirme son accord à l’inscription ; l’accord est daté et conservé. Le jeune n’a pas d’identifiant à lui : le parent répond pour lui aux convocations et gère son profil.</li>
+        <li>Un parent peut à tout moment, pour son enfant de moins de 15 ans : consulter ses données, les faire corriger, retirer son accord et <strong>supprimer son compte</strong> : directement dans Compte → Mes jeunes → Retirer, ou ${contact()}. Le compte est alors supprimé sans délai.</li>
         <li>Les données d’un mineur ne sont jamais publiques : sa photo et son profil ne sont visibles que par son équipe. Nous recommandons aux coachs de ne pas faire figurer le nom complet d’un mineur dans une stratégie partagée par lien public.</li>
         <li>Les textes de l’appli sont écrits simplement, avec un résumé en tête de cette page.</li>
       </ul>
@@ -135,7 +135,7 @@
       <h4>2. Votre compte</h4>
       <ul>
         <li>Donnez des informations exactes et gardez votre mot de passe secret : vous êtes responsable de ce qui est fait avec votre compte.</li>
-        <li>Avant 15 ans, l’accord d’un parent ou du représentant légal est obligatoire (voir Confidentialité, partie Mineurs).</li>
+        <li>Avant 15 ans, c’est un parent ou le représentant légal qui crée et gère le compte du jeune (voir Confidentialité, partie Mineurs).</li>
         <li>Vous pouvez supprimer votre compte à tout moment (Compte → « Supprimer mon compte »).</li>
       </ul>
       <h4>3. Équipes et clubs</h4>

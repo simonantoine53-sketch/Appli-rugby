@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugbeo">
-  <link rel="stylesheet" href="css/style.css?v=202610201246">
+  <link rel="stylesheet" href="css/style.css?v=202610201322">
 </head>
 <body>
 
@@ -440,24 +440,27 @@
       </svg>
     </div>
     <p class="auth-brand"><strong>Rugbeo</strong> · De la convoc’ au maillot.</p>
-    <ul id="auth-points" class="auth-points hidden"></ul>
+    <!-- Inscription, étape 1 : qui crée le compte ? -->
+    <div id="auth-who" class="auth-who hidden">
+      <p class="auth-step-title">Qui crée le compte ?</p>
+      <button type="button" class="who-card" data-who="adult"><strong>J’ai 15 ans ou plus</strong><span>Joueur, coach, dirigeant, bénévole…</span></button>
+      <button type="button" class="who-card" data-who="parent"><strong>Je suis parent d’un joueur de moins de 15 ans</strong><span>Vous créez son compte et répondez à ses convocations. Plusieurs enfants ? Un seul compte suffit.</span></button>
+      <p class="help">Vous avez moins de 15 ans ? Demandez à un parent de créer le compte.</p>
+    </div>
     <form id="auth-form" class="form" data-mode="login">
-      <label class="hidden">Prénom / pseudo<input id="auth-name" type="text" autocomplete="nickname" maxlength="40"></label>
+      <a href="#" id="auth-who-back" class="auth-link hidden">← Retour</a>
+      <div id="auth-kids" class="auth-kids hidden">
+        <span class="auth-kids-label">Prénom et nom du jeune</span>
+        <div id="auth-kid-list"></div>
+        <button type="button" id="auth-kid-add" class="btn ghost small">+ Ajouter un autre jeune</button>
+      </div>
+      <label class="hidden"><span id="auth-name-label">Prénom et nom</span><input id="auth-name" type="text" autocomplete="name" maxlength="40"></label>
       <p id="auth-intro" class="help hidden"></p>
       <label id="auth-email-field">E-mail<input id="auth-email" type="email" required autocomplete="email"></label>
       <label id="auth-password-field"><span id="auth-password-label">Mot de passe</span><input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
       <div id="auth-pw-hint" class="pw-meter hidden"><div class="pw-bar"><i></i></div><span class="pw-label">6 caractères minimum.</span></div>
       <div id="auth-signup-extra" class="auth-extra hidden">
-        <fieldset class="auth-age">
-          <legend>Votre âge</legend>
-          <label class="radio"><input type="radio" name="auth-age" value="15plus" checked><span>J’ai 15 ans ou plus</span></label>
-          <label class="radio"><input type="radio" name="auth-age" value="u15"><span>J’ai moins de 15 ans</span></label>
-        </fieldset>
-        <div id="auth-parent" class="auth-parent hidden">
-          <p class="help">Avant 15 ans, la loi demande l’accord d’un parent pour utiliser l’appli. Montrez-lui cet écran et la page Confidentialité.</p>
-          <label>E-mail d’un parent<input id="auth-parent-email" type="email" autocomplete="off" maxlength="254"></label>
-          <label class="check"><input id="auth-parent-ok" type="checkbox"><span>Un de mes parents (ou mon représentant légal) a lu la politique de confidentialité et est d’accord pour que je crée ce compte.</span></label>
-        </div>
+        <label id="auth-parent" class="check hidden"><input id="auth-parent-ok" type="checkbox"><span>Je suis son parent (ou son représentant légal) et j’accepte, pour lui, la <a href="#" data-legal="privacy">politique de confidentialité</a>.</span></label>
         <p class="help auth-terms">En créant un compte, vous acceptez les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Vos données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
       </div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
@@ -580,7 +583,7 @@
 <div id="modal-profile" class="modal hidden">
   <div class="modal-box auth-box">
     <div class="modal-head">
-      <strong>Mon profil</strong>
+      <strong id="profile-title">Mon profil</strong>
       <button class="btn-close" data-close="modal-profile" title="Fermer">✕</button>
     </div>
     <div id="profile-body" class="team-body profile-body"></div>
@@ -651,27 +654,27 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610201246"></script>
-<script src="js/legal.js?v=202610201246"></script>
-<script src="js/consent.js?v=202610201246"></script>
-<script src="js/selects.js?v=202610201246"></script>
-<script src="js/dialog.js?v=202610201246"></script>
-<script src="js/icons.js?v=202610201246"></script>
-<script src="js/field.js?v=202610201246"></script>
-<script src="js/formations.js?v=202610201246"></script>
-<script src="js/objects.js?v=202610201246"></script>
-<script src="js/export.js?v=202610201246"></script>
-<script src="vendor/supabase.min.js?v=202610201246"></script>
-<script src="js/config.js?v=202610201246"></script>
-<script src="js/editor.js?v=202610201246"></script>
-<script src="js/account.js?v=202610201246"></script>
-<script src="js/push.js?v=202610201246"></script>
-<script src="js/profile.js?v=202610201246"></script>
-<script src="js/admin.js?v=202610201246"></script>
-<script src="js/agenda.js?v=202610201246"></script>
-<script src="js/calimport.js?v=202610201246"></script>
-<script src="js/sheets.js?v=202610201246"></script>
-<script src="js/tour.js?v=202610201246"></script>
-<script src="js/hub.js?v=202610201246"></script>
+<script src="js/update.js?v=202610201322"></script>
+<script src="js/legal.js?v=202610201322"></script>
+<script src="js/consent.js?v=202610201322"></script>
+<script src="js/selects.js?v=202610201322"></script>
+<script src="js/dialog.js?v=202610201322"></script>
+<script src="js/icons.js?v=202610201322"></script>
+<script src="js/field.js?v=202610201322"></script>
+<script src="js/formations.js?v=202610201322"></script>
+<script src="js/objects.js?v=202610201322"></script>
+<script src="js/export.js?v=202610201322"></script>
+<script src="vendor/supabase.min.js?v=202610201322"></script>
+<script src="js/config.js?v=202610201322"></script>
+<script src="js/editor.js?v=202610201322"></script>
+<script src="js/account.js?v=202610201322"></script>
+<script src="js/push.js?v=202610201322"></script>
+<script src="js/profile.js?v=202610201322"></script>
+<script src="js/admin.js?v=202610201322"></script>
+<script src="js/agenda.js?v=202610201322"></script>
+<script src="js/calimport.js?v=202610201322"></script>
+<script src="js/sheets.js?v=202610201322"></script>
+<script src="js/tour.js?v=202610201322"></script>
+<script src="js/hub.js?v=202610201322"></script>
 </body>
 </html>

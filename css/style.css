@@ -1192,9 +1192,6 @@ button.switch { border: 0; padding: 0; }
 
 /* Inscription : âge, accord parental, conditions */
 .auth-extra { display: flex; flex-direction: column; gap: 10px; }
-.auth-age { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
-.auth-age legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
-.auth-age label { display: flex; align-items: center; gap: 6px; font-size: 14px; }
 .auth-parent { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--primary-soft); }
 .auth-parent .help { margin: 0; }
 label.check { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.4; font-weight: 400; }
@@ -1204,7 +1201,6 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 @media (max-width: 760px) { .terms-bar { bottom: auto; } }
 .consent-actions.single { grid-template-columns: 1fr; }
 .form .auth-extra label.check { align-items: flex-start; font-weight: 400; font-size: 13.5px; }
-.form .auth-age label.radio { flex-direction: row; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; }
 .form .auth-extra input[type="checkbox"], .form .auth-extra input[type="radio"] { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
 .auth-terms { margin: 0; }
 @media (max-width: 760px) { .hub-tiles:has(> :nth-child(3):last-child) > :last-child { grid-column: span 2; } }
@@ -1272,6 +1268,44 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .auth-hero .ah-ball { fill: var(--panel); stroke: var(--text); stroke-width: 1; }
 @keyframes ah-run { to { stroke-dashoffset: -26; } }
 @media (prefers-reduced-motion: reduce) { .auth-hero .ah-run { animation: none; } }
-.auth-points { list-style: none; margin: 8px 18px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; font-weight: 600; color: var(--text); }
-.auth-points li::before { content: '✓'; color: var(--field); font-weight: 800; margin-right: 6px; }
-.auth-points.hidden { display: none; }
+/* Accueil visiteur : présentation de l'appli */
+.pres-page { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 14px; }
+.pres-title { margin: 10px 0 0; font-size: 20px; }
+.pres-card { background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 1fr 230px; align-items: stretch; }
+.pres-text { padding: 20px 22px; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.pres-text h3 { margin: 0; font-size: 18px; }
+.pres-text p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.pres-n { width: 28px; height: 28px; border-radius: 50%; background: var(--field); color: var(--panel); font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+.pres-shot { background: var(--bg); padding: 16px 16px 0; display: flex; justify-content: center; align-items: flex-start; max-height: 300px; overflow: hidden; border-left: 1px solid var(--border); }
+.pres-shot img { width: 100%; max-width: 200px; height: auto; border-radius: 10px 10px 0 0; border: 1px solid var(--border-strong); border-bottom: none; display: block; }
+.pres-club { background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 22px; }
+.pres-club h3 { margin: 0 0 8px; font-size: 18px; }
+.pres-club ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.pres-club li::before { content: '✓'; color: var(--field); font-weight: 800; margin-right: 8px; }
+.pres-why { display: flex; gap: 10px; flex-wrap: wrap; }
+.pres-why span { flex: 1 1 140px; text-align: center; font-weight: 700; border-top: 4px solid var(--field); padding-top: 8px; }
+.pres-cta { background: var(--primary-soft); border-radius: 14px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pres-cta p { margin: 0; }
+.pres-cta .btn { min-height: 48px; padding: 0 22px; font-size: 16px; }
+@media (max-width: 700px) {
+  .pres-card { grid-template-columns: 1fr; }
+  .pres-shot { border-left: none; border-top: 1px solid var(--border); max-height: 240px; }
+  .pres-text { padding: 16px 18px; }
+  .pres-cta .btn { flex: 1 1 100%; justify-content: center; }
+  .pres-why span { flex-basis: 90px; font-size: 13px; }
+}
+.auth-who { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+.auth-step-title { margin: 0; font-weight: 700; font-size: 16px; }
+.who-card { text-align: left; background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; font: inherit; color: var(--text); }
+.who-card:hover, .who-card:focus-visible { border-color: var(--primary); background: var(--primary-soft); }
+.who-card strong { font-size: 15px; }
+.who-card span { font-size: 13px; color: var(--muted); }
+.auth-kids { display: flex; flex-direction: column; gap: 6px; }
+.auth-kids-label { font-weight: 600; font-size: 13px; }
+#auth-kid-list input { font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; }
+#auth-kid-list { display: flex; flex-direction: column; gap: 6px; }
+.auth-kids .btn { align-self: flex-start; }
+.kid-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.kid-row .who { flex: 1 1 140px; display: flex; flex-direction: column; font-weight: 600; }
+.kid-row .who small { font-weight: 400; color: var(--muted); }
+.kids-card .inline-form { margin-top: 8px; }

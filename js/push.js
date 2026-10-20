@@ -32,7 +32,7 @@
     let sub = await r.pushManager.getSubscription();
     if (!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.vapidPublicKey) });
     const j = sub.toJSON();
-    const { error } = await A.sb.from('push_subscriptions').upsert({ user_id: A.user().id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' });
+    const { error } = await A.sb.from('push_subscriptions').upsert({ user_id: A.authUser().id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200) }, { onConflict: 'endpoint' });
     if (error) { console.warn(error); $('#push-help').textContent = 'Impossible d’enregistrer l’abonnement : ' + error.message; return; }
     renderButton(true);
   }
@@ -58,7 +58,7 @@
   // Appelée après une publication / proposition : envoie la notification aux membres concernés
   async function notify(drawingId, kind) {
     const A = acc(); if (!A || !A.isLoggedIn() || !A.sb.functions) return;
-    try { const { data, error } = await A.sb.functions.invoke('push-notify', { body: { drawing_id: drawingId, kind } }); if (error) console.warn('push-notify', error); else if (data && data.sent) console.log('push envoyées :', data.sent); }
+    try { const { data, error } = await A.sb.functions.invoke('push-notify', { body: Object.assign({ drawing_id: drawingId, kind }, A.user().id !== A.authUser().id ? { as_user: A.user().id } : {}) }); if (error) console.warn('push-notify', error); else if (data && data.sent) console.log('push envoyées :', data.sent); }
     catch (e) { console.warn('push-notify', e); }
   }
 
@@ -67,7 +67,7 @@
   let asking = false;
   async function maybeAsk() {
     const A = acc(); if (asking || !A || !A.isLoggedIn() || !A.team()) return;
-    const key = 'push-asked-' + A.user().id;
+    const key = 'push-asked-' + A.authUser().id;
     let last = 0; try { last = +localStorage.getItem(key) || 0; } catch (e) {}
     if (Date.now() - last < 7 * 86400000) return;
     const iosTip = isIosNotInstalled();

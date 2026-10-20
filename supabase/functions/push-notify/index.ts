@@ -3,6 +3,7 @@
 // ou par le staff pour relancer les membres qui n'ont pas encore ouvert une stratégie publiée (kind = "reminder").
 // Agenda : nouvel événement (event_new), relance des membres sans réponse (event_reminder), annulation (event_cancelled),
 // composition publiée (sheet_published). Adhésion : nouvelle demande (join_request), demande acceptée (join_accepted).
+// Espace parents : un parent agit au nom d'un jeune (as_user) ; les notifications d'un jeune arrivent sur les appareils du parent.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -25,9 +26,16 @@ Deno.serve(async (req) => {
     const { data: { user } } = await asUser.auth.getUser();
     if (!user) return json({ error: "non connecté" }, 401);
 
-    const { drawing_id, event_id, team_id, user_id, kind } = await req.json();
+    const { drawing_id, event_id, team_id, user_id, kind, as_user } = await req.json();
     const admin = createClient(url, serviceKey);
-    if (kind === "join_request" || kind === "join_accepted") return await joinPush(admin, user.id, team_id, user_id, kind);
+    // Au nom d'un jeune : seulement son parent
+    let actor = user.id;
+    if (as_user && as_user !== user.id) {
+      const { data: kid } = await admin.from("profiles").select("guardian_id").eq("id", as_user).maybeSingle();
+      if (!kid || kid.guardian_id !== user.id) return json({ error: "action non autorisée" }, 403);
+      actor = as_user;
+    }
+    if (kind === "join_request" || kind === "join_accepted") return await joinPush(admin, actor, team_id, user_id, kind);
     if (["event_new", "event_reminder", "event_cancelled", "sheet_published"].includes(kind)) return await eventPush(admin, user.id, event_id, kind);
     if (!drawing_id || !["published", "proposed", "reminder"].includes(kind)) return json({ error: "paramètres invalides" }, 400);
 
@@ -38,10 +46,10 @@ Deno.serve(async (req) => {
 
     // L'expéditeur doit être membre actif de l'équipe
     const { data: members } = await admin.from("team_members").select("user_id, role").eq("team_id", drawing.team_id).eq("status", "active");
-    const me = (members || []).find((m) => m.user_id === user.id);
+    const me = (members || []).find((m) => m.user_id === actor);
     // La direction du club a les droits du staff dans toutes ses équipes ; une proposition peut venir
     // d'un autre membre du club (stratégie partagée par le coach d'une autre équipe)
-    const club = me ? null : await clubRole(admin, drawing.team_id, user.id);
+    const club = me ? null : await clubRole(admin, drawing.team_id, actor);
     if (!me && club !== "responsable" && !(kind === "proposed" && club)) return json({ error: "pas membre de l'équipe" }, 403);
     if (kind === "reminder" && me?.role !== "coach" && me?.role !== "admin" && club !== "responsable") return json({ error: "réservé au staff" }, 403);
 
@@ -52,7 +60,7 @@ Deno.serve(async (req) => {
       seen = new Set((views || []).map((v) => v.user_id));
     }
     const recipients = (members || [])
-      .filter((m) => m.user_id !== user.id)
+      .filter((m) => m.user_id !== actor && m.user_id !== user.id)
       .filter((m) => kind === "proposed" ? (m.role === "coach" || m.role === "admin") : true)
       .filter((m) => kind === "reminder" ? m.user_id !== drawing.owner_id && !seen.has(m.user_id) : true)
       .map((m) => m.user_id);
@@ -61,7 +69,7 @@ Deno.serve(async (req) => {
     if (!(await setVapid(admin))) return json({ error: "clés VAPID absentes" }, 500);
 
     const { data: team } = await admin.from("teams").select("name").eq("id", drawing.team_id).maybeSingle();
-    const { data: sender } = await admin.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+    const { data: sender } = await admin.from("profiles").select("display_name").eq("id", actor).maybeSingle();
     const who = sender?.display_name || "Un membre";
     const teamName = team?.name || "équipe";
     const payload = JSON.stringify({
@@ -72,7 +80,7 @@ Deno.serve(async (req) => {
       tag: `drawing-${drawing.id}`,
     });
 
-    return json(await send(admin, recipients, payload));
+    return json(await send(admin, recipients, payload, user.id));
   } catch (e) {
     console.error(e);
     return json({ error: (e as Error).message }, 500);
@@ -82,21 +90,30 @@ Deno.serve(async (req) => {
 // deno-lint-ignore no-explicit-any
 type Admin = any;
 
-async function send(admin: Admin, recipients: string[], payload: string) {
-  const { data: subs } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").in("user_id", recipients);
+async function send(admin: Admin, recipients: string[], payload: string, skip?: string) {
+  // Un jeune n'a pas d'appareil : on prévient son parent, avec le prénom du jeune devant le titre (une notification par jeune)
+  const forUser: Record<string, string[]> = {};
+  recipients.forEach((id) => { forUser[id] = [payload]; });
+  const { data: kids, error: kidErr } = await admin.from("profiles").select("id, display_name, guardian_id").in("id", recipients).not("guardian_id", "is", null);
+  if (!kidErr) (kids || []).forEach((k: { id: string; display_name: string; guardian_id: string }) => {
+    if (k.guardian_id === skip) return;
+    const p = JSON.parse(payload);
+    (forUser[k.guardian_id] ||= []).push(JSON.stringify({ ...p, title: `${(k.display_name || "").split(" ")[0]} · ${p.title}`, tag: `${p.tag}-${k.id}` }));
+  });
+  const { data: subs } = await admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth").in("user_id", Object.keys(forUser));
   let sent = 0;
   const dead: string[] = [];
-  await Promise.all((subs || []).map(async (s: { id: string; endpoint: string; p256dh: string; auth: string }) => {
+  await Promise.all((subs || []).flatMap((s: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }) => (forUser[s.user_id] || []).map(async (body) => {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, { TTL: 60 * 60 * 24 });
       sent++;
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
       if (code === 404 || code === 410) dead.push(s.id);
       else console.error("push", code, (e as Error).message);
     }
-  }));
-  if (dead.length) await admin.from("push_subscriptions").delete().in("id", dead);
+  })));
+  if (dead.length) await admin.from("push_subscriptions").delete().in("id", [...new Set(dead)]);
   return { sent, removed: dead.length, recipients: recipients.length };
 }
 
@@ -157,7 +174,7 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
     url: kind === "sheet_published" ? `#/compos/${ev.id}` : `#/agenda/${ev.id}`,
     tag: `event-${ev.id}`,
   });
-  return json(await send(admin, recipients, payload));
+  return json(await send(admin, recipients, payload, senderId));
 }
 
 /** Adhésion : le staff et la direction du club sont prévenus d'une demande ; la personne est prévenue quand elle est acceptée. */

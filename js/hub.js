@@ -81,11 +81,11 @@
     const sel = $('#hub-team'), title = $('#hub-title');
     const multiClub = new Set(teams.map(t => t.club_id)).size > 1;   // le nom du club seulement s'il y en a plusieurs
     if (teams.length > 1) {
-      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = t.id; o.textContent = t.name + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : ''); o.selected = team && team.id === t.id; return o; }));
+      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = A.teamKey(t); o.textContent = t.name + (t.kidName ? ' · ' + t.kidName : '') + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : ''); o.selected = !!team && A.teamKey(team) === A.teamKey(t); return o; }));
       sel.classList.remove('hidden'); title.classList.add('hidden');
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
-      title.textContent = team ? team.name : 'Rugbeo';
+      title.textContent = team ? team.name + (team.kidName ? ' · ' + team.kidName : '') : 'Rugbeo';
     }
     // Une seule action principale : nouveau dessin (Stratégies, et accueil du staff)
     $('#home-new').classList.toggle('hidden', !(view === 'strats' || (view === 'home' && logged && A.isStaff() && team)));
@@ -93,7 +93,7 @@
     const acc = $('#hub-account');
     acc.classList.toggle('hidden', !active);
     if (active) {
-      const p = logged ? A.profile() : null;
+      const p = logged ? (A.ownProfile ? A.ownProfile() : A.profile()) : null;
       const initial = ((p && p.display_name) || '?').trim().slice(0, 1).toUpperCase() || '?';
       acc.classList.toggle('logged', !!logged);
       acc.classList.toggle('on', view === 'account' || view === 'admin');
@@ -146,9 +146,33 @@
       box.appendChild(login);
     }
     root.appendChild(box);
+    if (active) root.appendChild(tour(fromStrat));
+  }
+  /* Visiteur : ce que fait l'appli, concrètement, écran par écran (captures du club fictif RC Démo). */
+  function tour(fromStrat) {
+    const parts = [
+      { k: 'agenda', img: 'agenda', t: 'Les convocations', p: 'Matchs et entraînements arrivent dans l’agenda de chaque joueur, avec l’heure de rendez-vous et le lieu. Il répond Présent, Peut-être ou Absent en un appui ; le coach voit qui vient et relance seulement ceux qui n’ont pas répondu.' },
+      { k: 'strats', img: 'strategies', t: 'Les stratégies', p: 'Le coach dessine ses lancements de jeu sur un vrai terrain de rugby, étape par étape. Les joueurs les voient s’animer sur leur téléphone, et le coach sait qui les a regardés avant le match.' },
+      { k: 'compo', img: 'compo', t: 'La feuille de match', p: 'La compo se fait à partir des joueurs présents, sans recopier de noms. Feuille aux couleurs du club, à imprimer ou à envoyer en image ; chaque joueur voit tout de suite sa place.' },
+      { k: 'home', img: 'accueil', t: 'Un accueil qui fait avancer l’équipe', p: 'En ouvrant l’appli, chacun voit ce qu’il a à faire cette semaine : répondre, regarder la stratégie, découvrir la compo. Des notifications préviennent de chaque nouveauté.' }
+    ];
+    if (fromStrat) parts.unshift(parts.splice(1, 1)[0]);
+    const wrap = el('div', 'pres-page');
+    wrap.appendChild(el('h2', 'pres-title', 'Comment ça marche'));
+    parts.forEach((x, i) => {
+      const card = el('section', 'pres-card', `<div class="pres-text"><span class="pres-n">${i + 1}</span><h3>${x.t}</h3><p>${x.p}</p></div><div class="pres-shot"><img src="img/accueil/${x.img}.jpg" alt="Capture : ${x.t.toLowerCase()}" loading="lazy" width="390" height="545"></div>`);
+      wrap.appendChild(card);
+    });
+    wrap.appendChild(el('div', 'pres-club', '<h3>Tout le club, pas seulement une équipe</h3><ul><li>Autant d’équipes que vous voulez : séniors, réserve, jeunes, féminines…</li><li>Un seul code pour rejoindre le club ; le bureau gère toutes les équipes.</li><li>Moins de 15 ans : un parent gère le compte de ses enfants depuis le sien.</li></ul>'));
+    wrap.appendChild(el('div', 'pres-why', '<span>Pensée pour le rugby</span><span>Données en France</span><span>Gratuit, sans publicité</span>'));
+    const cta = el('div', 'pres-cta');
+    cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Créez votre compte en une minute.'));
+    cta.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
+    wrap.appendChild(cta);
+    return wrap;
   }
   function hello(root, sub) {
-    const p = A.profile();
+    const p = A.ownProfile ? A.ownProfile() : A.profile();   // un parent est salué lui-même, pas son jeune
     const name = ((p && p.display_name) || '').split(' ')[0];
     root.appendChild(el('div', 'hub-hello', `<h1>Bonjour ${esc(name)}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}`));
   }
@@ -162,22 +186,28 @@
       hello(root, 'Bienvenue sur Rugbeo.');
       // Déjà membre d'un club : il ne reste qu'à choisir ses équipes
       const club = A.clubs && A.clubs()[0];
+      const kids = A.kids ? A.kids() : [];
       if (club) {
-        const c = el('div', 'todo-card', `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
-        c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
+        const c = el('div', 'todo-card', kids.length
+          ? `<div class="todo-head">Dernière étape : leurs équipes</div><p class="muted">Club « ${esc(club.name)} » : choisissez l’équipe de chaque jeune. Le coach ou le bureau du club validera la demande.</p>`
+          : `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
+        if (kids.length) kids.forEach(k => c.appendChild(btn(`Choisir l’équipe de ${k.display_name}`, 'primary', () => A.openTeamPicker(club.id, k.id))));
+        else c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
         root.appendChild(c);
-        A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation.`)));
+        A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation.`)));
         return;
       }
-      const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez ci-dessous le code donné par votre club ou votre coach : le code du club (vous choisirez ensuite vos équipes) ou celui d’une équipe.</p>');
+      const card = el('div', 'todo-card', kids.length
+        ? `<div class="todo-head">Dernière étape : rejoignez le club</div><p class="muted">Entrez ci-dessous le code donné par le club ou le coach, et choisissez pour quel jeune : le code du club (vous choisirez ensuite son équipe) ou celui d’une équipe.</p>`
+        : '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez ci-dessous le code donné par votre club ou votre coach : le code du club (vous choisirez ensuite vos équipes) ou celui d’une équipe.</p>');
       root.appendChild(card);
-      A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation par un coach.`)));
+      A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation par un coach.`)));
       root.appendChild(A.teamForms());
       return;
     }
     const staff = A.isStaff();
     const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'bureau du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
-    hello(root, `${esc(team.name)} · ${roleLabel}`);
+    hello(root, `${esc(team.name)}${team.kidName ? ' · ' + esc(team.kidName) : ''} · ${roleLabel}`);
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
     slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
     let d;
