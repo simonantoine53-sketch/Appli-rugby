@@ -1257,3 +1257,21 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .hero-slogan { margin: 4px 0 0; font-weight: 600; color: var(--text); }
 .auth-brand { margin: 0; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
 .auth-brand strong { color: var(--field); }
+/* Bandeau terrain de la fenêtre de connexion (décoratif) */
+.auth-hero { height: 104px; overflow: hidden; border-bottom: 1px solid var(--border); }
+.auth-hero svg { display: block; width: 100%; height: 100%; }
+.auth-hero .ah-grass { fill: var(--field); }
+.auth-hero .ah-stripe { fill: var(--panel); opacity: .06; }
+.auth-hero .ah-lines { stroke: var(--panel); stroke-width: 1.6; opacity: .75; fill: none; }
+.auth-hero .ah-lines .dash { stroke-dasharray: 5 5; }
+.auth-hero .ah-run { fill: none; stroke: var(--panel); stroke-width: 2.4; stroke-dasharray: 7 6; animation: ah-run 1.6s linear infinite; }
+.auth-hero .ah-pass { fill: none; stroke: var(--panel); stroke-width: 2; stroke-dasharray: 3 4; }
+.auth-hero .ah-blue circle { fill: var(--primary); stroke: var(--panel); stroke-width: 1.5; }
+.auth-hero .ah-red circle { fill: var(--danger); stroke: var(--panel); stroke-width: 1.5; }
+.auth-hero .ah-num text { fill: var(--panel); font-size: 8px; font-weight: 800; text-anchor: middle; }
+.auth-hero .ah-ball { fill: var(--panel); stroke: var(--text); stroke-width: 1; }
+@keyframes ah-run { to { stroke-dashoffset: -26; } }
+@media (prefers-reduced-motion: reduce) { .auth-hero .ah-run { animation: none; } }
+.auth-points { list-style: none; margin: 8px 18px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; font-weight: 600; color: var(--text); }
+.auth-points li::before { content: '✓'; color: var(--field); font-weight: 800; margin-right: 6px; }
+.auth-points.hidden { display: none; }

@@ -1272,6 +1272,24 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .hero-slogan { margin: 4px 0 0; font-weight: 600; color: var(--text); }
 .auth-brand { margin: 0; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
 .auth-brand strong { color: var(--field); }
+/* Bandeau terrain de la fenêtre de connexion (décoratif) */
+.auth-hero { height: 104px; overflow: hidden; border-bottom: 1px solid var(--border); }
+.auth-hero svg { display: block; width: 100%; height: 100%; }
+.auth-hero .ah-grass { fill: var(--field); }
+.auth-hero .ah-stripe { fill: var(--panel); opacity: .06; }
+.auth-hero .ah-lines { stroke: var(--panel); stroke-width: 1.6; opacity: .75; fill: none; }
+.auth-hero .ah-lines .dash { stroke-dasharray: 5 5; }
+.auth-hero .ah-run { fill: none; stroke: var(--panel); stroke-width: 2.4; stroke-dasharray: 7 6; animation: ah-run 1.6s linear infinite; }
+.auth-hero .ah-pass { fill: none; stroke: var(--panel); stroke-width: 2; stroke-dasharray: 3 4; }
+.auth-hero .ah-blue circle { fill: var(--primary); stroke: var(--panel); stroke-width: 1.5; }
+.auth-hero .ah-red circle { fill: var(--danger); stroke: var(--panel); stroke-width: 1.5; }
+.auth-hero .ah-num text { fill: var(--panel); font-size: 8px; font-weight: 800; text-anchor: middle; }
+.auth-hero .ah-ball { fill: var(--panel); stroke: var(--text); stroke-width: 1; }
+@keyframes ah-run { to { stroke-dashoffset: -26; } }
+@media (prefers-reduced-motion: reduce) { .auth-hero .ah-run { animation: none; } }
+.auth-points { list-style: none; margin: 8px 18px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; font-weight: 600; color: var(--text); }
+.auth-points li::before { content: '✓'; color: var(--field); font-weight: 800; margin-right: 6px; }
+.auth-points.hidden { display: none; }
 
 </style>
 </head>
@@ -1685,7 +1703,23 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
       <div class="tabs small"><button class="tab active" data-mode="login">Connexion</button><button class="tab" data-mode="signup">Inscription</button></div><strong id="auth-title" class="hidden"></strong>
       <button class="btn-close" data-close="modal-auth" title="Fermer">✕</button>
     </div>
+    <div class="auth-hero" aria-hidden="true">
+      <svg viewBox="0 0 420 112" preserveAspectRatio="xMidYMid slice">
+        <rect class="ah-grass" width="420" height="112"/>
+        <rect class="ah-stripe" x="70" width="70" height="112"/><rect class="ah-stripe" x="210" width="70" height="112"/><rect class="ah-stripe" x="350" width="70" height="112"/>
+        <g class="ah-lines"><line x1="30" y1="0" x2="30" y2="112"/><line x1="120" y1="0" x2="120" y2="112"/><line x1="210" y1="0" x2="210" y2="112"/><line x1="300" y1="0" x2="300" y2="112"/><line x1="390" y1="0" x2="390" y2="112"/>
+          <line class="dash" x1="180" y1="0" x2="180" y2="112"/><line class="dash" x1="240" y1="0" x2="240" y2="112"/>
+          <path d="M24 44 h12 M30 30 v28 M384 44 h12 M390 30 v28"/></g>
+        <path class="ah-run" d="M150 86 C 190 70, 220 52, 262 36"/>
+        <path class="ah-pass" d="M116 70 Q 132 74 148 84"/>
+        <g class="ah-blue"><circle cx="104" cy="62" r="7"/><circle cx="150" cy="86" r="7"/><circle cx="128" cy="98" r="7"/><circle cx="96" cy="94" r="7"/></g>
+        <g class="ah-num"><text x="104" y="65">9</text><text x="150" y="89">10</text><text x="128" y="101">12</text><text x="96" y="97">13</text></g>
+        <g class="ah-red"><circle cx="232" cy="24" r="7"/><circle cx="236" cy="48" r="7"/><circle cx="230" cy="72" r="7"/><circle cx="238" cy="94" r="7"/></g>
+        <ellipse class="ah-ball" cx="262" cy="36" rx="6" ry="4" transform="rotate(-30 262 36)"/>
+      </svg>
+    </div>
     <p class="auth-brand"><strong>Rugbeo</strong> · De la convoc’ au maillot.</p>
+    <ul id="auth-points" class="auth-points hidden"></ul>
     <form id="auth-form" class="form" data-mode="login">
       <label class="hidden">Prénom / pseudo<input id="auth-name" type="text" autocomplete="nickname" maxlength="40"></label>
       <p id="auth-intro" class="help hidden"></p>
@@ -4243,7 +4277,7 @@ window.RUGBY_CONFIG = {
   $('#share-next').onclick = previewNext;
   $('#share-prev').onclick = previewPrev;
   $('#share-full').onclick = () => { const el = $('#view-share'); if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
-  $('#share-open-app').onclick = () => go('home');
+  $('#share-open-app').onclick = () => { try { sessionStorage.setItem('rs-from', 'strat'); } catch (e) {} go('home'); };
 
   /* ---------- Export PNG ---------- */
   function exportPng() {
@@ -4722,6 +4756,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
+    renderAuthPoints(mode);
+  }
+  /* Rappel de ce que fait l'appli, à l'inscription : stratégies si l'on vient d'un lien de stratégie, sinon toute l'appli. */
+  function renderAuthPoints(mode) {
+    let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
+    const pts = fromStrat ? ['Dessinez vos combinaisons', 'Animez-les étape par étape', 'Voyez qui les a regardées']
+      : ['Convocations en un appui', 'Stratégies animées', 'Feuille de match en quelques minutes'];
+    const ul = $('#auth-points');
+    ul.innerHTML = pts.map(t => `<li>${t}</li>`).join('');
+    ul.classList.toggle('hidden', mode !== 'signup');
   }
   /* Solidité du mot de passe : longueur, minuscules/majuscules, chiffres, symboles (indicatif, seul le minimum de 6 est imposé). */
   function pwStrength(pw) {
@@ -8576,8 +8620,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Accueil ---------- */
   let seq = 0;
   function hero(root) {
-    const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>Dessinez vos combinaisons de rugby, toute l’équipe les comprend.</h1>
-      <ul><li>Placez joueurs, courses et passes en quelques secondes</li><li>Animez étape par étape, zoomez sur une touche ou une mêlée</li><li>Publiez à l’équipe et voyez qui a regardé avant le match</li></ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
+    // Arrivé par le lien public d'une stratégie : on parle stratégies ; sinon, de toute l'appli.
+    let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
+    const pitch = fromStrat
+      ? { h: 'Dessinez vos combinaisons de rugby, toute l’équipe les comprend.', pts: ['Placez joueurs, courses et passes en quelques secondes', 'Animez étape par étape, zoomez sur une touche ou une mêlée', 'Publiez à l’équipe et voyez qui a regardé avant le match'] }
+      : { h: 'Tout votre club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : vos lancements de jeu animés, et vous savez qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
+    const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
+      <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
     if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Essayer sans compte', 'outline', () => E.go('editor')));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));

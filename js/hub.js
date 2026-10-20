@@ -129,8 +129,13 @@
   /* ---------- Accueil ---------- */
   let seq = 0;
   function hero(root) {
-    const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>Dessinez vos combinaisons de rugby, toute l’équipe les comprend.</h1>
-      <ul><li>Placez joueurs, courses et passes en quelques secondes</li><li>Animez étape par étape, zoomez sur une touche ou une mêlée</li><li>Publiez à l’équipe et voyez qui a regardé avant le match</li></ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
+    // Arrivé par le lien public d'une stratégie : on parle stratégies ; sinon, de toute l'appli.
+    let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
+    const pitch = fromStrat
+      ? { h: 'Dessinez vos combinaisons de rugby, toute l’équipe les comprend.', pts: ['Placez joueurs, courses et passes en quelques secondes', 'Animez étape par étape, zoomez sur une touche ou une mêlée', 'Publiez à l’équipe et voyez qui a regardé avant le match'] }
+      : { h: 'Tout votre club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : vos lancements de jeu animés, et vous savez qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
+    const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
+      <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
     if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Essayer sans compte', 'outline', () => E.go('editor')));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));

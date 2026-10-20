@@ -930,7 +930,7 @@
   $('#share-next').onclick = previewNext;
   $('#share-prev').onclick = previewPrev;
   $('#share-full').onclick = () => { const el = $('#view-share'); if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); };
-  $('#share-open-app').onclick = () => go('home');
+  $('#share-open-app').onclick = () => { try { sessionStorage.setItem('rs-from', 'strat'); } catch (e) {} go('home'); };
 
   /* ---------- Export PNG ---------- */
   function exportPng() {

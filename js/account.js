@@ -229,6 +229,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
+    renderAuthPoints(mode);
+  }
+  /* Rappel de ce que fait l'appli, à l'inscription : stratégies si l'on vient d'un lien de stratégie, sinon toute l'appli. */
+  function renderAuthPoints(mode) {
+    let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
+    const pts = fromStrat ? ['Dessinez vos combinaisons', 'Animez-les étape par étape', 'Voyez qui les a regardées']
+      : ['Convocations en un appui', 'Stratégies animées', 'Feuille de match en quelques minutes'];
+    const ul = $('#auth-points');
+    ul.innerHTML = pts.map(t => `<li>${t}</li>`).join('');
+    ul.classList.toggle('hidden', mode !== 'signup');
   }
   /* Solidité du mot de passe : longueur, minuscules/majuscules, chiffres, symboles (indicatif, seul le minimum de 6 est imposé). */
   function pwStrength(pw) {
