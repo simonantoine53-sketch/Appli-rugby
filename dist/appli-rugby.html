@@ -514,7 +514,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .day-chips span { display: grid; place-items: center; min-width: 46px; height: 40px; padding: 0 8px; border-radius: 999px; border: 1.5px solid var(--border); background: #fff; font-size: 14px; cursor: pointer; }
 .day-chips input:checked + span { background: var(--primary); border-color: var(--primary); color: #fff; }
 .day-chips input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
-.ev-quick { margin-left: auto; padding: 2px 8px; font-size: 13px; color: var(--muted); }
+.ev-foot { display: flex; justify-content: flex-end; margin-top: 2px; }
+.ev-quick { padding: 2px 8px; font-size: 13px; color: var(--muted); }
 .ev-quick:hover { color: var(--danger); }
 .choice-panel { display: flex; flex-direction: column; gap: 8px; background: var(--warning-soft); border: 1.5px solid var(--warning); border-radius: 10px; padding: 10px 12px; }
 .choice-panel p { margin: 0; font-weight: 600; }
@@ -1328,6 +1329,9 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 /* Base de test : petit bandeau toujours visible (js/config.js) */
 .env-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 5000; pointer-events: none; background: var(--warning); color: var(--panel); font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 10px 3px; border-radius: 0 0 8px 8px; white-space: nowrap; }
 @media print { .env-banner { display: none; } }
+.club-ffr { display: inline-block; margin: 2px 0 8px; font-weight: 600; }
+.kid-handover { margin: -4px 0 8px; }
+.kid-nudge { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--warning-soft); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
 
 </style>
 </head>
@@ -4529,7 +4533,7 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
     if (view === 'share') { openShare(shareToken()); return; }
     if (view === 'editor') { requestAnimationFrame(fitZoom); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
-    if (view === 'strats') renderStrats();
+    if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();
     else if (view === 'admin' && window.RugbyAdmin) window.RugbyAdmin.render();
   }
@@ -4668,6 +4672,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.user) {
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
+      if (S.profile.guardian_id) {
+        const { data: claimed } = await sb.rpc('claim_my_account');
+        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le vôtre.'); }
+      }
       await loadKids();
       await loadTeams();
       watchMyMemberships();
@@ -4691,6 +4699,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function loadKids() {
     const { data } = await sb.from('profiles').select('*').eq('guardian_id', S.user.id).order('created_at');
     S.kids = data || [];
+    // Comptes déjà transmis à un jeune de 15 ans (en attente de sa première connexion)
+    S.kidLogins = {};
+    if (S.kids.length) { const { data: lg } = await sb.rpc('my_kids_login'); (lg || []).forEach(r => { S.kidLogins[r.id] = r.email; }); }
   }
 
   /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
@@ -4740,7 +4751,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
       sb.from('team_members').select(`user_id, role, status, plays, teams(${TEAM_COLS})`).in('user_id', ids),
-      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start)').in('user_id', ids)
+      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start, settings)').in('user_id', ids)
     ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
@@ -4759,7 +4770,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id && !x.who); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
     if (isSuper()) {
-      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start').order('name')]);
+      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start, settings').order('name')]);
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id && !x.who)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
       (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
     }
@@ -5157,6 +5168,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.appendChild(el('div', 'who', `${esc(k.display_name)}<small>${esc(teams.join(', ') || 'Pas encore d’équipe')}</small>`));
         const acts = el('div', 'row-wrap');
         acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
+        acts.appendChild(btn(S.kidLogins && S.kidLogins[k.id] ? 'Renvoyer le lien' : 'Lui donner son compte', 'outline small', () => handOver(k)));
         acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
           if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
           const { error } = await sb.rpc('remove_child', { p_child: k.id });
@@ -5165,6 +5177,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         }));
         row.appendChild(acts);
         box.appendChild(row);
+        if (S.kidLogins && S.kidLogins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(S.kidLogins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
       });
     }
     const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
@@ -5178,6 +5191,24 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     };
     box.appendChild(f);
     return box;
+  }
+  /** À 15 ans, le jeune peut avoir son propre compte : il reçoit un lien pour choisir son mot de passe.
+      Le parent garde la main jusqu'à la première connexion du jeune (claim_my_account). */
+  async function handOver(k) {
+    const D = window.RugbyDialog;
+    const first = (k.display_name || '').split(' ')[0];
+    const em = await D.prompt(`E-mail de ${first}`, (S.kidLogins && S.kidLogins[k.id]) || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
+    if (!em) return;
+    const again = await D.prompt('Retapez son adresse pour vérifier', '', { title: 'Lui donner son compte', placeholder: em.trim(), ok: 'Envoyer le lien', maxLength: 254 });
+    if (again == null) return;
+    if (again.trim().toLowerCase() !== em.trim().toLowerCase()) return E.toast('Les deux adresses ne sont pas identiques : rien n’a été envoyé.');
+    const { error } = await sb.rpc('handover_child', { p_child: k.id, p_email: em.trim() });
+    if (error) return E.toast(errMsg(error));
+    track('kid_handover');
+    const { error: e2 } = await sb.auth.resetPasswordForEmail(em.trim(), { redirectTo: location.origin + location.pathname });
+    await loadKids(); renderAccountPage();
+    if (e2) E.toast(`Compte transmis, mais l’e-mail n’est pas parti (${errMsg(e2)}). Réessayez avec « Renvoyer le lien ».`);
+    else E.toast(`Lien envoyé à ${em.trim()} : ${first} choisit son mot de passe et se connecte. Vous gérez son compte jusque-là.`);
   }
   function pendingCard() {
     if (!S.pending || !S.pending.length) return null;
@@ -5326,6 +5357,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const card = el('div', 'club-card');
     card.appendChild(el('h3', '', esc(club.name)));
     card.appendChild(el('p', 'muted small', direction.length ? `Bureau du club : ${direction.map(r => esc(nameOf(r)) + (r.title ? ` (${esc(r.title)})` : '')).join(', ')}` : 'Bureau du club : pas encore nommé.'));
+    const ffr = club.settings && club.settings.ffr_url;
+    if (ffr) { const a = el('a', 'link club-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; card.appendChild(a); }
     if (admin) {
       const code = el('div', 'row-wrap', `<span class="muted small">Code du club</span><span class="club-code">${esc(club.join_code)}</span>`);
       code.appendChild(btn('Copier', 'outline small', () => copy(club.join_code, 'Code du club copié.', 'club-code')));
@@ -5347,6 +5380,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       };
       season.appendChild(month);
       card.appendChild(season);
+      card.appendChild(btn(ffr ? 'Modifier le lien FFR' : 'Ajouter la page FFR du club', 'outline small', async () => {
+        const v = await window.RugbyDialog.prompt('Adresse de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300 });
+        if (v == null) return;
+        const url = v.trim();
+        if (url && !/^https:\/\/[^\s]+\.[^\s]+$/.test(url)) return E.toast('Adresse invalide : elle doit commencer par https://');
+        const settings = Object.assign({}, club.settings || {}, { ffr_url: url && url !== 'https://' ? url : null });
+        const { error } = await sb.from('clubs').update({ settings }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        club.settings = settings; E.toast(settings.ffr_url ? 'Lien FFR enregistré : il s’affiche pour tous les membres du club.' : 'Lien FFR retiré.'); renderTeamPage();
+      }));
       card.appendChild(btn('Renommer le club', 'outline small club-rename', async () => {
         const v = await window.RugbyDialog.prompt('Nom du club', club.name, { title: 'Renommer le club', ok: 'Renommer', maxLength: 60 });
         if (!v || v.trim() === club.name) return;
@@ -5591,7 +5634,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number, guardian_id)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
@@ -5629,7 +5672,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const row = el('div', 'member-row clickable');
       const P = window.RugbyProfile, pr = m.profiles || {};
       row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}${pr.guardian_id && staff ? ' · compte géré par un parent' : ''}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)
@@ -6319,7 +6362,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Fiche d'un membre ---------- */
   async function viewMember(userId, role) {
     const [{ data: p }, { data: priv }] = await Promise.all([
-      sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio').eq('id', userId).maybeSingle(),
+      sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio, guardian_id').eq('id', userId).maybeSingle(),
       sb.from('profile_private').select('phone, birth_date, emergency_name, emergency_phone').eq('user_id', userId).maybeSingle()
     ]);
     if (!p) return E.toast('Profil introuvable.');
@@ -6335,6 +6378,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const age = priv.birth_date ? Math.floor((Date.now() - new Date(priv.birth_date)) / 31557600000) : null;
       const rows = [['Téléphone', priv.phone ? `<a class="link" href="tel:${esc(priv.phone.replace(/\s/g, ''))}">${esc(priv.phone)}</a>` : ''], ['Naissance', priv.birth_date ? `${new Date(priv.birth_date).toLocaleDateString('fr-FR')} (${age} ans)` : ''], ['Contact d’urgence', [priv.emergency_name, priv.emergency_phone].filter(Boolean).map(esc).join(' · ')]].filter(x => x[1]);
       if (rows.length) body.appendChild(el('dl', 'member-facts private', '<div class="facts-title">Infos privées (staff)</div>' + rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('')));
+    }
+    // Jeune de moins de 15 ans : le staff voit qui gère son compte, pour prévenir le parent directement
+    if (p.guardian_id) {
+      const { data: g } = await sb.rpc('guardian_contact', { p_user: userId });
+      const c = g && g[0];
+      if (c) body.appendChild(el('dl', 'member-facts private', `<div class="facts-title">Compte géré par un parent</div><div><dt>Parent</dt><dd>${esc(c.name)}</dd></div><div><dt>E-mail</dt><dd><a class="link" href="mailto:${esc(c.email)}">${esc(c.email)}</a></dd></div>`));
     }
     if (!p.bio && !facts.length && !summary(p)) body.appendChild(el('p', 'muted', 'Ce membre n’a pas encore complété son profil.'));
     E.openModal('modal-member');
@@ -7273,17 +7322,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     c.appendChild(dateBlock(ev));
     const body = el('div', 'ev-body');
     const meta = el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`);
-    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé
-    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
-      if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
-      setCancelled([ev], !ev.cancelled, refresh);
-    }));
     body.appendChild(meta);
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
+    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé. En bas de la carte, discret.
+    if (staff && new Date(ev.starts_at) > Date.now()) {
+      const foot = el('div', 'ev-foot');
+      foot.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
+        if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
+        setCancelled([ev], !ev.cancelled, refresh);
+      }));
+      body.appendChild(foot);
+    }
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
     return c;
@@ -8822,6 +8875,24 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     wrap.appendChild(cta);
     return wrap;
   }
+  /* Parent de plusieurs jeunes : un seul jeune à la fois, mais un rappel si un autre a une convocation sans réponse. */
+  async function kidsNudge(slot, team, my) {
+    const others = A.teams().filter(t => t.who && A.teamKey(t) !== A.teamKey(team));
+    if (!others.length) return;
+    const soon = new Date(Date.now() + 7 * 86400e3).toISOString(), now = new Date(Date.now() - 3 * 3600e3).toISOString();
+    const { data: evs } = await A.sb.from('team_events').select('id, team_id').in('team_id', [...new Set(others.map(t => t.id))]).eq('cancelled', false).gte('starts_at', now).lte('starts_at', soon);
+    if (!evs || !evs.length || my !== seq) return;
+    const { data: rs } = await A.sb.from('event_responses').select('event_id, user_id').in('event_id', evs.map(e => e.id)).in('user_id', [...new Set(others.map(t => t.who))]);
+    if (my !== seq) return;
+    const answered = new Set((rs || []).map(r => r.event_id + '|' + r.user_id));
+    others.forEach(t => {
+      const n = evs.filter(e => e.team_id === t.id && !answered.has(e.id + '|' + t.who)).length;
+      if (!n) return;
+      const box = el('div', 'kid-nudge', `<span><strong>${esc(t.kidName.split(' ')[0])}</strong> : ${n} convocation${n > 1 ? 's' : ''} sans réponse (${esc(t.name)})</span>`);
+      box.appendChild(btn('Voir', 'outline small', () => { A.selectTeam(A.teamKey(t)); data = null; E.refreshView(); }));
+      slot.insertBefore(box, slot.firstChild);
+    });
+  }
   function hello(root, sub) {
     const p = A.ownProfile ? A.ownProfile() : A.profile();   // un parent est salué lui-même, pas son jeune
     const name = ((p && p.display_name) || '').split(' ')[0];
@@ -8875,6 +8946,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (my !== seq) return;
     if (staff && !team.notMember && !team.superadmin) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
     slot.appendChild(todo(d, notifOn, staff));
+    kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
     // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
     const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };

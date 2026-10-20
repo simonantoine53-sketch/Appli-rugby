@@ -72,6 +72,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.user) {
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
+      if (S.profile.guardian_id) {
+        const { data: claimed } = await sb.rpc('claim_my_account');
+        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le vôtre.'); }
+      }
       await loadKids();
       await loadTeams();
       watchMyMemberships();
@@ -95,6 +99,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function loadKids() {
     const { data } = await sb.from('profiles').select('*').eq('guardian_id', S.user.id).order('created_at');
     S.kids = data || [];
+    // Comptes déjà transmis à un jeune de 15 ans (en attente de sa première connexion)
+    S.kidLogins = {};
+    if (S.kids.length) { const { data: lg } = await sb.rpc('my_kids_login'); (lg || []).forEach(r => { S.kidLogins[r.id] = r.email; }); }
   }
 
   /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
@@ -144,7 +151,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
       sb.from('team_members').select(`user_id, role, status, plays, teams(${TEAM_COLS})`).in('user_id', ids),
-      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start)').in('user_id', ids)
+      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start, settings)').in('user_id', ids)
     ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
@@ -163,7 +170,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id && !x.who); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
     if (isSuper()) {
-      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start').order('name')]);
+      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start, settings').order('name')]);
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id && !x.who)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
       (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
     }
@@ -561,6 +568,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.appendChild(el('div', 'who', `${esc(k.display_name)}<small>${esc(teams.join(', ') || 'Pas encore d’équipe')}</small>`));
         const acts = el('div', 'row-wrap');
         acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
+        acts.appendChild(btn(S.kidLogins && S.kidLogins[k.id] ? 'Renvoyer le lien' : 'Lui donner son compte', 'outline small', () => handOver(k)));
         acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
           if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
           const { error } = await sb.rpc('remove_child', { p_child: k.id });
@@ -569,6 +577,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         }));
         row.appendChild(acts);
         box.appendChild(row);
+        if (S.kidLogins && S.kidLogins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(S.kidLogins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
       });
     }
     const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
@@ -582,6 +591,24 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     };
     box.appendChild(f);
     return box;
+  }
+  /** À 15 ans, le jeune peut avoir son propre compte : il reçoit un lien pour choisir son mot de passe.
+      Le parent garde la main jusqu'à la première connexion du jeune (claim_my_account). */
+  async function handOver(k) {
+    const D = window.RugbyDialog;
+    const first = (k.display_name || '').split(' ')[0];
+    const em = await D.prompt(`E-mail de ${first}`, (S.kidLogins && S.kidLogins[k.id]) || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
+    if (!em) return;
+    const again = await D.prompt('Retapez son adresse pour vérifier', '', { title: 'Lui donner son compte', placeholder: em.trim(), ok: 'Envoyer le lien', maxLength: 254 });
+    if (again == null) return;
+    if (again.trim().toLowerCase() !== em.trim().toLowerCase()) return E.toast('Les deux adresses ne sont pas identiques : rien n’a été envoyé.');
+    const { error } = await sb.rpc('handover_child', { p_child: k.id, p_email: em.trim() });
+    if (error) return E.toast(errMsg(error));
+    track('kid_handover');
+    const { error: e2 } = await sb.auth.resetPasswordForEmail(em.trim(), { redirectTo: location.origin + location.pathname });
+    await loadKids(); renderAccountPage();
+    if (e2) E.toast(`Compte transmis, mais l’e-mail n’est pas parti (${errMsg(e2)}). Réessayez avec « Renvoyer le lien ».`);
+    else E.toast(`Lien envoyé à ${em.trim()} : ${first} choisit son mot de passe et se connecte. Vous gérez son compte jusque-là.`);
   }
   function pendingCard() {
     if (!S.pending || !S.pending.length) return null;
@@ -730,6 +757,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const card = el('div', 'club-card');
     card.appendChild(el('h3', '', esc(club.name)));
     card.appendChild(el('p', 'muted small', direction.length ? `Bureau du club : ${direction.map(r => esc(nameOf(r)) + (r.title ? ` (${esc(r.title)})` : '')).join(', ')}` : 'Bureau du club : pas encore nommé.'));
+    const ffr = club.settings && club.settings.ffr_url;
+    if (ffr) { const a = el('a', 'link club-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; card.appendChild(a); }
     if (admin) {
       const code = el('div', 'row-wrap', `<span class="muted small">Code du club</span><span class="club-code">${esc(club.join_code)}</span>`);
       code.appendChild(btn('Copier', 'outline small', () => copy(club.join_code, 'Code du club copié.', 'club-code')));
@@ -751,6 +780,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       };
       season.appendChild(month);
       card.appendChild(season);
+      card.appendChild(btn(ffr ? 'Modifier le lien FFR' : 'Ajouter la page FFR du club', 'outline small', async () => {
+        const v = await window.RugbyDialog.prompt('Adresse de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300 });
+        if (v == null) return;
+        const url = v.trim();
+        if (url && !/^https:\/\/[^\s]+\.[^\s]+$/.test(url)) return E.toast('Adresse invalide : elle doit commencer par https://');
+        const settings = Object.assign({}, club.settings || {}, { ffr_url: url && url !== 'https://' ? url : null });
+        const { error } = await sb.from('clubs').update({ settings }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        club.settings = settings; E.toast(settings.ffr_url ? 'Lien FFR enregistré : il s’affiche pour tous les membres du club.' : 'Lien FFR retiré.'); renderTeamPage();
+      }));
       card.appendChild(btn('Renommer le club', 'outline small club-rename', async () => {
         const v = await window.RugbyDialog.prompt('Nom du club', club.name, { title: 'Renommer le club', ok: 'Renommer', maxLength: 60 });
         if (!v || v.trim() === club.name) return;
@@ -995,7 +1034,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function renderMembers(list, staff, seq) {
     list.classList.remove('library-list'); list.classList.add('member-list');
-    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number)').eq('team_id', S.team.id);
+    const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number, guardian_id)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
     if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
@@ -1033,7 +1072,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const row = el('div', 'member-row clickable');
       const P = window.RugbyProfile, pr = m.profiles || {};
       row.appendChild(P ? P.avatar(name, pr.avatar) : el('div', 'avatar', esc(name.trim().slice(0, 1).toUpperCase() || '?')));
-      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}</small>`));
+      row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}${pr.guardian_id && staff ? ' · compte géré par un parent' : ''}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
       // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)

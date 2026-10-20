@@ -171,6 +171,24 @@
     wrap.appendChild(cta);
     return wrap;
   }
+  /* Parent de plusieurs jeunes : un seul jeune à la fois, mais un rappel si un autre a une convocation sans réponse. */
+  async function kidsNudge(slot, team, my) {
+    const others = A.teams().filter(t => t.who && A.teamKey(t) !== A.teamKey(team));
+    if (!others.length) return;
+    const soon = new Date(Date.now() + 7 * 86400e3).toISOString(), now = new Date(Date.now() - 3 * 3600e3).toISOString();
+    const { data: evs } = await A.sb.from('team_events').select('id, team_id').in('team_id', [...new Set(others.map(t => t.id))]).eq('cancelled', false).gte('starts_at', now).lte('starts_at', soon);
+    if (!evs || !evs.length || my !== seq) return;
+    const { data: rs } = await A.sb.from('event_responses').select('event_id, user_id').in('event_id', evs.map(e => e.id)).in('user_id', [...new Set(others.map(t => t.who))]);
+    if (my !== seq) return;
+    const answered = new Set((rs || []).map(r => r.event_id + '|' + r.user_id));
+    others.forEach(t => {
+      const n = evs.filter(e => e.team_id === t.id && !answered.has(e.id + '|' + t.who)).length;
+      if (!n) return;
+      const box = el('div', 'kid-nudge', `<span><strong>${esc(t.kidName.split(' ')[0])}</strong> : ${n} convocation${n > 1 ? 's' : ''} sans réponse (${esc(t.name)})</span>`);
+      box.appendChild(btn('Voir', 'outline small', () => { A.selectTeam(A.teamKey(t)); data = null; E.refreshView(); }));
+      slot.insertBefore(box, slot.firstChild);
+    });
+  }
   function hello(root, sub) {
     const p = A.ownProfile ? A.ownProfile() : A.profile();   // un parent est salué lui-même, pas son jeune
     const name = ((p && p.display_name) || '').split(' ')[0];
@@ -224,6 +242,7 @@
     if (my !== seq) return;
     if (staff && !team.notMember && !team.superadmin) { const ob = onboarding(d, notifOn); if (ob) slot.appendChild(ob); }
     slot.appendChild(todo(d, notifOn, staff));
+    kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
     // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
     const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };

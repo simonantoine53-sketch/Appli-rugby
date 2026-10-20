@@ -158,7 +158,7 @@
   /* ---------- Fiche d'un membre ---------- */
   async function viewMember(userId, role) {
     const [{ data: p }, { data: priv }] = await Promise.all([
-      sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio').eq('id', userId).maybeSingle(),
+      sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio, guardian_id').eq('id', userId).maybeSingle(),
       sb.from('profile_private').select('phone, birth_date, emergency_name, emergency_phone').eq('user_id', userId).maybeSingle()
     ]);
     if (!p) return E.toast('Profil introuvable.');
@@ -174,6 +174,12 @@
       const age = priv.birth_date ? Math.floor((Date.now() - new Date(priv.birth_date)) / 31557600000) : null;
       const rows = [['Téléphone', priv.phone ? `<a class="link" href="tel:${esc(priv.phone.replace(/\s/g, ''))}">${esc(priv.phone)}</a>` : ''], ['Naissance', priv.birth_date ? `${new Date(priv.birth_date).toLocaleDateString('fr-FR')} (${age} ans)` : ''], ['Contact d’urgence', [priv.emergency_name, priv.emergency_phone].filter(Boolean).map(esc).join(' · ')]].filter(x => x[1]);
       if (rows.length) body.appendChild(el('dl', 'member-facts private', '<div class="facts-title">Infos privées (staff)</div>' + rows.map(([k, val]) => `<div><dt>${k}</dt><dd>${val}</dd></div>`).join('')));
+    }
+    // Jeune de moins de 15 ans : le staff voit qui gère son compte, pour prévenir le parent directement
+    if (p.guardian_id) {
+      const { data: g } = await sb.rpc('guardian_contact', { p_user: userId });
+      const c = g && g[0];
+      if (c) body.appendChild(el('dl', 'member-facts private', `<div class="facts-title">Compte géré par un parent</div><div><dt>Parent</dt><dd>${esc(c.name)}</dd></div><div><dt>E-mail</dt><dd><a class="link" href="mailto:${esc(c.email)}">${esc(c.email)}</a></dd></div>`));
     }
     if (!p.bio && !facts.length && !summary(p)) body.appendChild(el('p', 'muted', 'Ce membre n’a pas encore complété son profil.'));
     E.openModal('modal-member');
