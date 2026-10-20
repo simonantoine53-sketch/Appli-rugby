@@ -151,6 +151,18 @@
   // Déconnexion : les données gardées pour le hors ligne sont effacées de l'appareil (avant et après, lectures en cours comprises)
   $('#btn-logout').onclick = async () => { const O = window.RugbyOffline; if (O) await O.clearData(); await sb.auth.signOut(); if (O) setTimeout(O.clearData, 1500); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
+  /* Apparence : Clair / Sombre / Automatique (suit le téléphone) ; gardé sur cet appareil */
+  function showTheme() {
+    let cur = 'auto'; try { cur = localStorage.getItem('rs-theme') || 'auto'; } catch (e) { /* ignore */ }
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.themeSet === cur)));
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(b => { b.onclick = () => {
+    const v = b.dataset.themeSet;
+    try { if (v === 'auto') localStorage.removeItem('rs-theme'); else localStorage.setItem('rs-theme', v); } catch (e) { /* ignore */ }
+    if (v === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', v);
+    track('theme', { theme: v }); showTheme();
+  }; });
+  showTheme();
   $('#btn-calendar').onclick = () => window.RugbyAgenda && window.RugbyAgenda.openSubscribe && window.RugbyAgenda.openSubscribe();
   $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);
   // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée

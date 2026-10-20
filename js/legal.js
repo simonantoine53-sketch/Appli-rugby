@@ -6,9 +6,9 @@
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '22 octobre 2026',
-    version: '2026-10-22',
-    changes: 'abonnement à l’agenda, rappels de la veille, réponse depuis la notification'   // résumé affiché aux comptes existants
+    updated: '21 octobre 2026',
+    version: '2026-10-21-2',
+    changes: 'abonnement à l’agenda, rappels de la veille, réponse depuis la notification, mode hors ligne'   // résumé affiché aux comptes existants
 
   };
   const $ = s => document.querySelector(s);
@@ -118,7 +118,8 @@
         <li>votre session de connexion (pour ne pas vous redemander votre mot de passe) ;</li>
         <li>l’équipe que vous avez choisie et les stratégies déjà vues ;</li>
         <li>les dessins faits sans compte et le dessin en cours ;</li>
-        <li>vos préférences (tutoriel déjà vu, notifications déjà proposées, lieux récents de l’agenda) ;</li>
+        <li>vos préférences (tutoriel déjà vu, notifications déjà proposées, lieux récents de l’agenda, apparence claire ou sombre) ;</li>
+        <li>pour le mode hors ligne : une copie de l’appli et des dernières données de vos équipes que vous avez consultées, ainsi que les réponses aux convocations données sans réseau, le temps de les envoyer. Cette copie est effacée quand vous vous déconnectez ;</li>
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
       <h4>Mesure d’audience anonyme</h4>

@@ -37,8 +37,8 @@ Aperçu visuel : ouvrir `charte.html` (en ligne : `/Appli-rugby/charte.html`).
 | Terrain | `--field` | `#4a9e4f` | Uniquement le terrain des dessins |
 | Cadre sur le terrain | `--field-highlight` | `#ffd54f` | Cadre en cours de modification dans l'éditeur |
 
-Exceptions voulues : le blanc (`#fff`) pour le texte sur un bouton coloré, le noir transparent des ombres,
-le vert WhatsApp (couleur de marque) et le thème sombre du mode présentation.
+Plus aucun code couleur dans les règles de `css/style.css` : le blanc sur un bouton coloré, le vert WhatsApp et le fond noir
+du mode présentation ont maintenant leur variable (voir « Couleurs fixes en plus »). Seule exception : le noir transparent des ombres.
 Les couleurs des joueurs et du matériel sur le terrain font partie du dessin, pas de l'interface.
 
 ## Quel bouton pour quelle action
@@ -71,3 +71,35 @@ Réservées aux graphiques : jamais pour un bouton ni pour un état.
 | `--chart-grid` | #e9ecef | lignes de repère |
 
 Toujours dans cet ordre, la couleur suit la série (jamais son rang). L'ordre a été vérifié pour les daltoniens. Les séries 2, 4 et 5 sont peu contrastées sur fond blanc : on affiche toujours les valeurs (légende chiffrée ou tableau).
+
+## Couleurs fixes en plus
+
+| Variable | Couleur | Rôle |
+|---|---|---|
+| `--on-color` | #ffffff | Texte et icônes posés sur une couleur pleine (bouton bleu, pastille rouge, réponse choisie). Blanc dans les deux modes. |
+| `--primary-ink`, `--success-ink`, `--warning-ink`, `--danger-ink`, `--match-ink`, `--tag-ink`, `--neutral-ink` | (= la couleur en clair) | Texte posé sur une teinte pâle (`--x-soft`) : étiquettes, badges, bouton secondaire. Plus lumineux en mode sombre. |
+| `--stage`, `--stage-btn`, `--stage-border` | #000 / #222 / #444 | Présentation plein écran (fond noir), identique dans les deux modes. |
+| `--whatsapp` | #25d366 | Bouton « WhatsApp » de l'invitation (couleur de la marque). |
+
+## Mode sombre
+
+Réglage dans Compte → Réglages → Apparence : **Clair**, **Sombre** ou **Automatique** (par défaut : suit le réglage du téléphone). Le choix est gardé sur l'appareil (`rs-theme`) et appliqué avant l'affichage (pas d'éclair blanc).
+
+Chaque variable garde **le même rôle** ; seules les valeurs changent (bloc `:root[data-theme="dark"]` de `css/style.css`). On n'écrit donc jamais de règle propre au mode sombre : une nouvelle règle qui utilise les variables marche dans les deux modes.
+
+| Variable | Clair | Sombre |
+|---|---|---|
+| `--bg` | #f4f6f8 | #0d1117 |
+| `--panel` | #ffffff | #151b22 |
+| `--subtle` | #f1f3f5 | #1d252e |
+| `--border` / `--border-strong` | #e3e6ea / #c9cdd2 | #2a333d / #46515d |
+| `--text` / `--muted` | #1f2933 / #6b7280 | #e6edf3 / #9da7b3 |
+| `--primary` / `--primary-soft` | #1a73e8 / #e8f0fe | #257ae9 / #19304e |
+| `--success` / `--success-soft` | #2e7d32 / #e3f2e6 | #348e39 / #1c3427 |
+| `--warning` / `--warning-soft` | #b34d00 / #fff3e0 | #cf5900 / #3e291b |
+| `--danger` / `--danger-soft` | #c62828 / #fdecea | #da4949 / #40252b |
+| `--match` / `--tag` / `--neutral` | #6a1b9a / #00796b / #455a64 | #ac54e1 / #008c7c / #63818f |
+
+Contrastes vérifiés en sombre : texte 14,7:1 et texte secondaire 7,1:1 sur les cartes ; texte « encre » 6:1 sur les teintes pâles. Les couleurs pleines (bleu, vert, orange, rouge) sont réglées pour être lisibles dans les deux sens, texte blanc dessus et texte coloré sur une carte, à environ 4,2:1 : on les réserve à des textes en gras ou des boutons. Pour un long texte coloré sur une carte, utiliser la variable `-ink`.
+
+Restent toujours en clair : **l'impression** (bloc `@media print`), la **feuille de match** (aperçu, image, PDF), les **dessins du terrain** et leurs exports (couleurs propres à `js/field.js` et `js/export.js`).

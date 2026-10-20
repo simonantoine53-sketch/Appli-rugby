@@ -72,7 +72,7 @@
       list.sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'unanswered' ? (a, b) => unanswered(b) - unanswered(a) || a.name.localeCompare(b.name) : by(sort));
       if (staff) {
         const t = el('div', 'st-table');
-        t.appendChild(el('div', 'st-row st-th', '<span>Joueur</span><span>Entraînements</span><span>Matchs</span><span>Sans réponse</span>'));
+        t.appendChild(el('div', 'st-row st-th', '<span>Joueur</span><span><span class="st-long">Entraînements</span><span class="st-short">Entraîn.</span></span><span>Matchs</span><span><span class="st-long">Sans réponse</span><span class="st-short">Sans rép.</span></span>'));
         list.forEach(p => {
           const r = el('button', 'st-row'); r.type = 'button';
           r.innerHTML = `<span class="st-name">${esc(p.name)}</span><span>${cell(p.training)}</span><span>${cell(p.match)}</span><span class="${unanswered(p) ? 'st-none' : 'muted'}">${unanswered(p)}</span>`;
