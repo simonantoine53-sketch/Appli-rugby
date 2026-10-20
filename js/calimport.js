@@ -175,6 +175,13 @@
     });
     body.appendChild(list);
     const todo = items.filter(i => i.state !== 'same');
+    if (todo.length) {
+      // Prévenir l'équipe : une seule notification pour tous les nouveaux matchs (et une pour les changements)
+      const warn = el('label', 'check', '<input type="checkbox" checked> Prévenir l’équipe par notification');
+      warn.querySelector('input').onchange = e => { state.warn = e.target.checked; };
+      state.warn = true;
+      body.appendChild(warn);
+    }
     if (todo.length) body.appendChild(btn(nNew && !nChg ? `Importer ${plural(nNew, 'match', 'matchs')}` : `Importer et mettre à jour (${todo.length})`, 'primary wide', b => run(todo, b)));
     else if (items.length) body.appendChild(el('p', 'todo-empty', 'Tout est déjà à jour. ✓'));
   }
@@ -183,7 +190,7 @@
     const team = A.team(), me = A.user().id;
     const notes = m => [m.comp, m.url ? `Fiche du match : ${m.url}` : ''].filter(Boolean).join('\n') || null;
     const fresh = items.filter(i => i.state === 'new').map(i => Object.assign({}, i.row, {
-      team_id: team.id, kind: 'match', title: 'Match', created_by: me, external_id: i.m.uid, notes: notes(i.m),
+      id: crypto.randomUUID(), team_id: team.id, kind: 'match', title: 'Match', created_by: me, external_id: i.m.uid, notes: notes(i.m),
       meet_at: state.meet ? new Date(i.m.start.getTime() - state.meet * 60000).toISOString() : null
     }));
     let failed = 0;
@@ -196,6 +203,13 @@
       return sb.from('team_events').update(patch).eq('id', i.ex.id);
     }));
     failed = res.filter(r => r.error).length;
+    if (state.warn && AG.notify) {
+      const ok = updates.filter((i, k) => !res[k].error);
+      if (fresh.length) AG.notify(fresh.length > 1 ? fresh.map(r => r.id) : fresh[0].id, 'event_new');
+      const cancelled = ok.filter(i => i.m.cancelled).map(i => i.ex.id), moved = ok.filter(i => !i.m.cancelled).map(i => i.ex.id);
+      if (cancelled.length) AG.notify(cancelled.length > 1 ? cancelled : cancelled[0], 'event_cancelled');
+      if (moved.length) AG.notify(moved.length > 1 ? moved : moved[0], 'event_updated');
+    }
     await sb.from('teams').update({ calendar_club: state.club }).eq('id', team.id);
     track('calendar_import', { created: fresh.length, updated: updates.length - failed });
     E.closeModal('modal-import');

@@ -40,9 +40,26 @@
 
     // 3. Réglages
     if (window.RugbyPush) window.RugbyPush.renderButton(!!A.team());
+    renderReminders();
     // 5. Compte
     $('#btn-admin').classList.toggle('hidden', !A.isSuper());
     closePassword();
+  }
+
+  /** Préférence personnelle : rappel la veille (pour mes jeunes aussi, puisque leurs notifications arrivent chez moi). */
+  async function renderReminders() {
+    const row = $('#reminders-row'), box = $('#reminders-on');
+    const { data, error } = await sb.from('profile_private').select('reminders_off').eq('user_id', A.authUser().id).maybeSingle();
+    row.classList.toggle('hidden', !!error);
+    if (error) return;
+    box.checked = !(data && data.reminders_off);
+    $('#reminders-help').textContent = A.kids().length ? 'Pour vous et vos jeunes. Le staff choisit l’heure.' : 'Le staff de l’équipe choisit l’heure.';
+    box.onchange = async () => {
+      const { error: e } = await sb.from('profile_private').upsert({ user_id: A.authUser().id, reminders_off: !box.checked });
+      if (e) { box.checked = !box.checked; return E.toast(errMsg(e)); }
+      track('reminders_pref', { on: box.checked });
+      E.toast(box.checked ? 'Rappel de la veille activé.' : 'Plus de rappel la veille.');
+    };
   }
 
   /** Mes jeunes (moins de 15 ans) : leurs équipes, leur profil, en ajouter ou en retirer. */
@@ -133,6 +150,7 @@
 
   $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
+  $('#btn-calendar').onclick = () => window.RugbyAgenda && window.RugbyAgenda.openSubscribe && window.RugbyAgenda.openSubscribe();
   $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);
   // Revoir le tutoriel : retour à l'accueil (là où se trouvent les blocs expliqués) puis visite guidée
   $('#btn-tour').onclick = () => { E.go('home'); setTimeout(() => { if (window.RugbyTour) window.RugbyTour.start(A.isStaff() ? 'coach' : 'player'); }, 1200); };

@@ -90,9 +90,10 @@
     const { error } = await sb.from('event_responses').delete().match({ event_id: evId, user_id: userId });
     if (error) E.toast(error.message);
   }
+  /** evId : un événement, ou une liste (planning, import, annulation groupée : une seule notification). */
   async function notify(evId, kind) {
     try {
-      const { data, error } = await sb.functions.invoke('push-notify', { body: { event_id: evId, kind } });
+      const { data, error } = await sb.functions.invoke('push-notify', { body: Array.isArray(evId) ? { event_ids: evId, kind } : { event_id: evId, kind } });
       if (error) throw error;
       return data || {};
     } catch (e) { console.warn('push-notify', e); return null; }
@@ -109,7 +110,21 @@
   /* ---------- Page Agenda ---------- */
   let tab = 'next';
   let seq = 0;
-  async function render(root, eventId) {
+  // Temps réel : les réponses arrivent sans recharger (le staff voit qui répond depuis sa notification)
+  let live = null, liveTimer = null;
+  function watch(ids, redraw) {
+    if (live) { sb.removeChannel(live); live = null; }
+    if (!ids.length || !sb.channel) return;
+    live = sb.channel('responses-' + ids[0])
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_responses', filter: ids.length === 1 ? 'event_id=eq.' + ids[0] : `event_id=in.(${ids.slice(0, 100).join(',')})` }, () => {
+        clearTimeout(liveTimer);
+        // On ne coupe pas quelqu'un en train d'écrire son commentaire
+        liveTimer = setTimeout(() => { const a = document.activeElement; if (a && a.closest && a.closest('#hub-agenda') && a.tagName === 'INPUT') return; redraw(); }, 600);
+      })
+      .subscribe();
+  }
+  /** quick : écran de réponse directe, ouvert depuis la notification (iPhone : pas de boutons dans la notification). */
+  async function render(root, eventId, quick) {
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
@@ -125,6 +140,7 @@
       box.appendChild(btn('Rejoindre ou créer mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
+    if (eventId && quick) return renderQuick(root, eventId, my);
     if (eventId) return renderEvent(root, eventId, my);
     const staff = A.isStaff();
     // Une seule barre : onglets à gauche posés sur le trait, actions à droite décollées du trait
@@ -132,11 +148,12 @@
     const tabs = el('div', 'tabs small');
     [['next', 'À venir'], ['past', 'Passés']].forEach(([id, l]) => { const b = el('button', 'tab' + (tab === id ? ' active' : '')); b.textContent = l; b.onclick = () => { tab = id; render(root); }; tabs.appendChild(b); });
     bar.appendChild(tabs);
+    const acts = el('div', 'page-actions');
+    acts.appendChild(btn('S’abonner', 'outline small', () => openSubscribe()));
+    bar.appendChild(acts);
     if (staff) {
-      const acts = el('div', 'page-actions');
       if (window.RugbyAgenda.openImport) acts.appendChild(btn('Importer les matchs', 'outline small', () => window.RugbyAgenda.openImport()));
       acts.appendChild(btn('+ Nouvel événement', 'primary small', () => openForm()));
-      bar.appendChild(acts);
     }
     root.appendChild(bar);
     const list = el('div', 'agenda-list'); root.appendChild(list);
@@ -160,6 +177,7 @@
       }
       list.appendChild(empty); return;
     }
+    watch(evs.map(e => e.id), () => { if (my === seq) render(root); });
     let lastWeek = '';
     evs.forEach(ev => {
       const w = weekLabel(ev.starts_at);
@@ -229,6 +247,7 @@
     const sum = summarize(ev, resp, team_);
     const me = A.user().id, mine = sum.byUser[me];
     const refresh = () => render(root, id);
+    watch([ev.id], () => { if (my === seq) refresh(); });
     root.appendChild(btn('‹ Agenda', 'ghost back-link', () => E.go('agenda')));
 
     const info = el('div', 'ev-detail' + (ev.cancelled ? ' cancelled' : ''));
@@ -331,6 +350,47 @@
     root.appendChild(who);
   }
 
+  /* ---------- Réponse directe (depuis la notification) ---------- */
+  async function renderQuick(root, id, my) {
+    const { data: ev } = await sb.from('team_events').select('*').eq('id', id).maybeSingle();
+    if (my !== seq) return;
+    if (!ev) { root.appendChild(el('p', 'library-empty', 'Cet événement n’existe plus.')); root.appendChild(btn('‹ Agenda', 'outline', () => E.go('agenda'))); return; }
+    const [resp, team_] = await Promise.all([responsesFor([ev.id]), members(ev.team_id)]);
+    if (my !== seq) return;
+    // Moi et mes jeunes convoqués pour cet événement (un parent répond pour son enfant)
+    const own = A.authUser().id, kids = A.kids().map(k => k.id);
+    const people = team_.filter(m => m.convoked && (m.id === own || kids.includes(m.id)));
+    if (!people.length) return renderEvent(root, id, my);
+    const first = people[0].id;
+    if (A.team() && (A.team().id !== ev.team_id || (A.team().who || own) !== first)) A.selectTeam(ev.team_id + (first !== own ? '|' + first : ''));
+    const byUser = {}; resp.forEach(r => { byUser[r.user_id] = r; });
+    const box = el('div', 'quick-rsvp' + (ev.cancelled ? ' cancelled' : ''));
+    box.appendChild(el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`));
+    box.appendChild(el('h2', '', esc(label(ev))));
+    box.appendChild(el('p', 'quick-when', `<strong>${cap(dayLong(ev.starts_at))} · ${time(ev.starts_at)}</strong>${ev.meet_at ? `<br>Rendez-vous à ${time(ev.meet_at)}` : ''}${ev.location ? `<br>${esc(ev.location)}` : ''}`));
+    const past = new Date(ev.starts_at) < Date.now() - 3 * 3600e3;
+    if (ev.cancelled || past) box.appendChild(el('p', 'muted', ev.cancelled ? 'Cet événement est annulé : pas besoin de répondre.' : 'Cet événement est passé.'));
+    else people.forEach(p => {
+      const cur = byUser[p.id] && byUser[p.id].status;
+      const part = el('div', 'quick-person');
+      part.appendChild(el('div', 'todo-head', people.length > 1 || p.id !== own ? `Réponse de ${esc(p.name.split(' ')[0])}` : 'Serez-vous là ?'));
+      const row = el('div', 'quick-buttons');
+      [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
+        const b = btn(l, 'rsvp-btn quick ' + s, async () => {
+          if (s === cur) return;
+          if (await answer(ev.id, s, p.id)) { E.toast(`Réponse enregistrée : ${l.toLowerCase()}.`); render(root, id, true); }
+        });
+        b.setAttribute('aria-pressed', String(cur === s));
+        row.appendChild(b);
+      });
+      part.appendChild(row);
+      if (cur) part.appendChild(el('p', 'quick-done', `✓ Réponse enregistrée : <strong>${STATUS[cur]}</strong>. Vous pouvez la changer.`));
+      box.appendChild(part);
+    });
+    box.appendChild(btn('Voir l’événement et qui vient', 'outline wide', () => E.go('agenda', ev.id)));
+    root.appendChild(box);
+  }
+
   /** Séances d'un planning à partir de celle-ci (incluse), dans l'ordre. */
   async function seriesFrom(ev) {
     if (!ev.series_id) return [ev];
@@ -341,9 +401,9 @@
   async function setCancelled(list, cancelled, refresh) {
     const { error } = await sb.from('team_events').update({ cancelled }).in('id', list.map(x => x.id));
     if (error) return E.toast(error.message);
-    if (cancelled && list.length === 1) notify(list[0].id, 'event_cancelled');
+    if (cancelled) notify(list.length === 1 ? list[0].id : list.map(x => x.id), 'event_cancelled');
     track('event_cancel', { cancelled, count: list.length });
-    E.toast(!cancelled ? 'Séance rétablie.' : list.length > 1 ? `${list.length} séances annulées.` : 'Annulé, les membres sont prévenus.');
+    E.toast(!cancelled ? 'Séance rétablie.' : list.length > 1 ? `${list.length} séances annulées, les membres sont prévenus.` : 'Annulé, les membres sont prévenus.');
     refresh();
   }
   /** Petit choix en ligne (les fenêtres du navigateur ne proposent que oui / non). */
@@ -376,6 +436,36 @@
     track('event_ics');
   }
 
+  /* ---------- Abonnement : l'agenda de toutes mes équipes dans mon calendrier ---------- */
+  async function openSubscribe(renew) {
+    const body = $('#calendar-body');
+    body.replaceChildren(el('p', 'muted', 'Préparation du lien…'));
+    E.openModal('modal-calendar');
+    const { data: token, error } = await sb.rpc('my_calendar_token', { p_renew: !!renew });
+    if (error || !token) { body.replaceChildren(el('p', 'muted', window.RugbyDemo && window.RugbyDemo.isOn() ? 'Dans la démo, l’abonnement n’est pas disponible : créez votre compte pour l’essayer.' : 'Lien indisponible pour le moment : ' + esc(error ? A.errMsg(error) : 'réessayez.'))); return; }
+    const https = `${(window.RUGBY_CONFIG || {}).supabaseUrl}/functions/v1/calendar?t=${token}`;
+    const webcal = https.replace(/^https:/, 'webcal:');
+    body.replaceChildren();
+    body.appendChild(el('p', '', 'Les matchs, entraînements et rendez-vous de toutes vos équipes apparaissent dans votre calendrier, et se mettent à jour tout seuls.'));
+    const links = el('div', 'cal-links');
+    const link = (label, href, key) => { const a = el('a', 'btn outline wide'); a.textContent = label; a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.onclick = () => track('calendar_subscribe', { app: key }); return a; };
+    links.appendChild(link('Google Agenda', 'https://calendar.google.com/calendar/render?cid=' + encodeURIComponent(webcal), 'google'));
+    links.appendChild(link('iPhone, iPad, Mac', webcal, 'apple'));
+    links.appendChild(link('Outlook', 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(https) + '&name=Rugbeo', 'outlook'));
+    links.appendChild(btn('Copier le lien', 'outline wide', () => {
+      track('calendar_subscribe', { app: 'copy' });
+      if (navigator.clipboard) navigator.clipboard.writeText(https).then(() => E.toast('Lien copié : collez-le dans votre calendrier (« Ajouter par URL »).'), () => window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' }));
+      else window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' });
+    }));
+    body.appendChild(links);
+    body.appendChild(el('p', 'help', 'Google Agenda peut mettre plusieurs heures à afficher un changement ; l’appli reste à jour tout de suite.'));
+    body.appendChild(el('p', 'help', 'Ce lien est personnel : ne le partagez pas. Si vous l’avez donné par erreur, créez-en un nouveau (l’ancien ne marchera plus).'));
+    body.appendChild(btn('Nouveau lien', 'ghost small', async () => {
+      if (!await window.RugbyDialog.confirm('Créer un nouveau lien ? L’ancien ne marchera plus : il faudra vous réabonner dans votre calendrier.', { ok: 'Nouveau lien' })) return;
+      track('calendar_renew'); openSubscribe(true);
+    }));
+  }
+
   /* ---------- Création / modification ---------- */
   let editing = null;
   function openForm(ev) {
@@ -399,7 +489,9 @@
     document.querySelectorAll('input[name=ev-days]').forEach(c => { c.checked = +c.value === d.getDay(); });
     $('#ev-series-field').classList.toggle('hidden', !(ev && ev.series_id));
     $('#ev-apply-series').checked = false;
+    // Création : prévenir par défaut ; modification : au choix (un changement d'horaire ou de lieu mérite une notification)
     $('#ev-notify').checked = !ev;
+    $('#ev-notify-label').textContent = ev ? 'Prévenir l’équipe du changement' : 'Prévenir l’équipe par notification';
     $('#ev-error').textContent = '';
     syncKind();
     syncRecur();
@@ -466,7 +558,7 @@
     if (editing) {
       const { error } = await sb.from('team_events').update(Object.assign({}, base, { starts_at: start.toISOString(), meet_at: meet ? meet.toISOString() : null })).eq('id', editing.id);
       if (error) { b.disabled = false; $('#ev-error').textContent = error.message; return; }
-      let extra = 0;
+      let extra = 0, changed = [editing.id];
       if (editing.series_id && $('#ev-apply-series').checked) {
         // Mêmes horaires, lieu et infos pour les séances suivantes ; chaque séance garde sa date
         const next = (await seriesFrom(editing)).filter(x => x.id !== editing.id);
@@ -477,11 +569,14 @@
         }).eq('id', x.id)));
         const failed = results.filter(r => r.error).length;
         extra = next.length - failed;
+        changed = changed.concat(next.filter((x, i) => !results[i].error).map(x => x.id));
         if (failed) E.toast(`${failed} séance(s) n’ont pas pu être modifiées.`);
       }
       b.disabled = false;
       firstId = editing.id;
-      E.toast(extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}.` : 'Événement modifié.');
+      const warn = $('#ev-notify').checked;
+      if (warn) notify(changed.length > 1 ? changed : editing.id, 'event_updated');
+      E.toast((extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}` : 'Événement modifié') + (warn ? ', l’équipe est prévenue.' : '.'));
     } else {
       // Planning de la saison : chaque jour coché, à la même heure, jusqu'à la date de fin
       const recurring = kind === 'training' && $('#ev-recurring').checked;
@@ -501,12 +596,12 @@
       if (error) { $('#ev-error').textContent = error.message; return; }
       firstId = rows[0].id; n = rows.length;
       track('event_create', { kind, repeat: n });
-      if ($('#ev-notify').checked) notify(firstId, 'event_new');
-      E.toast(n > 1 ? `Planning créé : ${n} entraînements.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
+      if ($('#ev-notify').checked) notify(n > 1 ? rows.map(r => r.id) : firstId, 'event_new');
+      E.toast(n > 1 ? `Planning créé : ${n} entraînements${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
     }
     E.closeModal('modal-event');
     if (location.hash === '#/agenda/' + firstId) E.refreshView(); else E.go('agenda', n > 1 ? '' : firstId);
   };
 
-  window.RugbyAgenda = { render, upcoming, answer, remind, openForm, label, short, time, dayShort };
+  window.RugbyAgenda = { render, upcoming, answer, remind, openForm, notify, openSubscribe, label, short, time, dayShort };
 })();

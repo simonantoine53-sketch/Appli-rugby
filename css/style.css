@@ -1356,3 +1356,23 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .kids-card.kids-closed { padding: 4px 8px; }
 .kids-card.kids-closed .kids-help, .kids-card.kids-closed .inline-form { display: none; }
 .kids-open { width: 100%; justify-content: flex-start; color: var(--muted); white-space: normal; text-align: left; font-weight: 500; font-size: 14px; min-height: 44px; }
+
+/* Réponse directe depuis la notification : trois grands boutons */
+.quick-rsvp { max-width: 520px; margin: 8px auto; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+.quick-rsvp h2 { margin: 0; font-size: 22px; }
+.quick-when { margin: 0; line-height: 1.5; }
+.quick-person { display: flex; flex-direction: column; gap: 8px; }
+.quick-buttons { display: flex; flex-direction: column; gap: 10px; }
+.quick-buttons .rsvp-btn.quick { min-height: 60px; font-size: 18px; font-weight: 600; background: var(--panel); border: 2px solid var(--border); color: var(--text); }
+.quick-buttons .rsvp-btn.yes { border-color: var(--success); color: var(--success); }
+.quick-buttons .rsvp-btn.maybe { border-color: var(--warning); color: var(--warning); }
+.quick-buttons .rsvp-btn.no { border-color: var(--danger); color: var(--danger); }
+.quick-buttons .rsvp-btn.yes[aria-pressed="true"] { background: var(--success); color: var(--panel); }
+.quick-buttons .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning); color: var(--panel); }
+.quick-buttons .rsvp-btn.no[aria-pressed="true"] { background: var(--danger); color: var(--panel); }
+.quick-done { margin: 0; color: var(--success); }
+
+/* Réglages : interrupteur dans une ligne ; abonnement à l'agenda */
+.acc-toggle span small { display: block; font-weight: 400; font-size: 13px; margin-top: 2px; }
+.cal-links { display: flex; flex-direction: column; gap: var(--gap); margin: 12px 0; }
+.calendar-body .help { margin: 6px 0; }

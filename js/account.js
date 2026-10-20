@@ -1001,6 +1001,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       share.foot.appendChild(shareDefaultSelect(desc => { share.help.textContent = desc + ' Modifiable stratégie par stratégie.'; }));
       const sheet = card('Feuille de match', 'Logo, couleurs, modèle, champs et repères imprimés sur la feuille de match.');
       sheet.foot.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
+      reminderCard(card('Rappel la veille', 'La veille de chaque match et entraînement, une notification : « À demain » pour les présents, « Vous n’avez pas répondu » pour les autres. Rien pour les absents.'), t);
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
@@ -1016,6 +1017,26 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }));
     }
     return grid;
+  }
+
+  /** Rappel automatique la veille (staff) : activé ou non, et à quelle heure (heure de Paris). Chargé à part. */
+  async function reminderCard(c, t) {
+    const { data, error } = await sb.from('teams').select('reminder_enabled, reminder_hour').eq('id', t.id).maybeSingle();
+    if (error || !data) { c.foot.appendChild(el('p', 'muted small', 'Réglage indisponible pour le moment.')); return; }
+    const on = el('label', 'check', '<input type="checkbox"> Envoyer le rappel');
+    const box = on.querySelector('input'); box.checked = data.reminder_enabled;
+    const hour = el('select', 'select small'); hour.setAttribute('aria-label', 'Heure du rappel');
+    for (let h = 8; h <= 21; h++) { const o = el('option'); o.value = h; o.textContent = `à ${h} h`; o.selected = h === data.reminder_hour; hour.appendChild(o); }
+    if (![...hour.options].some(o => o.selected)) { const o = el('option'); o.value = data.reminder_hour; o.textContent = `à ${data.reminder_hour} h`; o.selected = true; hour.appendChild(o); }
+    hour.disabled = !box.checked;
+    const saveIt = async patch => {
+      const { error: e } = await sb.from('teams').update(patch).eq('id', t.id);
+      if (e) { E.toast(errMsg(e)); return false; }
+      track('reminder_setting', patch); return true;
+    };
+    box.onchange = async () => { if (await saveIt({ reminder_enabled: box.checked })) { hour.disabled = !box.checked; E.toast(box.checked ? `Rappel activé, la veille à ${hour.value} h.` : 'Rappel de la veille désactivé.'); } else box.checked = !box.checked; };
+    hour.onchange = async () => { if (await saveIt({ reminder_hour: +hour.value })) E.toast(`Rappel envoyé la veille à ${hour.value} h.`); };
+    c.foot.append(on, hour);
   }
 
   /** Liste du partage par défaut des stratégies de l'équipe (staff). onDesc reçoit l'explication du mode choisi. */
