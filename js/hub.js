@@ -372,7 +372,7 @@
     renderChrome();
     if (v === 'home') renderHome();
     else if (v === 'compos') { if (SH()) SH().render($('#hub-compos'), location.hash.split('/')[2] || ''); }
-    else if (v === 'agenda') { if (AG()) AG().render($('#hub-agenda'), location.hash.split('/')[2] || ''); else renderSoon('agenda', '#hub-agenda'); }
+    else if (v === 'agenda') { if (AG()) AG().render($('#hub-agenda'), (location.hash.split('/')[2] || '').split('?')[0], location.hash.split('/')[3] === 'repondre'); else renderSoon('agenda', '#hub-agenda'); }
     else if (v === 'soon') renderSoon(location.hash.split('/')[2] || 'agenda', '#hub-soon');
     else if (v === 'account' && active) A.renderAccountPage();
   }
