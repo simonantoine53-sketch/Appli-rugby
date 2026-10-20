@@ -1208,3 +1208,19 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .invite-scope { display: flex; flex-wrap: wrap; gap: 8px; }
 .invite-scope .chip { font-weight: 600; padding: 7px 14px; }
 .invite-explain { margin: 0; }
+
+/* Page Compte : quatre groupes (Moi, Réglages, Aide, Compte), lignes de réglages façon téléphone */
+.account-page { gap: 18px; }
+.acc-group { display: flex; flex-direction: column; gap: 8px; }
+.acc-label { margin: 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.acc-list { background: var(--panel); border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.acc-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 50px; padding: 12px 16px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text); font: inherit; font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; }
+.acc-list > .acc-row:first-child, .acc-list > .acc-item:first-child .acc-row, .acc-list > .hidden:first-child + .acc-row { border-top: 0; }
+.acc-row:hover { background: var(--bg); }
+.acc-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.acc-row.danger { color: var(--danger); }
+.acc-chev { color: var(--muted); font-size: 20px; line-height: 1; }
+.acc-item { display: flex; flex-direction: column; }
+.acc-item .muted { padding: 0 16px 12px; margin: -4px 0 0; }
+.acc-item + .acc-row { border-top: 1px solid var(--border); }
+.push-block .acc-row.hidden { display: none; }

@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugby Strat">
-  <link rel="stylesheet" href="css/style.css?v=202610200138">
+  <link rel="stylesheet" href="css/style.css?v=202610200159">
 </head>
 <body>
 
@@ -67,32 +67,49 @@
 <!-- ===== Compte ===== -->
 <div id="view-account" class="view hidden">
   <div class="home-body account-page">
-    <div class="team-forms-card account-card">
-      <div class="account-id">
-        <div id="account-avatar"></div>
-        <div class="account-who">
-          <h2 id="account-name"></h2>
-          <p id="account-summary" class="muted"></p>
-          <p id="team-user" class="muted small"></p>
+    <!-- Page Compte en quatre groupes : Moi, Réglages, Aide, Compte -->
+    <section class="acc-group">
+      <h3 class="acc-label">Moi</h3>
+      <div class="team-forms-card account-card">
+        <div class="account-id">
+          <div id="account-avatar"></div>
+          <div class="account-who">
+            <h2 id="account-name"></h2>
+            <p id="account-summary" class="muted"></p>
+            <p id="team-user" class="muted small"></p>
+          </div>
         </div>
+        <div id="account-teams" class="account-teams"></div>
+        <button id="btn-profile" class="btn primary wide">Modifier mon profil</button>
       </div>
-      <div id="account-teams" class="account-teams"></div>
-      <button id="btn-profile" class="btn primary wide">Modifier mon profil</button>
-    </div>
-    <div id="account-join" class="account-join"></div>
-    <div class="account-actions">
-      <div id="push-block" class="push-block hidden">
-        <button id="btn-push" class="btn outline wide">Activer les notifications</button>
-        <p id="push-help" class="muted small"></p>
+      <div id="account-join" class="account-join"></div>
+    </section>
+    <section class="acc-group">
+      <h3 class="acc-label">Réglages</h3>
+      <div class="acc-list">
+        <div id="push-block" class="push-block acc-item hidden">
+          <button id="btn-push" class="acc-row">Activer les notifications</button>
+          <p id="push-help" class="muted small"></p>
+        </div>
+        <button id="btn-cookies" class="acc-row">Cookies et mesure d’usage<span class="acc-chev" aria-hidden="true">›</span></button>
       </div>
-      <button id="btn-feedback" class="btn outline wide">Signaler un bug ou proposer une idée</button>
-      <button id="btn-admin" class="btn outline wide hidden">Back-office (super-admin)</button>
-      <button id="btn-logout" class="btn outline wide">Se déconnecter</button>
-      <button id="btn-tour" class="btn ghost wide">Revoir le tutoriel</button>
-      <button id="btn-privacy" class="btn ghost wide">Confidentialité et données personnelles</button>
-      <button id="btn-cookies" class="btn ghost wide">Cookies et mesure d’usage</button>
-      <button id="btn-delete-account" class="btn ghost wide danger">Supprimer mon compte</button>
-    </div>
+    </section>
+    <section class="acc-group">
+      <h3 class="acc-label">Aide</h3>
+      <div class="acc-list">
+        <button id="btn-tour" class="acc-row">Revoir le tutoriel<span class="acc-chev" aria-hidden="true">›</span></button>
+        <button id="btn-feedback" class="acc-row">Signaler un bug ou proposer une idée<span class="acc-chev" aria-hidden="true">›</span></button>
+        <button id="btn-privacy" class="acc-row">Confidentialité et conditions<span class="acc-chev" aria-hidden="true">›</span></button>
+      </div>
+    </section>
+    <section class="acc-group">
+      <h3 class="acc-label">Compte</h3>
+      <div class="acc-list">
+        <button id="btn-admin" class="acc-row hidden">Back-office (super-admin)<span class="acc-chev" aria-hidden="true">›</span></button>
+        <button id="btn-logout" class="acc-row">Se déconnecter</button>
+        <button id="btn-delete-account" class="acc-row danger">Supprimer mon compte</button>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -615,27 +632,27 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610200138"></script>
-<script src="js/legal.js?v=202610200138"></script>
-<script src="js/consent.js?v=202610200138"></script>
-<script src="js/selects.js?v=202610200138"></script>
-<script src="js/dialog.js?v=202610200138"></script>
-<script src="js/icons.js?v=202610200138"></script>
-<script src="js/field.js?v=202610200138"></script>
-<script src="js/formations.js?v=202610200138"></script>
-<script src="js/objects.js?v=202610200138"></script>
-<script src="js/export.js?v=202610200138"></script>
-<script src="vendor/supabase.min.js?v=202610200138"></script>
-<script src="js/config.js?v=202610200138"></script>
-<script src="js/editor.js?v=202610200138"></script>
-<script src="js/account.js?v=202610200138"></script>
-<script src="js/push.js?v=202610200138"></script>
-<script src="js/profile.js?v=202610200138"></script>
-<script src="js/admin.js?v=202610200138"></script>
-<script src="js/agenda.js?v=202610200138"></script>
-<script src="js/calimport.js?v=202610200138"></script>
-<script src="js/sheets.js?v=202610200138"></script>
-<script src="js/tour.js?v=202610200138"></script>
-<script src="js/hub.js?v=202610200138"></script>
+<script src="js/update.js?v=202610200159"></script>
+<script src="js/legal.js?v=202610200159"></script>
+<script src="js/consent.js?v=202610200159"></script>
+<script src="js/selects.js?v=202610200159"></script>
+<script src="js/dialog.js?v=202610200159"></script>
+<script src="js/icons.js?v=202610200159"></script>
+<script src="js/field.js?v=202610200159"></script>
+<script src="js/formations.js?v=202610200159"></script>
+<script src="js/objects.js?v=202610200159"></script>
+<script src="js/export.js?v=202610200159"></script>
+<script src="vendor/supabase.min.js?v=202610200159"></script>
+<script src="js/config.js?v=202610200159"></script>
+<script src="js/editor.js?v=202610200159"></script>
+<script src="js/account.js?v=202610200159"></script>
+<script src="js/push.js?v=202610200159"></script>
+<script src="js/profile.js?v=202610200159"></script>
+<script src="js/admin.js?v=202610200159"></script>
+<script src="js/agenda.js?v=202610200159"></script>
+<script src="js/calimport.js?v=202610200159"></script>
+<script src="js/sheets.js?v=202610200159"></script>
+<script src="js/tour.js?v=202610200159"></script>
+<script src="js/hub.js?v=202610200159"></script>
 </body>
 </html>

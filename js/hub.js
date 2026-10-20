@@ -104,7 +104,7 @@
     }
     // Onglets
     // Compos : pour les joueurs, seulement quand le coach en a publié une (sinon l'onglet reste caché)
-    const showCompos = !!(data && (data.staff || (data.sheets || []).some(m => m.sheet === 'published')));
+    const showCompos = A.isStaff() || !!(data && (data.sheets || []).some(m => m.sheet === 'published'));
     const items = (active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats')).filter(([id]) => id !== 'compos' || showCompos);
     const cur = view === 'soon' ? 'home' : view;
     const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
@@ -158,13 +158,13 @@
       // Déjà membre d'un club : il ne reste qu'à choisir ses équipes
       const club = A.clubs && A.clubs()[0];
       if (club) {
-        const c = el('div', 'todo-card', `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou la direction du club validera votre demande.</p>`);
+        const c = el('div', 'todo-card', `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
         c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
         root.appendChild(c);
         A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation.`)));
         return;
       }
-      const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez le code d’invitation donné par votre coach. Vous êtes coach ? Créez votre équipe, vous pourrez inviter vos joueurs juste après.</p>');
+      const card = el('div', 'todo-card', '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez ci-dessous le code donné par votre club ou votre coach : le code du club (vous choisirez ensuite vos équipes) ou celui d’une équipe.</p>');
       root.appendChild(card);
       A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation par un coach.`)));
       root.appendChild(A.teamForms());
