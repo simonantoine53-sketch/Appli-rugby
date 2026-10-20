@@ -1,6 +1,6 @@
 # Feuille de route – Rugbeo
 
-Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'abord l'éditeur de stratégies avec les retours des coachs.
+Priorités décidées le 8 octobre 2026, mises à jour le 21 octobre 2026 (lots 0 à 3 faits, voir plus bas ; à passer en production après validation).
 
 ## En cours : éditeur de stratégies
 - Finaliser avec les retours des coachs (test terrain vendredi).
@@ -31,7 +31,8 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Personnalisation par équipe : 3 modèles (Classique façon feuille papier, Moderne, Terrain), logo, couleurs, champs d'en-tête (brassards, responsables…), équipes A / B / C et nombre de joueurs, champs de bas d'équipe (resp. maillots), repères à côté des noms (1re ligne, capitaine, « double » coché automatiquement quand un joueur joue en B puis en A…), postes affichables.
 - Remplissage : noms proposés depuis l'effectif, « Ajouter les présents » depuis la convocation, enregistrement automatique.
 - Sorties : impression / PDF (A4), image PNG partageable sur WhatsApp, publication aux joueurs (notification, leur ligne en surbrillance, « tu es n°12 » sur l'accueil).
-- Plus tard : glisser-déposer pour réordonner, copier la compo du match précédent, statistiques de sélection.
+- Fait le 21 octobre 2026 : déplacer ou échanger deux joueurs, vider un poste, reprendre la compo du match précédent (absents surlignés).
+- Plus tard : statistiques de sélection.
 
 ## Droits de partage (15 octobre 2026)
 - Le coach choisit ce que les joueurs peuvent faire d'une stratégie : « Dans l'appli seulement » (pas de téléchargement, pas de copie, pas de lien public), « Téléchargeable » (export et copie, pas de lien public) ou « Partage libre ».
@@ -42,14 +43,13 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Page Compte → « Modifier mon profil » : photo (recadrée et réduite), nom affiché, postes (4 au plus), numéro préféré, pied fort, taille, poids, présentation.
 - Infos privées (téléphone, date de naissance, contact d'urgence) visibles seulement par la personne et le staff de ses équipes (vérifié côté serveur).
 - Photos dans l'en-tête, la page Équipe (poste et numéro sous le nom, fiche au clic) et la liste « qui vient » de l'agenda ; « Complète ton profil » sur l'accueil du joueur.
-- Plus tard : licence et certificat médical (effectif), statistiques de présence sur la fiche.
+- Fait le 21 octobre 2026 : présences de la saison sur la fiche.
+- Plus tard : licence et certificat médical (effectif).
 
 ## À noter pour l'éditeur
-- **Bibliothèque de départ** (plans de jeu type 1-3-3-1, 2-4-2, pod…) : à décider avec le coach quels plans y mettre avant de les construire.
 - **Cadrage par étape** : fait le 11 octobre 2026. Dans l'étape active, « Cadrer (zoomer sur une zone) » : on glisse le cadre, on tire un coin pour zoomer, on valide. Une nouvelle étape reprend le cadre ; « Tout le terrain » le retire. L'aperçu, le partage, le GIF, la vidéo, le PNG et la fiche PDF animent ou appliquent le cadrage.
 
 ## À réfléchir plus (priorité moyenne)
-- **Cotisations** : suivi de qui a payé, relances. Intéressant pour le club, à remonter, mais la faisabilité (paiement en ligne, prestataire) reste à étudier.
 - **Effectif** (poste, licence, certificat médical, contact d'urgence) : à creuser, pas tranché.
 
 ## Dépriorisé (bonnes idées, pas maintenant)
@@ -57,7 +57,6 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - **Suivi des matchs** (scores, essais, stats) : trop lourd à alimenter, existe déjà côté FFR. Prévoir plutôt **un lien vers la page du club (FFR / « mon club house »)**.
 - **Calendrier de saison** : pas prioritaire, à réfléchir.
 - **Suivi des blessures** : se fait par message aujourd'hui, à réfléchir.
-- **Espace parents** (écoles de rugby) : très bonne idée, pour plus tard.
 - **Annotation vidéo** (flèches sur une vidéo de match, comme 360Player / Hudl) : reportée le 13 octobre 2026, trop complexe pour l'instant (stockage vidéo, export impossible avec YouTube, usage rare). Version légère possible plus tard : importer une capture de match comme fond de l'éditeur et dessiner dessus.
 
 ## Accueil global : fait le 13 octobre 2026
@@ -74,7 +73,8 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Planning de la saison (13 octobre 2026) : jours cochés (ex. mercredi et vendredi), même heure, jusqu'au 30 juin par défaut ; annulation en un appui depuis la liste ; pour une séance du planning, annuler / supprimer / modifier « seulement celle-ci » ou « celle-ci et les suivantes ».
 - Import des matchs FFR (13 octobre 2026) : fichier .ics exporté de Mon Club House (page de la compétition → Calendrier → « Ajouter à mon agenda »), ou tout autre .ics. Le coach choisit son club dans la poule (deviné d'après le nom de l'équipe, mémorisé), voit l'aperçu (nouveaux / modifiés / à jour), choisit l'heure de rendez-vous. Un réimport met à jour les matchs déplacés sans doublon (UID du fichier).
 - Synchronisation automatique : le fichier annonce un flux (SOURCE api-web.monclubhouse.ffr.fr/ical/poule/<id>) mais cette adresse renvoie « route inexistante » au 13 octobre 2026. Si la FFR l'ouvre, on pourra synchroniser chaque nuit côté serveur.
-- Plus tard : rappel automatique la veille (tâche planifiée), convocation d'une sélection pour les matchs, lien vers la compo, statistiques de présence par joueur.
+- Faits le 21 octobre 2026 : rappel automatique la veille, statistiques de présence par joueur (voir lots 2 et 3).
+- Plus tard : convocation d'une sélection pour les matchs.
 
 ## Niveau club : fait le 15 au 20 octobre 2026
 - Un club regroupe plusieurs équipes (Séniors, U16, Féminines…). Code du club : on rejoint le club puis on choisit ses équipes, comme joueur ou comme coach / encadrant ; code d'équipe : demande directe pour une équipe.
@@ -86,6 +86,39 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 ## Confidentialité et RGPD : fait le 19 octobre 2026
 - Données hébergées en France (Paris), aucune revente, aucune publicité, aucun cookie.
 - Accord parental avant 15 ans, infos privées réservées au staff, suppression du compte par la personne, nettoyage automatique des données anciennes.
+
+## Lot 0 : environnement de test (20 octobre 2026)
+- Base de test séparée (rugbeo-test) avec le même schéma, ses fonctions serveur et ses clés de notification ; l'appli choisit la base selon l'adresse (bandeau « Environnement de test » ; les aperçus de branche restent sur le test).
+- Jeu de données reproductible (`select public.test_seed();`), comptes `@exemple.test`, documentation dans le README et CLAUDE.md.
+- Lot 0 bis : le coach voit le parent d'un jeune, compte transmis au jeune à 15 ans, lien vers la page FFR du club.
+
+## Espace parents (20 octobre 2026)
+- Un compte parent gère plusieurs jeunes de moins de 15 ans (inscription par étapes) : convocations, profil, équipes ; les notifications des jeunes arrivent chez le parent.
+
+## Lot 1 (21 octobre 2026)
+- Compos : déplacer / échanger / vider un poste, « double » gardé, reprendre la compo du dernier match.
+- Équipe démo en lecture seule (« Voir la démo »), remise à zéro chaque semaine, aucune notification.
+- Rejoindre en un clic : lien et QR code d'invitation, adhésion automatique après l'inscription (même après confirmation de l'e-mail), nouveau lien, code manuel toujours possible.
+- Page Compte en cinq groupes courts, changement de mot de passe.
+
+## Lot 2 (21 octobre 2026)
+- Répondre à une convocation depuis la notification (boutons Présent / Absent ; sur iPhone, écran à trois grands boutons), réponses vues en temps réel par le staff.
+- Rappel automatique la veille (heure réglable par équipe, journal anti-doublon, coupable par chacun).
+- Abonnement à l'agenda (Google, iPhone / Mac, Outlook, lien à copier), lien personnel renouvelable.
+- Notifications groupées : planning, import FFR, annulation de plusieurs séances, modification avec « Prévenir l'équipe ».
+
+## Lot 3 (21 octobre 2026)
+- Présences par joueur : saison (début fixé par le club) ou 30 derniers jours, entraînements et matchs séparés, sans réponse à part, tri ; sur la fiche du membre ; chaque joueur voit les siennes.
+- Partenaires du club : nom, logo, lien, ordre ; gérés par le bureau ; sur l'accueil de l'équipe et en bas des liens publics (pas sur la feuille de match, choix de Simon).
+- Mode hors ligne : appli en cache liée à la version, dernières données consultées, bandeau « Hors ligne », réponses envoyées au retour du réseau, données effacées à la déconnexion.
+- Mode sombre : Clair / Sombre / Automatique, contrastes vérifiés, impressions et exports toujours en clair.
+
+## Plus tard
+- **Covoiturage** pour les matchs à l'extérieur.
+- **Espace bénévoles** : buvette, arbitrage de touche, tâches du club.
+- **Cotisations** : suivi de qui a payé et paiement en ligne via SumUp ou HelloAsso. À valider d'abord avec le président du club.
+- **Bibliothèque de départ** de l'éditeur (plans de jeu types 1-3-3-1, 2-4-2, pods…) : choisir les plans avec le coach avant de les construire.
+- **Mesure de l'activation des clubs** : savoir quels clubs utilisent vraiment l'appli (équipes créées, joueurs inscrits, convocations envoyées, réponses) pour aider ceux qui décrochent.
 
 ## Modèle économique (hypothèse)
 - Dessiner et prévisualiser : gratuit.
