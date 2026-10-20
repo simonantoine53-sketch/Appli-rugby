@@ -1443,6 +1443,10 @@ a.sponsor-item:hover img { opacity: .8; }
 .sponsor-acts { margin-left: auto; flex-wrap: nowrap; }
 @media (max-width: 560px) { .sponsor-acts { width: 100%; justify-content: flex-end; } }
 
+/* Hors ligne */
+.offline-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--neutral); color: var(--panel); font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 32px); text-align: center; }
+@media (min-width: 900px) { .offline-banner { bottom: 16px; } }
+
 </style>
 </head>
 <body>
@@ -2133,6 +2137,8 @@ a.sponsor-item:hover img { opacity: .8; }
   async function check() {
     if (Date.now() - last < 15000) return apply();
     last = Date.now();
+    // Le service worker (cache de l'appli pour le hors ligne) se met à jour en même temps
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
     try {
       const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
       if (r.ok) latest = (await r.json()).v || null;
@@ -3555,6 +3561,83 @@ a.sponsor-item:hover img { opacity: .8; }
     };
     if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
   }
+})();
+
+</script>
+<script>
+/* Hors ligne : bandeau « Hors ligne », réponses aux convocations gardées sur l'appareil et envoyées au retour du réseau.
+   Les écrans affichent les dernières données lues (gardées par le service worker, sw.js). */
+(function () {
+  'use strict';
+  const KEY = 'rs-rsvp-queue';
+  const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+  const write = q => { try { if (q.length) localStorage.setItem(KEY, JSON.stringify(q)); else localStorage.removeItem(KEY); } catch (e) { /* stockage plein ou bloqué */ } };
+  const toast = m => { const E = window.RugbyEditor; if (E && E.toast) E.toast(m); };
+  /** Erreur due au réseau (et pas un refus de la base). */
+  const isNetwork = err => !navigator.onLine || /fetch|network|load failed|internet/i.test((err && (err.message || err.details)) || '');
+
+  /** Réponse à envoyer plus tard (une seule par personne et par événement : la dernière compte). */
+  function queueAnswer(row) {
+    const q = read().filter(r => !(r.event_id === row.event_id && r.user_id === row.user_id));
+    q.push(Object.assign({}, row, { at: new Date().toISOString() }));
+    write(q); banner();
+  }
+  /** Réponses en attente pour ces événements : affichées comme si elles étaient déjà parties. */
+  const pending = ids => read().filter(r => !ids || ids.includes(r.event_id));
+
+  let flushing = false;
+  async function flush() {
+    const A = window.RugbyAccount;
+    if (flushing || !navigator.onLine || !A || !A.isLoggedIn || !A.isLoggedIn()) return;
+    const q = read(); if (!q.length) { askWorker(); return; }
+    flushing = true;
+    let sent = 0;
+    const left = [];
+    for (const r of q) {
+      const row = { event_id: r.event_id, user_id: r.user_id, status: r.status, set_by: r.set_by };
+      if (r.comment !== undefined) row.comment = r.comment;
+      const { error } = await A.sb.from('event_responses').upsert(row);
+      if (!error) sent++;
+      else if (isNetwork(error)) left.push(r);
+      else toast('Une réponse donnée hors ligne n’a pas pu partir : ' + (A.errMsg ? A.errMsg(error) : error.message));
+    }
+    write(left); flushing = false; banner();
+    if (sent) { toast(sent > 1 ? `${sent} réponses envoyées.` : 'Réponse envoyée.'); if (window.RugbyEditor && window.RugbyEditor.refreshView) window.RugbyEditor.refreshView(); }
+    askWorker();
+  }
+  // Réponses données depuis une notification sans réseau : c'est le service worker qui les garde
+  const askWorker = () => { if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'flush' }); };
+  /** Déconnexion : effacer les données gardées sur l'appareil. */
+  async function clearData() {
+    write([]);
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'clear-data' });
+    try { if (window.caches) await Promise.all([caches.delete('rugbeo-data'), caches.delete('rugbeo-queue')]); } catch (e) { /* pas de cache */ }
+  }
+
+  /* ---------- Bandeau ---------- */
+  let staleData = false, staleTimer = null;
+  function banner() {
+    let b = document.getElementById('offline-banner');
+    const off = !navigator.onLine || staleData;
+    const n = read().length;
+    if (!off && !n) { if (b) b.remove(); document.documentElement.classList.remove('is-offline'); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'offline-banner'; b.className = 'offline-banner'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    document.documentElement.classList.toggle('is-offline', off);
+    b.textContent = off
+      ? `Hors ligne : dernières données enregistrées${n ? ` · ${n} réponse${n > 1 ? 's' : ''} en attente d’envoi` : ''}`
+      : `${n} réponse${n > 1 ? 's' : ''} en attente d’envoi…`;
+  }
+  window.addEventListener('offline', banner);
+  window.addEventListener('online', () => { staleData = false; banner(); flush(); });
+  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type === 'offline-data') { staleData = true; banner(); clearTimeout(staleTimer); staleTimer = setTimeout(() => { staleData = false; banner(); }, 30000); }
+    if (d.type === 'queue-sent') { toast(d.count > 1 ? `${d.count} réponses envoyées.` : 'Réponse envoyée.'); if (window.RugbyEditor && window.RugbyEditor.refreshView) window.RugbyEditor.refreshView(); }
+  });
+  const start = () => { banner(); setTimeout(flush, 3000); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+
+  window.RugbyOffline = { queueAnswer, pending, flush, clearData, isNetwork };
 })();
 
 </script>
@@ -6886,7 +6969,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   };
   $('#password-cancel').onclick = closePassword;
 
-  $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
+  // Déconnexion : les données gardées pour le hors ligne sont effacées de l'appareil (avant et après, lectures en cours comprises)
+  $('#btn-logout').onclick = async () => { const O = window.RugbyOffline; if (O) await O.clearData(); await sb.auth.signOut(); if (O) setTimeout(O.clearData, 1500); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
   $('#btn-calendar').onclick = () => window.RugbyAgenda && window.RugbyAgenda.openSubscribe && window.RugbyAgenda.openSubscribe();
   $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);
@@ -7672,7 +7756,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function responsesFor(ids) {
     if (!ids.length) return [];
     const { data } = await sb.from('event_responses').select('event_id, user_id, status, comment, set_by, updated_at').in('event_id', ids);
-    return data || [];
+    // Réponses données hors ligne, pas encore parties : affichées comme déjà prises en compte
+    const waiting = window.RugbyOffline ? window.RugbyOffline.pending(ids) : [];
+    if (!waiting.length) return data || [];
+    const rest = (data || []).filter(r => !waiting.some(w => w.event_id === r.event_id && w.user_id === r.user_id));
+    return rest.concat(waiting.map(w => Object.assign({ comment: null, updated_at: w.at }, w)));
   }
   /** Compteurs : seuls les convoqués (joueurs + staff qui joue aussi) comptent ; le reste du staff n'est pas convoqué. */
   function summarize(ev, resp, team) {
@@ -7706,12 +7794,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const me = A.user().id, uid = userId || me;
     const row = { event_id: evId, user_id: uid, status, set_by: me };
     if (comment !== undefined) row.comment = comment || null;
-    const { error } = await sb.from('event_responses').upsert(row);
+    const O = window.RugbyOffline;
+    const { error } = navigator.onLine ? await sb.from('event_responses').upsert(row) : { error: { message: 'network' } };
+    if (error && O && O.isNetwork(error)) {
+      O.queueAnswer(row);
+      E.toast('Hors ligne : réponse gardée sur cet appareil, elle partira dès le retour du réseau.');
+      return 'queued';
+    }
     if (error) { E.toast('Réponse impossible : ' + error.message); return false; }
     track('rsvp', { status, for_other: uid !== me });
     return true;
   }
   async function clearAnswer(evId, userId) {
+    if (!navigator.onLine) { E.toast('Hors ligne : changez plutôt votre réponse, ou réessayez au retour du réseau.'); return; }
     const { error } = await sb.from('event_responses').delete().match({ event_id: evId, user_id: userId });
     if (error) E.toast(error.message);
   }
@@ -7822,7 +7917,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const b = btn(l, 'rsvp-btn ' + s, async () => {
         if (ev.cancelled) return;
         const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s, undefined, getComment ? getComment() : undefined);
-        if (ok) { E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
+        if (ok) { if (ok !== 'queued') E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
       });
       b.setAttribute('aria-pressed', String(current === s));
       if (ev.cancelled) b.disabled = true;
@@ -8003,7 +8098,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
         const b = btn(l, 'rsvp-btn quick ' + s, async () => {
           if (s === cur) return;
-          if (await answer(ev.id, s, p.id)) { E.toast(`Réponse enregistrée : ${l.toLowerCase()}.`); render(root, id, true); }
+          const ok = await answer(ev.id, s, p.id);
+          if (ok) { if (ok !== 'queued') E.toast(`Réponse enregistrée : ${l.toLowerCase()}.`); render(root, id, true); }
         });
         b.setAttribute('aria-pressed', String(cur === s));
         row.appendChild(b);

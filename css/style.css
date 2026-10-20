@@ -1427,3 +1427,7 @@ a.sponsor-item:hover img { opacity: .8; }
 .sponsor-row { flex-wrap: wrap; }
 .sponsor-acts { margin-left: auto; flex-wrap: nowrap; }
 @media (max-width: 560px) { .sponsor-acts { width: 100%; justify-content: flex-end; } }
+
+/* Hors ligne */
+.offline-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--neutral); color: var(--panel); font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 32px); text-align: center; }
+@media (min-width: 900px) { .offline-banner { bottom: 16px; } }

@@ -15,9 +15,13 @@ function load(fetchImpl) {
     clients: { claim: () => Promise.resolve(), matchAll: () => Promise.resolve([]), openWindow: u => { opened.push(u); return Promise.resolve(); } },
     skipWaiting() {}
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8'), { self, fetch: fetchImpl, JSON, Object, Promise });
+  // Cache simulé (file d'attente des réponses sans réseau)
+  const store = {};
+  const caches = { open: async name => { const m = store[name] = store[name] || new Map(); return { put: async (k, r) => m.set(String(k), await r.text()), match: async k => (m.has(String(k)) ? { json: async () => JSON.parse(m.get(String(k))) } : undefined), keys: async () => [...m.keys()], delete: async k => m.delete(String(k)) }; }, keys: async () => Object.keys(store), delete: async n => delete store[n] };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8'), { self, fetch: fetchImpl, caches, location: { origin: 'https://exemple.test' }, Response: class { constructor(b) { this.b = b; } text() { return Promise.resolve(this.b); } }, JSON, Object, Promise });
+  self.store = store;
   const fire = async (name, ev) => { let p; await handlers[name](Object.assign({ waitUntil: x => { p = x; } }, ev)); await p; };
-  return { fire, shown, opened };
+  return { fire, shown, opened, store };
 }
 const token = { api: 'https://base.test/functions/v1/push-notify', u: 'u1', e: 'e1', x: 9999999999, s: 'sig' };
 const push = data => ({ data: { json: () => data } });
@@ -46,7 +50,9 @@ const push = data => ({ data: { json: () => data } });
   check(sw.shown[0].title === 'Réponse non enregistrée' && sw.shown[0].opts.body.startsWith('L\'événement a commencé'), 'refus du serveur : message clair');
   sw = load(async () => { throw new Error('offline'); });
   await sw.fire('notificationclick', { action: 'no', notification: { close() {}, tag: 't', data: { url: '#/agenda/e1/repondre', rsvp: token } } });
-  check(sw.shown[0].title === 'Pas de réseau', 'pas de réseau : on prévient, la réponse n’est pas perdue de vue');
+  check(sw.shown[0].title === 'Pas de réseau' && sw.shown[0].opts.body.includes('partira dès le retour du réseau'), 'pas de réseau : on prévient que la réponse partira plus tard');
+  const q = sw.store['rugbeo-queue'];
+  check(q && q.size === 1 && JSON.parse([...q.values()][0]).status === 'no', 'la réponse est gardée dans la file d’attente du service worker');
   console.log(fails ? `\n${fails} problème(s).` : '\nTout est bon.');
   process.exit(fails ? 1 : 0);
 })();

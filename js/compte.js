@@ -148,7 +148,8 @@
   };
   $('#password-cancel').onclick = closePassword;
 
-  $('#btn-logout').onclick = async () => { await sb.auth.signOut(); E.go('home'); E.toast('Déconnecté.'); };
+  // Déconnexion : les données gardées pour le hors ligne sont effacées de l'appareil (avant et après, lectures en cours comprises)
+  $('#btn-logout').onclick = async () => { const O = window.RugbyOffline; if (O) await O.clearData(); await sb.auth.signOut(); if (O) setTimeout(O.clearData, 1500); E.go('home'); E.toast('Déconnecté.'); };
   $('#btn-privacy').onclick = () => window.RugbyLegal && window.RugbyLegal.open('privacy');
   $('#btn-calendar').onclick = () => window.RugbyAgenda && window.RugbyAgenda.openSubscribe && window.RugbyAgenda.openSubscribe();
   $('#btn-cookies').onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true);

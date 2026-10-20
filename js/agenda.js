@@ -47,7 +47,11 @@
   async function responsesFor(ids) {
     if (!ids.length) return [];
     const { data } = await sb.from('event_responses').select('event_id, user_id, status, comment, set_by, updated_at').in('event_id', ids);
-    return data || [];
+    // Réponses données hors ligne, pas encore parties : affichées comme déjà prises en compte
+    const waiting = window.RugbyOffline ? window.RugbyOffline.pending(ids) : [];
+    if (!waiting.length) return data || [];
+    const rest = (data || []).filter(r => !waiting.some(w => w.event_id === r.event_id && w.user_id === r.user_id));
+    return rest.concat(waiting.map(w => Object.assign({ comment: null, updated_at: w.at }, w)));
   }
   /** Compteurs : seuls les convoqués (joueurs + staff qui joue aussi) comptent ; le reste du staff n'est pas convoqué. */
   function summarize(ev, resp, team) {
@@ -81,12 +85,19 @@
     const me = A.user().id, uid = userId || me;
     const row = { event_id: evId, user_id: uid, status, set_by: me };
     if (comment !== undefined) row.comment = comment || null;
-    const { error } = await sb.from('event_responses').upsert(row);
+    const O = window.RugbyOffline;
+    const { error } = navigator.onLine ? await sb.from('event_responses').upsert(row) : { error: { message: 'network' } };
+    if (error && O && O.isNetwork(error)) {
+      O.queueAnswer(row);
+      E.toast('Hors ligne : réponse gardée sur cet appareil, elle partira dès le retour du réseau.');
+      return 'queued';
+    }
     if (error) { E.toast('Réponse impossible : ' + error.message); return false; }
     track('rsvp', { status, for_other: uid !== me });
     return true;
   }
   async function clearAnswer(evId, userId) {
+    if (!navigator.onLine) { E.toast('Hors ligne : changez plutôt votre réponse, ou réessayez au retour du réseau.'); return; }
     const { error } = await sb.from('event_responses').delete().match({ event_id: evId, user_id: userId });
     if (error) E.toast(error.message);
   }
@@ -197,7 +208,7 @@
       const b = btn(l, 'rsvp-btn ' + s, async () => {
         if (ev.cancelled) return;
         const ok = current === s ? (await clearAnswer(ev.id, A.user().id), true) : await answer(ev.id, s, undefined, getComment ? getComment() : undefined);
-        if (ok) { E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
+        if (ok) { if (ok !== 'queued') E.toast(current === s ? 'Réponse retirée.' : `Réponse envoyée : ${STATUS[s].toLowerCase()}.`); onDone(); }
       });
       b.setAttribute('aria-pressed', String(current === s));
       if (ev.cancelled) b.disabled = true;
@@ -378,7 +389,8 @@
       [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
         const b = btn(l, 'rsvp-btn quick ' + s, async () => {
           if (s === cur) return;
-          if (await answer(ev.id, s, p.id)) { E.toast(`Réponse enregistrée : ${l.toLowerCase()}.`); render(root, id, true); }
+          const ok = await answer(ev.id, s, p.id);
+          if (ok) { if (ok !== 'queued') E.toast(`Réponse enregistrée : ${l.toLowerCase()}.`); render(root, id, true); }
         });
         b.setAttribute('aria-pressed', String(cur === s));
         row.appendChild(b);

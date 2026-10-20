@@ -18,6 +18,8 @@
   async function check() {
     if (Date.now() - last < 15000) return apply();
     last = Date.now();
+    // Le service worker (cache de l'appli pour le hors ligne) se met à jour en même temps
+    if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
     try {
       const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
       if (r.ok) latest = (await r.json()).v || null;
