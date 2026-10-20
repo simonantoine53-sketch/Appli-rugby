@@ -78,4 +78,5 @@ td.c, th.c { text-align: center; }
 .yes { color: var(--success); font-weight: 700; }
 .no { color: var(--muted); }
 
-.foot { margin-top: 10mm; text-align: center; color: var(--muted); font-weight: 700; }
+.foot { margin-top: 4mm; break-before: avoid; text-align: center; color: var(--muted); font-weight: 700; }
+.faq h4 { margin-top: 3mm; } .faq p { margin-bottom: 1.5mm; }
