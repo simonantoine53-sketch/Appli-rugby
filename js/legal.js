@@ -6,8 +6,8 @@
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '19 octobre 2026',
-    version: '2026-10-19'
+    updated: '20 octobre 2026',
+    version: '2026-10-20'
   };
   const $ = s => document.querySelector(s);
   const contact = () => LEGAL.email
@@ -41,7 +41,9 @@
           <tr><td><strong>Infos privées</strong> (facultatif) : téléphone, date de naissance, contact d’urgence</td><td>Que le staff de votre équipe puisse vous joindre, ou joindre un proche en cas d’urgence</td><td>Votre consentement</td></tr>
           <tr><td><strong>Vie d’équipe</strong> : stratégies, formations, commentaires, agenda, réponses aux convocations, feuilles de match, demandes d’adhésion, qui a ouvert une stratégie</td><td>Le cœur de l’appli : partager les stratégies, organiser les matchs et entraînements</td><td>Exécution du service (contrat)</td></tr>
           <tr><td><strong>Notifications</strong> : adresse technique de votre appareil</td><td>Vous prévenir des convocations, compos, stratégies et demandes d’adhésion</td><td>Votre consentement (autorisation de l’appareil)</td></tr>
-          <tr><td><strong>Mesure d’usage</strong> : pages et fonctions utilisées, durée des visites, type d’appareil</td><td>Comprendre ce qui sert et améliorer l’appli</td><td>Votre consentement (bandeau, modifiable à tout moment)</td></tr>
+          <tr><td><strong>Mesure d’audience anonyme</strong> : onglet ouvert, origine du clic (barre du bas, tuile, notification), téléphone ou ordinateur, appli installée ou non, <strong>sans aucun identifiant</strong> ; nombre de personnes actives par jour, semaine et mois</td><td>Savoir quelles parties de l’appli servent, sans savoir qui fait quoi</td><td>Intérêt légitime (mesure d’audience dispensée de consentement selon la CNIL) ; vous pouvez vous y opposer (onglet Cookies)</td></tr>
+          <tr><td><strong>Date de votre dernière activité</strong></td><td>Compter les personnes actives (seuls des totaux sont gardés) et supprimer les comptes inutilisés depuis 3 ans</td><td>Intérêt légitime</td></tr>
+          <tr><td><strong>Mesure d’usage détaillée</strong> : temps passé par onglet, fonctions utilisées (exports, relances, impressions…), liés à votre compte</td><td>Comprendre en détail ce qui sert et améliorer l’appli</td><td>Votre consentement (bandeau, modifiable à tout moment)</td></tr>
           <tr><td><strong>Erreurs techniques et sécurité</strong> : message d’erreur, navigateur, version, essais de code d’invitation</td><td>Corriger les bugs, empêcher les abus (essais de codes, envois massifs)</td><td>Intérêt légitime (faire fonctionner et sécuriser l’appli)</td></tr>
           <tr><td><strong>Vos messages</strong> (« Signaler un bug ou proposer une idée »)</td><td>Vous répondre et améliorer l’appli</td><td>Intérêt légitime</td></tr>
         </tbody>
@@ -71,7 +73,7 @@
       <ul>
         <li><strong>Compte, profil, contenu</strong> : tant que votre compte existe. Un compte sans connexion depuis <strong>3 ans</strong> est supprimé automatiquement.</li>
         <li><strong>Inscription jamais confirmée</strong> : supprimée après 24 heures.</li>
-        <li><strong>Mesure d’usage</strong> : 13 mois.</li>
+        <li><strong>Mesure d’usage détaillée</strong> : 13 mois. <strong>Compteurs anonymes</strong> : 25 mois.</li>
         <li><strong>Erreurs techniques</strong> : 6 mois. <strong>Essais de code d’invitation</strong> : 24 heures.</li>
         <li><strong>Vos messages</strong> : 2 ans, ou jusqu’à la suppression de votre compte.</li>
         <li><strong>Accord parental et acceptation des conditions</strong> : tant que le compte existe (c’est la preuve demandée par la loi).</li>
@@ -83,7 +85,8 @@
       <ul>
         <li><strong>consulter et corriger</strong> vos données (Compte → « Modifier mon profil ») ;</li>
         <li><strong>tout effacer</strong> (Compte → « Supprimer mon compte ») ;</li>
-        <li><strong>retirer votre consentement</strong> : vider vos infos privées ou votre profil, couper les notifications, refuser la mesure d’usage (Compte → « Cookies et mesure d’usage ») ;</li>
+        <li><strong>retirer votre consentement</strong> : vider vos infos privées ou votre profil, couper les notifications, refuser la mesure d’usage détaillée (Compte → « Cookies et mesure d’usage ») ;</li>
+        <li><strong>vous opposer</strong> à la mesure d’audience anonyme (même endroit) ;</li>
         <li>demander <strong>une copie de vos données</strong> dans un fichier (portabilité), la <strong>limitation</strong> d’un traitement ou vous <strong>opposer</strong> à un traitement fondé sur l’intérêt légitime ;</li>
         <li>donner des <strong>directives</strong> sur le sort de vos données après votre décès.</li>
       </ul>
@@ -115,7 +118,10 @@
         <li>vos préférences (tutoriel déjà vu, notifications déjà proposées, lieux récents de l’agenda) ;</li>
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
-      <h4>Mesure d’usage : seulement avec votre accord</h4>
+      <h4>Mesure d’audience anonyme</h4>
+      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
+      <p><button type="button" class="btn outline small" data-anon-toggle></button> <span class="muted small" data-anon-state></span></p>
+      <h4>Mesure d’usage détaillée : seulement avec votre accord</h4>
       <p>Si vous l’acceptez, l’appli enregistre les pages et fonctions utilisées et la durée des visites, liées à votre compte, pour comprendre ce qui sert et l’améliorer. Ces données restent chez nous, ne servent jamais à la publicité et sont effacées après 13 mois. Refuser ne change rien au fonctionnement de l’appli.</p>
       <p>Votre choix est gardé 13 mois, puis l’appli vous redemande. Vous pouvez le changer à tout moment :</p>
       <p><button type="button" class="btn outline small" data-consent-open>Changer mon choix</button> <span class="muted small" data-consent-state></span></p>
@@ -179,6 +185,14 @@
     const body = $('#legal-body'); body.innerHTML = PAGES[current].html(); body.scrollTop = 0;
     body.querySelectorAll('[data-consent-open]').forEach(b => { b.onclick = () => window.RugbyConsent && window.RugbyConsent.ask(true); });
     body.querySelectorAll('[data-consent-state]').forEach(s => { s.textContent = window.RugbyConsent ? window.RugbyConsent.label() : ''; });
+    const C = window.RugbyConsent;
+    const anonDraw = () => body.querySelectorAll('[data-anon-toggle]').forEach(b => {
+      const on = !C || C.anon();
+      b.textContent = on ? 'M’opposer à la mesure anonyme' : 'Accepter la mesure anonyme';
+      b.onclick = () => { if (C) C.setAnon(!on); anonDraw(); };
+      const st = b.parentElement.querySelector('[data-anon-state]'); if (st) st.textContent = on ? 'Mesure anonyme active.' : 'Vous vous êtes opposé à la mesure anonyme.';
+    });
+    anonDraw();
     $('#modal-legal').classList.remove('hidden');
   }
   // Tous les liens « data-legal » de l'appli ouvrent la page correspondante

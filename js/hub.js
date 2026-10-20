@@ -112,7 +112,7 @@
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
       if (cur === id) b.setAttribute('aria-current', 'page');
-      b.onclick = () => E.go(id);
+      b.onclick = () => { if (window.RugbyNavSource) window.RugbyNavSource('nav'); E.go(id); };
       return b;
     });
     $('#hub-tabs').replaceChildren(...make(false));
@@ -277,7 +277,7 @@
     const tile = (icon, title, sub, fn, opts) => {
       const o = opts || {};
       const t = el('button', 'hub-tile' + (o.soon ? ' soon' : ''), `${ico(icon)}<strong>${title}${o.badge ? ` <span class="nav-badge">${o.badge}</span>` : ''}</strong><small>${sub}</small>${o.soon ? '<span class="soon-tag">Bientôt</span>' : ''}`);
-      t.dataset.tile = icon; t.onclick = fn; grid.appendChild(t);
+      t.dataset.tile = icon; t.onclick = () => { if (window.RugbyNavSource) window.RugbyNavSource('tile'); fn(); }; grid.appendChild(t);
     };
     if (staff) {
       tile('strats', 'Stratégies', d.published.length ? plural(d.published.length, 'publiée', 'publiées') : 'Aucune publiée pour l’instant', () => E.go('strats'));

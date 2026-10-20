@@ -53,9 +53,11 @@ begin
   delete from public.client_errors where created_at < now() - interval '6 months';     -- erreurs techniques
   delete from public.join_attempts where created_at < now() - interval '24 hours';     -- essais de code
   delete from public.feedback where created_at < now() - interval '2 years';           -- messages
-  -- Comptes sans connexion depuis 3 ans (jamais les super-admins) ; tout ce qui leur est lié part avec eux
+  delete from public.page_counts where day < current_date - interval '25 months';      -- compteurs anonymes
+  delete from public.activity_counts where period < current_date - interval '25 months';
+  -- Comptes sans activité depuis 3 ans (jamais les super-admins) ; tout ce qui leur est lié part avec eux
   delete from auth.users u
-  where coalesce(u.last_sign_in_at, u.created_at) < now() - interval '3 years'
+  where greatest(coalesce(u.last_sign_in_at, u.created_at), coalesce((select a.day::timestamptz from public.activity_last a where a.user_id = u.id), u.created_at)) < now() - interval '3 years'
     and not exists (select 1 from public.profiles p where p.id = u.id and p.is_superadmin);
 end $f$;
 revoke execute on function public.purge_old_data() from anon, public, authenticated;

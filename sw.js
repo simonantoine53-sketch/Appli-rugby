@@ -18,7 +18,7 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const base = self.registration.scope;
-  const target = base + 'index.html' + ((e.notification.data && e.notification.data.url) || '#/');
+  const target = base + 'index.html?from=notif' + ((e.notification.data && e.notification.data.url) || '#/');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const open = list.find(c => c.url.startsWith(base));
     if (open) { open.navigate(target); return open.focus(); }

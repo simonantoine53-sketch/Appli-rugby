@@ -55,3 +55,19 @@ Les couleurs des joueurs et du matériel sur le terrain font partie du dessin, p
 
 - Toujours le **vouvoiement** (« Vérifiez votre boîte mail »).
 - Les mêmes mots partout : **Équipe**, **Compos**, **Présent / Peut-être / Absent**.
+
+## Graphiques (back-office)
+
+Réservées aux graphiques : jamais pour un bouton ni pour un état.
+
+| Variable | Couleur | Rôle |
+|---|---|---|
+| `--chart-1` | #1a73e8 | 1re série (le bleu de l'appli ; série unique) |
+| `--chart-2` | #1baf7a | 2e série |
+| `--chart-3` | #6250d6 | 3e série |
+| `--chart-4` | #eda100 | 4e série |
+| `--chart-5` | #e87ba4 | 5e série |
+| `--chart-other` | #9aa3ad | « Autres » (au-delà de 5 séries, on regroupe) |
+| `--chart-grid` | #e9ecef | lignes de repère |
+
+Toujours dans cet ordre, la couleur suit la série (jamais son rang). L'ordre a été vérifié pour les daltoniens. Les séries 2, 4 et 5 sont peu contrastées sur fond blanc : on affiche toujours les valeurs (légende chiffrée ou tableau).

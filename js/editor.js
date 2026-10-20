@@ -12,7 +12,6 @@
   const escHtml = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const clone = o => JSON.parse(JSON.stringify(o));
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
-  const TOOL_GROUP = {}; TOOL_GROUPS.forEach(g => g.tools.forEach(t => { TOOL_GROUP[t.id] = g.id; }));
   const LIB_KEY = 'rugby-drawings-v1';
   const CUR_KEY = 'rugby-drawing-current-v1';
 
@@ -141,7 +140,7 @@
     if (!state.framing) return;
     const before = state.framing.before; state.framing = null;
     $('#frame-bar').classList.add('hidden');
-    if (keep) { const st = curStep(); if (st.frame) { const f = frameRect(state.drawing.settings, st.frame); st.frame = f.full ? undefined : { x: Math.round(f.x), y: Math.round(f.y), w: Math.round(f.w) }; } commit(before); track('frame', { step: state.step + 1 }); }
+    if (keep) { const st = curStep(); if (st.frame) { const f = frameRect(state.drawing.settings, st.frame); st.frame = f.full ? undefined : { x: Math.round(f.x), y: Math.round(f.y), w: Math.round(f.w) }; } commit(before);  }
     else { state.drawing = JSON.parse(before); fixStepIndex(); afterChange(); }
   }
   function zoomFrame(k) {
@@ -346,14 +345,14 @@
     state.selected = null;
     commit(before);
     setTool(null);
-    track('formation', { type: formation.opts.type });
+    
     const info = formation.opts.type === 'custom' ? { name: `Formation « ${formation.opts.name} »` } : FORMATION_INFO[formation.opts.type] || FORMATION_INFO.scrum;
     toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
   }
 
   function setTool(id) {
     if (id && state.framing) endFraming(true);
-    if (id && id !== state.tool && id !== 'formation') track('tool', { tool: id, group: TOOL_GROUP[id] || '?' });
+    
     state.tool = id;
     if (id) closeDrawer();
     if (id && TOOLS[id] && TOOLS[id].kind === 'player' && TOOLS[id].color) state.lastPlayerColor = TOOLS[id].color;
@@ -787,7 +786,7 @@
       root.appendChild(card);
     });
   }
-  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()), frame: curStep().frame ? clone(curStep().frame) : undefined }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b); track('step_add', { steps: state.drawing.steps.length }); };
+  $('#add-step').onclick = () => { const b = snapshot(); state.drawing.steps.push({ id: uid(), objects: clone(curObjects()), frame: curStep().frame ? clone(curStep().frame) : undefined }); state.step = state.drawing.steps.length - 1; state.selected = null; commit(b);  };
 
   /* ---------- Onglets & réglages ---------- */
   function activateTab(name) {

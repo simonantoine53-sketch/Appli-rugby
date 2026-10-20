@@ -110,7 +110,40 @@
     if (uid === lastUser) { loadAnnouncements(); return; }
     lastUser = uid;
     loadAnnouncements(); loadFlags();
-    if (uid) track('session_start', { view: view(), standalone: !!(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches) });
+    if (uid) { track('session_start', { view: view(), standalone: installed() }); touchActivity(uid); }
+  }
+
+  /* ---------- Mesure d'audience anonyme : onglets visités et personnes actives ----------
+     Aucun identifiant n'est envoyé avec les onglets ; la personne peut s'y opposer (page Cookies).
+     Le temps passé par onglet, lui, est lié au compte : seulement avec l'accord (bandeau). */
+  const installed = () => !!(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches);
+  const anonOk = () => !(window.RugbyConsent && window.RugbyConsent.anon && !window.RugbyConsent.anon());
+  const PAGE_OF = { home: 'home', agenda: 'agenda', strategies: 'strats', compos: 'compos', team: 'team', account: 'account', editor: 'editor', d: 'editor', admin: 'admin' };
+  let navSource = /[?&]from=notif\b/.test(location.search) ? 'notif' : 'link';
+  let curPage = null, pageSince = Date.now();
+  // La barre du bas et les tuiles de l'accueil disent d'où vient le clic (sinon : lien dans une page)
+  window.RugbyNavSource = s => { navSource = s; };
+  function pageTime() {
+    if (!curPage || !consentOk()) return;
+    const s = Math.round((Date.now() - pageSince) / 1000);
+    if (s >= 2) track('page_time', { page: curPage, s: Math.min(s, 3600) });
+  }
+  function onView() {
+    const page = PAGE_OF[view()] || 'other';
+    if (page === curPage) return;
+    pageTime();
+    curPage = page; pageSince = Date.now();
+    if (anonOk()) sb.rpc('count_page', { p_page: page, p_source: navSource, p_device: device(), p_installed: installed() }).then(({ error }) => { if (error) console.warn('count_page', error.message); });
+    navSource = 'link';
+  }
+  window.addEventListener('hashchange', onView);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { pageTime(); flush(); } else { pageSince = Date.now(); if (loggedIn()) touchActivity(A.user().id); } });
+  setTimeout(onView, 1500);
+  // Personne active aujourd'hui : une fois par jour et par appareil (compteurs anonymes + date de dernière activité)
+  function touchActivity(uid) {
+    const today = new Date().toISOString().slice(0, 10), key = 'rs-active-' + uid;
+    try { if (localStorage.getItem(key) === today) return; localStorage.setItem(key, today); } catch (e) { /* ignore */ }
+    sb.rpc('touch_activity').then(({ error }) => { if (error) console.warn('touch_activity', error.message); });
   }
 
   /* ---------- Retours utilisateurs ---------- */
@@ -188,66 +221,194 @@
   }
   const must = ({ data, error }) => { if (error) throw error; return data; };
 
-  /* --- Vue d'ensemble --- */
+  /* --- Vue d'ensemble : tableau de bord en 5 étages (santé, onglets, fonctions, démarrage et fidélité, clubs et qualité) --- */
   function kpi(label, value, sub) { return el('div', 'kpi', `<span class="kpi-label">${label}</span><strong>${value}</strong>${sub ? `<small>${sub}</small>` : ''}`); }
-  function bars(title, rows, fmt) {
+  function bars(title, rows, fmt, note) {
     const box = el('div', 'admin-card');
     box.appendChild(el('h4', '', title));
-    if (!rows || !rows.length) { box.appendChild(el('p', 'muted small', 'Pas encore de données.')); return box; }
+    if (note) box.appendChild(el('p', 'muted small dash-note', note));
+    if (!rows || !rows.length || !rows.some(r => r.n)) { box.appendChild(el('p', 'muted small', 'Pas encore de données sur la période.')); return box; }
     const max = Math.max(...rows.map(r => r.n)) || 1;
-    rows.forEach(r => box.appendChild(el('div', 'bar-row', `<span class="bar-name">${esc(fmt ? fmt(r.name) : r.name)}</span><span class="bar-track"><i style="width:${Math.max(2, 100 * r.n / max)}%"></i></span><span class="bar-n">${r.n}</span>`)));
+    rows.forEach(r => box.appendChild(el('div', 'bar-row', `<span class="bar-name">${esc(fmt ? fmt(r.name) : r.name)}</span><span class="bar-track"><i style="width:${Math.max(2, 100 * r.n / max)}%"></i></span><span class="bar-n">${esc(r.label || String(r.n))}</span>`)));
     return box;
   }
-  function columns(title, rows, key) {
-    const box = el('div', 'admin-card wide');
+  const pct = (a, b) => b ? Math.round(100 * a / b) + ' %' : '—';
+  const wkLabel = w => new Date(w + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const hrs = h => h == null ? '—' : h < 1 ? Math.round(h * 60) + ' min' : h < 48 ? Math.round(h) + ' h' : Math.round(h / 24) + ' j';
+
+  // Infobulle commune aux graphiques (survol ou appui)
+  let tip = null;
+  function showTip(evt, html) {
+    if (!tip) { tip = el('div', 'dash-tip'); document.body.appendChild(tip); }
+    tip.innerHTML = html; tip.classList.remove('hidden');
+    const x = Math.min(evt.clientX + 12, innerWidth - tip.offsetWidth - 8), y = Math.max(8, evt.clientY - tip.offsetHeight - 12);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  const hideTip = () => { if (tip) tip.classList.add('hidden'); };
+
+  /** Frise par semaine : colonnes empilées (une ou plusieurs séries), axe des semaines, valeurs au survol. */
+  function weekChart(title, weeks, series, opts) {
+    const o = opts || {};
+    const box = el('div', 'admin-card' + (o.wide ? ' wide' : ''));
     box.appendChild(el('h4', '', title));
-    if (!rows || !rows.length) { box.appendChild(el('p', 'muted small', 'Pas encore de données.')); return box; }
-    const max = Math.max(...rows.map(r => r.n)) || 1;
-    const chart = el('div', 'col-chart');
-    rows.forEach(r => { const c = el('div', 'col', `<i style="height:${Math.max(3, 100 * r.n / max)}%"></i>`); c.title = `${fmtDay(r[key])} : ${r.n}`; chart.appendChild(c); });
-    box.appendChild(chart);
-    box.appendChild(el('div', 'col-axis muted small', `<span>${fmtDay(rows[0][key])}</span><span>${fmtDay(rows[rows.length - 1][key])}</span>`));
+    if (o.note) box.appendChild(el('p', 'muted small dash-note', o.note));
+    const totals = weeks.map((_, i) => series.reduce((t, s) => t + (s.values[i] || 0), 0));
+    if (!totals.some(Boolean)) { box.appendChild(el('p', 'muted small', 'Pas encore de données sur la période.')); return box; }
+    // Largeur de dessin proche de la largeur affichée : le texte garde la même taille sur les petites et les grandes cartes
+    const big = o.wide && innerWidth > 760;
+    const W = big ? 1200 : 420, H = big ? 190 : 150, padL = 30, padB = 22, padT = 8, n = weeks.length, gap = n > 20 ? 2 : 4;
+    const max = Math.max(...totals), step = max <= 5 ? 1 : Math.ceil(max / 4);
+    const top = Math.ceil(max / step) * step, colW = (W - padL) / n;
+    const y = v => padT + (H - padT - padB) * (1 - v / top);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="dash-svg" role="img" aria-label="${esc(title)}">`;
+    for (let v = 0; v <= top; v += step) svg += `<line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}" class="dash-grid"/><text x="${padL - 6}" y="${y(v) + 4}" class="dash-tick" text-anchor="end">${v}</text>`;
+    weeks.forEach((w, i) => {
+      let base = 0; const x = padL + i * colW + gap / 2, cw = Math.max(2, colW - gap);
+      series.forEach((s, k) => {
+        const v = s.values[i] || 0; if (!v) return;
+        const y0 = y(base), y1 = y(base + v); base += v;
+        const last = !series.slice(k + 1).some(t => t.values[i]);
+        svg += `<rect x="${x}" y="${y1}" width="${cw}" height="${Math.max(1, y0 - y1 - (last ? 0 : 2))}" rx="${last ? 3 : 0}" style="fill:${s.color}"/>`;
+      });
+      svg += `<rect x="${padL + i * colW}" y="0" width="${colW}" height="${H - padB}" fill="transparent" class="dash-hit" data-i="${i}"/>`;
+      if (i === 0 || i === n - 1 || (n > 6 && i === Math.floor(n / 2))) svg += `<text x="${padL + i * colW + colW / 2}" y="${H - 6}" class="dash-tick" text-anchor="middle">${wkLabel(w)}</text>`;
+    });
+    svg += '</svg>';
+    const wrap = el('div', 'dash-chart', svg); box.appendChild(wrap);
+    wrap.querySelectorAll('.dash-hit').forEach(r => {
+      const i = +r.dataset.i;
+      const html = `<strong>Semaine du ${wkLabel(weeks[i])}</strong>` + (series.length > 1 ? series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)} : ${s.values[i] || 0}</span>`).join('') + `<span>Total : ${totals[i]}</span>` : `<span>${totals[i]}</span>`);
+      r.addEventListener('mousemove', e => showTip(e, html)); r.addEventListener('mouseleave', hideTip);
+      r.addEventListener('click', e => showTip(e, html));
+    });
+    if (series.length > 1) {
+      const lg = el('div', 'dash-legend');
+      series.forEach(s => lg.appendChild(el('span', '', `<i style="background:${s.color}"></i>${esc(s.name)} <b>${s.values.reduce((a, b) => a + (b || 0), 0)}</b>`)));
+      box.appendChild(lg);
+    }
     return box;
   }
-  const TOOL_LABEL = id => { const t = window.RugbyPalette && window.RugbyPalette.TOOLS[id]; return t ? t.label : id; };
-  const GROUP_LABEL = { formations: 'Formations', shapes: 'Formes', equip: 'Équipement', players: 'Joueurs' };
-  const EVENT_LABEL = { session_start: 'Ouverture de l’appli', tool: 'Outil choisi', export: 'Export', preview: 'Aperçu', present: 'Mode présentation', save: 'Enregistrement', publish: 'Publication', propose: 'Proposition au coach', share_link: 'Lien public créé', comment: 'Commentaire', formation: 'Formation placée', duplicate: 'Duplication', step_add: 'Étape ajoutée', feedback: 'Avis envoyé', new_drawing: 'Nouveau dessin', frame: 'Cadrage d’étape', reminder: 'Relance « pas vu »', interest: 'Intérêt « bientôt »', home_action: 'Action depuis l’accueil', invite: 'Invitation envoyée', open_link: 'Ouverture depuis une notification', event_create: 'Événement créé', rsvp: 'Réponse à une convocation', event_reminder: 'Relance convocation', event_ics: 'Ajout au calendrier', event_cancel: 'Annulation de séance', calendar_import: 'Import du calendrier des matchs', sheet_publish: 'Compo publiée', sheet_print: 'Feuille imprimée', sheet_image: 'Feuille partagée en image', sheet_view: 'Compo consultée', sheet_settings: 'Feuille personnalisée' };
+  /** Entonnoir : chaque étape en barre, avec le % de la première. */
+  function funnel(title, steps, note) {
+    const box = el('div', 'admin-card');
+    box.appendChild(el('h4', '', title));
+    if (note) box.appendChild(el('p', 'muted small dash-note', note));
+    const first = steps[0] ? steps[0].n : 0;
+    if (!first) { box.appendChild(el('p', 'muted small', 'Pas encore de données sur la période.')); return box; }
+    steps.forEach((st, i) => box.appendChild(el('div', 'bar-row', `<span class="bar-name">${esc(st.name)}</span><span class="bar-track"><i style="width:${Math.max(2, 100 * st.n / first)}%"></i></span><span class="bar-n">${st.n}${i ? ` <small>${pct(st.n, first)}</small>` : ''}</span>`)));
+    return box;
+  }
+  const section = (n, title, sub) => el('div', 'dash-section', `<span class="dash-step">${n}</span><div><h3>${title}</h3>${sub ? `<p class="muted small">${sub}</p>` : ''}</div>`);
+  const PAGE_LABEL = { home: 'Accueil', agenda: 'Agenda', strats: 'Stratégies', compos: 'Compos', team: 'Équipe' };
+  const PAGE_COLOR = { home: 'var(--chart-1)', agenda: 'var(--chart-2)', strats: 'var(--chart-3)', compos: 'var(--chart-4)', team: 'var(--chart-5)' };
+  const SOURCE_LABEL = { nav: 'Barre du bas', tile: 'Tuile de l’accueil', notif: 'Notification', link: 'Lien dans une page', other: 'Autre' };
+  let period = 12;
+
   async function renderOverview() {
-    const o = must(await sb.rpc('admin_overview'));
-    cache.feedbackNew = o.feedback_new; cache.pending = o.members_pending;
-    const vis = o.drawings_by_visibility || {};
-    const dev = o.devices_30d || {};
-    const devTotal = (dev.mobile || 0) + (dev.desktop || 0);
-    const grid = el('div', 'kpi-grid');
-    grid.append(
-      kpi('Comptes', o.users, `+${o.users_7d} en 7 jours`),
-      kpi('Équipes', o.teams, o.members_pending ? `${o.members_pending} demande(s) en attente` : 'aucune demande en attente'),
-      kpi('Actifs', `${o.active_1d} / ${o.active_7d} / ${o.active_30d}`, 'jour / semaine / mois'),
-      kpi('Dessins', o.drawings, `${vis.team || 0} publiés · ${vis.proposed || 0} proposés · ${vis.private || 0} privés`),
-      kpi('Temps d’usage (30 j)', o.total_hours_30d + ' h', `${o.sessions_30d} sessions · ${fmtDur(o.avg_session_s)} en moyenne`),
-      kpi('Part éditeur', o.editor_share + ' %', 'du temps passé dans l’éditeur'),
-      kpi('Mobile', devTotal ? Math.round(100 * (dev.mobile || 0) / devTotal) + ' %' : '—', 'des sessions sur 30 jours'),
-      kpi('Étapes par dessin', o.avg_steps, `${o.formations} formation(s) enregistrée(s)`),
-      kpi('Retours', o.feedback_new, 'nouveaux à lire'),
-      kpi('Erreurs (7 j)', o.errors_7d, 'remontées par les navigateurs')
+    const [m, pend] = await Promise.all([
+      sb.rpc('admin_metrics', { p_weeks: period }).then(must),
+      sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending')
+    ]);
+    cache.feedbackNew = m.feedback_new; cache.pending = pend.count || 0;
+    const W = m.weeks || [];
+    const out = [];
+
+    // Période des frises
+    const seasonWeeks = (() => { const now = new Date(), y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1; return Math.max(1, Math.ceil((now - new Date(y, 6, 1)) / (7 * 864e5))); })();
+    const bar = el('div', 'admin-filters dash-period');
+    [[4, '4 semaines'], [12, '12 semaines'], [seasonWeeks, 'Saison (depuis le 1er juillet)']].forEach(([w, label]) => bar.appendChild(btn(label, 'small ' + (period === w ? 'primary' : 'outline'), () => { period = w; render(); })));
+    out.push(bar);
+
+    // 1. Santé
+    const a = m.active, delta = a.week - a.week_prev;
+    out.push(section(1, 'Santé de l’appli', 'Personnes actives : toute personne connectée au moins une fois sur la période (compteur anonyme, tout le monde est compté).'));
+    const g1 = el('div', 'kpi-grid');
+    g1.append(
+      kpi('Personnes actives cette semaine', a.week, a.week_prev || a.week ? `${delta >= 0 ? '+' : ''}${delta} par rapport à la semaine dernière` : 'semaine en cours'),
+      kpi('Aujourd’hui', a.day, `${a.avg_day_month} par jour en moyenne ce mois-ci`),
+      kpi('Ce mois-ci', a.month, 'personnes différentes'),
+      kpi('Fidélité', pct(a.week, a.month), 'des actifs du mois sont venus cette semaine'),
+      kpi('Comptes', m.new.total_accounts, `${m.new.total_teams} équipes · ${m.new.total_clubs} clubs`)
     );
-    const charts = el('div', 'admin-grid');
-    charts.append(
-      columns('Comptes actifs par jour (30 jours)', o.active_by_day, 'day'),
-      columns('Inscriptions par semaine (12 semaines)', o.signups_by_week, 'week'),
-      bars('Outils les plus utilisés (30 j)', o.tools_30d, TOOL_LABEL),
-      bars('Familles d’outils (30 j)', o.tool_groups_30d, g => GROUP_LABEL[g] || g),
-      bars('Actions (30 j)', o.events_30d, n => EVENT_LABEL[n] || n),
-      bars('Exports (30 j)', o.exports_30d, k => k.toUpperCase()),
-      bars('Terrains utilisés', o.fields, f => f.replace('full', 'complet').replace('half', 'demi').replace('empty', 'vide').replace('landscape', 'paysage').replace('portrait', 'portrait')),
-      bars('Catégories des dessins', o.categories)
+    out.push(g1);
+    const c1 = el('div', 'admin-grid');
+    c1.append(
+      weekChart('Personnes actives par semaine', W, [{ name: 'Actives', values: a.by_week, color: 'var(--chart-1)' }], { wide: true, note: 'Compteur démarré le 20 octobre 2026 : les semaines d’avant sont vides.' }),
+      weekChart('Nouveaux comptes par semaine', W, [{ name: 'Comptes', values: m.new.accounts, color: 'var(--chart-1)' }]),
+      weekChart('Nouvelles équipes et nouveaux clubs', W, [{ name: 'Équipes', values: m.new.teams, color: 'var(--chart-1)' }, { name: 'Clubs', values: m.new.clubs, color: 'var(--chart-2)' }])
     );
-    // Intérêt pour les fonctionnalités à venir (clics « Ça m'intéresse »)
-    const { data: interest } = await sb.from('events').select('props, user_id').eq('name', 'interest').gte('created_at', new Date(Date.now() - 90 * 864e5).toISOString());
-    const FEAT = { agenda: 'Agenda et convocations (avant sa sortie)', seances: 'Séances d’entraînement', compos: 'Compositions et feuille de match' };
+    out.push(c1);
+
+    // 2. Onglets
+    out.push(section(2, 'Ce qui est utilisé', 'Onglets ouverts et origine des clics : compteurs anonymes, sauf pour les personnes qui s’y opposent.'));
+    const pw = m.pages.by_week || {};
+    const main = ['home', 'agenda', 'strats', 'compos', 'team'];
+    const others = W.map((_, i) => Object.keys(pw).filter(k => !main.includes(k)).reduce((t, k) => t + (pw[k][i] || 0), 0));
+    const c2 = el('div', 'admin-grid');
+    c2.append(weekChart('Onglets ouverts par semaine', W, main.map(k => ({ name: PAGE_LABEL[k], values: pw[k] || W.map(() => 0), color: PAGE_COLOR[k] })).concat([{ name: 'Autres (Compte, éditeur…)', values: others, color: 'var(--chart-other)' }]), { wide: true }));
+    const time = m.pages.time || {}, tTot = Object.values(time).reduce((x, y) => x + y, 0);
+    c2.append(bars('Temps passé par onglet', main.concat(['editor', 'account']).map(k => ({ name: k, n: time[k] || 0, label: tTot ? `${pct(time[k] || 0, tTot)} · ${fmtDur(time[k] || 0)}` : '0' })).sort((x, y) => y.n - x.n),
+      k => PAGE_LABEL[k] || ({ editor: 'Éditeur de stratégies', account: 'Compte' })[k] || k, `Seulement les ${m.pages.time_people} personne(s) qui ont accepté la mesure détaillée.`));
+    const src = m.pages.sources || {}, sTot = Object.values(src).reduce((x, y) => x + y, 0);
+    c2.append(bars('D’où viennent les clics', Object.entries(src).map(([k, n]) => ({ name: k, n, label: pct(n, sTot) })).sort((x, y) => y.n - x.n), k => SOURCE_LABEL[k] || k));
+    const dev = m.pages.devices || {}, inst = m.pages.installed || {};
+    c2.append(bars('Appareils', [{ name: 'Téléphone', n: dev.mobile || 0, label: pct(dev.mobile || 0, (dev.mobile || 0) + (dev.desktop || 0)) }, { name: 'Ordinateur', n: dev.desktop || 0, label: pct(dev.desktop || 0, (dev.mobile || 0) + (dev.desktop || 0)) },
+      { name: 'Téléphone : appli installée', n: inst.app || 0, label: pct(inst.app || 0, (inst.app || 0) + (inst.web || 0)) + ' des clics sur téléphone' }]));
+    out.push(c2);
+
+    // 3. Fonctions
+    out.push(section(3, 'Chaque fonction sert-elle ?', 'Calculé sur les données de l’appli (tout le monde). Relances, impressions et invitations : seulement les personnes qui ont accepté la mesure détaillée.'));
+    const st = m.strats, ag = m.agenda, co = m.compos, tm = m.team;
+    const g3 = el('div', 'kpi-grid');
+    g3.append(
+      kpi('Stratégies vues sous 48 h', pct(st.seen48, st.audience), `des joueurs, sur ${st.pub_count} stratégie(s) publiée(s) · délai médian ${hrs(st.median_h)}`),
+      kpi('Animations lues', pct(st.played, st.seen), `des joueurs qui ont ouvert une stratégie · ${st.proposals} proposition(s) de joueurs`),
+      kpi('Réponses aux convocations', pct(ag.answered, ag.convoked), `${ag.past} événement(s) passé(s) · délai médian ${hrs(ag.median_h)} · ${ag.reminders} relance(s)`),
+      kpi('Matchs avec compo publiée', `${co.published} / ${co.matches}`, `${co.prints} impression(s) · ${co.images} image(s) partagée(s)`),
+      kpi('Notifications activées', pct(m.push.users, m.push.total), `${m.push.users} compte(s) sur ${m.push.total}`)
+    );
+    out.push(g3);
+    const c3 = el('div', 'admin-grid');
+    c3.append(
+      weekChart('Stratégies créées et publiées', W, [{ name: 'Créées', values: st.created, color: 'var(--chart-1)' }, { name: 'Publiées', values: st.published, color: 'var(--chart-2)' }]),
+      weekChart('Événements créés (agenda)', W, [{ name: 'Événements', values: ag.created, color: 'var(--chart-1)' }]),
+      funnel('Invitations', [{ name: 'Invitations envoyées', n: tm.invites }, { name: 'Comptes créés', n: tm.accounts }, { name: 'Demandes pour une équipe', n: tm.requests }, { name: 'Membres acceptés', n: tm.accepted }], 'Les invitations ne comptent que les personnes qui ont accepté la mesure détaillée.')
+    );
+    // Intérêt pour les fonctions à venir (clics « Ça m'intéresse »)
+    const { data: interest } = await sb.from('events').select('props, user_id').eq('name', 'interest').gte('created_at', new Date(Date.now() - period * 7 * 864e5).toISOString());
+    const FEAT = { agenda: 'Agenda et convocations', seances: 'Séances d’entraînement', compos: 'Compositions et feuille de match' };
     const byFeat = {}; (interest || []).forEach(e => { const f = (e.props && e.props.feature) || '?'; (byFeat[f] = byFeat[f] || new Set()).add(e.user_id); });
-    charts.prepend(bars('Demande pour les fonctions à venir (comptes, 90 j)', Object.entries(byFeat).map(([k, v]) => ({ name: k, n: v.size })).sort((a, b) => b.n - a.n), k => FEAT[k] || k));
-    return [grid, charts];
+    c3.append(bars('Demande pour les fonctions à venir (comptes)', Object.entries(byFeat).map(([k, v]) => ({ name: k, n: v.size })).sort((x, y) => y.n - x.n), k => FEAT[k] || k));
+    out.push(c3);
+
+    // 4. Démarrage et fidélité
+    out.push(section(4, 'Est-ce que les gens restent ?', 'Comptes créés sur la période.'));
+    const fc = m.funnel_coach, fp = m.funnel_player;
+    const c4 = el('div', 'admin-grid');
+    c4.append(
+      funnel('Démarrage côté coach', [{ name: 'Comptes créés', n: fc[0] }, { name: 'Dans une équipe', n: fc[1] }, { name: 'Coach ou admin', n: fc[2] }, { name: 'Équipe de 5 membres ou plus', n: fc[3] }, { name: '1re stratégie publiée', n: fc[4] }, { name: '1er événement créé', n: fc[5] }]),
+      funnel('Démarrage côté joueur', [{ name: 'Demande comme joueur', n: fp[0] }, { name: 'Accepté dans l’équipe', n: fp[1] }, { name: '1re réponse à une convocation', n: fp[2] }, { name: '1re stratégie vue', n: fp[3] }])
+    );
+    const ret = el('div', 'admin-card wide');
+    ret.appendChild(el('h4', '', 'Retour des nouveaux inscrits'));
+    ret.appendChild(el('p', 'muted small dash-note', 'Par semaine d’inscription : part de ceux qui ont été actifs 1 semaine puis 4 semaines après.'));
+    if (!(m.retention || []).length) ret.appendChild(el('p', 'muted small', 'Pas encore d’inscriptions sur la période.'));
+    else ret.appendChild(table(['Semaine d’inscription', 'Inscrits', 'Revenus à 1 semaine', 'Revenus à 4 semaines'], m.retention.map(r => [wkLabel(r.w), r.n, r.w1 == null ? '<span class="muted">trop tôt</span>' : `${pct(r.w1, r.n)} <span class="muted">(${r.w1})</span>`, r.w4 == null ? '<span class="muted">trop tôt</span>' : `${pct(r.w4, r.n)} <span class="muted">(${r.w4})</span>`])));
+    c4.appendChild(ret);
+    out.push(c4);
+
+    // 5. Clubs et qualité
+    out.push(section(5, 'Clubs et qualité'));
+    const c5 = el('div', 'admin-grid');
+    const cl = el('div', 'admin-card wide');
+    cl.appendChild(el('h4', '', 'Clubs'));
+    cl.appendChild(table(['Club', 'Équipes', 'Membres', 'Actifs cette semaine', 'Dernière activité'], (m.clubs || []).slice().sort((x, y) => y.active - x.active || y.members - x.members).map(c => [esc(c.name), c.teams, c.members, c.active ? `<strong>${c.active}</strong>` : 0, fmtDay(c.last)])));
+    c5.append(cl, weekChart('Erreurs techniques par semaine', W, [{ name: 'Erreurs', values: m.errors, color: 'var(--chart-other)' }]));
+    const fb = el('div', 'admin-card'); fb.appendChild(el('h4', '', 'Retours à lire')); fb.appendChild(el('p', 'dash-big', String(m.feedback_new)));
+    fb.appendChild(btn('Ouvrir les retours', 'outline small', () => { tab = 'feedback'; render(); }));
+    c5.appendChild(fb);
+    out.push(c5);
+    return out;
   }
 
   /* --- Retours --- */
