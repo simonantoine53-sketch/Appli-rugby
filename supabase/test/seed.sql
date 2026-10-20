@@ -48,6 +48,8 @@ declare
   ev_past uuid := '30000000-0000-4000-8000-000000000004';
   ev_u16 uuid := '30000000-0000-4000-8000-000000000005';
   ev_match2 uuid := '30000000-0000-4000-8000-000000000006';
+  ev_old1 uuid := '30000000-0000-4000-8000-000000000007';
+  ev_old2 uuid := '30000000-0000-4000-8000-000000000008';
   d1 uuid := '40000000-0000-4000-8000-000000000001';
   d2 uuid := '40000000-0000-4000-8000-000000000002';
   names text[] := array['Léo Garnier','Kevin Durand','Mathis Roux','Yanis Petit','Bastien Lambert','Florian Girard','Romain Fontaine','Maxime Chevalier',
@@ -110,7 +112,10 @@ begin
     (ev_match, sen, 'match', 'Match', 'US Vallée Verte', true, day0 + interval '4 days 15 hours', day0 + interval '4 days 13 hours 30 minutes', 'Stade des Tilleuls', 'Maillots rouges, shorts blancs', coach),
     (ev_past, sen, 'match', 'Match', 'AS Les Prés', false, day0 - interval '3 days' + interval '15 hours', day0 - interval '3 days' + interval '13 hours', 'Stade municipal des Prés', null, coach),
     (ev_u16, u16, 'training', 'Entraînement', null, null, day0 + interval '2 days 18 hours', null, 'Stade des Tilleuls, terrain 2', 'Protège-dents obligatoire', adm),
-    (ev_match2, sen, 'match', 'Match', 'RC Les Collines', false, day0 + interval '11 days 15 hours', day0 + interval '11 days 12 hours 30 minutes', 'Stade des Collines', null, coach);
+    (ev_match2, sen, 'match', 'Match', 'RC Les Collines', false, day0 + interval '11 days 15 hours', day0 + interval '11 days 12 hours 30 minutes', 'Stade des Collines', null, coach),
+    -- Deux entraînements passés (statistiques de présence)
+    (ev_old1, sen, 'training', 'Entraînement', null, null, day0 - interval '6 days' + interval '19 hours 30 minutes', null, 'Stade des Tilleuls', null, coach),
+    (ev_old2, sen, 'training', 'Entraînement', null, null, day0 - interval '13 days' + interval '19 hours 30 minutes', null, 'Stade des Tilleuls', null, coach);
   -- Second match : pas encore de compo (pour « Reprendre la compo du dernier match »), Romain Fontaine (n°7 sur la feuille) absent
   insert into event_responses (event_id, user_id, status, comment, set_by) values (ev_match2, players[7], 'no', 'En vacances', players[7]);
   -- Match : 14 présents, 3 peut-être, 2 absents ; Léo (joueur@) n'a pas encore répondu
@@ -126,6 +131,12 @@ begin
     insert into event_responses (event_id, user_id, status, set_by) values (ev_past, players[i], case when i <= 17 then 'yes' else 'no' end, players[i]);
   end loop;
   insert into event_responses (event_id, user_id, status, set_by) values (ev_u16, kid2, 'yes', par);
+  -- Entraînements passés : la plupart présents, quelques absents ou peut-être, les n° 19 et 20 sans réponse
+  for i in 1..18 loop
+    insert into event_responses (event_id, user_id, status, set_by) values
+      (ev_old1, players[i], case when i in (4, 11) then 'no' when i = 7 then 'maybe' else 'yes' end, players[i]),
+      (ev_old2, players[i], case when i in (4, 15, 16) then 'no' else 'yes' end, players[i]);
+  end loop;
 
   -- 5. Stratégies : une combinaison animée (3 étapes) publiée, une stratégie privée du coach
   steps := jsonb_build_array(
@@ -158,6 +169,8 @@ begin
      jsonb_build_object('id', d1, 'title', 'Croisée 10-12', 'category', 'Attaque', 'tags', '', 'settings', jsonb_build_object('field','full','orientation','landscape','stepDuration',1200), 'steps', steps)),
     (d2, coach, sen, 'Défense en rideau', 'private', null,
      jsonb_build_object('id', d2, 'title', 'Défense en rideau', 'category', 'Défense', 'tags', '', 'settings', jsonb_build_object('field','full','orientation','landscape','stepDuration',1200), 'steps', jsonb_build_array(steps->0)));
+  -- Lien public de la combinaison (page publique : partenaires du club en bas)
+  update drawings set share_token = 'test-lien-public-croisee', share_mode = 'public' where id = d1;
   for i in 2..12 loop
     insert into drawing_views (drawing_id, user_id, views, played) values (d1, players[i], 2, true);
   end loop;

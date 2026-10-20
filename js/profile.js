@@ -183,6 +183,11 @@
     }
     if (!p.bio && !facts.length && !summary(p)) body.appendChild(el('p', 'muted', 'Ce membre n’a pas encore complété son profil.'));
     E.openModal('modal-member');
+    // Présences de la saison (le staff les voit pour tout joueur, chacun pour lui-même)
+    if (window.RugbyStats && A.team()) {
+      const st = await window.RugbyStats.memberBlock(A.team().id, userId);
+      if (st) body.appendChild(st);
+    }
   }
 
   /** Photo réduite à 256 px (JPEG) pour rester légère. */

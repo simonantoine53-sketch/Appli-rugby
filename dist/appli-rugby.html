@@ -1392,6 +1392,57 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .cal-links { display: flex; flex-direction: column; gap: var(--gap); margin: 12px 0; }
 .calendar-body .help { margin: 6px 0; }
 
+/* Présences (page Équipe → Présences, fiche d'un membre) */
+.st-head { display: flex; flex-wrap: wrap; gap: var(--gap); align-items: center; justify-content: space-between; margin: 8px 0 12px; }
+.st-period { display: inline-flex; background: var(--subtle); border-radius: var(--radius-btn); padding: 3px; gap: 2px; }
+.st-period .seg { border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; padding: 0 14px; min-height: var(--tap-sm); border-radius: 8px; cursor: pointer; }
+.st-period .seg.active { background: var(--panel); color: var(--text); box-shadow: var(--shadow); }
+.st-table { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.st-row { display: grid; grid-template-columns: minmax(0, 1.6fr) 1fr 1fr 0.8fr; gap: 8px; align-items: center; padding: 10px 12px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.st-row:first-child { border-top: 0; }
+.st-row:not(.st-th):hover { background: var(--bg); }
+.st-th { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; cursor: default; }
+.st-row > span { display: flex; flex-direction: column; min-width: 0; }
+.st-row small { color: var(--muted); font-size: 12px; }
+.st-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block !important; }
+.st-rate.good { color: var(--success); }
+.st-rate.mid { color: var(--warning); }
+.st-rate.low { color: var(--danger); }
+.st-none { color: var(--warning); font-weight: 600; }
+.st-help { margin-top: 10px; }
+.st-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin: 10px 0; }
+.st-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+.st-box { display: flex; flex-direction: column; gap: 2px; }
+.st-box strong { font-size: 20px; }
+.st-box small { color: var(--muted); }
+.st-box .pres-bar { margin-top: 4px; }
+@media (max-width: 560px) {
+  .st-row { grid-template-columns: minmax(0, 1.3fr) 1fr 1fr 0.6fr; padding: 10px; font-size: 14px; }
+  .st-th { font-size: 11px; }
+}
+
+/* Partenaires du club */
+.sponsor-strip { margin: 18px 0 6px; text-align: center; }
+.sponsor-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.sponsor-logos { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 18px; }
+.sponsor-item { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; color: var(--muted); text-decoration: none; }
+.sponsor-item img { max-height: 40px; max-width: 120px; object-fit: contain; }
+a.sponsor-item:hover img { opacity: .8; }
+.sponsor-name { font-weight: 600; font-size: 14px; }
+.home-sponsors { opacity: .9; }
+.share-sponsors .sponsor-strip { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--border); }
+.sponsor-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.sponsor-row .grow { min-width: 0; display: flex; flex-direction: column; }
+.sponsor-row small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sponsor-thumb { width: 64px; height: 40px; object-fit: contain; flex: 0 0 auto; background: var(--subtle); border-radius: 6px; }
+.sponsor-thumb.empty { display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+.sponsor-form { display: flex; flex-direction: column; gap: 10px; }
+.sponsor-preview { display: flex; align-items: center; gap: 12px; }
+.sponsor-preview img { max-height: 50px; max-width: 150px; object-fit: contain; background: var(--subtle); border-radius: 6px; padding: 4px; }
+.sponsor-row { flex-wrap: wrap; }
+.sponsor-acts { margin-left: auto; flex-wrap: nowrap; }
+@media (max-width: 560px) { .sponsor-acts { width: 100%; justify-content: flex-end; } }
+
 </style>
 </head>
 <body>
@@ -1537,6 +1588,7 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
     </div>
     <p id="share-step" class="muted center"></p>
     <p id="share-error" class="library-empty hidden">Ce lien n'est plus valide ou le partage a été arrêté.</p>
+    <footer id="share-sponsors" class="share-sponsors"></footer>
   </div>
 </div>
 
@@ -2103,8 +2155,10 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '20 octobre 2026 (nouveau nom : Rugbeo)',
-    version: '2026-10-22'
+    updated: '22 octobre 2026',
+    version: '2026-10-22',
+    changes: 'abonnement à l’agenda, rappels de la veille, réponse depuis la notification'   // résumé affiché aux comptes existants
+
   };
   const $ = s => document.querySelector(s);
   const contact = () => LEGAL.email
@@ -2301,7 +2355,7 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
     e.preventDefault(); open(a.dataset.legal);
   });
 
-  window.RugbyLegal = { open, version: LEGAL.version, owner: LEGAL.owner };
+  window.RugbyLegal = { open, version: LEGAL.version, changes: LEGAL.changes, owner: LEGAL.owner };
 })();
 
 </script>
@@ -4577,6 +4631,9 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
       preview.drawing = d; preview.canvas = '#share-canvas'; preview.label = '#share-step'; preview.playBtn = '#share-play'; preview.step = 0; preview.playing = false;
       showPreviewStep(0);
       if (d.steps.length > 1) setPlaying(true);
+      // Partenaires du club de l'équipe, en bas de page
+      const foot = $('#share-sponsors'); foot.replaceChildren();
+      if (row.sponsors && row.sponsors.length && window.RugbySponsors) foot.appendChild(window.RugbySponsors.strip(row.sponsors, { title: row.club_name ? `Partenaires de ${row.club_name}` : 'Partenaires du club' }));
     });
   }
   $('#share-play').onclick = () => setPlaying(!preview.playing);
@@ -4946,7 +5003,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
     const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
     if (data && data.terms_version === L.version) return;
-    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo (mineurs, durées de conservation, vos droits). <a href="#" data-legal="privacy">Les lire</a></p>`);
+    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo${L.changes ? ` (${esc(L.changes)})` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
     bar.setAttribute('role', 'dialog');
     const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
     const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
@@ -5538,7 +5595,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
     if (seq !== teamSeq) return;
     // Onglets : Membres et Club pour tous ; les réglages de l'équipe pour le staff seulement
-    const tabList = [['members', 'Membres', pending]].concat(staff ? [['settings', 'Réglages', 0]] : [], [['club', 'Club', 0]]);
+    // Présences : toute l'équipe pour le staff, ses propres chiffres pour un joueur (ou un parent pour son jeune)
+    const plays = staff || S.team.role === 'player' || S.team.plays;
+    const tabList = [['members', 'Membres', pending]].concat(window.RugbyStats && plays ? [['stats', 'Présences', 0]] : [], staff ? [['settings', 'Réglages', 0]] : [], [['club', 'Club', 0]]);
     if (!tabList.find(([id]) => id === teamTab)) teamTab = 'members';
     const tabs = el('div', 'tabs small page-tabs');
     tabList.forEach(([id, label, n]) => {
@@ -5549,6 +5608,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     root.appendChild(tabs);
 
     if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
+    if (teamTab === 'stats') { const box = el('div', 'stats-pane'); root.appendChild(box); await window.RugbyStats.renderTab(box, S.team.id, staff); return; }
     if (teamTab === 'club') { const box = el('div', 'club-pane'); root.appendChild(box); await renderClubTab(box, seq); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
@@ -5634,6 +5694,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }));
     }
     root.appendChild(card);
+
+    // Partenaires du club (gérés par le bureau)
+    if (window.RugbySponsors) await window.RugbySponsors.manage(root, club, admin);
+    if (seq !== teamSeq) return;
 
     // Équipes du club
     const sec = el('div', 'club-section');
@@ -6644,6 +6708,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     }
     if (!p.bio && !facts.length && !summary(p)) body.appendChild(el('p', 'muted', 'Ce membre n’a pas encore complété son profil.'));
     E.openModal('modal-member');
+    // Présences de la saison (le staff les voit pour tout joueur, chacun pour lui-même)
+    if (window.RugbyStats && A.team()) {
+      const st = await window.RugbyStats.memberBlock(A.team().id, userId);
+      if (st) body.appendChild(st);
+    }
   }
 
   /** Photo réduite à 256 px (JPEG) pour rester légère. */
@@ -8164,6 +8233,255 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
 </script>
 <script>
+/* Présences : par joueur, sur la saison (début fixé par le club) ou les 30 derniers jours, entraînements et matchs séparés.
+   Taux = présent / convocations passées ; les convocations restées sans réponse sont comptées à part.
+   Le staff voit toute l'équipe (tri au choix) ; un joueur, ou le parent d'un jeune, ne voit que ses propres chiffres. */
+(function () {
+  'use strict';
+  const A = window.RugbyAccount;
+  if (!A || !A.isActive()) return;
+  const sb = A.sb;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+  const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
+
+  let period = 'season', sort = 'training';
+  const PERIODS = [['season', 'Saison'], ['30', '30 derniers jours']];
+  const SORTS = [['training', 'Présence aux entraînements'], ['match', 'Présence aux matchs'], ['unanswered', 'Sans réponse'], ['name', 'Nom']];
+
+  /** Une ligne par joueur : { id, name, training: {total, present, maybe, absent, unanswered}, match: {…} } */
+  async function load(teamId, days) {
+    const { data, error } = await sb.rpc('attendance_stats', days ? { p_team: teamId, p_days: days } : { p_team: teamId });
+    if (error) throw error;
+    const by = {};
+    (data || []).forEach(r => {
+      const p = by[r.user_id] || (by[r.user_id] = { id: r.user_id, name: r.display_name || 'Membre' });
+      p[r.kind] = r;
+    });
+    return Object.values(by);
+  }
+  const rate = s => (s && s.total ? s.present / s.total : null);
+  const pct = s => (rate(s) == null ? '—' : Math.round(rate(s) * 100) + ' %');
+  const level = s => { const r = rate(s); return r == null ? '' : r >= 0.75 ? 'good' : r >= 0.5 ? 'mid' : 'low'; };
+
+  function cell(s) {
+    if (!s || !s.total) return '<span class="muted">Aucun</span>';
+    return `<strong class="st-rate ${level(s)}">${pct(s)}</strong><small>${s.present}/${s.total}${s.maybe ? ` · ${s.maybe} peut-être` : ''}</small>`;
+  }
+  const unanswered = p => ((p.training && p.training.unanswered) || 0) + ((p.match && p.match.unanswered) || 0);
+
+  function periodTabs(onChange) {
+    const tabs = el('div', 'segmented small st-period');
+    PERIODS.forEach(([id, label]) => {
+      const b = el('button', 'seg' + (period === id ? ' active' : '')); b.type = 'button'; b.textContent = label;
+      b.setAttribute('aria-pressed', String(period === id));
+      b.onclick = () => { period = id; track('stats_period', { period: id }); onChange(); };
+      tabs.appendChild(b);
+    });
+    return tabs;
+  }
+  const days = () => (period === 'season' ? null : +period);
+
+  /** Onglet « Présences » de la page Équipe. */
+  async function renderTab(root, teamId, staff) {
+    root.replaceChildren();
+    const head = el('div', 'st-head');
+    head.appendChild(periodTabs(() => renderTab(root, teamId, staff)));
+    let sel = null;
+    if (staff) {
+      sel = el('select', 'select small'); sel.setAttribute('aria-label', 'Trier par');
+      SORTS.forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = 'Trier : ' + l.toLowerCase(); o.selected = v === sort; sel.appendChild(o); });
+      head.appendChild(sel);
+    }
+    root.appendChild(head);
+    const box = el('div', 'st-list'); root.appendChild(box);
+    box.appendChild(el('p', 'muted', 'Chargement…'));
+    let rows;
+    try { rows = await load(teamId, days()); } catch (e) { box.replaceChildren(el('p', 'muted', 'Statistiques indisponibles pour le moment.')); return; }
+    root.appendChild(el('p', 'help st-help', `${period === 'season' ? 'Depuis le début de la saison' : 'Sur les 30 derniers jours'} : matchs et entraînements passés, sans les annulés, depuis l’arrivée de chacun dans l’équipe. « Peut-être » ne compte pas comme présent ; les convocations sans réponse sont comptées à part.`));
+    const draw = () => {
+      box.replaceChildren();
+      if (!rows.length) { box.appendChild(el('p', 'muted', staff ? 'Pas encore de joueur dans l’équipe.' : 'Vous n’êtes pas convoqué dans cette équipe.')); return; }
+      const list = rows.slice();
+      const by = k => (a, b) => ((rate(b[k]) == null ? -1 : rate(b[k])) - (rate(a[k]) == null ? -1 : rate(a[k]))) || a.name.localeCompare(b.name);
+      list.sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'unanswered' ? (a, b) => unanswered(b) - unanswered(a) || a.name.localeCompare(b.name) : by(sort));
+      if (staff) {
+        const t = el('div', 'st-table');
+        t.appendChild(el('div', 'st-row st-th', '<span>Joueur</span><span>Entraînements</span><span>Matchs</span><span>Sans réponse</span>'));
+        list.forEach(p => {
+          const r = el('button', 'st-row'); r.type = 'button';
+          r.innerHTML = `<span class="st-name">${esc(p.name)}</span><span>${cell(p.training)}</span><span>${cell(p.match)}</span><span class="${unanswered(p) ? 'st-none' : 'muted'}">${unanswered(p)}</span>`;
+          r.onclick = () => window.RugbyProfile && window.RugbyProfile.viewMember && window.RugbyProfile.viewMember(p.id, 'player');
+          t.appendChild(r);
+        });
+        box.appendChild(t);
+      } else list.forEach(p => box.appendChild(card(p, rows.length > 1)));
+    };
+    if (sel) sel.onchange = () => { sort = sel.value; track('stats_sort', { sort }); draw(); };
+    draw();
+  }
+
+  /** Carte d'une personne : ses présences (fiche du membre, ou « Mes présences » d'un joueur). */
+  function card(p, named) {
+    const c = el('div', 'st-card');
+    c.appendChild(el('div', 'facts-title', named ? `Présences de ${esc(p.name.split(' ')[0])}` : 'Mes présences'));
+    const grid = el('div', 'st-grid');
+    [['Entraînements', p.training], ['Matchs', p.match]].forEach(([label, s]) => {
+      grid.appendChild(el('div', 'st-box', `<span class="muted small">${label}</span>${cell(s)}${s && s.total ? `<div class="pres-bar"><i class="y" style="width:${100 * s.present / s.total}%"></i><i class="m" style="width:${100 * s.maybe / s.total}%"></i><i class="n" style="width:${100 * s.absent / s.total}%"></i></div>` : ''}`));
+    });
+    c.appendChild(grid);
+    const n = unanswered(p);
+    if (n) c.appendChild(el('p', 'small st-none', `${n} convocation${n > 1 ? 's' : ''} sans réponse`));
+    return c;
+  }
+
+  /** Bloc pour la fiche d'un membre (saison en cours) ; null si rien à montrer ou pas le droit de voir. */
+  async function memberBlock(teamId, userId) {
+    try {
+      const rows = await load(teamId, null);
+      const p = rows.find(r => r.id === userId);
+      if (!p || (!(p.training && p.training.total) && !(p.match && p.match.total))) return null;
+      const c = card(p, false);
+      c.querySelector('.facts-title').textContent = 'Présences cette saison';
+      return c;
+    } catch (e) { return null; }
+  }
+
+  window.RugbyStats = { renderTab, memberBlock };
+})();
+
+</script>
+<script>
+/* Partenaires du club : nom, logo, lien, ordre d'affichage. Gérés par le bureau du club (et le super-admin).
+   Affichés : bloc discret sur l'accueil de l'équipe et bas de page des liens publics (pas sur la feuille de match). */
+(function () {
+  'use strict';
+  const A = window.RugbyAccount;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+  const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.type = 'button'; b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(b); }; return b; };
+  const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
+  const safeUrl = u => (/^https?:\/\/[^\s]+$/i.test(u || '') ? u : null);
+
+  /** Bandeau de logos (ou de noms sans logo), cliquables quand il y a un lien. */
+  function strip(list, opts) {
+    const o = opts || {};
+    const box = el('div', 'sponsor-strip' + (o.cls ? ' ' + o.cls : ''));
+    if (o.title !== false) box.appendChild(el('div', 'sponsor-title', esc(o.title || 'Nos partenaires')));
+    const row = el('div', 'sponsor-logos');
+    (list || []).forEach(s => {
+      const url = safeUrl(s.url);
+      const item = el(url && !o.print ? 'a' : 'span', 'sponsor-item');
+      if (url && !o.print) { item.href = url; item.target = '_blank'; item.rel = 'noopener sponsored'; item.title = s.name; }
+      if (s.logo) { const img = el('img'); img.src = s.logo; img.alt = s.name; img.loading = 'lazy'; item.appendChild(img); }
+      else item.appendChild(el('span', 'sponsor-name', esc(s.name)));
+      row.appendChild(item);
+    });
+    box.appendChild(row);
+    return box;
+  }
+
+  const cache = {};
+  async function load(clubId, fresh) {
+    if (!clubId || !A || !A.isActive()) return [];
+    if (!fresh && cache[clubId] && Date.now() - cache[clubId].at < 5 * 60e3) return cache[clubId].list;
+    const { data, error } = await A.sb.from('club_sponsors').select('id, name, logo, url, position, created_at').eq('club_id', clubId).order('position').order('created_at');
+    if (error) return [];
+    cache[clubId] = { at: Date.now(), list: data || [] };
+    return cache[clubId].list;
+  }
+
+  /** Logo réduit (300 × 150 au plus) : PNG pour garder la transparence, JPEG sur fond blanc si c'est trop lourd. */
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const k = Math.min(1, 300 / img.width, 150 / img.height);
+        const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+        const g = c.getContext('2d'); g.drawImage(img, 0, 0, c.width, c.height);
+        let out = c.toDataURL('image/png');
+        if (out.length > 190000) { const w = document.createElement('canvas'); w.width = c.width; w.height = c.height; const h = w.getContext('2d'); h.fillStyle = '#fff'; h.fillRect(0, 0, w.width, w.height); h.drawImage(c, 0, 0); out = w.toDataURL('image/jpeg', 0.85); }
+        URL.revokeObjectURL(url); resolve(out);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image illisible')); };
+      img.src = url;
+    });
+  }
+
+  /** Onglet Club : la liste des partenaires ; le bureau ajoute, modifie, réordonne, retire. */
+  async function manage(root, club, admin) {
+    const E = window.RugbyEditor, sb = A.sb;
+    const sec = el('div', 'club-section sponsor-admin');
+    root.appendChild(sec);
+    const draw = async fresh => {
+      const list = await load(club.id, fresh);
+      sec.replaceChildren();
+      const head = el('div', 'members-head', `<span class="muted">${list.length ? `${list.length} partenaire${list.length > 1 ? 's' : ''}` : 'Partenaires du club'}</span>`);
+      if (admin) head.appendChild(btn('+ Ajouter un partenaire', 'outline small', () => form(null)));
+      sec.appendChild(head);
+      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Les logos de vos partenaires s’affichent sur l’accueil des équipes et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
+      list.forEach((s, i) => {
+        const row = el('div', 'sponsor-row');
+        row.appendChild(s.logo ? Object.assign(el('img', 'sponsor-thumb'), { src: s.logo, alt: '' }) : el('div', 'sponsor-thumb empty', esc(s.name.slice(0, 1).toUpperCase())));
+        row.appendChild(el('div', 'grow', `<strong>${esc(s.name)}</strong>${safeUrl(s.url) ? `<small>${esc(s.url.replace(/^https?:\/\//, ''))}</small>` : ''}`));
+        if (admin) {
+          const acts = el('div', 'row-wrap sponsor-acts');
+          const up = btn('↑', 'ghost small icon-only', () => move(list, i, -1)); up.disabled = i === 0; up.setAttribute('aria-label', 'Monter ' + s.name);
+          const down = btn('↓', 'ghost small icon-only', () => move(list, i, 1)); down.disabled = i === list.length - 1; down.setAttribute('aria-label', 'Descendre ' + s.name);
+          acts.append(up, down, btn('Modifier', 'outline small', () => form(s)), btn('Retirer', 'ghost small danger', async () => {
+            if (!await window.RugbyDialog.confirm(`Retirer « ${s.name} » des partenaires du club ?`, { title: 'Retirer un partenaire', ok: 'Retirer', danger: true })) return;
+            const { error } = await sb.from('club_sponsors').delete().eq('id', s.id);
+            if (error) return E.toast(A.errMsg(error));
+            track('sponsor_remove'); E.toast('Partenaire retiré.'); draw(true);
+          }));
+          row.appendChild(acts);
+        }
+        sec.appendChild(row);
+      });
+    };
+    async function move(list, i, d) {
+      const order = list.slice(); const [x] = order.splice(i, 1); order.splice(i + d, 0, x);
+      const res = await Promise.all(order.map((s, k) => sb.from('club_sponsors').update({ position: k }).eq('id', s.id)));
+      if (res.some(r => r.error)) E.toast('Ordre non enregistré.');
+      track('sponsor_reorder'); draw(true);
+    }
+    function form(s) {
+      const f = el('form', 'form sponsor-form');
+      f.innerHTML = `<label>Nom<input name="name" required maxlength="80" value="${esc(s ? s.name : '')}"></label>
+        <label>Lien (facultatif)<input name="url" type="url" maxlength="300" placeholder="https://…" value="${esc(s && s.url ? s.url : '')}"></label>
+        <label>Logo (facultatif)<input name="logo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <p class="form-error"></p>`;
+      const preview = el('div', 'sponsor-preview');
+      let logo = s ? s.logo : null;
+      const showLogo = () => { preview.replaceChildren(); if (logo) { preview.appendChild(Object.assign(el('img'), { src: logo, alt: '' })); preview.appendChild(btn('Enlever le logo', 'ghost small', () => { logo = null; showLogo(); })); } };
+      showLogo();
+      f.insertBefore(preview, f.querySelector('.form-error'));
+      f.logo.onchange = async () => { const file = f.logo.files[0]; if (!file) return; try { logo = await shrink(file); showLogo(); } catch (e) { f.querySelector('.form-error').textContent = 'Image illisible : essayez un PNG ou un JPEG.'; } };
+      const acts = el('div', 'row-wrap');
+      acts.append(el('button', 'btn primary small', 'Enregistrer'), btn('Annuler', 'ghost small', () => draw()));
+      acts.firstChild.type = 'submit';
+      f.appendChild(acts);
+      f.onsubmit = async e => {
+        e.preventDefault();
+        const url = f.url.value.trim();
+        if (url && !safeUrl(url)) { f.querySelector('.form-error').textContent = 'Le lien doit commencer par https://'; return; }
+        const row = { name: f.name.value.trim(), url: url || null, logo: logo || null };
+        const list = await load(club.id);
+        const { error } = s ? await sb.from('club_sponsors').update(row).eq('id', s.id) : await sb.from('club_sponsors').insert(Object.assign(row, { club_id: club.id, position: list.length }));
+        if (error) { f.querySelector('.form-error').textContent = A.errMsg(error); return; }
+        track(s ? 'sponsor_edit' : 'sponsor_add'); E.toast(s ? 'Partenaire modifié.' : `${row.name} ajouté aux partenaires du club.`); draw(true);
+      };
+      sec.replaceChildren(el('div', 'members-head', `<span class="muted">${s ? 'Modifier le partenaire' : 'Nouveau partenaire'}</span>`), f);
+      f.name.focus();
+    }
+    await draw();
+  }
+
+  window.RugbySponsors = { strip, load, manage };
+})();
+
+</script>
+<script>
 /* Import des matchs depuis un fichier agenda (.ics), par exemple le calendrier d'une poule exporté de
    Mon Club House (FFR). Le coach choisit son club parmi les équipes de la poule, voit l'aperçu, puis importe.
    Un nouvel import du même calendrier met à jour les matchs déjà importés (identifiés par leur UID). */
@@ -9562,6 +9880,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     slot.appendChild(todo(d, notifOn, staff));
     kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
+    // Partenaires du club : bloc discret en bas de l'accueil
+    if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
     // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
     const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
     setTimeout(() => {

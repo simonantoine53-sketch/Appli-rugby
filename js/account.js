@@ -113,7 +113,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
     const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
     if (data && data.terms_version === L.version) return;
-    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo (mineurs, durées de conservation, vos droits). <a href="#" data-legal="privacy">Les lire</a></p>`);
+    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo${L.changes ? ` (${esc(L.changes)})` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
     bar.setAttribute('role', 'dialog');
     const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
     const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
@@ -705,7 +705,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (staff) { const { count } = await sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('status', 'pending'); pending = count || 0; }
     if (seq !== teamSeq) return;
     // Onglets : Membres et Club pour tous ; les réglages de l'équipe pour le staff seulement
-    const tabList = [['members', 'Membres', pending]].concat(staff ? [['settings', 'Réglages', 0]] : [], [['club', 'Club', 0]]);
+    // Présences : toute l'équipe pour le staff, ses propres chiffres pour un joueur (ou un parent pour son jeune)
+    const plays = staff || S.team.role === 'player' || S.team.plays;
+    const tabList = [['members', 'Membres', pending]].concat(window.RugbyStats && plays ? [['stats', 'Présences', 0]] : [], staff ? [['settings', 'Réglages', 0]] : [], [['club', 'Club', 0]]);
     if (!tabList.find(([id]) => id === teamTab)) teamTab = 'members';
     const tabs = el('div', 'tabs small page-tabs');
     tabList.forEach(([id, label, n]) => {
@@ -716,6 +718,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     root.appendChild(tabs);
 
     if (teamTab === 'settings') { root.appendChild(teamSettings(staff)); return; }
+    if (teamTab === 'stats') { const box = el('div', 'stats-pane'); root.appendChild(box); await window.RugbyStats.renderTab(box, S.team.id, staff); return; }
     if (teamTab === 'club') { const box = el('div', 'club-pane'); root.appendChild(box); await renderClubTab(box, seq); return; }
     const list = el('div', 'member-list');
     root.appendChild(list);
@@ -801,6 +804,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }));
     }
     root.appendChild(card);
+
+    // Partenaires du club (gérés par le bureau)
+    if (window.RugbySponsors) await window.RugbySponsors.manage(root, club, admin);
+    if (seq !== teamSeq) return;
 
     // Équipes du club
     const sec = el('div', 'club-section');
