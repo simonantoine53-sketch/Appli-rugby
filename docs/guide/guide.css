@@ -1,0 +1,81 @@
+/* Guide d'utilisation Rugbeo : mise en page A4 imprimable.
+   Couleurs : docs/charte-couleurs.md (mêmes valeurs que l'appli). */
+:root {
+  --bg: #f4f6f8; --panel: #ffffff; --subtle: #f1f3f5; --border: #e3e6ea; --border-strong: #c9cdd2;
+  --text: #1f2933; --muted: #6b7280;
+  --primary: #1a73e8; --primary-dark: #1558b8; --primary-soft: #e8f0fe;
+  --success: #2e7d32; --success-soft: #e3f2e6; --warning: #b34d00; --warning-soft: #fff3e0;
+  --danger: #c62828; --danger-soft: #fdecea; --match: #6a1b9a; --match-soft: #f3e5f5;
+  --field: #4a9e4f;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+}
+@page { size: A4; margin: 16mm 15mm 16mm; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10.5pt; line-height: 1.5; }
+.doc { max-width: 180mm; margin: 0 auto; background: var(--panel); padding: 14mm 15mm; }
+@media print { html, body { background: none; } .doc { max-width: none; padding: 0; } }
+
+/* Couverture */
+.cover { min-height: 250mm; display: flex; flex-direction: column; justify-content: center; gap: 6mm; break-after: page; }
+.cover .brand { display: flex; align-items: center; gap: 5mm; }
+.cover img { width: 22mm; height: 22mm; border-radius: 5mm; }
+.cover h1 { margin: 0; font-size: 40pt; line-height: 1; }
+.cover .sub { margin: 2mm 0 0; font-size: 14pt; color: var(--muted); }
+.cover .title { margin: 14mm 0 0; font-size: 24pt; font-weight: 800; line-height: 1.2; }
+.cover .lead { font-size: 12pt; max-width: 130mm; color: var(--muted); }
+.cover .slogan { margin-top: auto; font-weight: 700; border-left: 1.2mm solid var(--field); padding-left: 3mm; }
+
+/* Sommaire */
+.toc { break-after: page; }
+.toc ol { padding-left: 6mm; font-size: 11.5pt; line-height: 1.9; }
+.toc ol ol { font-size: 10.5pt; line-height: 1.6; color: var(--muted); list-style: none; padding-left: 4mm; }
+
+/* Chapitres */
+h2 { font-size: 20pt; margin: 0 0 4mm; padding-top: 2mm; break-before: page; display: flex; align-items: center; gap: 3mm; }
+h2 .n { width: 10mm; height: 10mm; border-radius: 50%; border: .6mm solid var(--text); display: grid; place-items: center; font-size: 13pt; flex: 0 0 auto; }
+h3 { font-size: 13.5pt; margin: 7mm 0 2mm; break-after: avoid; }
+h4 { font-size: 11pt; margin: 4mm 0 1mm; break-after: avoid; }
+p { margin: 0 0 2.5mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+li { margin-bottom: 1.2mm; }
+.ui { font-weight: 700; white-space: nowrap; }                       /* nom exact d'un bouton ou d'un onglet */
+.key { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 9pt; border: .3mm solid var(--border-strong); border-radius: 1mm; padding: 0 1.2mm; background: var(--subtle); }
+.intro { font-size: 11.5pt; color: var(--muted); margin-bottom: 4mm; }
+
+/* Encadrés */
+.tip, .warn, .who { border-radius: 2.5mm; padding: 3mm 4mm; margin: 3mm 0 4mm; break-inside: avoid; }
+.tip { background: var(--primary-soft); }
+.warn { background: var(--warning-soft); }
+.who { background: var(--subtle); }
+.tip b:first-child, .warn b:first-child, .who b:first-child { display: block; margin-bottom: .5mm; }
+
+/* Étapes numérotées */
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 9mm; margin-bottom: 2.2mm; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: .2mm; width: 6mm; height: 6mm; border-radius: 50%; background: var(--text); color: var(--panel); font-size: 8.5pt; font-weight: 700; display: grid; place-items: center; }
+
+/* Captures */
+.shots { display: flex; gap: 5mm; align-items: flex-start; margin: 3mm 0 5mm; break-inside: avoid; }
+.shots figure { margin: 0; flex: 0 0 auto; }
+.shots img { display: block; border: .4mm solid var(--border-strong); border-radius: 3mm; }
+.shots .phone img { width: 48mm; }
+.shots .phone.sm img { width: 40mm; }
+.shots .wide img { width: 100%; border-radius: 2mm; }
+.shots figure.wide { flex: 1 1 auto; }
+figcaption { font-size: 8.5pt; color: var(--muted); text-align: center; margin-top: 1.2mm; }
+.side { display: grid; grid-template-columns: 1fr 48mm; gap: 6mm; align-items: start; margin: 2mm 0 4mm; }
+.side figure { margin: 0; break-inside: avoid; }
+.side img { width: 48mm; display: block; border: .4mm solid var(--border-strong); border-radius: 3mm; }
+
+/* Tableaux */
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 9.5pt; break-inside: auto; }
+th, td { border-bottom: .3mm solid var(--border); padding: 1.8mm 2mm; text-align: left; vertical-align: top; }
+th { background: var(--subtle); font-weight: 700; }
+tr { break-inside: avoid; }
+td.c, th.c { text-align: center; }
+.yes { color: var(--success); font-weight: 700; }
+.no { color: var(--muted); }
+
+.foot { margin-top: 10mm; text-align: center; color: var(--muted); font-weight: 700; }
