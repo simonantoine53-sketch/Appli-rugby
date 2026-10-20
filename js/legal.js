@@ -7,7 +7,7 @@
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
     updated: '20 octobre 2026 (nouveau nom : Rugbeo)',
-    version: '2026-10-21'
+    version: '2026-10-22'
   };
   const $ = s => document.querySelector(s);
   const contact = () => LEGAL.email
@@ -63,6 +63,7 @@
             <li><strong>Services de notification</strong> d’Apple, Google ou Mozilla, selon votre appareil : ils transmettent les notifications, dont le contenu est chiffré.</li>
           </ul>
         </li>
+        <li><strong>Votre calendrier</strong> (Google Agenda, Apple, Outlook…), seulement si vous vous abonnez à l’agenda depuis l’appli : il reçoit, par un lien secret propre à vous, les dates, lieux et adversaires des événements de vos équipes, sans nom de joueur ni réponse. Vous pouvez couper ce lien à tout moment (« Nouveau lien »).</li>
       </ul>
       <p>Aucune donnée n’est vendue, louée ou utilisée pour de la publicité.</p>
 
@@ -126,7 +127,8 @@
       <p>Votre choix est gardé 13 mois, puis l’appli vous redemande. Vous pouvez le changer à tout moment :</p>
       <p><button type="button" class="btn outline small" data-consent-open>Changer mon choix</button> <span class="muted small" data-consent-state></span></p>
       <h4>Notifications</h4>
-      <p>L’appli ne vous envoie des notifications que si vous l’acceptez, en deux temps : nous vous expliquons d’abord à quoi elles servent, puis votre appareil vous demande l’autorisation. Vous pouvez les couper à tout moment (Compte → Notifications, ou dans les réglages de votre appareil). Leur contenu est chiffré pendant le transport.</p>` },
+      <p>L’appli ne vous envoie des notifications que si vous l’acceptez, en deux temps : nous vous expliquons d’abord à quoi elles servent, puis votre appareil vous demande l’autorisation. Vous pouvez les couper à tout moment (Compte → Notifications, ou dans les réglages de votre appareil). Leur contenu est chiffré pendant le transport.</p>
+      <p>La veille d’un match ou d’un entraînement, un rappel peut vous être envoyé (réglé par le staff de l’équipe). Vous pouvez le couper pour vous (et vos jeunes) dans Compte → Réglages. Pour ne jamais envoyer deux fois le même rappel, l’appli garde la trace des rappels envoyés, effacée avec l’événement. Les boutons « Présent » et « Absent » d’une notification de convocation envoient votre réponse grâce à un code valable pour vous seul, pour cet événement et jusqu’à son début.</p>` },
 
     cgu: { tab: 'Conditions', html: () => `
       <p>Ces conditions d’utilisation s’appliquent à toute personne qui crée un compte sur Rugbeo. En créant un compte, vous les acceptez.</p>

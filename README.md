@@ -51,6 +51,13 @@ Les objets d'une étape à l'autre partagent le même `id`, ce qui permet d'anim
 
 Le choix est automatique (`js/config.js`, liste `PROD_HOSTS`). Un futur nom de domaine de production s'ajoute à cette liste ; les déploiements d'aperçu (une adresse par branche) restent sur la base de test sans retouche. Les clés « publishable » et VAPID publiques sont publiques par conception ; la clé « service » et les clés VAPID privées ne vont jamais dans le dépôt (elles sont dans la table `app_secrets` de chaque base).
 
+### Fonctions serveur (Edge Functions) sur chaque base
+
+- `push-notify` : notifications, réponse depuis la notification (jeton signé, clé `rsvp_secret`) et rappels de la veille (tâche planifiée `rappels-veille`, chaque heure à :02, clé `cron_key`). Déployée **sans vérification du jeton** (elle vérifie elle-même la connexion, le jeton de réponse ou la clé de la tâche).
+- `calendar` : flux d'agenda personnel (`…/functions/v1/calendar?t=…`, table `calendar_feeds`). Déployée sans vérification du jeton (le lien secret fait foi).
+- Après la migration 0024, sur chaque base, enregistrer l'adresse des fonctions : `insert into public.app_secrets (key, value) values ('functions_url', 'https://<projet>.supabase.co/functions/v1') on conflict (key) do update set value = excluded.value;`
+- Tester les rappels sans attendre l'heure : appeler `push-notify` avec l'en-tête `x-cron-key` et `{"at": "2026-10-21T16:10:00Z"}` (heure simulée), sur la base de test uniquement.
+
 ### Méthode de travail
 
 1. Chaque nouvelle migration (`supabase/migrations/`, numéro suivant) est d'abord appliquée et testée sur la **base de test**.
@@ -68,4 +75,5 @@ Le choix est automatique (`js/config.js`, liste `PROD_HOSTS`). Un futur nom de d
 ```bash
 python3 -m http.server 8765      # depuis la racine du dépôt
 node tests/e2e.js                # vue téléphone et ordinateur, captures dans tests/out/
+node tests/sw-unit.js            # service worker : boutons de réponse dans la notification (sans navigateur)
 ```
