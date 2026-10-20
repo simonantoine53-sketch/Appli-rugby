@@ -76,6 +76,17 @@ Priorités décidées le 8 octobre 2026. Rien ici n'est en cours : on finit d'ab
 - Synchronisation automatique : le fichier annonce un flux (SOURCE api-web.monclubhouse.ffr.fr/ical/poule/<id>) mais cette adresse renvoie « route inexistante » au 13 octobre 2026. Si la FFR l'ouvre, on pourra synchroniser chaque nuit côté serveur.
 - Plus tard : rappel automatique la veille (tâche planifiée), convocation d'une sélection pour les matchs, lien vers la compo, statistiques de présence par joueur.
 
+## Niveau club : fait le 15 au 20 octobre 2026
+- Un club regroupe plusieurs équipes (Séniors, U16, Féminines…). Code du club : on rejoint le club puis on choisit ses équipes, comme joueur ou comme coach / encadrant ; code d'équipe : demande directe pour une équipe.
+- Rôles par équipe (on peut être coach des U19 et joueur des Séniors) ; « Joue aussi » pour le staff qui est convoqué.
+- Bureau du club (Président·e, Vice-président(e), Secrétaire, Trésorier·e, Membre du bureau) : droits de coach dans toutes les équipes du club, création d'équipes, code et début de saison du club, gestion des membres.
+- Partage d'une stratégie avec une autre équipe du club : elle reçoit une copie en proposition, l'original ne change pas.
+- Demandes d'adhésion en temps réel et notifiées (au staff à la demande, à la personne quand elle est acceptée).
+
+## Confidentialité et RGPD : fait le 19 octobre 2026
+- Données hébergées en France (Paris), aucune revente, aucune publicité, aucun cookie.
+- Accord parental avant 15 ans, infos privées réservées au staff, suppression du compte par la personne, nettoyage automatique des données anciennes.
+
 ## Modèle économique (hypothèse)
 - Dessiner et prévisualiser : gratuit.
 - Enregistrer, exporter, partager, convocations : réservé aux membres d'un club (abonnement club).

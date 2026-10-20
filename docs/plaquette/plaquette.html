@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rugbeo – Plaquette A4</title>
+<style>
+  /* Couleurs : docs/charte-couleurs.md (mêmes valeurs que l'appli) */
+  :root {
+    --bg: #f4f6f8; --panel: #ffffff; --border: #e3e6ea; --border-strong: #c9cdd2;
+    --text: #1f2933; --muted: #6b7280;
+    --primary: #1a73e8; --primary-dark: #1558b8; --primary-soft: #e8f0fe;
+    --success: #2e7d32; --field: #4a9e4f;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text);
+  }
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; margin: 10mm auto; background: var(--panel); padding: 11mm 13mm 10mm; display: flex; flex-direction: column; gap: 5mm; overflow: hidden; position: relative; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  @media print { html, body { background: none; } .page { margin: 0; box-shadow: none; break-after: page; } }
+
+  /* En-tête */
+  .brand { display: flex; align-items: center; gap: 4mm; }
+  .brand img { width: 15mm; height: 15mm; border-radius: 3.5mm; }
+  .brand h1 { margin: 0; font-size: 30pt; letter-spacing: -.01em; line-height: 1; }
+  .brand .sub { margin: 1.2mm 0 0; font-size: 11pt; color: var(--muted); }
+  .slogan { margin-left: auto; text-align: right; font-size: 12pt; font-weight: 700; max-width: 62mm; line-height: 1.3; border-left: 1.2mm solid var(--field); padding-left: 3mm; }
+
+  /* Accroche */
+  .hook h2 { margin: 0 0 3mm; font-size: 18pt; line-height: 1.2; letter-spacing: -.01em; }
+  .problems { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 0 0 3.5mm; padding: 0; list-style: none; }
+  .problems li { border: .35mm solid var(--border-strong); border-radius: 3mm; padding: 3mm; font-size: 9.5pt; line-height: 1.35; }
+  .problems b { display: block; font-size: 10pt; margin-bottom: 1mm; }
+  .promise { background: var(--primary-soft); border-radius: 3mm; padding: 3.5mm 4.5mm; font-size: 11.5pt; line-height: 1.4; }
+  .promise b { color: var(--primary-dark); }
+
+  /* Fonctions */
+  .feature { display: grid; gap: 5mm; align-items: start; }
+  .feature h3 { margin: 0 0 2.5mm; font-size: 15pt; display: flex; align-items: center; gap: 2.5mm; }
+  .num { flex: 0 0 auto; width: 8mm; height: 8mm; border-radius: 50%; border: .5mm solid var(--text); display: grid; place-items: center; font-size: 11pt; font-weight: 800; }
+  .feature ul { margin: 0; padding-left: 4.5mm; font-size: 10.5pt; line-height: 1.4; }
+  .feature li { margin-bottom: 1.4mm; }
+  .phone { border: .5mm solid var(--border-strong); border-radius: 4mm; overflow: hidden; background: var(--bg); }
+  .phone img { display: block; width: 100%; }
+  .wide { border: .5mm solid var(--border-strong); border-radius: 2.5mm; overflow: hidden; }
+  .wide img { display: block; width: 100%; }
+  .cap { font-size: 8pt; color: var(--muted); margin-top: 1.2mm; text-align: center; }
+
+  .f-convoc { grid-template-columns: 1fr 37mm 37mm; }
+  .f-convoc .phone { height: 66mm; }
+  .f-strat { grid-template-columns: 1fr; }
+  .f-strat .row { display: grid; grid-template-columns: 1fr 34mm; gap: 5mm; align-items: start; }
+  .f-strat .phone { height: 58mm; }
+  .f-strat .wide { height: 56mm; }
+  .f-strat .wide img { object-fit: cover; object-position: 50% 30%; height: 100%; }
+  .f-compo, .f-team { grid-template-columns: 1fr 44mm; }
+  .f-compo .phone { height: 62mm; }
+  .f-team .phone { height: 50mm; }
+
+  /* Verso */
+  .club { border: .35mm solid var(--border-strong); border-radius: 3mm; padding: 4mm 5mm; }
+  .club h3 { margin: 0 0 2mm; font-size: 13.5pt; display: flex; gap: 2.5mm; align-items: center; }
+  .club ul { margin: 0; padding-left: 4.5mm; font-size: 10.5pt; line-height: 1.45; columns: 2; column-gap: 8mm; }
+  .club li { break-inside: avoid; margin-bottom: 1.2mm; }
+  .why h3 { margin: 0 0 3mm; font-size: 13.5pt; }
+  .why-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; }
+  .why-grid div { border-top: 1mm solid var(--field); padding-top: 2.5mm; font-size: 9.5pt; line-height: 1.35; }
+  .why-grid b { display: block; font-size: 10.5pt; margin-bottom: 1mm; }
+  .cta { margin-top: auto; display: flex; align-items: center; gap: 6mm; background: var(--text); color: var(--panel); border-radius: 3.5mm; padding: 4mm 6mm; }
+  .cta h3 { margin: 0 0 1.5mm; font-size: 16pt; }
+  .cta p { margin: 0; font-size: 11pt; }
+  .cta .link { font-weight: 700; font-size: 12pt; margin-top: 1.5mm; }
+  .qr { margin-left: auto; width: 27mm; height: 27mm; flex: 0 0 auto; background: var(--panel); color: var(--muted); border-radius: 2mm; display: grid; place-items: center; text-align: center; font-size: 7.5pt; padding: 2mm; }
+  .foot { text-align: center; font-size: 10pt; font-weight: 700; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ============ RECTO ============ -->
+<section class="page">
+  <header class="brand">
+    <img src="captures/logo.png" alt="">
+    <div><h1>Rugbeo</h1><p class="sub">L’appli des clubs de rugby</p></div>
+    <p class="slogan">De la convoc’ au maillot, Rugbeo.</p>
+  </header>
+
+  <div class="hook">
+    <h2>Votre club tient sur quatre outils.<br>Il pourrait tenir dans une seule appli.</h2>
+    <ul class="problems">
+      <li><b>Les convocations</b>se perdent dans les groupes WhatsApp.</li>
+      <li><b>Les compos</b>se font sur Excel.</li>
+      <li><b>La feuille de match</b>se remplit à la main.</li>
+      <li><b>La combinaison</b>dessinée au tableau est oubliée au match.</li>
+    </ul>
+    <p class="promise">Avec <b>Rugbeo</b>, tout le club est dans une seule appli : <b>l’agenda, les stratégies, les compos et l’équipe</b>. Sur le téléphone de chacun, sans rien de compliqué à installer.</p>
+  </div>
+
+  <div class="feature f-convoc">
+    <div>
+      <h3><span class="num">1</span>La convoc’</h3>
+      <ul>
+        <li>Chaque joueur répond <b>Présent, Peut-être ou Absent en un appui</b>.</li>
+        <li>Vous voyez tout de suite qui vient, et vous <b>relancez seulement ceux qui n’ont pas répondu</b>.</li>
+        <li>Les matchs de la saison s’importent depuis <b>Mon Club House (FFR)</b>. Les entraînements se répètent chaque semaine.</li>
+      </ul>
+    </div>
+    <div><div class="phone"><img src="captures/joueur-accueil.jpg" alt="Accueil d’un joueur : Présent, Peut-être, Absent"></div><p class="cap">L’accueil du joueur</p></div>
+    <div><div class="phone"><img src="captures/match-detail.jpg" alt="Détail d’un match : qui vient"></div><p class="cap">Qui vient au match</p></div>
+  </div>
+
+  <div class="feature f-strat">
+    <h3><span class="num">2</span>Les stratégies</h3>
+    <div class="row">
+      <div>
+        <div class="wide"><img src="captures/editeur.jpg" alt="L’éditeur de stratégies"></div>
+        <ul style="margin-top:3mm">
+          <li>Dessinez vos combinaisons sur un vrai terrain de rugby, <b>étape par étape</b>.</li>
+          <li>Les joueurs les voient <b>s’animer</b> sur leur téléphone avant le match.</li>
+          <li>Vous savez <b>qui les a regardées</b>, et vous relancez les autres d’un appui.</li>
+        </ul>
+      </div>
+      <div><div class="phone"><img src="captures/qui-a-vu.jpg" alt="Qui a vu la stratégie"></div><p class="cap">Qui a vu</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VERSO ============ -->
+<section class="page">
+  <div class="feature f-compo">
+    <div>
+      <h3><span class="num">3</span>La compo et la feuille de match</h3>
+      <ul>
+        <li>Composez l’équipe à partir des <b>joueurs présents</b>.</li>
+        <li>Une feuille de match <b>aux couleurs du club</b> (logo, couleurs), prête à imprimer.</li>
+        <li>Imprimez-la, gardez-la en <b>PDF</b> ou envoyez-la <b>en image sur WhatsApp</b>.</li>
+        <li>Dès la publication, chaque joueur sait qu’il est « n°12 ».</li>
+      </ul>
+    </div>
+    <div><div class="phone"><img src="captures/joueur-compo.jpg" alt="Feuille de match publiée"></div><p class="cap">La feuille de match publiée</p></div>
+  </div>
+
+  <div class="feature f-team">
+    <div>
+      <h3><span class="num">4</span>L’équipe et le maillot</h3>
+      <ul>
+        <li>Chaque joueur a son profil : <b>photo, postes, numéro</b>.</li>
+        <li>Les coachs ont le téléphone et le contact d’urgence ; <b>les autres membres ne les voient pas</b>.</li>
+        <li>Des <b>notifications</b> préviennent de chaque convocation, compo et nouvelle stratégie.</li>
+      </ul>
+    </div>
+    <div><div class="phone"><img src="captures/coach-equipe.jpg" alt="Les membres de l’équipe"></div><p class="cap">L’équipe</p></div>
+  </div>
+
+  <div class="club">
+    <h3><span class="num">5</span>Tout le club, pas seulement une équipe</h3>
+    <ul>
+      <li>Toutes les équipes du club dans la même appli : Séniors, jeunes, féminines…</li>
+      <li>Un seul code pour rejoindre le club ; chacun choisit ses équipes.</li>
+      <li>Le bureau (présidente, secrétaire…) gère toutes les équipes.</li>
+      <li>Une stratégie peut être partagée avec une autre équipe du club.</li>
+    </ul>
+  </div>
+
+  <div class="why">
+    <h3>Pourquoi Rugbeo plutôt qu’une appli généraliste ?</h3>
+    <div class="why-grid">
+      <div><b>Pensée pour le rugby</b>Terrain de rugby, postes du XV, feuille de match prête à imprimer.</div>
+      <div><b>Données en France</b>Hébergées en France, jamais revendues.</div>
+      <div><b>Respecte le RGPD</b>Et protège les mineurs.</div>
+      <div><b>Sans publicité</b>Rien ne vient distraire vos joueurs.</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div>
+      <h3>Essayez Rugbeo gratuitement</h3>
+      <p>Créez votre compte en une minute, depuis votre téléphone.</p>
+      <p class="link">[lien de l’appli]</p>
+    </div>
+    <div class="qr">[QR code vers le lien de l’appli]</div>
+  </div>
+  <p class="foot">De la convoc’ au maillot, Rugbeo.</p>
+</section>
+
+</body>
+</html>

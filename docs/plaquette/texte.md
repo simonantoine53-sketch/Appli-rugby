@@ -2,7 +2,7 @@
 
 Cible : présidents, coachs, dirigeants bénévoles de clubs amateurs. Lecture en 30 secondes.
 Formats : A4 recto-verso (PDF) + image verticale pour WhatsApp (PNG).
-Les [crochets] sont des emplacements à remplir, rien n'est inventé.
+Validé le 20/10 : accroche « quatre outils », RGPD en une ligne, niveau club ajouté ; démo, tarif et témoignage retirés pour l'instant.
 
 ---
 
@@ -42,7 +42,7 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 
 **③ Les compos et la feuille de match** : *capture : feuille de match*
 - Composez l'équipe à partir des joueurs présents.
-- Feuille de match **aux couleurs du club** (logo, couleurs), sur le modèle de la feuille papier.
+- Feuille de match **aux couleurs du club** (logo, couleurs), prête à imprimer.
 - Imprimez-la, gardez-la en PDF ou envoyez-la **en image sur WhatsApp**.
 - Chaque joueur sait qu'il est « n°12 » dès la publication.
 
@@ -51,25 +51,20 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 - Les coachs ont les numéros utiles et le contact d'urgence ; les autres membres ne les voient pas.
 - Les **notifications** préviennent de chaque convocation, compo et nouvelle stratégie.
 
+**⑤ Tout le club, pas seulement une équipe** *(sans capture, ou petite capture de l'onglet Club)*
+- Toutes les équipes du club dans la même appli : Séniors, jeunes, féminines…
+- Un seul code pour rejoindre le club ; chacun choisit ses équipes.
+- Le bureau (présidente, secrétaire…) gère toutes les équipes.
+- Une stratégie peut être partagée avec une autre équipe du club.
+
 ### 3. Pourquoi Rugbeo plutôt qu'une appli généraliste
-- **Pensée pour le rugby** : terrain de rugby, postes du XV, feuille de match du rugby amateur.
-- **Données hébergées en France**, jamais revendues.
-- **Pensée pour respecter le RGPD et protéger les mineurs** : accord parental avant 15 ans, infos privées réservées au staff.
-- **Sans publicité.**
+- **Pensée pour le rugby** : terrain de rugby, postes du XV, feuille de match prête à imprimer.
+- **Données hébergées en France**, jamais revendues. **Sans publicité.**
+- **Respecte le RGPD** et protège les mineurs.
 
-### 4. Tarif fondateur
-**Tarif fondateur : [XX € / an par club]**
-Toutes les équipes du club, tous les membres.
-Prix garanti [X ans] pour les premiers clubs.
-
-### 5. Témoignage
-« [Citation du coach ou du président du club partenaire] »
-[Prénom Nom], [fonction], [club]
-
-### 6. Passez à l'action
-**Demandez une démo** ou **essayez gratuitement**.
-[e-mail] · [téléphone] · [lien de l'appli]
-[QR code vers le lien de l'appli]
+### 4. Essayez Rugbeo
+**Essayez gratuitement** : [lien de l'appli]
+[QR code vers le lien]
 
 *De la convoc' au maillot, Rugbeo.*
 
@@ -82,8 +77,7 @@ Version courte, lisible sur un téléphone :
 2. « Moins de WhatsApp, plus de terrain. » *(accroche de réserve, ou le slogan)*
 3. Les 4 étapes avec une capture chacune : La convoc' → Les stratégies → La compo → Le maillot
 4. Données en France · Sans pub · Pensée pour le rugby
-5. Tarif fondateur [XX € / an par club]
-6. Demandez une démo : [téléphone] · [lien]
+5. Essayez gratuitement : [lien]
 
 ## Accroches de réserve
 - Haut de plaquette, à la place de « Votre club tient sur quatre outils… » : **« Moins de WhatsApp, plus de terrain. »**
@@ -92,6 +86,6 @@ Version courte, lisible sur un téléphone :
 ---
 
 ## Captures prévues (club de démonstration, noms fictifs, aucun vrai joueur)
-- Club « RC Démo », équipe « Séniors », 20 joueurs fictifs.
+- Club « RC Démo », équipes « Séniors » et « U19 », 20 joueurs fictifs.
 - Téléphone : accueil joueur (Présent / Peut-être / Absent), détail d'un match (qui vient), « Qui a vu » une stratégie, feuille de match, page Équipe.
 - Large (ordinateur) : éditeur de stratégies avec plusieurs étapes.

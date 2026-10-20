@@ -1109,7 +1109,8 @@ select:disabled { opacity: .5; cursor: default; }
 @media (max-width: 560px) {
   .member-row:has(.member-actions) { flex-wrap: wrap; }
   .member-row .member-actions { flex: 1 1 100%; padding-left: 42px; }
-  .member-row .member-actions > * { flex: 1 1 0; }
+  .member-row .member-actions { flex-wrap: wrap; }
+  .member-row .member-actions > * { flex: 1 1 auto; min-width: 88px; }
 }
 
 /* Fenêtres de dialogue : les retours à la ligne du message sont respectés */
