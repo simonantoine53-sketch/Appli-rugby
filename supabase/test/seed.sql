@@ -47,6 +47,7 @@ declare
   ev_tr2 uuid := '30000000-0000-4000-8000-000000000003';
   ev_past uuid := '30000000-0000-4000-8000-000000000004';
   ev_u16 uuid := '30000000-0000-4000-8000-000000000005';
+  ev_match2 uuid := '30000000-0000-4000-8000-000000000006';
   d1 uuid := '40000000-0000-4000-8000-000000000001';
   d2 uuid := '40000000-0000-4000-8000-000000000002';
   names text[] := array['Léo Garnier','Kevin Durand','Mathis Roux','Yanis Petit','Bastien Lambert','Florian Girard','Romain Fontaine','Maxime Chevalier',
@@ -108,7 +109,10 @@ begin
     (ev_tr2, sen, 'training', 'Entraînement', null, null, day0 + interval '3 days 19 hours 30 minutes', null, 'Stade des Tilleuls', null, coach),
     (ev_match, sen, 'match', 'Match', 'US Vallée Verte', true, day0 + interval '4 days 15 hours', day0 + interval '4 days 13 hours 30 minutes', 'Stade des Tilleuls', 'Maillots rouges, shorts blancs', coach),
     (ev_past, sen, 'match', 'Match', 'AS Les Prés', false, day0 - interval '3 days' + interval '15 hours', day0 - interval '3 days' + interval '13 hours', 'Stade municipal des Prés', null, coach),
-    (ev_u16, u16, 'training', 'Entraînement', null, null, day0 + interval '2 days 18 hours', null, 'Stade des Tilleuls, terrain 2', 'Protège-dents obligatoire', adm);
+    (ev_u16, u16, 'training', 'Entraînement', null, null, day0 + interval '2 days 18 hours', null, 'Stade des Tilleuls, terrain 2', 'Protège-dents obligatoire', adm),
+    (ev_match2, sen, 'match', 'Match', 'RC Les Collines', false, day0 + interval '11 days 15 hours', day0 + interval '11 days 12 hours 30 minutes', 'Stade des Collines', null, coach);
+  -- Second match : pas encore de compo (pour « Reprendre la compo du dernier match »), Romain Fontaine (n°7 sur la feuille) absent
+  insert into event_responses (event_id, user_id, status, comment, set_by) values (ev_match2, players[7], 'no', 'En vacances', players[7]);
   -- Match : 14 présents, 3 peut-être, 2 absents ; Léo (joueur@) n'a pas encore répondu
   for i in 2..20 loop
     insert into event_responses (event_id, user_id, status, comment, set_by) values (ev_match, players[i],

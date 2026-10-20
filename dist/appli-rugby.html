@@ -1333,6 +1333,27 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .kid-handover { margin: -4px 0 8px; }
 .kid-nudge { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--warning-soft); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
 
+/* Compos : déplacer / échanger un joueur, vider un poste, absents connus, reprendre la compo */
+.sheet-clear { flex: 0 0 auto; width: 28px; height: 28px; border: none; background: none; color: var(--muted); border-radius: 50%; cursor: pointer; font-size: 14px; }
+.sheet-clear:hover, .sheet-clear:focus-visible { background: var(--danger-soft); color: var(--danger); }
+.sheet-choice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 6px 38px; padding: 8px 10px; border-radius: 10px; background: var(--primary-soft); font-size: 14px; }
+.sheet-choice span { flex: 1 1 100%; }
+.sheet-row.is-absent input { border-color: var(--danger); background: var(--danger-soft); }
+.sheet-in { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.sheet-in input { flex: 1 1 auto; min-width: 0; }
+.sheet-row.is-absent .sheet-in input { padding-right: 58px; }
+.sheet-absent { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: var(--danger); background: var(--panel); border-radius: 6px; padding: 1px 5px; pointer-events: none; }
+.sheet-reuse { display: flex; justify-content: flex-start; }
+/* Feuille de match sur téléphone : boutons de repère plus petits pour laisser la place au nom */
+@media (max-width: 560px) {
+  .sheet-row { gap: 5px; }
+  .sheet-num { width: 20px; font-size: 13px; }
+  .sheet-marks { gap: 3px; }
+  .sheet-mark { width: 30px; height: 30px; font-size: 12px; }
+  .sheet-clear { width: 24px; height: 30px; }
+  .sheet-choice { margin-left: 25px; }
+}
+
 </style>
 </head>
 <body>
@@ -8117,6 +8138,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const { data } = await sb.from('event_responses').select('user_id, status').eq('event_id', eventId).eq('status', 'yes');
     return new Set((data || []).map(r => r.user_id));
   }
+  async function loadAbsent(eventId) {
+    const { data } = await sb.from('event_responses').select('user_id').eq('event_id', eventId).eq('status', 'no');
+    return new Set((data || []).map(r => r.user_id));
+  }
   /** Matchs à venir avec l'état de leur feuille (pour l'accueil). */
   async function upcoming(team) {
     if (!team) return null;
@@ -8195,9 +8220,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       track('sheet_view');
       return;
     }
-    const [members, present] = await Promise.all([loadMembers(team.id), loadPresent(ev.id)]);
+    const [members, present, absent] = await Promise.all([loadMembers(team.id), loadPresent(ev.id), loadAbsent(ev.id)]);
     if (my !== seq) return;
-    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, markButtons: [] };
+    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, absent, markButtons: [] };
     syncDoubles();
     buildEditor(root);
   }
@@ -8236,6 +8261,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       root.appendChild(call);
     }
 
+    // Reprendre la compo du match précédent (feuille vide, ou on écrase après confirmation)
+    const reuse = el('div', 'sheet-reuse');
+    reuse.appendChild(btn('Reprendre la compo du dernier match', 'outline small', () => reusePrevious()));
+    root.appendChild(reuse);
+
     // En-tête
     const top = el('div', 'sheet-card');
     top.appendChild(el('div', 'todo-head', 'En-tête'));
@@ -8267,6 +8297,42 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (published) pub.appendChild(btn('Retirer la publication', 'outline wide', () => publish(false)));
     pub.appendChild(el('p', 'muted small center', 'Les joueurs voient la feuille et leur ligne en surbrillance. Tout est enregistré automatiquement.'));
     root.appendChild(pub);
+  }
+  /** Copie la feuille du dernier match de l'équipe : seulement les joueurs encore dans l'effectif ; les absents
+      connus de la convocation du nouveau match restent visibles (ligne « Absent »). */
+  async function reusePrevious() {
+    const { ev, team, settings, sheet, members } = cur;
+    const { data: prev } = await sb.from('team_events').select('id, kind, home, opponent, title, starts_at').eq('team_id', team.id).eq('kind', 'match').lt('starts_at', ev.starts_at).order('starts_at', { ascending: false }).limit(10);
+    const ids = (prev || []).map(e => e.id);
+    const { data: sheets } = ids.length ? await sb.from('match_sheets').select('event_id, data').in('event_id', ids) : { data: [] };
+    const from = (prev || []).find(e => (sheets || []).some(x => x.event_id === e.id && x.data && x.data.squads));
+    if (!from) return E.toast('Aucune compo d’un match précédent à reprendre.');
+    const filled = settings.squads.some(q => sheet.squads[q.id].some(p => p.name));
+    const label = AG() ? AG().label(from) : from.opponent;
+    if (filled && !await window.RugbyDialog.confirm(`Remplacer cette feuille par la compo du match « ${label} » (${new Date(from.starts_at).toLocaleDateString('fr-FR')}) ?`, { title: 'Reprendre la compo', ok: 'Remplacer' })) return;
+    const old = (sheets.find(x => x.event_id === from.id) || {}).data;
+    const roster = new Map(members.map(m => [m.id, m]));
+    const auto = (settings.marks.find(m => m.auto === 'double') || {}).code;
+    let kept = 0, dropped = 0;
+    settings.squads.forEach(q => {
+      const src = (old.squads && old.squads[q.id]) || [];
+      sheet.squads[q.id] = sheet.squads[q.id].map((_, i) => {
+        const p = src[i];
+        const m = p && (p.user_id ? roster.get(p.user_id) : members.find(x => nameKey(x.name) === nameKey(p.name)));
+        if (p && p.name && !m) dropped++;
+        if (!m) return { name: '', user_id: null, marks: [] };
+        kept++;
+        return { name: m.name, user_id: m.id, marks: (p.marks || []).filter(c => c !== auto) };
+      });
+    });
+    Object.assign(sheet.values, old.values || {});
+    if (old.squadValues) Object.keys(sheet.squadValues).forEach(k => Object.assign(sheet.squadValues[k], old.squadValues[k] || {}));
+    syncDoubles();
+    clearTimeout(saveTimer); await saveSheet();
+    track('sheet_reuse', { kept, dropped });
+    const abs = settings.squads.reduce((n, q) => n + sheet.squads[q.id].filter(p => p.user_id && cur.absent.has(p.user_id)).length, 0);
+    E.toast(`Compo du match « ${label} » reprise : ${kept} joueur${kept > 1 ? 's' : ''}${dropped ? `, ${dropped} plus dans l’effectif retiré${dropped > 1 ? 's' : ''}` : ''}${abs ? `. ${abs} absent${abs > 1 ? 's' : ''} pour ce match (surligné${abs > 1 ? 's' : ''})` : ''}.`);
+    E.refreshView();
   }
   function field(label, value, onChange, type, list) {
     const l = el('label', 'sheet-field');
@@ -8310,22 +8376,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       r.appendChild(el('span', 'sheet-num', String(i + 1)));
       const inp = el('input'); inp.value = p.name || ''; inp.maxLength = 40; inp.setAttribute('list', listId);
       inp.placeholder = settings.showPositions && i < 15 ? POSITIONS[i] : i >= 15 ? 'Remplaçant' : 'Nom';
-      let prev = p.name || '';
-      inp.onfocus = () => { prev = p.name || ''; };
+      let prev = p.name || '', prevState = null;
+      inp.onfocus = () => { prev = p.name || ''; prevState = { name: p.name, user_id: p.user_id, marks: p.marks.slice() }; };
       inp.oninput = () => { setName(p, inp.value); refresh(); syncDoubles(); queueSave(); };
       inp.onchange = () => {
         const k = keyOf(p), other = k ? list.findIndex(x => x !== p && keyOf(x) === k) : -1;
         if (other >= 0) {
-          // Doublon dans la même équipe : on refuse et on remet l'ancien nom
-          E.toast(`${list[other].name} est déjà dans ${q.label} (n° ${other + 1}).`);
-          inp.value = prev; setName(p, prev); refresh(); syncDoubles(); queueSave(); return;
+          // Joueur déjà placé dans cette équipe : on propose de le déplacer ici ou d'échanger les deux places
+          askMove(r, i, other, prevState || { name: '', user_id: null, marks: [] });
+          return;
         }
         const m = p.user_id && members.find(x => x.id === p.user_id);
         if (m && inp.value !== m.name) { inp.value = p.name = m.name; queueSave(); }   // « simon a » → « Simon A. »
         prev = p.name;
       };
       inputs.push({ p, inp });
-      r.appendChild(inp);
+      // Absent connu de la convocation : ligne en rouge, étiquette dans le champ (sans réduire le nom)
+      const wrap = el('span', 'sheet-in'); wrap.appendChild(inp);
+      if (p.user_id && cur.absent.has(p.user_id)) { r.classList.add('is-absent'); wrap.appendChild(el('span', 'sheet-absent', 'Absent')); inp.title = 'Absent pour ce match'; }
+      r.appendChild(wrap);
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
@@ -8336,8 +8405,33 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         marks.appendChild(b);
       });
       r.appendChild(marks);
+      // Vider le poste
+      if (p.name) {
+        const x = el('button', 'sheet-clear', '✕'); x.type = 'button'; x.title = 'Retirer ce joueur du poste'; x.setAttribute('aria-label', `Retirer ${p.name} du n° ${i + 1}`);
+        x.onclick = () => { Object.assign(p, { name: '', user_id: null, marks: [] }); syncDoubles(); queueSave(); redraw(); };
+        r.appendChild(x);
+      }
       rows.appendChild(r);
     });
+    // Redessine cette équipe sur place (après un déplacement, un échange ou un poste vidé)
+    function redraw() { const fresh = squadCard(q); card.replaceWith(fresh); }
+    /** Choix sous la ligne : « Déplacer ici » (l'ancien poste se vide) ou « Échanger » (le joueur remplacé prend l'ancien poste). */
+    function askMove(row, i, other, before) {
+      document.querySelectorAll('.sheet-choice').forEach(x => x.remove());
+      const p = list[i], o = list[other];
+      const box = el('div', 'sheet-choice', `<span><b>${esc(o.name)}</b> est déjà n° ${other + 1}.</span>`);
+      const cancel = () => { Object.assign(p, before); box.remove(); redraw(); };
+      box.appendChild(btn('Déplacer ici', 'primary small', () => {
+        p.marks = o.marks.slice(); Object.assign(o, { name: '', user_id: null, marks: [] });
+        syncDoubles(); queueSave(); redraw(); E.toast(`${p.name} passe au n° ${i + 1}.`);
+      }));
+      if (before.name) box.appendChild(btn('Échanger', 'outline small', () => {
+        const marks = o.marks.slice(); Object.assign(o, { name: before.name, user_id: before.user_id, marks: before.marks.slice() }); p.marks = marks;
+        syncDoubles(); queueSave(); redraw(); E.toast(`${p.name} et ${o.name} ont échangé leurs places.`);
+      }));
+      box.appendChild(btn('Annuler', 'ghost small', cancel));
+      row.after(box);
+    }
     card.appendChild(rows);
     refresh();
     if (settings.squadFields.length) {

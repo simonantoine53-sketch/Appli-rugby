@@ -1317,3 +1317,24 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .club-ffr { display: inline-block; margin: 2px 0 8px; font-weight: 600; }
 .kid-handover { margin: -4px 0 8px; }
 .kid-nudge { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--warning-soft); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+
+/* Compos : déplacer / échanger un joueur, vider un poste, absents connus, reprendre la compo */
+.sheet-clear { flex: 0 0 auto; width: 28px; height: 28px; border: none; background: none; color: var(--muted); border-radius: 50%; cursor: pointer; font-size: 14px; }
+.sheet-clear:hover, .sheet-clear:focus-visible { background: var(--danger-soft); color: var(--danger); }
+.sheet-choice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 6px 38px; padding: 8px 10px; border-radius: 10px; background: var(--primary-soft); font-size: 14px; }
+.sheet-choice span { flex: 1 1 100%; }
+.sheet-row.is-absent input { border-color: var(--danger); background: var(--danger-soft); }
+.sheet-in { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.sheet-in input { flex: 1 1 auto; min-width: 0; }
+.sheet-row.is-absent .sheet-in input { padding-right: 58px; }
+.sheet-absent { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: var(--danger); background: var(--panel); border-radius: 6px; padding: 1px 5px; pointer-events: none; }
+.sheet-reuse { display: flex; justify-content: flex-start; }
+/* Feuille de match sur téléphone : boutons de repère plus petits pour laisser la place au nom */
+@media (max-width: 560px) {
+  .sheet-row { gap: 5px; }
+  .sheet-num { width: 20px; font-size: 13px; }
+  .sheet-marks { gap: 3px; }
+  .sheet-mark { width: 30px; height: 30px; font-size: 12px; }
+  .sheet-clear { width: 24px; height: 30px; }
+  .sheet-choice { margin-left: 25px; }
+}

@@ -266,6 +266,10 @@
     const { data } = await sb.from('event_responses').select('user_id, status').eq('event_id', eventId).eq('status', 'yes');
     return new Set((data || []).map(r => r.user_id));
   }
+  async function loadAbsent(eventId) {
+    const { data } = await sb.from('event_responses').select('user_id').eq('event_id', eventId).eq('status', 'no');
+    return new Set((data || []).map(r => r.user_id));
+  }
   /** Matchs à venir avec l'état de leur feuille (pour l'accueil). */
   async function upcoming(team) {
     if (!team) return null;
@@ -344,9 +348,9 @@
       track('sheet_view');
       return;
     }
-    const [members, present] = await Promise.all([loadMembers(team.id), loadPresent(ev.id)]);
+    const [members, present, absent] = await Promise.all([loadMembers(team.id), loadPresent(ev.id), loadAbsent(ev.id)]);
     if (my !== seq) return;
-    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, markButtons: [] };
+    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, absent, markButtons: [] };
     syncDoubles();
     buildEditor(root);
   }
@@ -385,6 +389,11 @@
       root.appendChild(call);
     }
 
+    // Reprendre la compo du match précédent (feuille vide, ou on écrase après confirmation)
+    const reuse = el('div', 'sheet-reuse');
+    reuse.appendChild(btn('Reprendre la compo du dernier match', 'outline small', () => reusePrevious()));
+    root.appendChild(reuse);
+
     // En-tête
     const top = el('div', 'sheet-card');
     top.appendChild(el('div', 'todo-head', 'En-tête'));
@@ -416,6 +425,42 @@
     if (published) pub.appendChild(btn('Retirer la publication', 'outline wide', () => publish(false)));
     pub.appendChild(el('p', 'muted small center', 'Les joueurs voient la feuille et leur ligne en surbrillance. Tout est enregistré automatiquement.'));
     root.appendChild(pub);
+  }
+  /** Copie la feuille du dernier match de l'équipe : seulement les joueurs encore dans l'effectif ; les absents
+      connus de la convocation du nouveau match restent visibles (ligne « Absent »). */
+  async function reusePrevious() {
+    const { ev, team, settings, sheet, members } = cur;
+    const { data: prev } = await sb.from('team_events').select('id, kind, home, opponent, title, starts_at').eq('team_id', team.id).eq('kind', 'match').lt('starts_at', ev.starts_at).order('starts_at', { ascending: false }).limit(10);
+    const ids = (prev || []).map(e => e.id);
+    const { data: sheets } = ids.length ? await sb.from('match_sheets').select('event_id, data').in('event_id', ids) : { data: [] };
+    const from = (prev || []).find(e => (sheets || []).some(x => x.event_id === e.id && x.data && x.data.squads));
+    if (!from) return E.toast('Aucune compo d’un match précédent à reprendre.');
+    const filled = settings.squads.some(q => sheet.squads[q.id].some(p => p.name));
+    const label = AG() ? AG().label(from) : from.opponent;
+    if (filled && !await window.RugbyDialog.confirm(`Remplacer cette feuille par la compo du match « ${label} » (${new Date(from.starts_at).toLocaleDateString('fr-FR')}) ?`, { title: 'Reprendre la compo', ok: 'Remplacer' })) return;
+    const old = (sheets.find(x => x.event_id === from.id) || {}).data;
+    const roster = new Map(members.map(m => [m.id, m]));
+    const auto = (settings.marks.find(m => m.auto === 'double') || {}).code;
+    let kept = 0, dropped = 0;
+    settings.squads.forEach(q => {
+      const src = (old.squads && old.squads[q.id]) || [];
+      sheet.squads[q.id] = sheet.squads[q.id].map((_, i) => {
+        const p = src[i];
+        const m = p && (p.user_id ? roster.get(p.user_id) : members.find(x => nameKey(x.name) === nameKey(p.name)));
+        if (p && p.name && !m) dropped++;
+        if (!m) return { name: '', user_id: null, marks: [] };
+        kept++;
+        return { name: m.name, user_id: m.id, marks: (p.marks || []).filter(c => c !== auto) };
+      });
+    });
+    Object.assign(sheet.values, old.values || {});
+    if (old.squadValues) Object.keys(sheet.squadValues).forEach(k => Object.assign(sheet.squadValues[k], old.squadValues[k] || {}));
+    syncDoubles();
+    clearTimeout(saveTimer); await saveSheet();
+    track('sheet_reuse', { kept, dropped });
+    const abs = settings.squads.reduce((n, q) => n + sheet.squads[q.id].filter(p => p.user_id && cur.absent.has(p.user_id)).length, 0);
+    E.toast(`Compo du match « ${label} » reprise : ${kept} joueur${kept > 1 ? 's' : ''}${dropped ? `, ${dropped} plus dans l’effectif retiré${dropped > 1 ? 's' : ''}` : ''}${abs ? `. ${abs} absent${abs > 1 ? 's' : ''} pour ce match (surligné${abs > 1 ? 's' : ''})` : ''}.`);
+    E.refreshView();
   }
   function field(label, value, onChange, type, list) {
     const l = el('label', 'sheet-field');
@@ -459,22 +504,25 @@
       r.appendChild(el('span', 'sheet-num', String(i + 1)));
       const inp = el('input'); inp.value = p.name || ''; inp.maxLength = 40; inp.setAttribute('list', listId);
       inp.placeholder = settings.showPositions && i < 15 ? POSITIONS[i] : i >= 15 ? 'Remplaçant' : 'Nom';
-      let prev = p.name || '';
-      inp.onfocus = () => { prev = p.name || ''; };
+      let prev = p.name || '', prevState = null;
+      inp.onfocus = () => { prev = p.name || ''; prevState = { name: p.name, user_id: p.user_id, marks: p.marks.slice() }; };
       inp.oninput = () => { setName(p, inp.value); refresh(); syncDoubles(); queueSave(); };
       inp.onchange = () => {
         const k = keyOf(p), other = k ? list.findIndex(x => x !== p && keyOf(x) === k) : -1;
         if (other >= 0) {
-          // Doublon dans la même équipe : on refuse et on remet l'ancien nom
-          E.toast(`${list[other].name} est déjà dans ${q.label} (n° ${other + 1}).`);
-          inp.value = prev; setName(p, prev); refresh(); syncDoubles(); queueSave(); return;
+          // Joueur déjà placé dans cette équipe : on propose de le déplacer ici ou d'échanger les deux places
+          askMove(r, i, other, prevState || { name: '', user_id: null, marks: [] });
+          return;
         }
         const m = p.user_id && members.find(x => x.id === p.user_id);
         if (m && inp.value !== m.name) { inp.value = p.name = m.name; queueSave(); }   // « simon a » → « Simon A. »
         prev = p.name;
       };
       inputs.push({ p, inp });
-      r.appendChild(inp);
+      // Absent connu de la convocation : ligne en rouge, étiquette dans le champ (sans réduire le nom)
+      const wrap = el('span', 'sheet-in'); wrap.appendChild(inp);
+      if (p.user_id && cur.absent.has(p.user_id)) { r.classList.add('is-absent'); wrap.appendChild(el('span', 'sheet-absent', 'Absent')); inp.title = 'Absent pour ce match'; }
+      r.appendChild(wrap);
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
@@ -485,8 +533,33 @@
         marks.appendChild(b);
       });
       r.appendChild(marks);
+      // Vider le poste
+      if (p.name) {
+        const x = el('button', 'sheet-clear', '✕'); x.type = 'button'; x.title = 'Retirer ce joueur du poste'; x.setAttribute('aria-label', `Retirer ${p.name} du n° ${i + 1}`);
+        x.onclick = () => { Object.assign(p, { name: '', user_id: null, marks: [] }); syncDoubles(); queueSave(); redraw(); };
+        r.appendChild(x);
+      }
       rows.appendChild(r);
     });
+    // Redessine cette équipe sur place (après un déplacement, un échange ou un poste vidé)
+    function redraw() { const fresh = squadCard(q); card.replaceWith(fresh); }
+    /** Choix sous la ligne : « Déplacer ici » (l'ancien poste se vide) ou « Échanger » (le joueur remplacé prend l'ancien poste). */
+    function askMove(row, i, other, before) {
+      document.querySelectorAll('.sheet-choice').forEach(x => x.remove());
+      const p = list[i], o = list[other];
+      const box = el('div', 'sheet-choice', `<span><b>${esc(o.name)}</b> est déjà n° ${other + 1}.</span>`);
+      const cancel = () => { Object.assign(p, before); box.remove(); redraw(); };
+      box.appendChild(btn('Déplacer ici', 'primary small', () => {
+        p.marks = o.marks.slice(); Object.assign(o, { name: '', user_id: null, marks: [] });
+        syncDoubles(); queueSave(); redraw(); E.toast(`${p.name} passe au n° ${i + 1}.`);
+      }));
+      if (before.name) box.appendChild(btn('Échanger', 'outline small', () => {
+        const marks = o.marks.slice(); Object.assign(o, { name: before.name, user_id: before.user_id, marks: before.marks.slice() }); p.marks = marks;
+        syncDoubles(); queueSave(); redraw(); E.toast(`${p.name} et ${o.name} ont échangé leurs places.`);
+      }));
+      box.appendChild(btn('Annuler', 'ghost small', cancel));
+      row.after(box);
+    }
     card.appendChild(rows);
     refresh();
     if (settings.squadFields.length) {
