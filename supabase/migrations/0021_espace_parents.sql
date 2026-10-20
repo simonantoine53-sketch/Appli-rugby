@@ -35,6 +35,7 @@ begin
 end $$;
 drop trigger if exists profiles_protect_guardian on public.profiles;
 create trigger profiles_protect_guardian before update on public.profiles for each row execute function public.protect_guardian();
+revoke execute on function public.protect_guardian() from anon, public, authenticated;
 
 -- ---------- Fonctions d'accès : les équipes de mes jeunes comptent comme les miennes ----------
 create or replace function public.is_member(t uuid) returns boolean
@@ -274,6 +275,7 @@ begin
 end $$;
 drop trigger if exists profiles_drop_child_login on public.profiles;
 create trigger profiles_drop_child_login after delete on public.profiles for each row execute function public.drop_child_login();
+revoke execute on function public.drop_child_login() from anon, public, authenticated;
 
 create or replace function public.remove_child(p_child uuid) returns void
 language plpgsql security definer set search_path = public as $$
