@@ -65,8 +65,8 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 - **Respecte le RGPD** et protège les mineurs.
 
 ### 4. Essayez Rugbeo
-**Essayez gratuitement** : [lien de l'appli]
-[QR code vers le lien]
+**Essayez gratuitement** : simonantoine53-sketch.github.io/Appli-rugby
+QR code vers ce lien (à refaire au passage au nom de domaine)
 
 *De la convoc' au maillot, Rugbeo.*
 
