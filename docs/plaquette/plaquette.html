@@ -55,9 +55,11 @@
   .f-strat .phone { height: 58mm; }
   .f-strat .wide { height: 56mm; }
   .f-strat .wide img { object-fit: cover; object-position: 50% 30%; height: 100%; }
-  .f-compo, .f-team { grid-template-columns: 1fr 44mm; }
-  .f-compo .phone { height: 62mm; }
-  .f-team .phone { height: 50mm; }
+  .f-compo { grid-template-columns: 1fr 44mm; }
+  .f-home { grid-template-columns: 1fr 36mm 36mm; }
+  .f-home .phone { height: 54mm; }
+  .f-compo .phone { height: 58mm; }
+  
 
   /* Verso */
   .club { border: .35mm solid var(--border-strong); border-radius: 3mm; padding: 4mm 5mm; }
@@ -99,14 +101,15 @@
 
   <div class="feature f-convoc">
     <div>
-      <h3><span class="num">1</span>La convoc’</h3>
+      <h3><span class="num">1</span>L’agenda et la convoc’</h3>
       <ul>
+        <li>Tous les <b>matchs et entraînements</b> de l’équipe au même endroit : date, heure de rendez-vous, lieu, consignes.</li>
         <li>Chaque joueur répond <b>Présent, Peut-être ou Absent en un appui</b>.</li>
         <li>Vous voyez tout de suite qui vient, et vous <b>relancez seulement ceux qui n’ont pas répondu</b>.</li>
-        <li>Les matchs de la saison s’importent depuis <b>Mon Club House (FFR)</b>. Les entraînements se répètent chaque semaine.</li>
+        <li>Les matchs de la saison s’importent depuis <b>Mon Club House (FFR)</b> ; les entraînements se programment pour toute la saison.</li>
       </ul>
     </div>
-    <div><div class="phone"><img src="captures/joueur-accueil.jpg" alt="Accueil d’un joueur : Présent, Peut-être, Absent"></div><p class="cap">L’accueil du joueur</p></div>
+    <div><div class="phone"><img src="captures/joueur-agenda.jpg" alt="L’agenda : entraînements et matchs avec les réponses"></div><p class="cap">L’agenda de l’équipe</p></div>
     <div><div class="phone"><img src="captures/match-detail.jpg" alt="Détail d’un match : qui vient"></div><p class="cap">Qui vient au match</p></div>
   </div>
 
@@ -116,7 +119,7 @@
       <div>
         <div class="wide"><img src="captures/editeur.jpg" alt="L’éditeur de stratégies"></div>
         <ul style="margin-top:3mm">
-          <li>Dessinez vos combinaisons sur un vrai terrain de rugby, <b>étape par étape</b>.</li>
+          <li>Dessinez vos <b>lancements de jeu et combinaisons</b> (touche, mêlée, attaque, défense) sur un vrai terrain de rugby, <b>étape par étape</b>.</li>
           <li>Les joueurs les voient <b>s’animer</b> sur leur téléphone avant le match.</li>
           <li>Vous savez <b>qui les a regardées</b>, et vous relancez les autres d’un appui.</li>
         </ul>
@@ -130,9 +133,9 @@
 <section class="page">
   <div class="feature f-compo">
     <div>
-      <h3><span class="num">3</span>La compo et la feuille de match</h3>
+      <h3><span class="num">3</span>La feuille de match, en quelques minutes</h3>
       <ul>
-        <li>Composez l’équipe à partir des <b>joueurs présents</b>.</li>
+        <li>Composez l’équipe à partir des <b>joueurs qui ont répondu présent</b> : plus besoin de recopier les noms.</li>
         <li>Une feuille de match <b>aux couleurs du club</b> (logo, couleurs), prête à imprimer.</li>
         <li>Imprimez-la, gardez-la en <b>PDF</b> ou envoyez-la <b>en image sur WhatsApp</b>.</li>
         <li>Dès la publication, chaque joueur sait qu’il est « n°12 ».</li>
@@ -141,24 +144,26 @@
     <div><div class="phone"><img src="captures/joueur-compo.jpg" alt="Feuille de match publiée"></div><p class="cap">La feuille de match publiée</p></div>
   </div>
 
-  <div class="feature f-team">
+  <div class="feature f-home">
     <div>
-      <h3><span class="num">4</span>L’équipe et le maillot</h3>
+      <h3><span class="num">4</span>Un accueil qui fait avancer l’équipe</h3>
       <ul>
-        <li>Chaque joueur a son profil : <b>photo, postes, numéro</b>.</li>
-        <li>Les coachs ont le téléphone et le contact d’urgence ; <b>les autres membres ne les voient pas</b>.</li>
+        <li>En ouvrant l’appli, chaque joueur voit <b>ce qu’il a à faire</b> : répondre aux convocations, regarder la stratégie du week-end, découvrir sa place dans la compo.</li>
+        <li>Il répond <b>directement depuis l’accueil</b>, sans chercher.</li>
+        <li>Le coach voit d’un coup d’œil <b>qui n’a pas répondu</b> et relance en un appui.</li>
         <li>Des <b>notifications</b> préviennent de chaque convocation, compo et nouvelle stratégie.</li>
       </ul>
     </div>
-    <div><div class="phone"><img src="captures/coach-equipe.jpg" alt="Les membres de l’équipe"></div><p class="cap">L’équipe</p></div>
+    <div><div class="phone"><img src="captures/joueur-accueil.jpg" alt="Accueil d’un joueur : répondre en un appui"></div><p class="cap">Côté joueur</p></div>
+    <div><div class="phone"><img src="captures/coach-accueil.jpg" alt="Accueil du coach : relancer les joueurs sans réponse"></div><p class="cap">Côté coach</p></div>
   </div>
 
   <div class="club">
     <h3><span class="num">5</span>Tout le club, pas seulement une équipe</h3>
     <ul>
-      <li>Toutes les équipes du club dans la même appli : Séniors, jeunes, féminines…</li>
+      <li><b>Autant d’équipes que vous voulez</b> : Séniors, réserve, jeunes, féminines…</li>
       <li>Un seul code pour rejoindre le club ; chacun choisit ses équipes.</li>
-      <li>Le bureau (présidente, secrétaire…) gère toutes les équipes.</li>
+      <li>Le bureau (présidente, secrétaire…) <b>gère toutes les équipes</b> du club.</li>
       <li>Une stratégie peut être partagée avec une autre équipe du club.</li>
     </ul>
   </div>

@@ -26,13 +26,14 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 
 ### 2. Ce que Rugbeo change (dans l'ordre du slogan)
 
-**① La convoc'** : *capture : accueil joueur avec Présent / Peut-être / Absent*
+**① L'agenda et la convoc'** : *captures : agenda de l'équipe, détail d'un match*
+- Tous les matchs et entraînements de l'équipe au même endroit : date, heure de rendez-vous, lieu, consignes.
 - Chaque joueur répond **Présent, Peut-être ou Absent en un appui**.
 - Vous voyez tout de suite qui vient, et vous **relancez seulement ceux qui n'ont pas répondu**.
-- Les matchs de la saison s'importent depuis Mon Club House (FFR), et les entraînements se répètent chaque semaine.
+- Les matchs de la saison s'importent depuis Mon Club House (FFR) ; les entraînements se programment pour toute la saison.
 
-**② Les stratégies** : *capture large : l'éditeur*
-- Dessinez vos combinaisons sur un vrai terrain de rugby, **étape par étape**.
+**② Les stratégies** : *capture large : l'éditeur ; capture : « Qui a vu »*
+- Dessinez vos **lancements de jeu et combinaisons** (touche, mêlée, attaque, défense) sur un vrai terrain de rugby, étape par étape.
 - Les joueurs les voient **s'animer** sur leur téléphone avant le match.
 - Vous savez **qui les a regardées**, et vous relancez les autres d'un appui.
 
@@ -40,19 +41,20 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 
 ## VERSO
 
-**③ Les compos et la feuille de match** : *capture : feuille de match*
-- Composez l'équipe à partir des joueurs présents.
+**③ La feuille de match, en quelques minutes** : *capture : feuille de match publiée*
+- Composez l'équipe à partir des joueurs qui ont répondu présent : plus besoin de recopier les noms.
 - Feuille de match **aux couleurs du club** (logo, couleurs), prête à imprimer.
 - Imprimez-la, gardez-la en PDF ou envoyez-la **en image sur WhatsApp**.
-- Chaque joueur sait qu'il est « n°12 » dès la publication.
+- Dès la publication, chaque joueur sait qu'il est « n°12 ».
 
-**④ L'équipe et le maillot** : *capture : page Équipe ou profil*
-- Chaque joueur a son profil : photo, postes, numéro.
-- Les coachs ont les numéros utiles et le contact d'urgence ; les autres membres ne les voient pas.
-- Les **notifications** préviennent de chaque convocation, compo et nouvelle stratégie.
+**④ Un accueil qui fait avancer l'équipe** : *captures : accueil joueur, accueil coach*
+- En ouvrant l'appli, chaque joueur voit ce qu'il a à faire : répondre aux convocations, regarder la stratégie du week-end, découvrir sa place dans la compo.
+- Il répond directement depuis l'accueil, sans chercher.
+- Le coach voit d'un coup d'œil qui n'a pas répondu et relance en un appui.
+- Des notifications préviennent de chaque convocation, compo et nouvelle stratégie.
 
 **⑤ Tout le club, pas seulement une équipe** *(sans capture, ou petite capture de l'onglet Club)*
-- Toutes les équipes du club dans la même appli : Séniors, jeunes, féminines…
+- Autant d'équipes que vous voulez : Séniors, réserve, jeunes, féminines…
 - Un seul code pour rejoindre le club ; chacun choisit ses équipes.
 - Le bureau (présidente, secrétaire…) gère toutes les équipes.
 - Une stratégie peut être partagée avec une autre équipe du club.
@@ -75,7 +77,7 @@ Avec Rugbeo, tout le club est dans une seule appli : l'agenda, les stratégies, 
 Version courte, lisible sur un téléphone :
 1. Rugbeo · L'appli des clubs de rugby
 2. « Moins de WhatsApp, plus de terrain. » *(accroche de réserve, ou le slogan)*
-3. Les 4 étapes avec une capture chacune : La convoc' → Les stratégies → La compo → Le maillot
+3. Les 4 points avec une capture chacun : L'agenda et la convoc' → Les stratégies → La feuille de match → L'accueil
 4. Données en France · Sans pub · Pensée pour le rugby
 5. Essayez gratuitement : [lien]
 
