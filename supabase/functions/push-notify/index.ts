@@ -75,8 +75,8 @@ Deno.serve(async (req) => {
     const payload = JSON.stringify({
       title: kind === "published" ? `Nouvelle stratégie · ${teamName}` : kind === "reminder" ? `À regarder · ${teamName}` : `Proposition · ${teamName}`,
       body: kind === "published" ? `${who} a publié « ${drawing.title} »` : kind === "reminder" ? `${who} vous demande de regarder « ${drawing.title} »` : `${who} propose « ${drawing.title} »`,
-      // Lien direct : la stratégie s'ouvre (et s'anime pour un joueur) ; une proposition ouvre la page Équipe du coach
-      url: kind === "proposed" ? `#/team` : `#/d/${drawing.id}`,
+      // Lien direct : la stratégie s'ouvre (et s'anime pour un joueur) ; une proposition ouvre Stratégies → Propositions
+      url: kind === "proposed" ? `#/strategies/propositions` : `#/d/${drawing.id}`,
       tag: `drawing-${drawing.id}`,
     });
 

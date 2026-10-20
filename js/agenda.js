@@ -197,17 +197,21 @@
     c.appendChild(dateBlock(ev));
     const body = el('div', 'ev-body');
     const meta = el('div', 'ev-meta', `<span class="ev-kind ${ev.kind}">${KIND[ev.kind]}</span><span>${time(ev.starts_at)}${ev.meet_at ? ` · RDV ${time(ev.meet_at)}` : ''}</span>${ev.cancelled ? '<span class="ev-cancel">Annulé</span>' : ''}`);
-    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé
-    if (staff && new Date(ev.starts_at) > Date.now()) meta.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
-      if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
-      setCancelled([ev], !ev.cancelled, refresh);
-    }));
     body.appendChild(meta);
     body.appendChild(el('div', 'ev-title', esc(label(ev))));
     if (ev.location) body.appendChild(el('div', 'ev-place', esc(ev.location)));
     const mine = sum.byUser[A.user().id];
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
+    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé. En bas de la carte, discret.
+    if (staff && new Date(ev.starts_at) > Date.now()) {
+      const foot = el('div', 'ev-foot');
+      foot.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
+        if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
+        setCancelled([ev], !ev.cancelled, refresh);
+      }));
+      body.appendChild(foot);
+    }
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
     return c;

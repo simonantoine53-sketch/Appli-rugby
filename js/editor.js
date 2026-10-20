@@ -1113,7 +1113,7 @@
     if (view === 'share') { openShare(shareToken()); return; }
     if (view === 'editor') { requestAnimationFrame(fitZoom); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
-    if (view === 'strats') renderStrats();
+    if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();
     else if (view === 'admin' && window.RugbyAdmin) window.RugbyAdmin.render();
   }
