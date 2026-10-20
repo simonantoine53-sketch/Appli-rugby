@@ -84,6 +84,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     renderAccountButton();
     ready = true;
     refreshCurrentView();
+    usePendingJoin(false);
     if (window.RugbyAdmin) window.RugbyAdmin.onSession();
   }
   sb.auth.getSession().then(({ data }) => refreshSession(data.session));
@@ -367,7 +368,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (parent && !kids.length) { setAuthMsg('Indiquez le prénom et le nom du jeune.'); b.disabled = false; return; }
         if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indiquez votre prénom et votre nom.'); b.disabled = false; return; }
         if (parent && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord du parent.'); b.disabled = false; return; }
-        const meta = Object.assign({ display_name: name, terms_version: window.RugbyLegal ? window.RugbyLegal.version : '' }, parent ? { kids } : {});
+        const meta = Object.assign({ display_name: name, terms_version: window.RugbyLegal ? window.RugbyLegal.version : '' }, parent ? { kids } : {}, pendingJoin() ? { join_code: pendingJoin() } : {});
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
@@ -444,17 +445,18 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.toast(`Club « ${data.name} » créé. Code du club : ${data.join_code}`); teamTab = 'club'; E.go('team'); renderTeamPage();
   }
   /** Un seul code : celui du club (on choisit ensuite ses équipes) ou celui d'une équipe (demande directe). */
-  async function joinWithCode(code, forId) {
+  async function joinWithCode(code, forId, quiet) {
     forId = forId || S.user.id;
     const { data, error } = await sb.rpc('join_with_code', Object.assign({ p_code: code }, forArg(forId)));
     if (error) return E.toast(errMsg(error));
     if (!data || !data.kind) return E.toast('Code invalide : vérifiez-le auprès de votre club.');
     await loadTeams();
     const kid = forId !== S.user.id ? kidName(forId) : '';
-    if (data.kind === 'club') { E.toast(kid ? `${kid} entre au club « ${data.name} » !` : `Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id, forId); }
+    if (data.kind === 'club') { if (quiet) return; E.toast(kid ? `${kid} entre au club « ${data.name} » !` : `Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id, forId); }
     const t = S.teams.find(x => x.id === data.id && (x.who || S.user.id) === forId);
     if (t) { setTeam(t); E.toast(`${kid || 'Vous'} ${kid ? 'est' : 'êtes'} membre de « ${data.name} ».`); }
-    else { pushJoin('join_request', data.id, undefined, forId); E.toast(`Demande envoyée à « ${data.name} »${kid ? ' pour ' + kid : ''}. Un coach ou le bureau du club doit la valider.`); }
+    else { pushJoin('join_request', data.id, undefined, forId); if (!quiet) E.toast(`Demande envoyée à « ${data.name} »${kid ? ' pour ' + kid : ''}. Un coach ou le bureau du club doit la valider.`); }
+    if (quiet) return;
     E.go('team'); renderTeamPage();
   }
   /** Fenêtre « Quelles équipes rejoindre ? » : on coche ses équipes, comme joueur ou comme coach / encadrant. */
@@ -636,16 +638,33 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       });
       body.appendChild(seg);
     }
-    const box = el('div', 'invite-code', `<span class="muted">${forClub ? `Code du club ${esc(club.name)}` : `Code de l’équipe ${esc(t.name)}`}</span><strong>${esc(code)}</strong>`);
+    // Lien d'invitation (contient le code) : en un clic, la personne rejoint l'équipe ou le club
+    const link = joinLink(code);
+    const lk = el('div', 'invite-link', `<span class="muted">Lien d’invitation</span><a class="invite-url" href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\//, ''))}</a>`);
+    const lkActs = el('div', 'row-wrap');
+    lkActs.appendChild(btn('Copier le lien', 'primary small', () => copy(link, 'Lien copié.', 'link')));
+    if (navigator.share) lkActs.appendChild(btn('Partager', 'outline small', () => { track('invite', { channel: 'share-link' }); navigator.share({ title: 'Rugbeo', text: forClub ? `Rejoignez le club « ${club.name} » sur Rugbeo` : `Rejoignez l’équipe « ${t.name} » sur Rugbeo`, url: link }).catch(() => {}); }));
+    lkActs.appendChild(btn('QR code', 'outline small', () => showQr(link, forClub ? club.name : t.name, code, forClub)));
+    lk.appendChild(lkActs);
+    body.appendChild(lk);
+    const box = el('div', 'invite-code', `<span class="muted">${forClub ? `Code du club ${esc(club.name)}` : `Code de l’équipe ${esc(t.name)}`} (à taper si le lien ne s’ouvre pas)</span><strong>${esc(code)}</strong>`);
     box.appendChild(btn('Copier le code', 'outline small', () => copy(code, 'Code copié.', 'code')));
+    // Nouveau lien : l'ancien lien et l'ancien code ne marchent plus (staff de l'équipe, ou bureau pour le club)
+    if (forClub ? canClub : isStaff()) box.appendChild(btn('Nouveau lien', 'ghost small', async () => {
+      if (!await window.RugbyDialog.confirm(`Créer un nouveau lien ? L’ancien lien et l’ancien code (${code}) ne marcheront plus.`, { title: 'Nouveau lien d’invitation', ok: 'Nouveau lien' })) return;
+      const { data, error } = forClub ? await sb.rpc('regenerate_club_code', { p_club: club.id }) : await sb.rpc('regenerate_join_code', { p_team: t.id });
+      if (error) return E.toast(errMsg(error));
+      if (forClub) club.join_code = data; else { S.teams.forEach(x => { if (x.id === t.id) x.join_code = data; }); t.join_code = data; }
+      E.toast('Nouveau lien créé : l’ancien ne marche plus.'); shareCode(scope);
+    }));
     body.appendChild(box);
     body.appendChild(el('p', 'help invite-explain', forClub
       ? 'Avec ce code, la personne rejoint le club, puis choisit ses équipes (comme joueur ou comme coach). Chaque demande est validée par le coach de l’équipe ou le bureau.'
       : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Vous validez sa demande dans Équipe.`));
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
     msg.value = forClub
-      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}, puis choisissez vos équipes`
-      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\n1. Ouvrez ${url}\n2. Créez votre compte (gratuit)\n3. Entrez le code ${code}`;
+      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien, créez votre compte (gratuit), puis choisissez vos équipes :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`
+      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien et créez votre compte (gratuit) :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`;
     body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
@@ -673,6 +692,81 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     body.appendChild(links);
     body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
     E.openModal('modal-invite');
+  }
+  const joinLink = code => `${location.origin}${location.pathname}#/rejoindre/${encodeURIComponent(code)}`;
+  function loadQrLib() {
+    if (window.qrcode) return Promise.resolve();
+    return new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'vendor/qrcode.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  }
+  const qrSvg = text => { const q = window.qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); };
+  /** QR code du lien en grand, à montrer ou à imprimer pour le vestiaire. */
+  async function showQr(link, name, code, forClub) {
+    try { await loadQrLib(); } catch (e) { return E.toast('QR code indisponible : vérifiez la connexion.'); }
+    track('invite', { channel: 'qr' });
+    const body = $('#invite-body'); const prevNodes = [...body.childNodes];
+    body.replaceChildren();
+    const box = el('div', 'qr-box', `<div class="qr-img">${qrSvg(link)}</div><strong>${esc(name)}</strong><span class="muted">Scannez avec l’appareil photo du téléphone pour rejoindre ${forClub ? 'le club' : 'l’équipe'}. Code : ${esc(code)}</span>`);
+    body.appendChild(box);
+    const acts = el('div', 'row-wrap qr-acts');
+    acts.appendChild(btn('Imprimer pour le vestiaire', 'primary', () => printQr(link, name, code, forClub)));
+    acts.appendChild(btn('‹ Retour', 'ghost', () => body.replaceChildren(...prevNodes)));
+    body.appendChild(acts);
+  }
+  function printQr(link, name, code, forClub) {
+    const w = window.open('', '_blank');
+    if (!w) return E.toast('Autorisez les fenêtres surgissantes pour imprimer.');
+    // Page imprimée : noir sur blanc, indépendante des couleurs de l'appli
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rejoindre ${esc(name)} sur Rugbeo</title><style>
+      body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;text-align:center;margin:40px;color:#111}
+      h1{font-size:34px;margin:0 0 8px}p{font-size:18px;margin:6px 0}.qr{width:360px;height:360px;margin:24px auto}.qr svg{width:100%;height:100%}
+      .code{font-size:28px;font-weight:800;letter-spacing:.15em}.small{font-size:14px;color:#555}button{margin-top:24px;font-size:16px;padding:10px 18px}@media print{button{display:none}}
+    </style></head><body><h1>Rejoignez ${forClub ? 'le club' : 'l’équipe'} ${esc(name)}</h1><p>sur Rugbeo : convocations, stratégies et compos</p>
+    <div class="qr">${qrSvg(link)}</div><p>1. Ouvrez l’appareil photo du téléphone et visez le code.</p><p>2. Touchez le lien, puis créez votre compte (gratuit).</p>
+    <p class="small">Sans QR code : ${esc(location.origin + location.pathname)} puis le code</p><p class="code">${esc(code)}</p>
+    <button onclick="print()">Imprimer</button></body></html>`);
+    w.document.close();
+  }
+
+  /* ---------- Lien d'invitation : #/rejoindre/CODE ---------- */
+  const JOIN_KEY = 'rs-join-code';
+  let joinFromLink = false;
+  const pendingJoin = () => { try { return localStorage.getItem(JOIN_KEY) || ''; } catch (e) { return ''; } };
+  const setPendingJoin = v => { try { if (v) localStorage.setItem(JOIN_KEY, v); else localStorage.removeItem(JOIN_KEY); } catch (e) { /* ignore */ } };
+  function readJoinRoute() {
+    const m = location.hash.match(/^#\/rejoindre\/([A-Za-z0-9]{6,8})/);
+    if (!m) return;
+    setPendingJoin(m[1].toUpperCase());
+    joinFromLink = true;
+    history.replaceState(null, '', location.pathname + location.search + '#/');
+    if (ready) usePendingJoin(true);
+  }
+  window.addEventListener('hashchange', readJoinRoute);
+  readJoinRoute();
+  /** Connecté : on rejoint tout de suite. Visiteur : création de compte, le code est gardé (navigateur et compte). */
+  async function usePendingJoin(fromLink) {
+    const meta = (S.user && S.user.user_metadata) || {};
+    const code = pendingJoin() || meta.join_code || '';
+    if (!code) return;
+    if (!S.user) {
+      if (fromLink || joinFromLink) {
+        joinFromLink = false;
+        openAuth('signup');
+        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : créez votre compte (ou connectez-vous), vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
+      }
+      return;
+    }
+    setPendingJoin('');
+    $('#auth-note').classList.add('hidden');
+    if (meta.join_code) sb.auth.updateUser({ data: { join_code: null } }).catch(() => {});
+    track('join_link');
+    if (S.kids.length) {
+      // Parent : le lien vaut pour ses jeunes (chacun fait sa demande ; avec un code de club, on choisit ensuite leurs équipes)
+      for (const k of S.kids) await joinWithCode(code, k.id, true);
+      E.toast(`Demandes envoyées pour ${S.kids.map(k => k.display_name.split(' ')[0]).join(' et ')}.`);
+      E.go('home');
+      return;
+    }
+    await joinWithCode(code);
   }
   function copy(text, ok, channel) {
     track('invite', { channel });
