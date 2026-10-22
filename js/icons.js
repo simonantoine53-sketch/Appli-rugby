@@ -66,11 +66,11 @@
     icon: `<circle cx="14" cy="17" r="10" fill="#1e88e5"/><ellipse cx="24" cy="9" rx="6.5" ry="4" fill="#fff" stroke="#333" stroke-width="1.3" transform="rotate(-30 24 9)"/>` });
 
   const TOOL_GROUPS = [
-    // Joueurs d'abord : c'est ce qu'on pose en premier (test utilisateur : la section était sous le pli)
+    // Formations toutes prêtes (mêlée, touche…) en premier pour démarrer vite, puis les joueurs
+    { id: 'formations', title: 'Formations', tools: formationTools },
     { id: 'players', title: 'Joueurs', tools: playerTools },
     { id: 'shapes', title: 'Courses, passes et formes', tools: shapeTools },
-    { id: 'equip', title: 'Ballon et équipement', tools: equipTools },
-    { id: 'formations', title: 'Formations', tools: formationTools }
+    { id: 'equip', title: 'Ballon et équipement', tools: equipTools }
   ];
 
   const TOOLS = {};
