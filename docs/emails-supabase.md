@@ -17,7 +17,11 @@ Où : Supabase → Authentication → Emails → Templates. **Base de test (rugb
 
 Un même contenu s'adapte à la situation grâce aux données du compte (`.Data`, rempli à l'inscription par `js/account.js`) :
 - **Confirmation** : `kids` (un parent crée le compte de son enfant), sinon `join_code` (venu par un lien d'invitation : il rejoindra l'équipe automatiquement), sinon inscription simple.
-- **Mot de passe** : `managed` (compte d'un jeune transmis par son parent à 15 ans, voir « Lui donner son compte »), sinon mot de passe oublié.
+- **Mot de passe** : `managed` (compte d'un jeune transmis par son parent à 15 ans, voir « Lui donner son compte »), avec `first_name` et `guardian_name` (« Tom, votre compte Rugbeo est à vous · Sophie vous a transmis… », notés par `handover_child`, migration 0026) ; sinon mot de passe oublié.
+
+Les modèles sont vérifiés avec le moteur de Supabase (Go `html/template`) pour chaque situation : aucune accolade ne reste dans l'e-mail reçu.
+
+**Tests automatiques** : Brevo envoie pour de vrai depuis la base de test ; `tests/lib.js` bloque donc inscription, renvoi et mot de passe oublié pendant les tests.
 
 Ne pas modifier les morceaux `{{ … }}` : Supabase les remplit (`{{ .ConfirmationURL }}` = le lien).
 

@@ -22,6 +22,9 @@ function harness() {
     const ctx = await browser.newContext(Object.assign({ locale: 'fr-FR', timezoneId: 'Europe/Paris' }, VIEWS[view]));
     const page = await ctx.newPage();
     page.on('pageerror', e => problems.push(`[${view}] erreur JS : ${e.message}`));
+    // Aucun e-mail réel pendant les tests : inscription, renvoi et mot de passe oublié sont bloqués ici
+    // (Brevo envoie pour de vrai depuis la base de test) ; un test qui en a besoin les simule lui-même.
+    await page.route(/\/auth\/v1\/(signup|recover|resend|otp)/, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
     // Pas de visite guidée ni de demande de notifications pendant les tests
     await page.addInitScript(() => { const o = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return /^(tour-done-|push-asked-)/.test(k) ? '1' : o.call(this, k); }; });
     await page.goto(BASE + '#/');

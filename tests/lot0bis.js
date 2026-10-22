@@ -18,6 +18,8 @@ const step = process.argv[3] || 'all';
     await t.shot(page, `${view}-0bis-1-parent-rappel`);
     await t.go(page, '#/account');
     await t.waitText(page, 'Mes jeunes');
+    // Pas de vrai e-mail pendant les tests (Brevo est branché sur la base de test) : l'envoi du lien est simulé
+    await page.route(/\/auth\/v1\/recover/, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
     await page.click('.kid-row:has-text("Lina") button:has-text("Lui donner son compte")');
     await t.dialog(page, 'lina@exemple.test');
     await t.dialog(page, 'lina@exemple.test');
