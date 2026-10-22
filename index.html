@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugbeo">
-  <link rel="stylesheet" href="css/style.css?v=202610220810">
+  <link rel="stylesheet" href="css/style.css?v=202610221525">
 </head>
 <body>
 
@@ -175,7 +175,7 @@
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title-wrap">
-    <input id="title" class="title-input" value="Nouveau dessin" spellcheck="false" aria-label="Nom du dessin" title="Cliquez pour renommer le dessin" placeholder="Nom du dessin">
+    <textarea id="title" class="title-input" rows="1" maxlength="80" spellcheck="false" aria-label="Nom du dessin" title="Cliquez pour renommer le dessin" placeholder="Nom du dessin">Nouveau dessin</textarea>
   </div>
 
   <div class="zoom">
@@ -221,8 +221,8 @@
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div class="fab-history">
-      <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Annuler</span></button>
+      <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Rétablir</span></button>
     </div>
     <div class="fab-left">
       <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
@@ -231,10 +231,10 @@
       </button>
       <button id="fab-multi" class="fab-mode" title="Sélection multiple : chaque appui ajoute ou retire un objet (équivalent de Maj + clic)">
         <svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="3" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="10" width="11" height="11" rx="2" fill="currentColor" opacity=".85"/></svg>
-      </button>
+      <span class="fab-cap" aria-hidden="true">Plusieurs</span></button>
       <button id="fab-axis" class="fab-mode" title="Déplacement aligné : horizontal ou vertical seulement (équivalent de Maj + glisser)">
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <span class="fab-cap" aria-hidden="true">Aligné</span></button>
     </div>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
@@ -701,32 +701,32 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610220810"></script>
-<script src="js/legal.js?v=202610220810"></script>
-<script src="js/consent.js?v=202610220810"></script>
-<script src="js/selects.js?v=202610220810"></script>
-<script src="js/dialog.js?v=202610220810"></script>
-<script src="js/icons.js?v=202610220810"></script>
-<script src="js/field.js?v=202610220810"></script>
-<script src="js/formations.js?v=202610220810"></script>
-<script src="js/objects.js?v=202610220810"></script>
-<script src="js/export.js?v=202610220810"></script>
-<script src="vendor/supabase.min.js?v=202610220810"></script>
-<script src="js/config.js?v=202610220810"></script>
-<script src="js/offline.js?v=202610220810"></script>
-<script src="js/demo.js?v=202610220810"></script>
-<script src="js/editor.js?v=202610220810"></script>
-<script src="js/account.js?v=202610220810"></script>
-<script src="js/push.js?v=202610220810"></script>
-<script src="js/profile.js?v=202610220810"></script>
-<script src="js/compte.js?v=202610220810"></script>
-<script src="js/admin.js?v=202610220810"></script>
-<script src="js/agenda.js?v=202610220810"></script>
-<script src="js/stats.js?v=202610220810"></script>
-<script src="js/sponsors.js?v=202610220810"></script>
-<script src="js/calimport.js?v=202610220810"></script>
-<script src="js/sheets.js?v=202610220810"></script>
-<script src="js/tour.js?v=202610220810"></script>
-<script src="js/hub.js?v=202610220810"></script>
+<script src="js/update.js?v=202610221525"></script>
+<script src="js/legal.js?v=202610221525"></script>
+<script src="js/consent.js?v=202610221525"></script>
+<script src="js/selects.js?v=202610221525"></script>
+<script src="js/dialog.js?v=202610221525"></script>
+<script src="js/icons.js?v=202610221525"></script>
+<script src="js/field.js?v=202610221525"></script>
+<script src="js/formations.js?v=202610221525"></script>
+<script src="js/objects.js?v=202610221525"></script>
+<script src="js/export.js?v=202610221525"></script>
+<script src="vendor/supabase.min.js?v=202610221525"></script>
+<script src="js/config.js?v=202610221525"></script>
+<script src="js/offline.js?v=202610221525"></script>
+<script src="js/demo.js?v=202610221525"></script>
+<script src="js/editor.js?v=202610221525"></script>
+<script src="js/account.js?v=202610221525"></script>
+<script src="js/push.js?v=202610221525"></script>
+<script src="js/profile.js?v=202610221525"></script>
+<script src="js/compte.js?v=202610221525"></script>
+<script src="js/admin.js?v=202610221525"></script>
+<script src="js/agenda.js?v=202610221525"></script>
+<script src="js/stats.js?v=202610221525"></script>
+<script src="js/sponsors.js?v=202610221525"></script>
+<script src="js/calimport.js?v=202610221525"></script>
+<script src="js/sheets.js?v=202610221525"></script>
+<script src="js/tour.js?v=202610221525"></script>
+<script src="js/hub.js?v=202610221525"></script>
 </body>
 </html>

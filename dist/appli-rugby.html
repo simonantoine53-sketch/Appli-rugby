@@ -78,7 +78,9 @@ button { font: inherit; cursor: pointer; }
 .title-input {
   font-size: 20px; font-weight: 700; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px;
   min-width: 120px; width: 100%; background: transparent; color: var(--text); text-overflow: ellipsis;
+  font-family: inherit; resize: none; overflow: hidden; line-height: 1.2; display: block;
 }
+.title-input.long { font-size: 15px; }
 .title-input:hover { border-color: var(--border); }
 .title-input:focus { outline: none; border-color: var(--primary); background: var(--panel); }
 
@@ -700,8 +702,13 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   body:has(#props:not(.hidden)) .hint.tool-on { display: none; }   /* ne cache pas « Supprimer » quand un objet est sélectionné */
   .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
   .title-wrap { flex: 1 1 auto; min-width: 0; }
-  .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 4px 6px; }
-  .actions { margin-left: 0; gap: 4px; flex: 0 0 auto; }
+  .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 2px 6px; line-height: 1.15; }
+  .title-input.long { font-size: 14px; }
+  /* Téléphone : le nom du dessin a sa propre ligne, à droite d'Annuler / Rétablir (plus coupé par les boutons) */
+  #view-editor { position: relative; }
+  #view-editor .title-wrap { position: absolute; top: 64px; left: 146px; right: 12px; z-index: 6; }
+  #view-editor .title-input { background: var(--panel); border-color: var(--border); min-height: 44px; }
+  .actions { margin-left: auto; gap: 4px; flex: 0 0 auto; }
   .actions .btn { padding: 4px 8px; flex-direction: column; gap: 1px; font-size: 11px; font-weight: 600; }
   .actions .btn > span { display: block; line-height: 1.1; }
   .actions .btn .long { display: none; }
@@ -784,7 +791,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .zoom-fab { display: flex; }
   .fab-left { left: 12px; bottom: 68px; }
   .fab-select, .fab-mode { width: 50px; height: 50px; }
-  .fab-left.with-modes .fab-mode { display: grid; }
+  .fab-left.with-modes .fab-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 56px; }
   .props .pbtn { padding: 6px 8px; }
   .mobile-bar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: calc(56px + var(--bar-safe)); z-index: 35;
@@ -1572,6 +1579,13 @@ a:not([class]) { color: var(--primary); }
 }
 /* Visite guidée dans la démo : la bulle passe devant, le bandeau de la démo se retire le temps de la visite */
 body:has(.tour) .demo-banner { display: none; }
+/* Boutons à icône de l'éditeur : un mot sous l'icône (on n'a plus à deviner) */
+.fab-history button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.fab-history button { width: 54px; height: 50px; }
+.fab-cap { font-size: 10.5px; font-weight: 600; line-height: 1; }
+.fab-history button svg { width: 20px; height: 20px; }
+.pick-adults { margin-top: 8px; }
+.pick-adults summary { cursor: pointer; color: var(--muted); padding: 8px 0; min-height: 36px; }
 
 </style>
 </head>
@@ -1734,7 +1748,7 @@ body:has(.tour) .demo-banner { display: none; }
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title-wrap">
-    <input id="title" class="title-input" value="Nouveau dessin" spellcheck="false" aria-label="Nom du dessin" title="Cliquez pour renommer le dessin" placeholder="Nom du dessin">
+    <textarea id="title" class="title-input" rows="1" maxlength="80" spellcheck="false" aria-label="Nom du dessin" title="Cliquez pour renommer le dessin" placeholder="Nom du dessin">Nouveau dessin</textarea>
   </div>
 
   <div class="zoom">
@@ -1780,8 +1794,8 @@ body:has(.tour) .demo-banner { display: none; }
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div class="fab-history">
-      <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Annuler</span></button>
+      <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Rétablir</span></button>
     </div>
     <div class="fab-left">
       <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
@@ -1790,10 +1804,10 @@ body:has(.tour) .demo-banner { display: none; }
       </button>
       <button id="fab-multi" class="fab-mode" title="Sélection multiple : chaque appui ajoute ou retire un objet (équivalent de Maj + clic)">
         <svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="3" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="10" width="11" height="11" rx="2" fill="currentColor" opacity=".85"/></svg>
-      </button>
+      <span class="fab-cap" aria-hidden="true">Plusieurs</span></button>
       <button id="fab-axis" class="fab-mode" title="Déplacement aligné : horizontal ou vertical seulement (équivalent de Maj + glisser)">
         <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+      <span class="fab-cap" aria-hidden="true">Aligné</span></button>
     </div>
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
@@ -4192,7 +4206,7 @@ body:has(.tour) .demo-banner { display: none; }
   /* ---------- Palette ---------- */
   /** Boutons à icône seule : le nom lu par les lecteurs d'écran reprend l'info-bulle. */
   function nameIconButtons() {
-    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
+    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2 || b.querySelector('.fab-cap')) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
   }
   function buildPalette() {
     const root = $('#palette');
@@ -4812,12 +4826,25 @@ body:has(.tour) .demo-banner { display: none; }
     document.querySelectorAll('input[name=orientation]').forEach(r => r.checked = r.value === (s.orientation || 'landscape'));
     $('#step-duration').value = s.stepDuration || 1200;
     $('#step-duration-val').textContent = ((s.stepDuration || 1200) / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s';
-    $('#title').value = state.drawing.title;
+    $('#title').value = state.drawing.title; fitTitle();
     $('#drawing-category').value = state.drawing.category || '';
     $('#drawing-tags').value = state.drawing.tags || '';
     $('#snap-toggle').checked = !!s.snap;
   }
-  $('#title').onchange = e => { state.drawing.title = e.target.value.trim() || 'Sans titre'; e.target.value = state.drawing.title; afterChange(); };
+  // Nom du dessin : sur deux lignes si besoin (téléphone), sans retour à la ligne tapé
+  function fitTitle() {
+    const t = $('#title'); if (t.offsetParent === null) return;
+    // Deux lignes au plus ; nom plus long : police un peu plus petite tant qu'on ne le modifie pas
+    const fits = () => { t.style.height = 'auto'; const cs = getComputedStyle(t); return t.scrollHeight <= 2 * parseFloat(cs.lineHeight) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 1; };
+    t.classList.remove('long');
+    if (!fits() && document.activeElement !== t) { t.classList.add('long'); fits(); }
+    t.style.height = t.scrollHeight + 'px';
+  }
+  $('#title').addEventListener('focus', fitTitle); $('#title').addEventListener('blur', fitTitle);
+  $('#title').oninput = fitTitle;
+  $('#title').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+  window.addEventListener('resize', fitTitle);
+  $('#title').onchange = e => { state.drawing.title = e.target.value.replace(/\s+/g, ' ').trim() || 'Sans titre'; e.target.value = state.drawing.title; fitTitle(); afterChange(); };
   $('#drawing-category').onchange = e => { const b = snapshot(); state.drawing.category = e.target.value; commit(b); };
   $('#drawing-tags').onchange = e => { const b = snapshot(); state.drawing.tags = e.target.value.trim(); commit(b); };
   $('#snap-toggle').onchange = e => { state.drawing.settings.snap = e.target.checked; toast(e.target.checked ? 'Aimantation activée : les joueurs s’accrochent aux lignes et à une grille de 2,5 m.' : 'Aimantation désactivée.'); };
@@ -5119,7 +5146,7 @@ body:has(.tour) .demo-banner { display: none; }
     if (view !== 'share' && preview.drawing) stopPreview();
     if (view !== 'editor') closeDrawer();
     if (view === 'share') { openShare(shareToken()); return; }
-    if (view === 'editor') { requestAnimationFrame(fitZoom); return; }
+    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
     if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();
@@ -5693,8 +5720,15 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
     body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
+    // Pour un jeune : les équipes adultes (Séniors, Réserve, Loisirs…) sont rangées sous un repli, pas proposées d'emblée
+    const adult = t => kid && /s[ée]nior|r[ée]serve|v[ée]t[ée]ran|loisir/i.test(t.name) && !/\b[UM]\s?-?\d{1,2}\b|-\s?\d{1,2}\s?ans/i.test(t.name);
+    let adultBox = null;
     (teams || []).forEach(t => {
       const row = el('div', 'pick-row');
+      if (adult(t) && !mine.has(t.id) && !asked.has(t.id)) {
+        if (!adultBox) { adultBox = el('details', 'pick-adults', '<summary>Équipes adultes du club</summary>'); }
+        adultBox.appendChild(row);
+      }
       if (mine.has(t.id) || asked.has(t.id)) {
         row.innerHTML = `<span class="pick-name">${esc(t.name)}</span><span class="muted small">${mine.has(t.id) ? 'Déjà membre' : 'Demande envoyée'}</span>`;
       } else {
@@ -5704,8 +5738,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.append(lab, as);
         rows.push({ t, cb: lab.querySelector('input'), as });
       }
-      body.appendChild(row);
+      if (!row.parentNode) body.appendChild(row);
     });
+    if (adultBox) body.appendChild(adultBox);
     if (!(teams || []).length) body.appendChild(el('p', 'library-empty', 'Ce club n’a pas encore d’équipe.'));
     const go = btn('Envoyer mes demandes', 'primary wide', async () => {
       const picked = rows.filter(r => r.cb.checked);
@@ -9594,27 +9629,32 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     head.appendChild(status);
     root.appendChild(head);
 
-    // Actions
+    // Actions : les deux usages fréquents visibles, le reste dans le menu ⋯
     const acts = el('div', 'sheet-actions');
-    const tplSel = el('select', 'select'); tplSel.title = 'Modèle de feuille';
-    TEMPLATES.forEach(t => tplSel.appendChild(Object.assign(el('option'), { value: t.id, textContent: 'Modèle : ' + t.name, selected: t.id === settings.template })));
-    tplSel.onchange = async () => { settings.template = tplSel.value; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === tplSel.value).name} » choisi pour toute l’équipe.`); };
+    const setTemplate = async id => { settings.template = id; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === id).name} » choisi pour toute l’équipe.`); };
+    const more = btn('⋯ Plus', 'outline', () => window.RugbySelect.openMenu(more, [
+      ['Aperçu', () => openPreview()],
+      ['Changer de modèle…', () => window.RugbySelect.openMenu(more, TEMPLATES.map(t => [(t.id === settings.template ? '✓ ' : '') + t.name, () => setTemplate(t.id)]), 'Modèle de feuille')],
+      ['Personnaliser la feuille', () => openSettings()]
+    ], 'Feuille de match'));
+    more.setAttribute('aria-haspopup', 'menu');
     acts.append(
-      btn('Aperçu', 'outline', () => openPreview()),
       btn('Imprimer / PDF', 'outline', async () => { if (await checkUnsure('Imprimer')) printSheet(html(), 'Feuille de match'); }),
       btn('Partager en image', 'outline', async () => { if (await checkUnsure('Partager')) imageSheet(html(), fileName(ev)); }),
-      tplSel,
-      btn('Personnaliser la feuille', 'outline', () => openSettings())
+      more
     );
     root.appendChild(acts);
 
-    // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles
-    if (!settings.logo) {
+    // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles (encart refermable)
+    const laterKey = 'rs-logo-later-' + cur.team.id;
+    let later = false; try { later = !!localStorage.getItem(laterKey); } catch (e) { /* ignore */ }
+    if (!settings.logo && !later) {
       const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
-      call.append(l, f);
+      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Vous pourrez l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
+      call.append(l, f, x);
       root.appendChild(call);
     }
 

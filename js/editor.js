@@ -220,7 +220,7 @@
   /* ---------- Palette ---------- */
   /** Boutons à icône seule : le nom lu par les lecteurs d'écran reprend l'info-bulle. */
   function nameIconButtons() {
-    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
+    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2 || b.querySelector('.fab-cap')) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
   }
   function buildPalette() {
     const root = $('#palette');
@@ -840,12 +840,25 @@
     document.querySelectorAll('input[name=orientation]').forEach(r => r.checked = r.value === (s.orientation || 'landscape'));
     $('#step-duration').value = s.stepDuration || 1200;
     $('#step-duration-val').textContent = ((s.stepDuration || 1200) / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' s';
-    $('#title').value = state.drawing.title;
+    $('#title').value = state.drawing.title; fitTitle();
     $('#drawing-category').value = state.drawing.category || '';
     $('#drawing-tags').value = state.drawing.tags || '';
     $('#snap-toggle').checked = !!s.snap;
   }
-  $('#title').onchange = e => { state.drawing.title = e.target.value.trim() || 'Sans titre'; e.target.value = state.drawing.title; afterChange(); };
+  // Nom du dessin : sur deux lignes si besoin (téléphone), sans retour à la ligne tapé
+  function fitTitle() {
+    const t = $('#title'); if (t.offsetParent === null) return;
+    // Deux lignes au plus ; nom plus long : police un peu plus petite tant qu'on ne le modifie pas
+    const fits = () => { t.style.height = 'auto'; const cs = getComputedStyle(t); return t.scrollHeight <= 2 * parseFloat(cs.lineHeight) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 1; };
+    t.classList.remove('long');
+    if (!fits() && document.activeElement !== t) { t.classList.add('long'); fits(); }
+    t.style.height = t.scrollHeight + 'px';
+  }
+  $('#title').addEventListener('focus', fitTitle); $('#title').addEventListener('blur', fitTitle);
+  $('#title').oninput = fitTitle;
+  $('#title').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+  window.addEventListener('resize', fitTitle);
+  $('#title').onchange = e => { state.drawing.title = e.target.value.replace(/\s+/g, ' ').trim() || 'Sans titre'; e.target.value = state.drawing.title; fitTitle(); afterChange(); };
   $('#drawing-category').onchange = e => { const b = snapshot(); state.drawing.category = e.target.value; commit(b); };
   $('#drawing-tags').onchange = e => { const b = snapshot(); state.drawing.tags = e.target.value.trim(); commit(b); };
   $('#snap-toggle').onchange = e => { state.drawing.settings.snap = e.target.checked; toast(e.target.checked ? 'Aimantation activée : les joueurs s’accrochent aux lignes et à une grille de 2,5 m.' : 'Aimantation désactivée.'); };
@@ -1147,7 +1160,7 @@
     if (view !== 'share' && preview.drawing) stopPreview();
     if (view !== 'editor') closeDrawer();
     if (view === 'share') { openShare(shareToken()); return; }
-    if (view === 'editor') { requestAnimationFrame(fitZoom); return; }
+    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
     if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();

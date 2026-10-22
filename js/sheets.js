@@ -386,27 +386,32 @@
     head.appendChild(status);
     root.appendChild(head);
 
-    // Actions
+    // Actions : les deux usages fréquents visibles, le reste dans le menu ⋯
     const acts = el('div', 'sheet-actions');
-    const tplSel = el('select', 'select'); tplSel.title = 'Modèle de feuille';
-    TEMPLATES.forEach(t => tplSel.appendChild(Object.assign(el('option'), { value: t.id, textContent: 'Modèle : ' + t.name, selected: t.id === settings.template })));
-    tplSel.onchange = async () => { settings.template = tplSel.value; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === tplSel.value).name} » choisi pour toute l’équipe.`); };
+    const setTemplate = async id => { settings.template = id; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === id).name} » choisi pour toute l’équipe.`); };
+    const more = btn('⋯ Plus', 'outline', () => window.RugbySelect.openMenu(more, [
+      ['Aperçu', () => openPreview()],
+      ['Changer de modèle…', () => window.RugbySelect.openMenu(more, TEMPLATES.map(t => [(t.id === settings.template ? '✓ ' : '') + t.name, () => setTemplate(t.id)]), 'Modèle de feuille')],
+      ['Personnaliser la feuille', () => openSettings()]
+    ], 'Feuille de match'));
+    more.setAttribute('aria-haspopup', 'menu');
     acts.append(
-      btn('Aperçu', 'outline', () => openPreview()),
       btn('Imprimer / PDF', 'outline', async () => { if (await checkUnsure('Imprimer')) printSheet(html(), 'Feuille de match'); }),
       btn('Partager en image', 'outline', async () => { if (await checkUnsure('Partager')) imageSheet(html(), fileName(ev)); }),
-      tplSel,
-      btn('Personnaliser la feuille', 'outline', () => openSettings())
+      more
     );
     root.appendChild(acts);
 
-    // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles
-    if (!settings.logo) {
+    // Logo du club : à ajouter une seule fois, il s'affiche ensuite sur toutes les feuilles (encart refermable)
+    const laterKey = 'rs-logo-later-' + cur.team.id;
+    let later = false; try { later = !!localStorage.getItem(laterKey); } catch (e) { /* ignore */ }
+    if (!settings.logo && !later) {
       const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
-      call.append(l, f);
+      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Vous pourrez l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
+      call.append(l, f, x);
       root.appendChild(call);
     }
 

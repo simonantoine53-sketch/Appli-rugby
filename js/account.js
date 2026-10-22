@@ -470,8 +470,15 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
     body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
+    // Pour un jeune : les équipes adultes (Séniors, Réserve, Loisirs…) sont rangées sous un repli, pas proposées d'emblée
+    const adult = t => kid && /s[ée]nior|r[ée]serve|v[ée]t[ée]ran|loisir/i.test(t.name) && !/\b[UM]\s?-?\d{1,2}\b|-\s?\d{1,2}\s?ans/i.test(t.name);
+    let adultBox = null;
     (teams || []).forEach(t => {
       const row = el('div', 'pick-row');
+      if (adult(t) && !mine.has(t.id) && !asked.has(t.id)) {
+        if (!adultBox) { adultBox = el('details', 'pick-adults', '<summary>Équipes adultes du club</summary>'); }
+        adultBox.appendChild(row);
+      }
       if (mine.has(t.id) || asked.has(t.id)) {
         row.innerHTML = `<span class="pick-name">${esc(t.name)}</span><span class="muted small">${mine.has(t.id) ? 'Déjà membre' : 'Demande envoyée'}</span>`;
       } else {
@@ -481,8 +488,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.append(lab, as);
         rows.push({ t, cb: lab.querySelector('input'), as });
       }
-      body.appendChild(row);
+      if (!row.parentNode) body.appendChild(row);
     });
+    if (adultBox) body.appendChild(adultBox);
     if (!(teams || []).length) body.appendChild(el('p', 'library-empty', 'Ce club n’a pas encore d’équipe.'));
     const go = btn('Envoyer mes demandes', 'primary wide', async () => {
       const picked = rows.filter(r => r.cb.checked);

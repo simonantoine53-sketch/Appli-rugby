@@ -83,6 +83,8 @@ const has = (page, text) => page.waitForFunction(x => document.body.innerText.in
   t.check(!!sheetMeet, `feuille de match : heure de rendez-vous ${sheetMeet} (agenda : ${agendaMeet || '—'})`);
   if (agendaMeet) t.check(agendaMeet.replace('h', ':').padStart(5, '0') === sheetMeet, 'même heure de rendez-vous que l’agenda');
   t.check(await coach.isVisible('.sheet-legend'), 'légende des ronds au-dessus de l’équipe');
+  t.check(await coach.isVisible('.sheet-actions button[aria-haspopup="menu"]') && !(await coach.isVisible('.sheet-actions select')), 'feuille : deux actions visibles, le reste dans « ⋯ Plus »');
+  if (await coach.isVisible('.logo-callout')) { await coach.click('.logo-callout button:has-text("Plus tard")'); t.check(!(await coach.isVisible('.logo-callout')), 'encart du logo refermable'); }
   await t.shot(coach, `${view}-corr-4-feuille`);
   await t.go(coach, '#/team');
   await coach.waitForSelector('.member-row .member-actions select', { timeout: 20000 });
@@ -92,6 +94,16 @@ const has = (page, text) => page.waitForFunction(x => document.body.innerText.in
   t.check(await coach.waitForSelector('.dialog-modal:not(.hidden)', { timeout: 4000 }).then(() => true, () => false), 'changer un rôle demande confirmation');
   await coach.click('.dialog-modal .dialog-cancel'); await coach.waitForTimeout(300);
   await t.shot(coach, `${view}-corr-5-equipe`);
+  // Éditeur : nom long sur deux lignes, mots sous les icônes
+  await coach.evaluate(() => window.RugbyEditor.startNewDrawing());
+  await coach.waitForTimeout(800);
+  await coach.fill('#title', 'Croisée 10-12 avec renversement côté fermé');
+  await coach.dispatchEvent('#title', 'input'); await coach.evaluate(() => document.getElementById('title').blur());
+  const th = await coach.$eval('#title', e => ({ h: e.clientHeight, sh: e.scrollHeight }));
+  t.check(th.sh <= th.h + 2, `nom du dessin entièrement visible (${th.h} px)`);
+  t.check((await coach.textContent('#fab-undo')).includes('Annuler'), 'éditeur : « Annuler » écrit sous l’icône');
+  await t.shot(coach, `${view}-corr-7-editeur`);
+  await coach.evaluate(() => window.RugbyEditor.markSaved());
   // Création de club fermée : pas de bouton grisé, une phrase claire
   await t.go(coach, '#/account');
   await coach.click('button:has-text("Rejoindre un club ou une équipe")');
@@ -116,5 +128,15 @@ const has = (page, text) => page.waitForFunction(x => document.body.innerText.in
   });
   Object.entries(ratios).forEach(([k, r]) => t.check(r >= 4.5, `mode sombre, ${k} : ${r.toFixed(2)}`));
   await coach.close();
+
+  // Parent : pour un jeune, les équipes adultes sont repliées
+  const par = await t.open(view);
+  await t.login(par, 'parent@exemple.test');
+  await par.evaluate(() => { const A = window.RugbyAccount, k = A.kids()[A.kids().length - 1]; return A.openTeamPicker(A.clubs()[0].id, k.id); });
+  await par.waitForSelector('#modal-club-teams:not(.hidden)', { timeout: 15000 });
+  const visibleSen = await par.$$eval('#club-teams-body > .pick-row', r => r.some(x => /S[ée]nior/.test(x.textContent) && x.querySelector('input[type=checkbox]')));
+  t.check(!visibleSen, 'parent : « Séniors » n’est pas proposé d’emblée pour un jeune');
+  await t.shot(par, `${view}-corr-8-equipes-jeune`);
+  await par.close();
   await t.done();
 })();
