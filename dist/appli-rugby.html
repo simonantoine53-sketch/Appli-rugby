@@ -5163,8 +5163,13 @@ body:has(.tour) .demo-banner { display: none; }
     opener[id] = document.activeElement;
     requestAnimationFrame(() => {
       if (m.contains(document.activeElement)) return;
-      const f = m.querySelector('input:not([type=hidden]):not([disabled]), textarea, select, button:not(.btn-close)') || m.querySelector('.btn-close');
-      if (f && f.offsetParent !== null) f.focus();
+      const seen = x => x.offsetParent !== null;
+      // Au doigt, on n'ouvre pas le clavier d'office (sauf pour se connecter) : le focus va sur la fenêtre elle-même
+      if (matchMedia('(pointer: coarse)').matches && id !== 'modal-auth') { const box = m.querySelector('.modal-box') || m; box.tabIndex = -1; box.style.outline = 'none'; box.focus({ preventScroll: true }); return; }
+      // Le premier champ à remplir s'il y en a un, sinon le premier bouton
+      const f = [...m.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([disabled]), textarea')].find(seen)
+        || [...m.querySelectorAll('select, button:not(.btn-close)')].find(seen) || m.querySelector('.btn-close');
+      if (f && seen(f)) f.focus();
     });
   }
   function closeModal(id) {

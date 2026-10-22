@@ -32,7 +32,7 @@ const step = process.argv[3] || 'all';
     await t.go(page, '#/team');
     t.check(await t.waitText(page, 'compte géré par un parent'), 'coach U16 : les jeunes sont marqués « compte géré par un parent »');
     await t.shot(page, `${view}-0bis-3-coach-membres`);
-    await page.click('.member-row:has-text("Tom Garnier")');
+    await page.click('.member-row:has-text("Tom Garnier") .who');
     t.check(await t.waitText(page, 'Sophie Garnier') && await t.waitText(page, 'parent@exemple.test'), 'coach U16 : la fiche de Tom donne le nom et l’e-mail du parent');
     await t.shot(page, `${view}-0bis-4-coach-fiche-jeune`);
   }
