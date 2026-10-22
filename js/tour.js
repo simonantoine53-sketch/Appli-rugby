@@ -8,8 +8,10 @@
   const nav = () => visible($('#app-nav')) ? '#app-nav' : '#hub-tabs';
   const account = () => visible($('#hub-account')) ? '#hub-account' : '#btn-account';
   // Éditeur : sur ordinateur les panneaux sont affichés, sur téléphone on montre le bouton de la barre du bas
-  const tools = () => visible($('#palette')) ? '#palette' : '.mobile-bar [data-mtab="tools"]';
-  const stepsBox = () => visible($('#steps')) ? '#steps' : '.mobile-bar [data-mtab="steps"]';
+  // (sur téléphone, le panneau replié est glissé sous l'écran : il doit aussi être dans la hauteur de l'écran)
+  const shown = q => { const e = $(q); if (!visible(e)) return false; const r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; };
+  const tools = () => shown('#palette') ? '#palette' : '.mobile-bar [data-mtab="tools"]';
+  const stepsBox = () => shown('#steps') ? '#steps' : '.mobile-bar [data-mtab="steps"]';
 
   const STEPS = {
     coach: [

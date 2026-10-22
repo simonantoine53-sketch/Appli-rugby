@@ -23,7 +23,9 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
   for (let i = 1; i <= total; i++) {
     await p.waitForTimeout(500);
     const title = await p.textContent('#tour-title');
-    const spot = await p.$eval('.tour-spot', e => getComputedStyle(e).display !== 'none');
+    const spot = await p.$eval('.tour-spot', e => { const r = e.getBoundingClientRect(), c = document.querySelector('.tour-card').getBoundingClientRect();
+      // visible, dans l'écran, et pas caché par la bulle
+      return getComputedStyle(e).display !== 'none' && r.top < innerHeight && r.bottom > 0 && (r.bottom <= c.top + 8 || r.top >= c.bottom - 8 || r.right <= c.left || r.left >= c.right || r.height > 300); });
     if (i > 1) check(spot, `étape ${i} « ${title} » : l’élément est mis en valeur`);
     await p.screenshot({ path: path.join(OUT, `${view}-tuto-strat-${i}.png`) });
     await p.click('.tour-next');
