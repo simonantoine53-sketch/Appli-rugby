@@ -108,7 +108,9 @@
     const items = (active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats')).filter(([id]) => id !== 'compos' || showCompos);
     const cur = view === 'soon' ? 'home' : view;
     const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
-    const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
+    // Pastilles de l'équipe affichée seulement (pas celles de l'équipe ouverte juste avant)
+    const fresh = data && data.team && A.team() && data.team.id === A.team().id;
+    const badge = fresh ? { strats: !data.staff ? data.toWatch.length : 0, team: data.staff ? data.pending : 0, agenda: unanswered } : {};
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
       if (cur === id) b.setAttribute('aria-current', 'page');

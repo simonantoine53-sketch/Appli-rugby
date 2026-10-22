@@ -1541,6 +1541,7 @@ a:not([class]) { color: var(--primary); }
 .btn.two-lines { flex-direction: column; gap: 0; padding-top: 6px; padding-bottom: 6px; }
 .btn.two-lines small { font-size: 12.5px; font-weight: 400; color: var(--muted); }
 .sheet-status.sheet-st { align-self: flex-start; }
+#home-list.refreshing { opacity: .6; transition: opacity .2s; }
 
 </style>
 </head>
@@ -4291,7 +4292,7 @@ a:not([class]) { color: var(--primary); }
       case 'free': return Object.assign(base, { points: [[p.x, p.y]], color: 'white', width: 3, dashed: false });
       case 'text': return Object.assign(base, { x: p.x, y: p.y, text: 'Texte', size: 18, color: 'white' });
       case 'equip': return Object.assign(base, { kind: t.equip, x: p.x, y: p.y, rot: 0, scale: 1 });
-      case 'player': return Object.assign(base, { color: t.color || state.lastPlayerColor, jersey: !!t.jersey, ball: !!t.ball, x: p.x, y: p.y, label: '', scale: 1 });
+      case 'player': return Object.assign(base, { color: t.color || state.lastPlayerColor, jersey: !!t.jersey, ball: !!t.ball, x: p.x, y: p.y, label: '', scale: 1.2 });   // un peu plus grands : lisibles au doigt
     }
   }
 
@@ -4338,6 +4339,7 @@ a:not([class]) { color: var(--primary); }
     const t = state.tool && TOOLS[state.tool];
     if (t) {
       const obj = makeObject(t, (t.kind === 'player' || t.kind === 'equip') ? snapPoint(p) : p);
+      if (obj.ball) curObjects().forEach(o => { if (o.type === 'player') o.ball = false; });   // un seul porteur du ballon
       if (t.kind === 'text') {
         window.RugbyDialog.prompt('Texte à afficher', '', { title: 'Ajouter un texte', placeholder: 'Ex. Zone de défense', ok: 'Ajouter', maxLength: 80 }).then(txt => {
           if (!txt) return;
@@ -4608,17 +4610,22 @@ a:not([class]) { color: var(--primary); }
     if (obj.type === 'player') {
       const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'N°'; inp.maxLength = 3; inp.value = obj.label || '';
       inp.oninput = () => { obj.label = inp.value; render_objectsOnly(); };
-      inp.onchange = () => { const b = snapshot(); commit(b); };
+      // Entrée valide comme un clic ailleurs ; on n'enregistre qu'une fois (le panneau est redessiné après)
+      const done = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+      const keep = i => () => { const b = i.dataset.before; delete i.dataset.before; if (b) commit(b); };
+      inp.onkeydown = done;
       inp.onfocus = () => { inp.dataset.before = snapshot(); };
-      inp.onblur = () => { if (inp.dataset.before) { commit(inp.dataset.before); } };
+      inp.onblur = keep(inp);
       add(inp);
       const nameInp = document.createElement('input'); nameInp.type = 'text'; nameInp.placeholder = 'Nom'; nameInp.maxLength = 18; nameInp.value = obj.name || ''; nameInp.style.width = '110px'; nameInp.setAttribute('list', 'player-names');
       nameInp.oninput = () => { obj.name = nameInp.value; render_objectsOnly(); };
       nameInp.onfocus = () => { nameInp.dataset.before = snapshot(); if (window.RugbyAccount && window.RugbyAccount.memberNames) window.RugbyAccount.memberNames().then(names => { const dl = $('#player-names'); dl.replaceChildren(); names.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }); };
-      nameInp.onblur = () => { if (nameInp.dataset.before) commit(nameInp.dataset.before); };
+      nameInp.onkeydown = done;
+      nameInp.onblur = keep(nameInp);
       add(nameInp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
-      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
+      // Un seul porteur du ballon par étape
+      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; if (obj.ball) curObjects().forEach(o => { if (o !== obj && o.type === 'player') o.ball = false; }); });
     }
     if (obj.type === 'text') {
       btn('Modifier', 'Modifier le texte', false, () => { window.RugbyDialog.prompt('Texte', obj.text, { title: 'Modifier le texte', maxLength: 80 }).then(t => { if (t !== null) { const s2 = snapshot(); obj.text = t; commit(s2); } }); });
@@ -4626,6 +4633,7 @@ a:not([class]) { color: var(--primary); }
       btn('A+', 'Agrandir', false, () => { obj.size = Math.min(60, (obj.size || 18) + 2); });
     }
     if (obj.type === 'equip' || obj.type === 'player') {
+      const lb = document.createElement('span'); lb.className = 'pcount'; lb.textContent = 'Taille'; add(lb);
       btn('−', 'Réduire', false, () => { obj.scale = Math.max(0.5, +((obj.scale || 1) - 0.1).toFixed(2)); });
       btn('+', 'Agrandir', false, () => { obj.scale = Math.min(3, +((obj.scale || 1) + 0.1).toFixed(2)); });
     }
@@ -5954,7 +5962,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (!v) return;
       const { data, error } = await sb.rpc('create_club_team', { p_club: club.id, p_name: v });
       if (error) return E.toast(errMsg(error));
-      track('club_team_create'); E.toast(`Équipe « ${data.name} » créée. Ajoutez-y un coach depuis sa page Membres.`); refresh();
+      track('club_team_create');
+      // Équipe créée : on dit quoi faire ensuite (inviter la ou le coach avec le code de l'équipe)
+      await loadTeams();
+      const nt = S.teams.find(x => x.id === data.id);
+      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invitez la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
+      refresh();
     }));
     else head.appendChild(btn('Rejoindre d’autres équipes', 'outline small', () => openTeamPicker(club.id)));
     sec.appendChild(head);
@@ -6462,12 +6475,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   /* ---------- Page Stratégies ---------- */
   let libTab = null;   // au premier affichage : « De l’équipe » pour un joueur, « Mes dessins » pour le staff
-  let renderSeq = 0;
+  let renderSeq = 0, lastStratsKey = '';
   async function renderStrats() {
     const seq = ++renderSeq;
     const tabs = $('#home-tabs'); tabs.replaceChildren();
-    const root = $('#home-list'); root.replaceChildren();
+    // Même onglet, même équipe (après une publication…) : on garde la liste affichée pendant le rechargement
+    const root = $('#home-list'), key = `${libTab}|${S.team ? S.team.id : ''}|${S.user ? S.user.id : ''}`;
+    if (key !== lastStratsKey) root.replaceChildren(); else root.classList.add('refreshing');
+    lastStratsKey = key;
     if (!S.user) {
+      root.replaceChildren();
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p>Sans compte, vos dessins restent sur cet appareil. Créez un compte gratuit pour les retrouver partout et les partager à votre équipe.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => openAuth('signup')));
@@ -6477,6 +6494,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       return;
     }
     if (!isClubMember()) {
+      root.replaceChildren();
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
       box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
@@ -6502,18 +6520,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
       b.onclick = () => { libTab = id; renderStrats(); }; tabs.appendChild(b);
     });
-    if (libTab === 'local') { renderLocal(root); return; }
+    if (libTab === 'local') { root.replaceChildren(); root.classList.remove('refreshing'); renderLocal(root); return; }
     if (libTab === 'team' || libTab === 'proposed') {
-      if (!S.team) { root.appendChild(teamForms()); return; }
+      if (!S.team) { root.replaceChildren(); root.classList.remove('refreshing'); root.appendChild(teamForms()); return; }
       if (libTab === 'team') markSeen();
     }
     let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     q = libTab === 'mine' ? q.eq('owner_id', actorId()) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
-    if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
+    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); empty(root, 'Erreur : ' + errMsg(error)); return; }
     await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
+    root.replaceChildren(); root.classList.remove('refreshing');
     if (!data.length) {
       empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touchez « + Nouveau dessin », puis « Enregistrer » dans l’éditeur.'
         : libTab === 'proposed' ? 'Aucune proposition de joueur pour le moment. Les joueurs proposent leurs dessins depuis « Mes dessins ».'
@@ -10055,7 +10074,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const items = (active ? NAV : NAV.filter(([id]) => id === 'home' || id === 'strats')).filter(([id]) => id !== 'compos' || showCompos);
     const cur = view === 'soon' ? 'home' : view;
     const unanswered = data && data.agenda ? data.agenda.events.filter(e => e.convoked && !e.mine).length : 0;
-    const badge = { strats: data && !data.staff ? data.toWatch.length : 0, team: data && data.staff ? data.pending : 0, agenda: unanswered };
+    // Pastilles de l'équipe affichée seulement (pas celles de l'équipe ouverte juste avant)
+    const fresh = data && data.team && A.team() && data.team.id === A.team().id;
+    const badge = fresh ? { strats: !data.staff ? data.toWatch.length : 0, team: data.staff ? data.pending : 0, agenda: unanswered } : {};
     const make = withIcon => items.map(([id, label]) => {
       const b = el('button', 'nav-item', (withIcon ? ico(id) : '') + `<span>${label}</span>` + (badge[id] ? `<span class="nav-badge">${badge[id]}</span>` : ''));
       if (cur === id) b.setAttribute('aria-current', 'page');

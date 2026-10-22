@@ -380,7 +380,7 @@
       case 'free': return Object.assign(base, { points: [[p.x, p.y]], color: 'white', width: 3, dashed: false });
       case 'text': return Object.assign(base, { x: p.x, y: p.y, text: 'Texte', size: 18, color: 'white' });
       case 'equip': return Object.assign(base, { kind: t.equip, x: p.x, y: p.y, rot: 0, scale: 1 });
-      case 'player': return Object.assign(base, { color: t.color || state.lastPlayerColor, jersey: !!t.jersey, ball: !!t.ball, x: p.x, y: p.y, label: '', scale: 1 });
+      case 'player': return Object.assign(base, { color: t.color || state.lastPlayerColor, jersey: !!t.jersey, ball: !!t.ball, x: p.x, y: p.y, label: '', scale: 1.2 });   // un peu plus grands : lisibles au doigt
     }
   }
 
@@ -427,6 +427,7 @@
     const t = state.tool && TOOLS[state.tool];
     if (t) {
       const obj = makeObject(t, (t.kind === 'player' || t.kind === 'equip') ? snapPoint(p) : p);
+      if (obj.ball) curObjects().forEach(o => { if (o.type === 'player') o.ball = false; });   // un seul porteur du ballon
       if (t.kind === 'text') {
         window.RugbyDialog.prompt('Texte à afficher', '', { title: 'Ajouter un texte', placeholder: 'Ex. Zone de défense', ok: 'Ajouter', maxLength: 80 }).then(txt => {
           if (!txt) return;
@@ -697,17 +698,22 @@
     if (obj.type === 'player') {
       const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'N°'; inp.maxLength = 3; inp.value = obj.label || '';
       inp.oninput = () => { obj.label = inp.value; render_objectsOnly(); };
-      inp.onchange = () => { const b = snapshot(); commit(b); };
+      // Entrée valide comme un clic ailleurs ; on n'enregistre qu'une fois (le panneau est redessiné après)
+      const done = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+      const keep = i => () => { const b = i.dataset.before; delete i.dataset.before; if (b) commit(b); };
+      inp.onkeydown = done;
       inp.onfocus = () => { inp.dataset.before = snapshot(); };
-      inp.onblur = () => { if (inp.dataset.before) { commit(inp.dataset.before); } };
+      inp.onblur = keep(inp);
       add(inp);
       const nameInp = document.createElement('input'); nameInp.type = 'text'; nameInp.placeholder = 'Nom'; nameInp.maxLength = 18; nameInp.value = obj.name || ''; nameInp.style.width = '110px'; nameInp.setAttribute('list', 'player-names');
       nameInp.oninput = () => { obj.name = nameInp.value; render_objectsOnly(); };
       nameInp.onfocus = () => { nameInp.dataset.before = snapshot(); if (window.RugbyAccount && window.RugbyAccount.memberNames) window.RugbyAccount.memberNames().then(names => { const dl = $('#player-names'); dl.replaceChildren(); names.forEach(n => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); }); }); };
-      nameInp.onblur = () => { if (nameInp.dataset.before) commit(nameInp.dataset.before); };
+      nameInp.onkeydown = done;
+      nameInp.onblur = keep(nameInp);
       add(nameInp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
-      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; });
+      // Un seul porteur du ballon par étape
+      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; if (obj.ball) curObjects().forEach(o => { if (o !== obj && o.type === 'player') o.ball = false; }); });
     }
     if (obj.type === 'text') {
       btn('Modifier', 'Modifier le texte', false, () => { window.RugbyDialog.prompt('Texte', obj.text, { title: 'Modifier le texte', maxLength: 80 }).then(t => { if (t !== null) { const s2 = snapshot(); obj.text = t; commit(s2); } }); });
@@ -715,6 +721,7 @@
       btn('A+', 'Agrandir', false, () => { obj.size = Math.min(60, (obj.size || 18) + 2); });
     }
     if (obj.type === 'equip' || obj.type === 'player') {
+      const lb = document.createElement('span'); lb.className = 'pcount'; lb.textContent = 'Taille'; add(lb);
       btn('−', 'Réduire', false, () => { obj.scale = Math.max(0.5, +((obj.scale || 1) - 0.1).toFixed(2)); });
       btn('+', 'Agrandir', false, () => { obj.scale = Math.min(3, +((obj.scale || 1) + 0.1).toFixed(2)); });
     }

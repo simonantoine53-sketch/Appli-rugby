@@ -860,7 +860,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (!v) return;
       const { data, error } = await sb.rpc('create_club_team', { p_club: club.id, p_name: v });
       if (error) return E.toast(errMsg(error));
-      track('club_team_create'); E.toast(`Équipe « ${data.name} » créée. Ajoutez-y un coach depuis sa page Membres.`); refresh();
+      track('club_team_create');
+      // Équipe créée : on dit quoi faire ensuite (inviter la ou le coach avec le code de l'équipe)
+      await loadTeams();
+      const nt = S.teams.find(x => x.id === data.id);
+      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invitez la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
+      refresh();
     }));
     else head.appendChild(btn('Rejoindre d’autres équipes', 'outline small', () => openTeamPicker(club.id)));
     sec.appendChild(head);
@@ -1368,12 +1373,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   /* ---------- Page Stratégies ---------- */
   let libTab = null;   // au premier affichage : « De l’équipe » pour un joueur, « Mes dessins » pour le staff
-  let renderSeq = 0;
+  let renderSeq = 0, lastStratsKey = '';
   async function renderStrats() {
     const seq = ++renderSeq;
     const tabs = $('#home-tabs'); tabs.replaceChildren();
-    const root = $('#home-list'); root.replaceChildren();
+    // Même onglet, même équipe (après une publication…) : on garde la liste affichée pendant le rechargement
+    const root = $('#home-list'), key = `${libTab}|${S.team ? S.team.id : ''}|${S.user ? S.user.id : ''}`;
+    if (key !== lastStratsKey) root.replaceChildren(); else root.classList.add('refreshing');
+    lastStratsKey = key;
     if (!S.user) {
+      root.replaceChildren();
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p>Sans compte, vos dessins restent sur cet appareil. Créez un compte gratuit pour les retrouver partout et les partager à votre équipe.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => openAuth('signup')));
@@ -1383,6 +1392,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       return;
     }
     if (!isClubMember()) {
+      root.replaceChildren();
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
       box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
@@ -1408,18 +1418,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (n) b.appendChild(el('span', 'nav-badge tab-badge', String(n)));
       b.onclick = () => { libTab = id; renderStrats(); }; tabs.appendChild(b);
     });
-    if (libTab === 'local') { renderLocal(root); return; }
+    if (libTab === 'local') { root.replaceChildren(); root.classList.remove('refreshing'); renderLocal(root); return; }
     if (libTab === 'team' || libTab === 'proposed') {
-      if (!S.team) { root.appendChild(teamForms()); return; }
+      if (!S.team) { root.replaceChildren(); root.classList.remove('refreshing'); root.appendChild(teamForms()); return; }
       if (libTab === 'team') markSeen();
     }
     let q = sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, published_at, updated_at, share_token, share_mode, owner:profiles!drawings_owner_profile_fk(display_name)').order(libTab === 'team' ? 'published_at' : 'updated_at', { ascending: false });
     q = libTab === 'mine' ? q.eq('owner_id', actorId()) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
-    if (error) { empty(root, 'Erreur : ' + errMsg(error)); return; }
+    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); empty(root, 'Erreur : ' + errMsg(error)); return; }
     await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
+    root.replaceChildren(); root.classList.remove('refreshing');
     if (!data.length) {
       empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touchez « + Nouveau dessin », puis « Enregistrer » dans l’éditeur.'
         : libTab === 'proposed' ? 'Aucune proposition de joueur pour le moment. Les joueurs proposent leurs dessins depuis « Mes dessins ».'
