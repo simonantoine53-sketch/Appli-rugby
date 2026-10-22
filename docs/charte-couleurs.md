@@ -93,13 +93,16 @@ Chaque variable garde **le même rôle** ; seules les valeurs changent (bloc `:r
 | `--panel` | #ffffff | #151b22 |
 | `--subtle` | #f1f3f5 | #1d252e |
 | `--border` / `--border-strong` | #e3e6ea / #c9cdd2 | #2a333d / #46515d |
-| `--text` / `--muted` | #1f2933 / #6b7280 | #e6edf3 / #9da7b3 |
-| `--primary` / `--primary-soft` | #1a73e8 / #e8f0fe | #257ae9 / #19304e |
-| `--success` / `--success-soft` | #2e7d32 / #e3f2e6 | #348e39 / #1c3427 |
-| `--warning` / `--warning-soft` | #b34d00 / #fff3e0 | #cf5900 / #3e291b |
-| `--danger` / `--danger-soft` | #c62828 / #fdecea | #da4949 / #40252b |
+| `--text` / `--muted` | #1f2933 / #5f6672 | #e6edf3 / #9da7b3 |
+| `--primary` / `--primary-soft` | #1a73e8 / #e8f0fe | #4d94f0 / #19304e |
+| `--success` / `--success-soft` | #2e7d32 / #e3f2e6 | #45a84b / #1c3427 |
+| `--warning` / `--warning-soft` | #b34d00 / #fff3e0 | #e0701a / #3e291b |
+| `--danger` / `--danger-soft` | #c62828 / #fdecea | #e65c5c / #40252b |
+| `--primary-fill` / `--success-fill` / `--warning-fill` / `--danger-fill` | = couleur de base | #1a6fd0 / #2f8034 / #b34d00 / #c43c3c |
+| `--primary-ink` | #1558b8 | #80b1f2 |
+| `--brand-ink` | #3b8540 | #5bb361 |
 | `--match` / `--tag` / `--neutral` | #6a1b9a / #00796b / #455a64 | #ac54e1 / #008c7c / #63818f |
 
-Contrastes vérifiés en sombre : texte 14,7:1 et texte secondaire 7,1:1 sur les cartes ; texte « encre » 6:1 sur les teintes pâles. Les couleurs pleines (bleu, vert, orange, rouge) sont réglées pour être lisibles dans les deux sens, texte blanc dessus et texte coloré sur une carte, à environ 4,2:1 : on les réserve à des textes en gras ou des boutons. Pour un long texte coloré sur une carte, utiliser la variable `-ink`.
+Contrastes vérifiés en sombre : texte 14,7:1 et texte secondaire 7,1:1 sur les cartes ; texte « encre » 6:1 sur les teintes pâles. Depuis le test utilisateur du 22 octobre 2026, chaque couleur d'état a deux rôles séparés pour passer le seuil de 4,5:1 dans les deux modes : **la couleur de base** (`--primary`, `--success`…) pour un texte, une bordure ou une icône sur une carte ; **la version `-fill`** pour un fond plein sous un texte blanc (`background: var(--primary-fill)`, bouton principal, réponse choisie). En clair les deux sont identiques ; en sombre, la base est plus lumineuse (≥ 5:1 sur une carte) et le fond plein plus sombre (≥ 4,9:1 avec du blanc). Le survol d'un bouton plein l'assombrit (ombre intérieure), au lieu de changer de couleur. Le nom « Rugbeo » en texte utilise `--brand-ink` (le vert du terrain `--field` reste pour les fonds et les coches). Pour un long texte coloré sur une teinte pâle, utiliser la variable `-ink`.
 
 Restent toujours en clair : **l'impression** (bloc `@media print`), la **feuille de match** (aperçu, image, PDF), les **dessins du terrain** et leurs exports (couleurs propres à `js/field.js` et `js/export.js`).

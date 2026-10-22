@@ -33,7 +33,7 @@ const view = process.argv[2] || 'telephone';
   await t.waitText(page, 'US Vallée Verte');
   await page.click('.ev-card >> nth=0');
   await t.waitText(page, 'Qui vient');
-  const relance = page.locator('button:has-text("Copier pour WhatsApp")');
+  const relance = page.locator('button:has-text("Envoyer sur WhatsApp")');
   await t.shot(page, `${view}-lot1-11-demo-match`);
   await t.go(page, '#/team');
   await t.waitText(page, 'membres');

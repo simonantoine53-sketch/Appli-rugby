@@ -137,7 +137,7 @@
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
-    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), btn('Essayer sans compte', 'ghost', () => E.go('editor')));
+    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), twoLines(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), 'visiter un club fictif, sans compte'), twoLines(btn('Essayer l’éditeur', 'ghost', () => E.go('editor')), 'dessiner une stratégie sans compte'));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));
     box.appendChild(btns);
     if (active) {
@@ -190,6 +190,10 @@
       slot.insertBefore(box, slot.firstChild);
     });
   }
+  /** Bouton avec une précision en petit dessous (« Voir la démo » : visiter un club fictif). */
+  const twoLines = (b, sub) => { b.classList.add('two-lines'); b.appendChild(el('small', '', sub)); return b; };
+  /** « de » ou « d’ » devant un prénom (d’Emma, de Léo). */
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');
   function hello(root, sub) {
     const p = A.ownProfile ? A.ownProfile() : A.profile();   // un parent est salué lui-même, pas son jeune
     const name = ((p && p.display_name) || '').split(' ')[0];
@@ -210,10 +214,19 @@
         const c = el('div', 'todo-card', kids.length
           ? `<div class="todo-head">Dernière étape : leurs équipes</div><p class="muted">Club « ${esc(club.name)} » : choisissez l’équipe de chaque jeune. Le coach ou le bureau du club validera la demande.</p>`
           : `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
-        if (kids.length) kids.forEach(k => c.appendChild(btn(`Choisir l’équipe de ${k.display_name}`, 'primary', () => A.openTeamPicker(club.id, k.id))));
+        const pending = A.pendingTeams();
+        if (kids.length) kids.forEach(k => {
+          // Demande déjà envoyée pour ce jeune : on le dit, au lieu de reproposer le même bouton
+          const sent = pending.filter(t => t.who === k.id);
+          const first = (k.display_name || '').split(' ')[0];
+          if (sent.length) {
+            c.appendChild(el('p', 'kid-sent', `✓ Demande envoyée pour <strong>${esc(first)}</strong> à ${sent.map(t => '« ' + esc(t.name) + ' »').join(', ')} : le coach doit la valider.`));
+            c.appendChild(btn(`Ajouter une autre équipe ${de(first)}${first}`, 'ghost small', () => A.openTeamPicker(club.id, k.id)));
+          } else c.appendChild(btn(`Choisir l’équipe ${de(first)}${first}`, 'primary', () => A.openTeamPicker(club.id, k.id)));
+        });
         else c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
         root.appendChild(c);
-        A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation.`)));
+        pending.filter(t => !t.who).forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation.`)));
         return;
       }
       const card = el('div', 'todo-card', kids.length

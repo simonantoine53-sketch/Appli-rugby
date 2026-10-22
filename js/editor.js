@@ -756,15 +756,15 @@
       const card = document.createElement('div');
       card.className = 'step-card' + (i === state.step ? ' active' : '');
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
-        <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-        <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <button class="dup" title="Dupliquer l’étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+        <button class="del" title="Supprimer l’étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div><div class="meta">${[st.note ? 'consigne' : '', st.hold ? 'pause' : '', st.duration ? (st.duration / 1000).toLocaleString('fr-FR') + ' s' : '', st.frame ? 'cadrée' : ''].filter(Boolean).join(' · ')}</div>`;
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
-        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
+        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne (facultatif)" title="Affichée pendant l’aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
           <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">normale</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
-          <label title="L'animation s'arrête sur cette étape jusqu'à ce qu'on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
+          <label title="L’animation s’arrête sur cette étape jusqu’à ce qu’on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
           <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
         opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
         const note = opts.querySelector('.step-note'); note.value = st.note || '';
@@ -780,7 +780,7 @@
       card.querySelector('.del').onclick = async e => {
         e.stopPropagation();
         if (state.drawing.steps.length === 1) { toast('Impossible de supprimer la seule étape.'); return; }
-        if (!await window.RugbyDialog.confirm(`Supprimer l'étape ${i + 1} ?`)) return;
+        if (!await window.RugbyDialog.confirm(`Supprimer l’étape ${i + 1} ?`)) return;
         const b = snapshot(); state.drawing.steps.splice(i, 1); state.step = Math.max(0, Math.min(state.step, state.drawing.steps.length - 1)); state.selected = null; commit(b);
       };
       root.appendChild(card);
@@ -951,7 +951,7 @@
       c.toBlob(blob => download(blob, `${slug(state.drawing.title)}-etape-${state.step + 1}.png`), 'image/png');
       toast('Image exportée.');
     };
-    img.onerror = () => toast("Échec de l'export de l'image.");
+    img.onerror = () => toast('Échec de l’export de l’image.');
     img.src = url;
   }
   const slug = s => (s || 'dessin').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dessin';

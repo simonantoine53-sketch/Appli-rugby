@@ -112,13 +112,32 @@
       return data || {};
     } catch (e) { console.warn('push-notify', e); return null; }
   }
-  async function remind(ev) {
+  /** Message prêt pour le groupe WhatsApp, avec le lien direct vers l'événement. */
+  function waText(ev, names) {
+    const link = `${location.origin}${location.pathname}#/agenda/${ev.id}`;
+    return `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre Présent, Peut-être ou Absent dans Rugbeo.${names && names.length ? ` Pas encore de réponse : ${names.join(', ')}.` : ''}\n${link}`;
+  }
+  const openWhatsApp = text => { track('event_reminder_whatsapp'); window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); };
+  /** Après une convocation ou un changement : dit combien de téléphones l'ont reçue, sinon propose WhatsApp. */
+  async function report(pending, ev, what) {
+    const res = await pending, e = /^Convocation/.test(what) ? 'e' : '';
+    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Prévenez l’équipe sur WhatsApp.`);
+    if (!res.recipients) return E.toast(`${what} enregistré${e}.`);
+    if (res.sent) return E.toast(`${what} envoyé${e} sur ${plural(res.sent, 'téléphone', 'téléphones')}.`);
+    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoyez le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
+  }
+  async function remind(ev, names) {
     const res = await notify(ev.id, 'event_reminder');
     track('event_reminder', { recipients: res && res.recipients });
     if (!res) E.toast('Relance impossible pour le moment.');
     else if (!res.recipients) E.toast('Tous les joueurs ont déjà répondu.');
-    else if (res.sent) E.toast(`Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Pour les autres, utilise « Copier pour WhatsApp ».`);
-    else E.toast('Aucun de ces joueurs n’a activé les notifications : utilise « Copier pour WhatsApp ».');
+    else {
+      // Les notifications ne touchent que ceux qui les ont activées : on propose tout de suite WhatsApp pour les autres
+      const msg = res.sent
+        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoyez aussi le message dans le groupe WhatsApp.`
+        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoyez plutôt le message dans le groupe WhatsApp.';
+      if (await window.RugbyDialog.confirm(msg, { title: res.sent ? 'Relance envoyée' : 'Relance non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev, names));
+    }
   }
 
   /* ---------- Page Agenda ---------- */
@@ -151,7 +170,7 @@
     }
     if (!team) {
       const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
-      box.appendChild(btn('Rejoindre ou créer mon équipe', 'primary', () => E.go('team')));
+      box.appendChild(btn('Rejoindre mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
     if (eventId && quick) return renderQuick(root, eventId, my);
@@ -329,12 +348,8 @@
     if (staff && sum.none && !ev.cancelled) {
       const nonRep = players.filter(p => !sum.byUser[p.id]);
       const acts = el('div', 'ev-remind');
-      acts.appendChild(btn(`Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev)));
-      acts.appendChild(btn('Copier pour WhatsApp', 'outline', () => {
-        const text = `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre dans l’appli. Pas encore de réponse : ${nonRep.map(p => p.name).join(', ')}.`;
-        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));
-        else window.RugbyDialog.copy(text, { title: 'Message à copier' });
-      }));
+      acts.appendChild(btn(`Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev, nonRep.map(p => p.name))));
+      acts.appendChild(btn('Envoyer sur WhatsApp', 'outline', () => openWhatsApp(waText(ev, nonRep.map(p => p.name)))));
       who.appendChild(acts);
     }
     const person = (m, r) => {
@@ -352,14 +367,24 @@
       }
       return row;
     };
+    // « Sans réponse » en premier : c'est ce que le staff vient chercher
+    const head = (key, text) => { const h = el('h4', 'home-h4', text); h.id = 'grp-' + key; h.tabIndex = -1; return h; };
+    const none = players.filter(p => !sum.byUser[p.id]);
+    if (none.length) { who.appendChild(head('w', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
     groups.forEach(([s, l]) => {
       const list = players.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
       if (!list.length) return;
-      who.appendChild(el('h4', 'home-h4', `${l} (${list.length})`));
+      who.appendChild(head({ yes: 'y', maybe: 'm', no: 'n' }[s], `${l} (${list.length})`));
       list.forEach(m => who.appendChild(person(m, sum.byUser[m.id])));
     });
-    const none = players.filter(p => !sum.byUser[p.id]);
-    if (none.length) { who.appendChild(el('h4', 'home-h4', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
+    // Les compteurs mènent à la liste correspondante
+    who.querySelectorAll('.pres-legend span').forEach(sp => {
+      const key = sp.className, target = () => who.querySelector('#grp-' + key);
+      if (!target()) return;
+      sp.classList.add('linkish'); sp.setAttribute('role', 'link'); sp.tabIndex = 0;
+      const goTo = () => { const t = target(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); t.focus({ preventScroll: true }); };
+      sp.onclick = goTo; sp.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTo(); } };
+    });
     if (staffList.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff non convoqué (${staffList.length})`)); staffList.forEach(m => who.appendChild(person(m, null))); }
     root.appendChild(who);
   }
@@ -506,7 +531,7 @@
     $('#ev-apply-series').checked = false;
     // Création : prévenir par défaut ; modification : au choix (un changement d'horaire ou de lieu mérite une notification)
     $('#ev-notify').checked = !ev;
-    $('#ev-notify-label').textContent = ev ? 'Prévenir l’équipe du changement' : 'Prévenir l’équipe par notification';
+    $('#ev-notify-label').textContent = ev ? 'Prévenir l’équipe du changement (notification)' : 'Envoyer la convocation à l’équipe (notification)';
     $('#ev-error').textContent = '';
     syncKind();
     syncRecur();
@@ -590,8 +615,8 @@
       b.disabled = false;
       firstId = editing.id;
       const warn = $('#ev-notify').checked;
-      if (warn) notify(changed.length > 1 ? changed : editing.id, 'event_updated');
-      E.toast((extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}` : 'Événement modifié') + (warn ? ', l’équipe est prévenue.' : '.'));
+      if (warn) report(notify(changed.length > 1 ? changed : editing.id, 'event_updated'), Object.assign({}, editing, base), 'Changement');
+      else E.toast(extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}.` : 'Événement modifié.');
     } else {
       // Planning de la saison : chaque jour coché, à la même heure, jusqu'à la date de fin
       const recurring = kind === 'training' && $('#ev-recurring').checked;
@@ -601,7 +626,7 @@
         if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
         if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
-        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
+        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifiez les jours et la date de fin.'; return; }
       }
       const series = dates.length > 1 ? crypto.randomUUID() : null;
       const meetDelta = meet ? start - meet : 0;
@@ -611,8 +636,8 @@
       if (error) { $('#ev-error').textContent = error.message; return; }
       firstId = rows[0].id; n = rows.length;
       track('event_create', { kind, repeat: n });
-      if ($('#ev-notify').checked) notify(n > 1 ? rows.map(r => r.id) : firstId, 'event_new');
-      E.toast(n > 1 ? `Planning créé : ${n} entraînements${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
+      if ($('#ev-notify').checked) report(notify(n > 1 ? rows.map(r => r.id) : firstId, 'event_new'), rows[0], n > 1 ? `Planning (${n} entraînements)` : 'Convocation');
+      else E.toast(n > 1 ? `Planning créé : ${n} entraînements.` : `${KIND[kind]} créé.`);
     }
     E.closeModal('modal-event');
     if (location.hash === '#/agenda/' + firstId) E.refreshView(); else E.go('agenda', n > 1 ? '' : firstId);

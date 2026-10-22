@@ -360,7 +360,7 @@
     const { ev, settings, sheet } = cur;
     const head = el('div', 'sheet-head');
     head.appendChild(el('div', '', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${esc(dayLong(ev.starts_at))} · ${time(ev.starts_at)}</span></div><h2 class="page-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</h2>`));
-    const status = el('span', 'sheet-status muted', cur.row ? (cur.row.published ? 'Publiée' : 'Brouillon enregistré') : 'Nouvelle feuille');
+    const status = el('span', 'sheet-status sheet-st ' + (cur.row ? (cur.row.published ? 'pub' : 'draft') : 'none'), cur.row ? (cur.row.published ? 'Publiée' : 'Brouillon') : 'Nouvelle feuille');
     status.id = 'sheet-status';
     head.appendChild(status);
     root.appendChild(head);
@@ -604,7 +604,7 @@
     const st = $('#sheet-status');
     if (error) { if (st) st.textContent = 'Erreur d’enregistrement'; E.toast('Enregistrement impossible : ' + error.message); return; }
     if (data) cur.row = data;
-    if (st) st.textContent = cur.row && cur.row.published ? 'Publiée · enregistré ✓' : 'Brouillon enregistré ✓';
+    if (st) { const pub = !!(cur.row && cur.row.published); st.className = 'sheet-status sheet-st ' + (pub ? 'pub' : 'draft'); st.textContent = pub ? 'Publiée · enregistrée ✓' : 'Brouillon enregistré ✓'; }
   }
   async function publish(on) {
     clearTimeout(saveTimer); await saveSheet();

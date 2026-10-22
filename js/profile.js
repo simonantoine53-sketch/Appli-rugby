@@ -2,6 +2,7 @@
    et infos privées (téléphone, date de naissance, contact d'urgence) visibles seulement par le staff de l'équipe.
    Fournit aussi l'avatar (photo ou initiale) utilisé dans les listes de membres. */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const $ = s => document.querySelector(s);
@@ -33,7 +34,7 @@
     const me = A.user(); if (!me) return;
     if (typeof forId === 'string') me.id = forId;
     const kid = (A.kids ? A.kids() : []).find(k => k.id === me.id);
-    $('#profile-title').textContent = kid ? `Profil de ${kid.display_name}` : 'Mon profil';
+    $('#profile-title').textContent = kid ? `Profil ${de(kid.display_name)}${kid.display_name}` : 'Mon profil';
     const [{ data: prof }, { data: priv }] = await Promise.all([
       sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio').eq('id', me.id).maybeSingle(),
       sb.from('profile_private').select('phone, birth_date, emergency_name, emergency_phone').eq('user_id', me.id).maybeSingle()
@@ -48,7 +49,7 @@
     const drawPhoto = () => {
       photoRow.replaceChildren(avatar(p.display_name, photo));
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'profile-photo-file'; f.className = 'file-input';
-      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essaie une photo JPG ou PNG.')); };
+      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essayez une photo JPG ou PNG.')); };
       const lb = el('label', 'btn outline small', photo ? 'Changer la photo' : 'Ajouter une photo'); lb.htmlFor = 'profile-photo-file';
       const acts = el('div', 'row-wrap'); acts.append(lb, f);
       if (photo) acts.appendChild(btn('Retirer', 'ghost small', () => { photo = null; drawPhoto(); }));
@@ -65,7 +66,7 @@
 
     // Postes : choix multiple, 4 au plus
     const posBox = el('div', 'profile-field');
-    posBox.appendChild(el('span', 'profile-label', 'Postes (4 au plus)'));
+    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Vos postes (4 au plus)'));
     const chips = el('div', 'day-chips poste-chips');
     let positions = (p.positions || []).slice();
     POSTES.forEach(po => {
@@ -83,13 +84,13 @@
     const num = input('number', p.jersey_number, { min: 1, max: 99, inputMode: 'numeric', placeholder: '—' });
     const height = input('number', p.height_cm, { min: 100, max: 230, inputMode: 'numeric', placeholder: 'cm' });
     const weight = input('number', p.weight_kg, { min: 30, max: 200, inputMode: 'numeric', placeholder: 'kg' });
-    row1.append(field('Numéro préféré', num), field('Taille (cm)', height), field('Poids (kg)', weight));
+    row1.append(field('Numéro préféré (facultatif)', num), field('Taille en cm (facultatif)', height), field('Poids en kg (facultatif)', weight));
     form.appendChild(row1);
 
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
-    form.appendChild(field('Pied fort', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
+    form.appendChild(field('Pied fort (facultatif)', foot));
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées

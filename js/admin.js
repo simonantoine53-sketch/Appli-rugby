@@ -1,6 +1,7 @@
 /* Back-office super-admin, retours utilisateurs, statistiques d'usage, erreurs clients,
    annonces et drapeaux de fonctionnalités. Inactif en mode local (sans Supabase). */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const $ = s => document.querySelector(s);
@@ -196,7 +197,7 @@
     const root = $('#admin-page'); if (!root) return;
     if (!A.isSuper()) { root.replaceChildren(el('p', 'library-empty', 'Réservé aux super-admins.')); return; }
     const my = ++seq;
-    root.replaceChildren();
+    root.replaceChildren(el('h1', 'admin-title', 'Back-office'));
     const tabs = el('div', 'tabs small admin-tabs');
     TABS.forEach(([id, label]) => {
       const b = el('button', 'tab' + (tab === id ? ' active' : ''));
@@ -325,7 +326,7 @@
     const g1 = el('div', 'kpi-grid');
     g1.append(
       kpi('Personnes actives cette semaine', a.week, a.week_prev || a.week ? `${delta >= 0 ? '+' : ''}${delta} par rapport à la semaine dernière` : 'semaine en cours'),
-      kpi('Aujourd’hui', a.day, `${a.avg_day_month} par jour en moyenne ce mois-ci`),
+      kpi('Aujourd’hui', a.day, `${Number(a.avg_day_month || 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} par jour en moyenne ce mois-ci`),
       kpi('Ce mois-ci', a.month, 'personnes différentes'),
       kpi('Fidélité', pct(a.week, a.month), 'des actifs du mois sont venus cette semaine'),
       kpi('Comptes', m.new.total_accounts, `${m.new.total_teams} équipes · ${m.new.total_clubs} clubs`)
@@ -493,7 +494,7 @@
           TITLES.map(title => [title, async () => {
             const { error } = await sb.rpc('set_club_function', { p_club: r.id, p_user: u.id, p_title: title });
             if (error) return E.toast(error.message); E.toast(`${u.display_name} : ${title} de « ${r.name} ».`); render();
-          }]), `Fonction de ${u.display_name}`), 50)]), `Bureau de « ${r.name} »`));
+          }]), `Fonction ${de(u.display_name)}${u.display_name}`), 50)]), `Bureau de « ${r.name} »`));
       actions.appendChild(nominate);
       if (r.responsables.length) {
         const removeBtn = btn('Retirer du bureau', 'outline small danger', () => window.RugbySelect.openMenu(removeBtn,
@@ -557,7 +558,7 @@
         const me = A.user().id === r.id;
         const actions = el('div', 'admin-actions');
         actions.appendChild(btn(r.is_superadmin ? 'Retirer super-admin' : 'Passer super-admin', 'outline small' + (r.is_superadmin ? ' danger' : ''), async () => {
-          if (!await window.RugbyDialog.confirm(r.is_superadmin ? `Retirer les droits super-admin de ${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
+          if (!await window.RugbyDialog.confirm(r.is_superadmin ? `Retirer les droits super-admin ${de(r.display_name)}${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
           const { error } = await sb.rpc('admin_set_superadmin', { p_user: r.id, p_on: !r.is_superadmin });
           if (error) return E.toast(error.message); render();
         }));

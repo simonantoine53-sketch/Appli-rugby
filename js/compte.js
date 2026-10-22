@@ -1,6 +1,7 @@
 /* Page Compte, en cinq groupes courts : Mon profil, Mon club et mes équipes, Réglages, Aide, Compte.
    Tout est visible sur la page ; les formulaires (code, mot de passe) s'ouvrent sur place (2 touches au plus). */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
   const A = window.RugbyAccount;
   const E = window.RugbyEditor;
@@ -32,7 +33,7 @@
     if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoignez votre club avec le code ou le lien reçu.'));
     const join = $('#account-join'); join.replaceChildren();
     const pend = A.pendingCard(); if (pend) join.appendChild(pend);
-    const toggle = btn('Rejoindre ou créer un club, une équipe', 'outline wide', () => {
+    const toggle = btn('Rejoindre un club ou une équipe', 'outline wide', () => {
       const forms = A.teamForms(() => { forms.replaceWith(toggle); toggle.focus(); });
       toggle.replaceWith(forms);
     });
@@ -92,7 +93,13 @@
         row.appendChild(acts);
         box.appendChild(row);
         if (logins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(logins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
+        // Trace de l'accord parental donné à l'inscription (ou à l'ajout du jeune)
+        const consent = el('p', 'help kid-consent'); box.appendChild(consent);
+        sb.from('profile_private').select('parental_consent_at').eq('user_id', k.id).maybeSingle().then(({ data }) => {
+          if (data && data.parental_consent_at) consent.textContent = `Accord parental donné le ${new Date(data.parental_consent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.`;
+        });
       });
+      box.appendChild(el('p', 'help', 'À 15 ans, votre jeune peut avoir son propre e-mail et mot de passe : « Lui donner son compte » lui transmet ce compte, avec son profil et ses équipes.'));
     }
     const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
     f.onsubmit = async e => {
@@ -112,7 +119,7 @@
   async function handOver(k) {
     const D = window.RugbyDialog;
     const first = (k.display_name || '').split(' ')[0];
-    const em = await D.prompt(`E-mail de ${first}`, A.kidLogins()[k.id] || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
+    const em = await D.prompt(`E-mail ${de(first)}${first}`, A.kidLogins()[k.id] || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
     if (!em) return;
     const again = await D.prompt('Retapez son adresse pour vérifier', '', { title: 'Lui donner son compte', placeholder: em.trim(), ok: 'Envoyer le lien', maxLength: 254 });
     if (again == null) return;

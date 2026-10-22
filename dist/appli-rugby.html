@@ -25,7 +25,7 @@
   --border: #e3e6ea;        /* bordures et séparateurs */
   --border-strong: #c9cdd2; /* bordures au survol, interrupteurs éteints, icônes inactives */
   --text: #1f2933;          /* texte principal */
-  --muted: #6b7280;         /* texte secondaire, aides */
+  --muted: #5f6672;         /* texte secondaire, aides */
   /* Couleur d'action unique : boutons principaux, liens, onglet actif, sélection */
   --primary: #1a73e8;
   --primary-dark: #1558b8;  /* survol, texte sur fond clair */
@@ -35,7 +35,10 @@
   --warning: #b34d00;  --warning-soft: #fff3e0;   /* peut-être, en attente, proposé */
   --danger: #c62828;   --danger-dark: #a91f1f;  --danger-soft: #fdecea;   /* absent, erreurs, supprimer, pastilles */
   /* Texte posé sur une teinte pâle (--x-soft) : même couleur en clair, plus lumineuse en sombre */
-  --primary-ink: #1a73e8; --success-ink: #2e7d32; --warning-ink: #b34d00; --danger-ink: #c62828; --match-ink: #6a1b9a; --tag-ink: #00796b; --neutral-ink: #455a64;
+  --primary-ink: #1558b8; --success-ink: #2e7d32; --warning-ink: #b34d00; --danger-ink: #c62828; --match-ink: #6a1b9a; --tag-ink: #00796b; --neutral-ink: #455a64;
+  /* Fonds pleins sous un texte blanc (boutons, réponse choisie) : identiques en clair, plus sombres en mode sombre */
+  --primary-fill: var(--primary); --success-fill: var(--success); --warning-fill: var(--warning); --danger-fill: var(--danger);
+  --brand-ink: #3b8540;  /* nom « Rugbeo » en texte (le vert du terrain est trop pâle pour du texte) */
   --on-color: #ffffff;  /* texte et icônes posés sur une couleur pleine (bouton bleu, pastille…) : blanc dans les deux modes */
   /* Catégories (étiquettes d'information, jamais des boutons) */
   --match: #6a1b9a;    --match-soft: #f3e5f5;     /* matchs */
@@ -90,8 +93,8 @@ button { font: inherit; cursor: pointer; }
   border-radius: 8px; padding: 10px 16px; border: 1px solid transparent; font-weight: 600;
   display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
 }
-.btn.primary { background: var(--primary); color: var(--on-color); }
-.btn.primary:hover { background: var(--primary-dark); }
+.btn.primary { background: var(--primary-fill); color: var(--on-color); }
+.btn.primary:hover { background: var(--primary-fill); box-shadow: inset 0 0 0 999px rgba(0,0,0,.14); }   /* assombri au survol, lisible dans les deux modes */
 .btn.secondary { background: var(--primary-soft); color: var(--primary-ink); }
 .btn.secondary:hover { background: var(--primary-soft); }
 .btn.outline { background: var(--panel); color: var(--text); border-color: var(--border); }
@@ -112,7 +115,7 @@ button { font: inherit; cursor: pointer; }
 .progress { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: grid; place-items: center; z-index: 70; }
 .progress .box { background: var(--panel); border-radius: 12px; padding: 20px 26px; min-width: 300px; text-align: center; box-shadow: var(--shadow); }
 .progress .bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 12px; }
-.progress .bar i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .15s; }
+.progress .bar i { display: block; height: 100%; width: 0; background: var(--primary-fill); transition: width .15s; }
 
 /* ---------- Layout ---------- */
 .layout { flex: 1 1 auto; display: flex; min-height: 0; }
@@ -130,7 +133,7 @@ button { font: inherit; cursor: pointer; }
 .select-tool {
   width: 36px; height: 24px; border-radius: 6px; border: none; background: var(--border-strong); color: var(--on-color); display: grid; place-items: center;
 }
-.select-tool.active { background: var(--primary); }
+.select-tool.active { background: var(--primary-fill); }
 .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .tool {
   position: relative; aspect-ratio: 1; border: 1.5px solid var(--border-strong); border-radius: 8px; background: var(--panel);
@@ -170,9 +173,9 @@ button { font: inherit; cursor: pointer; }
   background: var(--panel); color: var(--primary); cursor: pointer;
 }
 .fab-mode { display: none; border-color: var(--border); color: var(--text); }
-.fab-mode.on { border-color: var(--primary); background: var(--primary); color: var(--on-color); }
+.fab-mode.on { border-color: var(--primary); background: var(--primary-fill); color: var(--on-color); }
 .fab-select svg { width: 26px; height: 26px; }
-.fab-select.tool-on { background: var(--primary); color: var(--on-color); }
+.fab-select.tool-on { background: var(--primary-fill); color: var(--on-color); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .zoom-fab { display: none; position: absolute; right: 12px; bottom: 68px; flex-direction: column; gap: 6px; z-index: 6; }
 .zoom-fab button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border); background: var(--panel); box-shadow: var(--shadow); font-size: 20px; display: grid; place-items: center; color: var(--text); }
@@ -229,7 +232,7 @@ button { font: inherit; cursor: pointer; }
 .filter-bar input[type=search] { font: inherit; font-size: 15px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; background: var(--panel); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { border: 1px solid var(--border); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
-.chip.on { background: var(--primary); color: var(--on-color); border-color: var(--primary); }
+.chip.on { background: var(--primary-fill); color: var(--on-color); border-color: var(--primary); }
 .vis-badge.cat { background: var(--tag-soft); color: var(--tag-ink); }
 
 .field-group { margin-bottom: 18px; }
@@ -317,7 +320,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .modal.presenting .preview-canvas svg { max-height: calc(100vh - 70px); border-radius: 0; box-shadow: none; }
 .modal.presenting .preview-controls { background: var(--stage); }
 .modal.presenting .preview-controls .btn { background: var(--stage-btn); color: var(--on-color); border-color: var(--stage-border); }
-.modal.presenting .preview-controls .btn.primary { background: var(--primary); }
+.modal.presenting .preview-controls .btn.primary { background: var(--primary-fill); }
 
 /* ---------- Partage public ---------- */
 .share-body { gap: 10px; }
@@ -356,7 +359,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 /* ---------- Comptes & équipes ---------- */
 .btn.account.logged { color: var(--primary); }
 .has-badge { position: relative; }
-.has-badge::after { content: attr(data-badge); position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: var(--on-color); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.has-badge::after { content: attr(data-badge); position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger-fill); color: var(--on-color); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
 .tabs.small { padding: 0; border: none; flex: 0 0 auto; }
 .tabs.small .tab { padding: 10px 6px; font-size: 14px; }
 #library-tabs { padding: 0 16px; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
@@ -402,7 +405,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .hub-account:not(.logged) { padding: 0 12px; border: 1.5px solid var(--border); }
 .hub-account .avatar-dot { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-ink); font-weight: 800; font-size: 16px; display: grid; place-items: center; border: 2px solid transparent; }
 .hub-account.on .avatar-dot { border-color: var(--primary); }
-.nav-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: var(--on-color); font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; line-height: 1; }
+.nav-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger-fill); color: var(--on-color); font-size: 12px; font-weight: 700; display: inline-grid; place-items: center; line-height: 1; }
 .app-nav { display: none; }
 
 /* ---------- Accueil connecté ---------- */
@@ -463,14 +466,14 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .rsvp .rsvp-btn.yes { border-color: var(--success); color: var(--success); }
 .rsvp .rsvp-btn.maybe { border-color: var(--warning); color: var(--warning); }
 .rsvp .rsvp-btn.no { border-color: var(--danger); color: var(--danger); }
-.rsvp .rsvp-btn.yes[aria-pressed="true"] { background: var(--success); border-color: var(--success); color: var(--on-color); }
-.rsvp .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning); border-color: var(--warning); color: var(--on-color); }
-.rsvp .rsvp-btn.no[aria-pressed="true"] { background: var(--danger); border-color: var(--danger); color: var(--on-color); }
+.rsvp .rsvp-btn.yes[aria-pressed="true"] { background: var(--success-fill); border-color: var(--success); color: var(--on-color); }
+.rsvp .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning-fill); border-color: var(--warning); color: var(--on-color); }
+.rsvp .rsvp-btn.no[aria-pressed="true"] { background: var(--danger-fill); border-color: var(--danger); color: var(--on-color); }
 .rsvp .rsvp-btn:disabled { opacity: .5; cursor: default; }
 .ev-counts { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
 .pres-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--neutral-soft); }
 .pres-bar i { display: block; height: 100%; }
-.pres-bar .y { background: var(--success); } .pres-bar .m { background: var(--warning); } .pres-bar .n { background: var(--danger); }
+.pres-bar .y { background: var(--success-fill); } .pres-bar .m { background: var(--warning-fill); } .pres-bar .n { background: var(--danger-fill); }
 .pres-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; font-weight: 700; }
 .pres-legend .y { color: var(--success); } .pres-legend .m { color: var(--warning); } .pres-legend .n { color: var(--danger); } .pres-legend .w { color: var(--muted); }
 .back-link { align-self: flex-start; padding: 6px 4px; color: var(--primary); }
@@ -490,7 +493,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .event-form .seg-row label { flex: 1 1 0; display: block; font-weight: 600; }
 .event-form .seg-row input { position: absolute; opacity: 0; pointer-events: none; }
 .event-form .seg-row span { display: block; text-align: center; padding: 10px 6px; font-size: 14px; cursor: pointer; }
-.event-form .seg-row input:checked + span { background: var(--primary); color: var(--on-color); }
+.event-form .seg-row input:checked + span { background: var(--primary-fill); color: var(--on-color); }
 .event-form .seg-row input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: -2px; }
 .event-form #ev-match-fields { display: flex; flex-direction: column; gap: 10px; }
 .event-form #ev-match-fields.hidden { display: none; }
@@ -524,7 +527,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .day-chips label { display: block; font-weight: 600; }
 .day-chips input { position: absolute; opacity: 0; pointer-events: none; }
 .day-chips span { display: grid; place-items: center; min-width: 46px; height: 40px; padding: 0 8px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--panel); font-size: 14px; cursor: pointer; }
-.day-chips input:checked + span { background: var(--primary); border-color: var(--primary); color: var(--on-color); }
+.day-chips input:checked + span { background: var(--primary-fill); border-color: var(--primary); color: var(--on-color); }
 .day-chips input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
 .ev-foot { display: flex; justify-content: flex-end; margin-top: 2px; }
 .ev-quick { padding: 2px 8px; font-size: 13px; color: var(--muted); }
@@ -558,9 +561,9 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .sheet-row input { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 16px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; }
 .sheet-marks { display: flex; gap: 4px; flex: 0 0 auto; }
 .sheet-mark { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--panel); font-weight: 800; font-size: 13px; color: var(--muted); padding: 0; }
-.sheet-mark.on { background: var(--primary); border-color: var(--primary); color: var(--on-color); }
+.sheet-mark.on { background: var(--primary-fill); border-color: var(--primary); color: var(--on-color); }
 .sheet-mark.auto { border-style: dashed; cursor: help; }
-.sheet-mark.auto.on { border-style: solid; background: var(--warning); border-color: var(--warning); }
+.sheet-mark.auto.on { border-style: solid; background: var(--warning-fill); border-color: var(--warning); }
 .sheet-publish { display: flex; flex-direction: column; gap: 8px; }
 .sheet-publish .btn { min-height: 48px; }
 .sheet-frame { width: 100%; overflow: hidden; background: var(--panel); border: 1.5px solid var(--border); border-radius: 10px; }
@@ -660,11 +663,11 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .bar-row { display: grid; grid-template-columns: minmax(0, 38%) 1fr minmax(36px, auto); align-items: center; gap: 8px; font-size: 13px; }
 .bar-name { overflow-wrap: anywhere; line-height: 1.3; }
 .bar-track { height: 10px; background: var(--subtle); border-radius: 5px; overflow: hidden; }
-.bar-track i { display: block; height: 100%; background: var(--primary); border-radius: 5px; }
+.bar-track i { display: block; height: 100%; background: var(--primary-fill); border-radius: 5px; }
 .bar-n { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
 .col-chart { display: flex; align-items: flex-end; gap: 3px; height: 120px; }
 .col-chart .col { flex: 1 1 0; max-width: 32px; height: 100%; display: flex; align-items: flex-end; }
-.col-chart .col i { display: block; width: 100%; background: var(--primary); border-radius: 3px 3px 0 0; }
+.col-chart .col i { display: block; width: 100%; background: var(--primary-fill); border-radius: 3px 3px 0 0; }
 .col-axis { display: flex; justify-content: space-between; }
 .admin-filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .admin-search { font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; width: 100%; max-width: 480px; }
@@ -708,6 +711,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .home-bar .actions .btn { flex-direction: row; padding: 0 12px; font-size: 14px; gap: 6px; }
   .home-bar .actions .btn span { display: inline; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-bar #home-new .long, .home-bar #home-team .long, .home-bar #home-feedback .long { display: none; }
+  .home-bar #home-new .only-short { display: inline; }
   .hub-tabs { display: none; }
   .app-nav { display: flex; flex: 0 0 auto; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: var(--bar-safe); }
   .app-nav .nav-item { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--muted); padding: 6px 0 8px; position: relative; min-height: 56px; }
@@ -817,10 +821,11 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 :root[data-theme="dark"] {
   --bg: #0d1117; --panel: #151b22; --subtle: #1d252e; --border: #2a333d; --border-strong: #46515d;
   --text: #e6edf3; --muted: #9da7b3;
-  --primary: #257ae9; --primary-dark: #7cb0ff; --primary-soft: #19304e;
-  --success: #348e39; --success-soft: #1c3427;
-  --warning: #cf5900; --warning-soft: #3e291b;
-  --danger: #da4949; --danger-dark: #ff7b7b; --danger-soft: #40252b;
+  --primary: #4d94f0; --primary-dark: #7cb0ff; --primary-soft: #19304e;
+  --success: #45a84b; --success-soft: #1c3427;
+  --warning: #e0701a; --warning-soft: #3e291b;
+  --danger: #e65c5c; --danger-dark: #ff7b7b; --danger-soft: #40252b;
+  --primary-fill: #1a6fd0; --success-fill: #2f8034; --warning-fill: #b34d00; --danger-fill: #c43c3c; --brand-ink: #5bb361;
   --match: #ac54e1; --match-soft: #36284c;
   --tag: #008c7c; --tag-soft: #103436;
   --neutral: #63818f; --neutral-soft: #26313a;
@@ -833,10 +838,11 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
   --bg: #0d1117; --panel: #151b22; --subtle: #1d252e; --border: #2a333d; --border-strong: #46515d;
   --text: #e6edf3; --muted: #9da7b3;
-  --primary: #257ae9; --primary-dark: #7cb0ff; --primary-soft: #19304e;
-  --success: #348e39; --success-soft: #1c3427;
-  --warning: #cf5900; --warning-soft: #3e291b;
-  --danger: #da4949; --danger-dark: #ff7b7b; --danger-soft: #40252b;
+  --primary: #4d94f0; --primary-dark: #7cb0ff; --primary-soft: #19304e;
+  --success: #45a84b; --success-soft: #1c3427;
+  --warning: #e0701a; --warning-soft: #3e291b;
+  --danger: #e65c5c; --danger-dark: #ff7b7b; --danger-soft: #40252b;
+  --primary-fill: #1a6fd0; --success-fill: #2f8034; --warning-fill: #b34d00; --danger-fill: #c43c3c; --brand-ink: #5bb361;
   --match: #ac54e1; --match-soft: #36284c;
   --tag: #008c7c; --tag-soft: #103436;
   --neutral: #63818f; --neutral-soft: #26313a;
@@ -849,15 +855,16 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 @media print {
   :root, :root[data-theme] {
   --bg: #f4f6f8; --panel: #ffffff; --subtle: #f1f3f5; --border: #e3e6ea; --border-strong: #c9cdd2;
-  --text: #1f2933; --muted: #6b7280;
+  --text: #1f2933; --muted: #5f6672;
   --primary: #1a73e8; --primary-dark: #1558b8; --primary-soft: #e8f0fe;
+  --primary-fill: #1a73e8; --success-fill: #2e7d32; --warning-fill: #b34d00; --danger-fill: #c62828; --brand-ink: #3b8540;
   --success: #2e7d32; --success-soft: #e3f2e6;
   --warning: #b34d00; --warning-soft: #fff3e0;
   --danger: #c62828; --danger-dark: #a91f1f; --danger-soft: #fdecea;
   --match: #6a1b9a; --match-soft: #f3e5f5;
   --tag: #00796b; --tag-soft: #e0f2f1;
   --neutral: #455a64; --neutral-soft: #eceff1;
-  --primary-ink: #1a73e8; --success-ink: #2e7d32; --warning-ink: #b34d00; --danger-ink: #c62828; --match-ink: #6a1b9a; --tag-ink: #00796b; --neutral-ink: #455a64;
+  --primary-ink: #1558b8; --success-ink: #2e7d32; --warning-ink: #b34d00; --danger-ink: #c62828; --match-ink: #6a1b9a; --tag-ink: #00796b; --neutral-ink: #455a64;
   --chart-grid: #e9ecef; --chart-other: #9aa3ad;
   --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
   color-scheme: light;
@@ -1013,8 +1020,8 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden { display: none; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
-.btn.primary.danger-solid { background: var(--danger); }
-.btn.primary.danger-solid:hover { background: var(--danger-dark); }
+.btn.primary.danger-solid { background: var(--danger-fill); }
+.btn.primary.danger-solid:hover { background: var(--danger-fill); box-shadow: inset 0 0 0 999px rgba(0,0,0,.14); }
 @media (max-width: 600px) { .dialog-actions .btn { flex: 1 1 0; } }
 
 /* Fenêtres : le contenu défile toujours si la fenêtre est plus petite que lui */
@@ -1064,7 +1071,7 @@ select:disabled { opacity: .5; cursor: default; }
 .switch-row small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
 .switch { -webkit-appearance: none; appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--border-strong); position: relative; flex: 0 0 auto; cursor: pointer; transition: background .15s; margin: 0; }
 .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--on-color); box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
-.switch:checked { background: var(--primary); }
+.switch:checked { background: var(--primary-fill); }
 .switch:checked::after { transform: translateX(18px); }
 .switch:focus-visible { outline: 3px solid rgba(26,115,232,.45); outline-offset: 2px; }
 .set-details summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: space-between; min-height: 32px; }
@@ -1085,6 +1092,7 @@ select:disabled { opacity: .5; cursor: default; }
 .invite-icons { display: flex; justify-content: center; gap: 16px; padding: 4px 0; }
 .invite-icon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--border); background: var(--panel); color: var(--text); cursor: pointer; padding: 0; }
 .invite-icon svg { width: 26px; height: 26px; }
+.invite-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12.5px; color: var(--muted); }
 .invite-icon:hover { border-color: var(--primary); }
 .invite-icon.whatsapp { background: var(--whatsapp); border-color: var(--whatsapp); color: var(--on-color); }
 .invite-icon.sms { color: var(--primary); }
@@ -1186,10 +1194,10 @@ select:disabled { opacity: .5; cursor: default; }
 .pw-bar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
 .pw-bar i { display: block; height: 100%; width: 0; border-radius: 3px; transition: width .2s, background .2s; }
 .pw-label { font-size: 13px; color: var(--muted); }
-.pw-meter[data-level="1"] .pw-bar i { width: 15%; background: var(--danger); }
-.pw-meter[data-level="2"] .pw-bar i { width: 35%; background: var(--danger); }
-.pw-meter[data-level="3"] .pw-bar i { width: 65%; background: var(--warning); }
-.pw-meter[data-level="4"] .pw-bar i { width: 100%; background: var(--success); }
+.pw-meter[data-level="1"] .pw-bar i { width: 15%; background: var(--danger-fill); }
+.pw-meter[data-level="2"] .pw-bar i { width: 35%; background: var(--danger-fill); }
+.pw-meter[data-level="3"] .pw-bar i { width: 65%; background: var(--warning-fill); }
+.pw-meter[data-level="4"] .pw-bar i { width: 100%; background: var(--success-fill); }
 .pw-meter[data-level="1"] .pw-label, .pw-meter[data-level="2"] .pw-label { color: var(--danger); }
 .pw-meter[data-level="4"] .pw-label { color: var(--success); font-weight: 600; }
 
@@ -1254,7 +1262,7 @@ select:disabled { opacity: .5; cursor: default; }
 .share-switch strong { display: block; font-size: 14.5px; }
 .share-switch small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; line-height: 1.35; }
 button.switch { border: 0; padding: 0; }
-.switch[aria-checked="true"] { background: var(--primary); }
+.switch[aria-checked="true"] { background: var(--primary-fill); }
 .switch[aria-checked="true"]::after { transform: translateX(18px); }
 .switch:disabled { opacity: .45; cursor: not-allowed; }
 .share-copy { align-self: flex-start; }
@@ -1318,7 +1326,7 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .dash-chart { width: 100%; }
 .dash-svg { width: 100%; height: auto; display: block; }
 .dash-grid { stroke: var(--chart-grid); stroke-width: 1; }
-.dash-tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.dash-tick { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .dash-hit { cursor: pointer; }
 .dash-hit:hover { fill: rgba(0, 0, 0, .04); }
 .dash-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12.5px; color: var(--text); }
@@ -1332,10 +1340,10 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 
 /* Nom et slogan : accueil (sans compte) et fenêtre de connexion */
 .hero-brand { margin: 0 0 6px; font-size: 13px; color: var(--muted); letter-spacing: .02em; }
-.hero-brand strong { color: var(--field); font-size: 15px; letter-spacing: .01em; }
+.hero-brand strong { color: var(--brand-ink); font-size: 15px; letter-spacing: .01em; }
 .hero-slogan { margin: 4px 0 0; font-weight: 600; color: var(--text); }
 .auth-brand { margin: 0; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
-.auth-brand strong { color: var(--field); }
+.auth-brand strong { color: var(--brand-ink); }
 /* Bandeau terrain de la fenêtre de connexion (décoratif) */
 .auth-hero { height: 104px; overflow: hidden; border-bottom: 1px solid var(--border); }
 .auth-hero svg { display: block; width: 100%; height: 100%; }
@@ -1394,7 +1402,7 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .kids-card .inline-form { margin-top: 8px; }
 
 /* Base de test : petit bandeau toujours visible (js/config.js) */
-.env-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 5000; pointer-events: none; background: var(--warning); color: var(--panel); font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 10px 3px; border-radius: 0 0 8px 8px; white-space: nowrap; }
+.env-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 5000; pointer-events: none; background: var(--warning-fill); color: var(--on-color); font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 10px 3px; border-radius: 0 0 8px 8px; white-space: nowrap; }
 @media print { .env-banner { display: none; } }
 .club-ffr { display: inline-block; margin: 2px 0 8px; font-weight: 600; }
 .kid-handover { margin: -4px 0 8px; }
@@ -1449,9 +1457,9 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .quick-buttons .rsvp-btn.yes { border-color: var(--success); color: var(--success); }
 .quick-buttons .rsvp-btn.maybe { border-color: var(--warning); color: var(--warning); }
 .quick-buttons .rsvp-btn.no { border-color: var(--danger); color: var(--danger); }
-.quick-buttons .rsvp-btn.yes[aria-pressed="true"] { background: var(--success); color: var(--panel); }
-.quick-buttons .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning); color: var(--panel); }
-.quick-buttons .rsvp-btn.no[aria-pressed="true"] { background: var(--danger); color: var(--panel); }
+.quick-buttons .rsvp-btn.yes[aria-pressed="true"] { background: var(--success-fill); color: var(--panel); }
+.quick-buttons .rsvp-btn.maybe[aria-pressed="true"] { background: var(--warning-fill); color: var(--panel); }
+.quick-buttons .rsvp-btn.no[aria-pressed="true"] { background: var(--danger-fill); color: var(--panel); }
 .quick-done { margin: 0; color: var(--success); }
 
 /* Réglages : interrupteur dans une ligne ; abonnement à l'agenda */
@@ -1523,6 +1531,17 @@ a.sponsor-item:hover img { opacity: .8; }
 .st-short { display: none; }
 @media (max-width: 560px) { .st-th .st-long { display: none; } .st-th .st-short { display: inline; } }
 
+/* Compteurs de réponses cliquables (fiche événement) */
+.only-short { display: none; }
+.pres-legend .linkish { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.kid-sent { margin: 8px 0 4px; color: var(--text); line-height: 1.4; }
+/* Liens de texte : une seule couleur, celle des actions */
+a:not([class]) { color: var(--primary); }
+.admin-title { font-size: 22px; margin: 0 0 8px; }
+.btn.two-lines { flex-direction: column; gap: 0; padding-top: 6px; padding-bottom: 6px; }
+.btn.two-lines small { font-size: 12.5px; font-weight: 400; color: var(--muted); }
+.sheet-status.sheet-st { align-self: flex-start; }
+
 </style>
 </head>
 <body>
@@ -1535,11 +1554,11 @@ a.sponsor-item:hover img { opacity: .8; }
     <svg id="hub-logo-default" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
     <img id="hub-logo" class="hub-logo hidden" alt="">
     <strong id="hub-title">Rugbeo</strong>
-    <select id="hub-team" class="hub-team hidden" aria-label="Changer d'équipe"></select>
+    <select id="hub-team" class="hub-team hidden" aria-label="Changer d’équipe"></select>
   </div>
   <nav id="hub-tabs" class="hub-tabs" aria-label="Navigation principale"></nav>
   <div class="actions">
-    <button id="home-new" class="btn primary hidden" style="gap:0">+ Nouveau<span class="long">&nbsp;dessin</span></button>
+    <button id="home-new" class="btn primary hidden" style="gap:0" aria-label="Nouveau dessin">+&nbsp;<span class="long">Nouveau&nbsp;dessin</span><span class="only-short">Dessin</span></button>
     <button id="hub-account" class="hub-account" aria-label="Mon compte"></button>
   </div>
 </header>
@@ -1659,7 +1678,7 @@ a.sponsor-item:hover img { opacity: .8; }
       <strong id="share-title">Stratégie partagée</strong>
     </div>
     <div class="actions">
-      <button id="share-open-app" class="btn primary">Ouvrir l'appli</button>
+      <button id="share-open-app" class="btn primary">Ouvrir l’appli</button>
     </div>
   </header>
   <div class="home-body share-body">
@@ -1672,7 +1691,7 @@ a.sponsor-item:hover img { opacity: .8; }
       <button id="share-full" class="btn outline">Plein écran</button>
     </div>
     <p id="share-step" class="muted center"></p>
-    <p id="share-error" class="library-empty hidden">Ce lien n'est plus valide ou le partage a été arrêté.</p>
+    <p id="share-error" class="library-empty hidden">Ce lien n’est plus valide ou le partage a été arrêté.</p>
     <footer id="share-sponsors" class="share-sponsors"></footer>
   </div>
 </div>
@@ -1704,8 +1723,8 @@ a.sponsor-item:hover img { opacity: .8; }
         <span>Exporter<span class="long"> ▾</span></span>
       </button>
       <div id="export-menu" class="menu hidden">
-        <button data-export="png"><strong>Image</strong><span>L'étape affichée, en haute résolution (PNG)</span></button>
-        <button data-export="gif"><strong>GIF animé</strong><span>L'animation complète, à envoyer sur WhatsApp ou par mail</span></button>
+        <button data-export="png"><strong>Image</strong><span>L’étape affichée, en haute résolution (PNG)</span></button>
+        <button data-export="gif"><strong>GIF animé</strong><span>L’animation complète, à envoyer sur WhatsApp ou par mail</span></button>
         <button data-export="mp4"><strong>Vidéo</strong><span>Toutes les étapes en vidéo HD, lisible sur iPhone et Android</span></button>
         <button data-export="pdf"><strong>Fiche à imprimer (PDF)</strong><span>Toutes les étapes sur une page, à distribuer aux joueurs</span></button>
       </div>
@@ -1748,7 +1767,7 @@ a.sponsor-item:hover img { opacity: .8; }
     <div class="zoom-fab">
       <button data-zoom="in" title="Zoom avant">+</button>
       <button data-zoom="out" title="Zoom arrière">−</button>
-      <button data-zoom="fit" title="Ajuster à l'écran"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button data-zoom="fit" title="Ajuster à l’écran"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     </div>
     <div id="frame-bar" class="frame-bar hidden">
       <strong id="frame-bar-title">Cadrage</strong>
@@ -1773,7 +1792,7 @@ a.sponsor-item:hover img { opacity: .8; }
     <div id="tab-steps" class="tab-content">
       <div id="steps" class="steps"></div>
       <button id="add-step" class="btn outline wide">+ Ajouter une étape</button>
-      <p class="help">La nouvelle étape reprend les joueurs là où ils sont. Déplacez-les : l'aperçu animera le mouvement.</p>
+      <p class="help">La nouvelle étape reprend les joueurs là où ils sont. Déplacez-les : l’aperçu animera le mouvement.</p>
     </div>
 
     <div id="tab-settings" class="tab-content hidden settings-pane">
@@ -1824,10 +1843,10 @@ a.sponsor-item:hover img { opacity: .8; }
         <ul class="shortcuts">
           <li><kbd>V</kbd> ou <kbd>Échap</kbd> : sélection</li>
           <li><kbd>1</kbd>–<kbd>0</kbd>, <kbd>S</kbd>, <kbd>D</kbd>, <kbd>F</kbd>, <kbd>T</kbd> : outils de forme</li>
-          <li><kbd>Suppr</kbd> : supprimer l'objet sélectionné</li>
+          <li><kbd>Suppr</kbd> : supprimer l’objet sélectionné</li>
           <li><kbd>Ctrl</kbd>+<kbd>D</kbd> : dupliquer</li>
           <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> : annuler / rétablir</li>
-          <li><kbd>Flèches</kbd> : déplacer l'objet (Maj = plus vite)</li>
+          <li><kbd>Flèches</kbd> : déplacer l’objet (Maj = plus vite)</li>
           <li>Cliquer-glisser dans le vide : sélectionner tout ce qui est dans le cadre (avec <kbd>Maj</kbd> : ajouter)</li>
           <li><kbd>Maj</kbd> + clic : ajouter à la sélection ; <kbd>Ctrl</kbd>+<kbd>A</kbd> : tout sélectionner</li>
           <li><kbd>Maj</kbd> + glisser : déplacement aligné ; sur une ligne, angle à 0°, 45° ou 90°</li>
@@ -1883,7 +1902,7 @@ a.sponsor-item:hover img { opacity: .8; }
         <div id="formation-defense" class="swatches"></div>
       </div>
       <div class="field-group" id="formation-dir-group">
-        <label class="label" id="formation-dir-label">Sens de l'attaque</label>
+        <label class="label" id="formation-dir-label">Sens de l’attaque</label>
         <div class="choice-row">
           <label><input type="radio" name="formation-dir" value="1" checked> Vers la droite →</label>
           <label><input type="radio" name="formation-dir" value="-1"> ← Vers la gauche</label>
@@ -1975,10 +1994,15 @@ a.sponsor-item:hover img { opacity: .8; }
     <p id="auth-note" class="auth-note hidden"></p>
     <!-- Inscription, étape 1 : qui crée le compte ? -->
     <div id="auth-who" class="auth-who hidden">
+      <button type="button" class="who-card who-login hidden" data-who="login"><strong>J’ai déjà un compte Rugbeo</strong><span>Connectez-vous : vous rejoindrez l’équipe tout de suite.</span></button>
       <p class="auth-step-title">Qui crée le compte ?</p>
       <button type="button" class="who-card" data-who="adult"><strong>J’ai 15 ans ou plus</strong><span>Joueur, coach, dirigeant, bénévole…</span></button>
-      <button type="button" class="who-card" data-who="parent"><strong>Je suis parent d’un joueur de moins de 15 ans</strong><span>Vous créez son compte et répondez à ses convocations. Plusieurs enfants ? Un seul compte suffit.</span></button>
-      <p class="help">Vous avez moins de 15 ans ? Demandez à un parent de créer le compte.</p>
+      <button type="button" class="who-card" data-who="parent"><strong>Je suis parent d’un joueur ou d’une joueuse de moins de 15 ans</strong><span>Vous créez son compte et répondez à ses convocations. Plusieurs enfants ? Un seul compte suffit.</span></button>
+      <button type="button" class="who-card" data-who="kid"><strong>J’ai moins de 15 ans</strong><span>Un parent crée le compte pour vous.</span></button>
+      <div id="auth-kid-info" class="auth-parent hidden">
+        <p class="help">Avant 15 ans, c’est un parent qui crée le compte (la loi le demande). Il pourra ensuite répondre aux convocations avec vous, et vous donner votre propre compte à 15 ans.</p>
+        <button type="button" id="auth-kid-share" class="btn primary">Envoyer le lien à un parent</button>
+      </div>
     </div>
     <form id="auth-form" class="form" data-mode="login">
       <a href="#" id="auth-who-back" class="auth-link hidden">← Retour</a>
@@ -1993,7 +2017,14 @@ a.sponsor-item:hover img { opacity: .8; }
       <label id="auth-password-field"><span id="auth-password-label">Mot de passe</span><input id="auth-password" type="password" required minlength="6" autocomplete="current-password"></label>
       <div id="auth-pw-hint" class="pw-meter hidden"><div class="pw-bar"><i></i></div><span class="pw-label">6 caractères minimum.</span></div>
       <div id="auth-signup-extra" class="auth-extra hidden">
-        <label id="auth-parent" class="check hidden"><input id="auth-parent-ok" type="checkbox"><span>Je suis son parent (ou son représentant légal) et j’accepte, pour lui, la <a href="#" data-legal="privacy">politique de confidentialité</a>.</span></label>
+        <div id="auth-parent" class="auth-parent hidden">
+          <ul class="help auth-parent-list">
+            <li>L’équipe verra son prénom, son nom, sa photo et son poste.</li>
+            <li>Son téléphone et sa date de naissance : seulement vous et le staff de son équipe.</li>
+            <li>Vous pourrez tout effacer depuis Compte → Mes jeunes.</li>
+          </ul>
+          <label class="check"><input id="auth-parent-ok" type="checkbox"><span><span id="auth-parent-who">Je suis son parent (ou son représentant légal)</span>. J’accepte, pour mon enfant, la <a href="#" data-legal="privacy">politique de confidentialité</a>.</span></label>
+        </div>
         <p class="help auth-terms">En créant un compte, vous acceptez les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Vos données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
       </div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
@@ -2007,6 +2038,7 @@ a.sponsor-item:hover img { opacity: .8; }
       <h3>Vérifiez votre boîte mail</h3>
       <p>Un e-mail de confirmation a été envoyé à <strong id="auth-pending-email"></strong>.</p>
       <p>Cliquez sur le lien qu’il contient : <strong>vous serez connecté automatiquement</strong>, même si vous l’ouvrez sur un autre appareil.</p>
+      <p id="auth-pending-next">Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.</p>
       <p class="muted small">Rien reçu ? Regardez dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
       <p id="auth-pending-msg" class="form-error"></p>
       <button id="auth-resend" class="btn outline wide" type="button">Renvoyer l’e-mail</button>
@@ -2024,7 +2056,7 @@ a.sponsor-item:hover img { opacity: .8; }
       <button class="btn-close" data-close="modal-event" title="Fermer">✕</button>
     </div>
     <form id="event-form" class="form event-form">
-      <div class="seg-row" role="radiogroup" aria-label="Type d'événement">
+      <div class="seg-row" role="radiogroup" aria-label="Type d’événement">
         <label><input type="radio" name="ev-kind" value="training" checked><span>Entraînement</span></label>
         <label><input type="radio" name="ev-kind" value="match"><span>Match</span></label>
         <label><input type="radio" name="ev-kind" value="other"><span>Autre</span></label>
@@ -2040,14 +2072,14 @@ a.sponsor-item:hover img { opacity: .8; }
       <div class="form-row">
         <label>Date<input id="ev-date" type="date" required></label>
         <label>Début<input id="ev-time" type="time" required></label>
-        <label>Rendez-vous<input id="ev-meet" type="time" title="Heure d'arrivée demandée (facultatif)"></label>
+        <label>Rendez-vous<input id="ev-meet" type="time" title="Heure d’arrivée demandée (facultatif)"></label>
       </div>
       <label>Lieu<input id="ev-location" type="text" maxlength="120" placeholder="Ex. Stade municipal, terrain 2"></label>
       <label>Infos pour l’équipe<textarea id="ev-notes" class="admin-textarea" rows="2" maxlength="1000" placeholder="Tenue, matériel, covoiturage… (facultatif)"></textarea></label>
       <div id="ev-repeat-field" class="recur">
         <label class="check"><input id="ev-recurring" type="checkbox"> Toutes les semaines (planning de la saison)</label>
         <div id="ev-recur-box" class="recur-box hidden">
-          <div class="day-chips" role="group" aria-label="Jours d'entraînement">
+          <div class="day-chips" role="group" aria-label="Jours d’entraînement">
             <label><input type="checkbox" name="ev-days" value="1"><span>Lun</span></label>
             <label><input type="checkbox" name="ev-days" value="2"><span>Mar</span></label>
             <label><input type="checkbox" name="ev-days" value="3"><span>Mer</span></label>
@@ -2061,7 +2093,7 @@ a.sponsor-item:hover img { opacity: .8; }
         </div>
       </div>
       <label id="ev-series-field" class="check hidden"><input id="ev-apply-series" type="checkbox"> Appliquer aussi aux séances suivantes de ce planning</label>
-      <label class="check"><input id="ev-notify" type="checkbox" checked> <span id="ev-notify-label">Prévenir l’équipe par notification</span></label>
+      <label class="check"><input id="ev-notify" type="checkbox" checked> <span id="ev-notify-label">Envoyer la convocation à l’équipe (notification)</span></label>
       <p id="ev-error" class="form-error"></p>
       <button id="ev-submit" class="btn primary wide" type="submit">Enregistrer</button>
     </form>
@@ -4635,15 +4667,15 @@ a.sponsor-item:hover img { opacity: .8; }
       const card = document.createElement('div');
       card.className = 'step-card' + (i === state.step ? ' active' : '');
       card.innerHTML = `<span class="num">${i + 1}</span><div class="thumb"></div><div class="card-actions">
-        <button class="dup" title="Dupliquer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-        <button class="del" title="Supprimer l'étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <button class="dup" title="Dupliquer l’étape"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+        <button class="del" title="Supprimer l’étape"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       </div><div class="meta">${[st.note ? 'consigne' : '', st.hold ? 'pause' : '', st.duration ? (st.duration / 1000).toLocaleString('fr-FR') + ' s' : '', st.frame ? 'cadrée' : ''].filter(Boolean).join(' · ')}</div>`;
       card.querySelector('.thumb').appendChild(sceneSvg(state.drawing.settings, st.objects, st.note, st.frame));
       if (i === state.step) {
         const opts = document.createElement('div'); opts.className = 'step-opts';
-        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne (facultatif)" title="Affichée pendant l'aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
+        opts.innerHTML = `<input type="text" class="step-note" placeholder="Consigne (facultatif)" title="Affichée pendant l’aperçu et dans les exports, ex. « Regarder la fixation du 10 »" maxlength="90">
           <div class="step-opts-row"><label>Durée <select class="step-dur"><option value="0">normale</option><option value="500">0,5 s</option><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label>
-          <label title="L'animation s'arrête sur cette étape jusqu'à ce qu'on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
+          <label title="L’animation s’arrête sur cette étape jusqu’à ce qu’on appuie sur Lire"><input type="checkbox" class="step-hold"> Marquer une pause</label></div>
           <div class="step-opts-row"><button type="button" class="btn small secondary step-frame">${st.frame ? 'Modifier le cadrage' : 'Cadrer (zoomer sur une zone)'}</button>${st.frame ? '<button type="button" class="btn small outline step-unframe">Tout le terrain</button>' : ''}</div>`;
         opts.onclick = e => e.stopPropagation(); opts.onpointerdown = e => e.stopPropagation();
         const note = opts.querySelector('.step-note'); note.value = st.note || '';
@@ -4659,7 +4691,7 @@ a.sponsor-item:hover img { opacity: .8; }
       card.querySelector('.del').onclick = async e => {
         e.stopPropagation();
         if (state.drawing.steps.length === 1) { toast('Impossible de supprimer la seule étape.'); return; }
-        if (!await window.RugbyDialog.confirm(`Supprimer l'étape ${i + 1} ?`)) return;
+        if (!await window.RugbyDialog.confirm(`Supprimer l’étape ${i + 1} ?`)) return;
         const b = snapshot(); state.drawing.steps.splice(i, 1); state.step = Math.max(0, Math.min(state.step, state.drawing.steps.length - 1)); state.selected = null; commit(b);
       };
       root.appendChild(card);
@@ -4830,7 +4862,7 @@ a.sponsor-item:hover img { opacity: .8; }
       c.toBlob(blob => download(blob, `${slug(state.drawing.title)}-etape-${state.step + 1}.png`), 'image/png');
       toast('Image exportée.');
     };
-    img.onerror = () => toast("Échec de l'export de l'image.");
+    img.onerror = () => toast('Échec de l’export de l’image.');
     img.src = url;
   }
   const slug = s => (s || 'dessin').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dessin';
@@ -5063,6 +5095,7 @@ a.sponsor-item:hover img { opacity: .8; }
 /* Comptes, équipes et partage des stratégies via Supabase.
    Inactif (mode local) tant que js/config.js ne contient pas d'URL et de clé. */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const cfg = window.RUGBY_CONFIG || {};
@@ -5311,7 +5344,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     i.setAttribute('aria-label', 'Prénom et nom du jeune');
     list.appendChild(i);
     $('#auth-kids .auth-kids-label').textContent = list.children.length > 1 ? 'Prénom et nom des jeunes' : 'Prénom et nom du jeune';
+    i.oninput = parentWho; parentWho();
     return i;
+  }
+  /** Accord parental : on nomme le ou les jeunes (« Je suis le parent d’Emma »). */
+  function parentWho() {
+    const names = [...document.querySelectorAll('#auth-kid-list input')].map(i => i.value.trim().split(' ')[0]).filter(Boolean);
+    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' et ' + names[names.length - 1] : names[0];
+    $('#auth-parent-who').textContent = list ? `Je suis le parent (ou le représentant légal) ${de(list)}${list}` : 'Je suis son parent (ou son représentant légal)';
   }
   $('#auth-kid-add').onclick = () => { const i = addKidInput(); if (i) i.focus(); };
   function setSignupWho(who) {
@@ -5327,7 +5367,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (parent && !$('#auth-kid-list').children.length) addKidInput();
     setAuthMsg('');
   }
-  document.querySelectorAll('#auth-who .who-card').forEach(b => { b.onclick = () => { setSignupWho(b.dataset.who); const f = b.dataset.who === 'parent' ? $('#auth-kid-list input') : $('#auth-name'); if (f) f.focus(); }; });
+  document.querySelectorAll('#auth-who .who-card').forEach(b => { b.onclick = () => {
+    const who = b.dataset.who;
+    if (who === 'login') return setAuthMode('login');
+    if (who === 'kid') { $('#auth-kid-info').classList.toggle('hidden'); return; }
+    setSignupWho(who); const f = who === 'parent' ? $('#auth-kid-list input') : $('#auth-name'); if (f) f.focus();
+  }; });
+  // Moins de 15 ans : on envoie le lien (avec le code d'invitation s'il y en a un) à un parent
+  $('#auth-kid-share').onclick = () => {
+    const code = pendingJoin();
+    const link = code ? joinLink(code) : `${location.origin}${location.pathname}`;
+    const text = `Bonjour ! Pour que je puisse suivre mon équipe de rugby sur Rugbeo (convocations, compos), il faut qu’un parent crée mon compte. Choisissez « Je suis parent d’un joueur de moins de 15 ans » : ${link}`;
+    track('kid_share_parent');
+    if (navigator.share) navigator.share({ title: 'Rugbeo', text }).catch(() => {});
+    else window.RugbyDialog.copy(text, { title: 'Message pour votre parent', message: 'Copiez ce message et envoyez-le à un parent (SMS, WhatsApp…).' });
+  };
   $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho(''); };
   function setAuthMode(mode) {
     showPending(false);
@@ -5391,6 +5445,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function startPending(email, password) {
     Object.assign(pending, { email, password, until: Date.now() + 30 * 60 * 1000 });
     $('#auth-pending-email').textContent = email;
+    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, vous rejoindrez automatiquement l’équipe de l’invitation.' : 'Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.';
     $('#auth-pending-msg').textContent = '';
     showPending(true);
     clearInterval(pending.timer);
@@ -5504,8 +5559,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const isFor = t => (t.who || S.user.id) === forId;
     const mine = new Set(S.teams.filter(t => !t.notMember && isFor(t)).map(t => t.id)), asked = new Set((S.pending || []).filter(isFor).map(t => t.id));
     const body = $('#club-teams-body'); body.replaceChildren();
-    $('#club-teams-title').textContent = (kid ? `Les équipes de ${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
-    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes de ${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
+    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
+    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
     (teams || []).forEach(t => {
       const row = el('div', 'pick-row');
@@ -5541,7 +5596,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
   function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre ou créer' : 'Rejoindre votre club'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre votre club'));
     if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
     box.appendChild(head);
     const part = (title, help) => { const d = el('div', 'forms-part'); d.appendChild(el('strong', 'forms-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); box.appendChild(d); return d; };
@@ -5576,16 +5631,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       p.appendChild(f);
     });
 
-    // 3. Nouveau club : ouvert ou sur invitation selon l'interrupteur du back-office
-    const p3 = part('Créer un nouveau club', '');
+    // 3. Nouveau club : seulement quand le back-office l'ouvre (création volontairement fermée pour l'instant,
+    //    pour éviter les comptes et équipes en série). Fermée : pas de bouton grisé, on dit simplement quoi faire.
+    const p3 = part('Créer un nouveau club', 'Vous serez au bureau du club et coach de sa première équipe.');
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom du club" required minlength="2" maxlength="60" aria-label="Nom du nouveau club"><button class="btn outline small" type="submit">Créer le club</button>');
     f1.onsubmit = e => { e.preventDefault(); createClub(f1.querySelector('input').value); };
-    const note = p3.querySelector('.help') || el('p', 'help', '');
-    p3.append(f1, note);
+    p3.appendChild(f1);
+    p3.classList.add('hidden');
+    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach.');
+    p1.appendChild(noCode);
     clubCreationOpen().then(open => {
-      f1.querySelectorAll('input, button').forEach(x => { x.disabled = !open; });
-      f1.classList.toggle('is-disabled', !open);
-      note.textContent = open ? 'Vous serez au bureau du club et coach de sa première équipe.' : 'Sur invitation pour le moment : demandez le code de votre club.';
+      p3.classList.toggle('hidden', !open);
+      head.firstChild.textContent = open && (S.teams.length || S.clubs.length) ? 'Rejoindre ou créer' : head.firstChild.textContent;
+      if (open) return;
+      noCode.innerHTML = 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach. Votre club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écrivez-nous</a>.';
+      noCode.querySelector('a').onclick = e => {
+        e.preventDefault(); if (!window.RugbyAdmin) return;
+        window.RugbyAdmin.openFeedback();
+        const m = $('#feedback-message'); if (m && !m.value) m.value = 'Je voudrais ouvrir mon club sur Rugbeo. Nom du club : … Ville : … Mon rôle : …';
+      };
     });
     return box;
   }
@@ -5651,10 +5715,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>'
     };
     const links = el('div', 'invite-icons');
+    // Un mot sous chaque icône : on sait ce que fait le bouton sans le deviner
+    const CAPTIONS = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'E-mail', more: 'Autre' };
+    const caption = (node, text) => { const w = el('div', 'invite-item'); w.append(node, el('span', '', text)); w.lastChild.setAttribute('aria-hidden', 'true'); return w; };
     const icon = (key, label, href) => {
       const a = el('a', 'invite-icon ' + key, ICONS[key]); a.href = href(); a.target = '_blank'; a.rel = 'noopener'; a.title = label; a.setAttribute('aria-label', label);
       a.onclick = () => { a.href = href(); track('invite', { channel: key }); };
-      return a;
+      return caption(a, CAPTIONS[key]);
     };
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
@@ -5664,7 +5731,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
       more.onclick = () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugbeo', text: msg.value }).catch(() => {}); };
-      links.appendChild(more);
+      links.appendChild(caption(more, CAPTIONS.more));
     }
     body.appendChild(links);
     body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
@@ -5728,7 +5795,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (fromLink || joinFromLink) {
         joinFromLink = false;
         openAuth('signup');
-        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : créez votre compte (ou connectez-vous), vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
+        $('#auth-who .who-login').classList.remove('hidden');   // « J’ai déjà un compte » en premier choix
+        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : connectez-vous ou créez votre compte, vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
       }
       return;
     }
@@ -5898,6 +5966,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (mine.has(t.id)) row.appendChild(el('span', 'role-badge player', 'Mon équipe'));
       else if (asked.has(t.id)) row.appendChild(el('span', 'vis-badge proposed', 'Demande envoyée'));
       const open = S.teams.find(x => x.id === t.id);
+      if (open && S.team && S.team.id === t.id) row.appendChild(el('span', 'vis-badge team', 'Équipe affichée'));
       if (open && (S.team && S.team.id !== t.id)) row.appendChild(btn('Ouvrir', 'outline small', () => { setTeam(open); teamTab = 'members'; renderTeamPage(); }));
       if (!open && !asked.has(t.id)) {
         const ask = btn('Demander à rejoindre', 'secondary small', () => window.RugbySelect.openMenu(ask, [
@@ -6158,7 +6227,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const acts = el('div', 'member-actions');
         // Une demande « comme coach / encadrant » acceptée donne le rôle Coach (modifiable ensuite)
         acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, asStaff ? { status: 'active', role: 'coach' } : { status: 'active' })));
-        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande ${de(nameOf(m))}${nameOf(m)} ?`)));
         row.appendChild(acts);
         list.appendChild(row);
       });
@@ -6392,7 +6461,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
 
   /* ---------- Page Stratégies ---------- */
-  let libTab = 'mine';
+  let libTab = null;   // au premier affichage : « De l’équipe » pour un joueur, « Mes dessins » pour le staff
   let renderSeq = 0;
   async function renderStrats() {
     const seq = ++renderSeq;
@@ -6410,7 +6479,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isClubMember()) {
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
-      box.appendChild(btn('Rejoindre ou créer mon club', 'primary', () => E.go('team')));
+      box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
       root.appendChild(box);
       const pend = pendingCard(); if (pend) root.appendChild(pend);
       return;
@@ -6420,8 +6489,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     let proposals = 0;
     if (isCoach() && S.team) { const { count } = await sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('visibility', 'proposed'); proposals = count || 0; }
     if (seq !== renderSeq) return;
+    if (!libTab) libTab = isStaff() ? 'mine' : 'team';
     if (libTab === 'proposed' && !isCoach()) libTab = 'mine';
-    const defs = [['mine', 'Mes dessins'], ['team', 'De l’équipe']];
+    const defs = isStaff() ? [['mine', 'Mes dessins'], ['team', 'De l’équipe']] : [['team', 'De l’équipe'], ['mine', 'Mes dessins']];
     if (isCoach()) defs.push(['proposed', 'Propositions']);
     // « Sur cet appareil » : seulement s'il reste des dessins faits sans compte (pour les envoyer dans le compte)
     const localCount = E.readLib().length;
@@ -6496,9 +6566,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary small', () => setVis('proposed')));
     if (row.visibility === 'team') {
       const vc = viewCounts[row.id];
-      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
+      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`Vue par ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
       const n = commentCounts[row.id] || 0;
-      btns.appendChild(btn(n ? `💬 ${n}` : '💬', 'outline small', () => openComments(row, refresh))).title = n ? 'Commentaires' : 'Commenter';
+      btns.appendChild(btn(n ? `${n} commentaire${n > 1 ? 's' : ''}` : 'Commenter', 'outline small', () => openComments(row, refresh)));
     }
     menu.push(['Ouvrir', () => loadCloud(row)]);
     const canCopy = mine || isCoach() || mode !== 'app';
@@ -6706,6 +6776,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
    et infos privées (téléphone, date de naissance, contact d'urgence) visibles seulement par le staff de l'équipe.
    Fournit aussi l'avatar (photo ou initiale) utilisé dans les listes de membres. */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const $ = s => document.querySelector(s);
@@ -6737,7 +6808,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const me = A.user(); if (!me) return;
     if (typeof forId === 'string') me.id = forId;
     const kid = (A.kids ? A.kids() : []).find(k => k.id === me.id);
-    $('#profile-title').textContent = kid ? `Profil de ${kid.display_name}` : 'Mon profil';
+    $('#profile-title').textContent = kid ? `Profil ${de(kid.display_name)}${kid.display_name}` : 'Mon profil';
     const [{ data: prof }, { data: priv }] = await Promise.all([
       sb.from('profiles').select('display_name, avatar, positions, jersey_number, strong_foot, height_cm, weight_kg, bio').eq('id', me.id).maybeSingle(),
       sb.from('profile_private').select('phone, birth_date, emergency_name, emergency_phone').eq('user_id', me.id).maybeSingle()
@@ -6752,7 +6823,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const drawPhoto = () => {
       photoRow.replaceChildren(avatar(p.display_name, photo));
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'profile-photo-file'; f.className = 'file-input';
-      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essaie une photo JPG ou PNG.')); };
+      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essayez une photo JPG ou PNG.')); };
       const lb = el('label', 'btn outline small', photo ? 'Changer la photo' : 'Ajouter une photo'); lb.htmlFor = 'profile-photo-file';
       const acts = el('div', 'row-wrap'); acts.append(lb, f);
       if (photo) acts.appendChild(btn('Retirer', 'ghost small', () => { photo = null; drawPhoto(); }));
@@ -6769,7 +6840,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
     // Postes : choix multiple, 4 au plus
     const posBox = el('div', 'profile-field');
-    posBox.appendChild(el('span', 'profile-label', 'Postes (4 au plus)'));
+    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Vos postes (4 au plus)'));
     const chips = el('div', 'day-chips poste-chips');
     let positions = (p.positions || []).slice();
     POSTES.forEach(po => {
@@ -6787,13 +6858,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const num = input('number', p.jersey_number, { min: 1, max: 99, inputMode: 'numeric', placeholder: '—' });
     const height = input('number', p.height_cm, { min: 100, max: 230, inputMode: 'numeric', placeholder: 'cm' });
     const weight = input('number', p.weight_kg, { min: 30, max: 200, inputMode: 'numeric', placeholder: 'kg' });
-    row1.append(field('Numéro préféré', num), field('Taille (cm)', height), field('Poids (kg)', weight));
+    row1.append(field('Numéro préféré (facultatif)', num), field('Taille en cm (facultatif)', height), field('Poids en kg (facultatif)', weight));
     form.appendChild(row1);
 
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
-    form.appendChild(field('Pied fort', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
+    form.appendChild(field('Pied fort (facultatif)', foot));
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
@@ -6918,6 +6989,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 /* Page Compte, en cinq groupes courts : Mon profil, Mon club et mes équipes, Réglages, Aide, Compte.
    Tout est visible sur la page ; les formulaires (code, mot de passe) s'ouvrent sur place (2 touches au plus). */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
   const A = window.RugbyAccount;
   const E = window.RugbyEditor;
@@ -6949,7 +7021,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoignez votre club avec le code ou le lien reçu.'));
     const join = $('#account-join'); join.replaceChildren();
     const pend = A.pendingCard(); if (pend) join.appendChild(pend);
-    const toggle = btn('Rejoindre ou créer un club, une équipe', 'outline wide', () => {
+    const toggle = btn('Rejoindre un club ou une équipe', 'outline wide', () => {
       const forms = A.teamForms(() => { forms.replaceWith(toggle); toggle.focus(); });
       toggle.replaceWith(forms);
     });
@@ -7009,7 +7081,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.appendChild(acts);
         box.appendChild(row);
         if (logins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(logins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
+        // Trace de l'accord parental donné à l'inscription (ou à l'ajout du jeune)
+        const consent = el('p', 'help kid-consent'); box.appendChild(consent);
+        sb.from('profile_private').select('parental_consent_at').eq('user_id', k.id).maybeSingle().then(({ data }) => {
+          if (data && data.parental_consent_at) consent.textContent = `Accord parental donné le ${new Date(data.parental_consent_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.`;
+        });
       });
+      box.appendChild(el('p', 'help', 'À 15 ans, votre jeune peut avoir son propre e-mail et mot de passe : « Lui donner son compte » lui transmet ce compte, avec son profil et ses équipes.'));
     }
     const f = el('form', 'inline-form', '<input type="text" placeholder="Prénom et nom du jeune" required minlength="2" maxlength="60" aria-label="Prénom et nom du jeune"><button class="btn outline small" type="submit">Ajouter un jeune</button>');
     f.onsubmit = async e => {
@@ -7029,7 +7107,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function handOver(k) {
     const D = window.RugbyDialog;
     const first = (k.display_name || '').split(' ')[0];
-    const em = await D.prompt(`E-mail de ${first}`, A.kidLogins()[k.id] || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
+    const em = await D.prompt(`E-mail ${de(first)}${first}`, A.kidLogins()[k.id] || '', { title: 'Lui donner son compte', placeholder: 'son.adresse@exemple.fr', ok: 'Continuer', maxLength: 254 });
     if (!em) return;
     const again = await D.prompt('Retapez son adresse pour vérifier', '', { title: 'Lui donner son compte', placeholder: em.trim(), ok: 'Envoyer le lien', maxLength: 254 });
     if (again == null) return;
@@ -7105,6 +7183,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 /* Back-office super-admin, retours utilisateurs, statistiques d'usage, erreurs clients,
    annonces et drapeaux de fonctionnalités. Inactif en mode local (sans Supabase). */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const $ = s => document.querySelector(s);
@@ -7300,7 +7379,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const root = $('#admin-page'); if (!root) return;
     if (!A.isSuper()) { root.replaceChildren(el('p', 'library-empty', 'Réservé aux super-admins.')); return; }
     const my = ++seq;
-    root.replaceChildren();
+    root.replaceChildren(el('h1', 'admin-title', 'Back-office'));
     const tabs = el('div', 'tabs small admin-tabs');
     TABS.forEach(([id, label]) => {
       const b = el('button', 'tab' + (tab === id ? ' active' : ''));
@@ -7429,7 +7508,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const g1 = el('div', 'kpi-grid');
     g1.append(
       kpi('Personnes actives cette semaine', a.week, a.week_prev || a.week ? `${delta >= 0 ? '+' : ''}${delta} par rapport à la semaine dernière` : 'semaine en cours'),
-      kpi('Aujourd’hui', a.day, `${a.avg_day_month} par jour en moyenne ce mois-ci`),
+      kpi('Aujourd’hui', a.day, `${Number(a.avg_day_month || 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} par jour en moyenne ce mois-ci`),
       kpi('Ce mois-ci', a.month, 'personnes différentes'),
       kpi('Fidélité', pct(a.week, a.month), 'des actifs du mois sont venus cette semaine'),
       kpi('Comptes', m.new.total_accounts, `${m.new.total_teams} équipes · ${m.new.total_clubs} clubs`)
@@ -7597,7 +7676,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
           TITLES.map(title => [title, async () => {
             const { error } = await sb.rpc('set_club_function', { p_club: r.id, p_user: u.id, p_title: title });
             if (error) return E.toast(error.message); E.toast(`${u.display_name} : ${title} de « ${r.name} ».`); render();
-          }]), `Fonction de ${u.display_name}`), 50)]), `Bureau de « ${r.name} »`));
+          }]), `Fonction ${de(u.display_name)}${u.display_name}`), 50)]), `Bureau de « ${r.name} »`));
       actions.appendChild(nominate);
       if (r.responsables.length) {
         const removeBtn = btn('Retirer du bureau', 'outline small danger', () => window.RugbySelect.openMenu(removeBtn,
@@ -7661,7 +7740,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const me = A.user().id === r.id;
         const actions = el('div', 'admin-actions');
         actions.appendChild(btn(r.is_superadmin ? 'Retirer super-admin' : 'Passer super-admin', 'outline small' + (r.is_superadmin ? ' danger' : ''), async () => {
-          if (!await window.RugbyDialog.confirm(r.is_superadmin ? `Retirer les droits super-admin de ${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
+          if (!await window.RugbyDialog.confirm(r.is_superadmin ? `Retirer les droits super-admin ${de(r.display_name)}${r.display_name} ?` : `Donner à ${r.display_name} l’accès complet au back-office et à toutes les équipes ?`)) return;
           const { error } = await sb.rpc('admin_set_superadmin', { p_user: r.id, p_on: !r.is_superadmin });
           if (error) return E.toast(error.message); render();
         }));
@@ -7929,13 +8008,32 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       return data || {};
     } catch (e) { console.warn('push-notify', e); return null; }
   }
-  async function remind(ev) {
+  /** Message prêt pour le groupe WhatsApp, avec le lien direct vers l'événement. */
+  function waText(ev, names) {
+    const link = `${location.origin}${location.pathname}#/agenda/${ev.id}`;
+    return `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre Présent, Peut-être ou Absent dans Rugbeo.${names && names.length ? ` Pas encore de réponse : ${names.join(', ')}.` : ''}\n${link}`;
+  }
+  const openWhatsApp = text => { track('event_reminder_whatsapp'); window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); };
+  /** Après une convocation ou un changement : dit combien de téléphones l'ont reçue, sinon propose WhatsApp. */
+  async function report(pending, ev, what) {
+    const res = await pending, e = /^Convocation/.test(what) ? 'e' : '';
+    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Prévenez l’équipe sur WhatsApp.`);
+    if (!res.recipients) return E.toast(`${what} enregistré${e}.`);
+    if (res.sent) return E.toast(`${what} envoyé${e} sur ${plural(res.sent, 'téléphone', 'téléphones')}.`);
+    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoyez le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
+  }
+  async function remind(ev, names) {
     const res = await notify(ev.id, 'event_reminder');
     track('event_reminder', { recipients: res && res.recipients });
     if (!res) E.toast('Relance impossible pour le moment.');
     else if (!res.recipients) E.toast('Tous les joueurs ont déjà répondu.');
-    else if (res.sent) E.toast(`Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Pour les autres, utilise « Copier pour WhatsApp ».`);
-    else E.toast('Aucun de ces joueurs n’a activé les notifications : utilise « Copier pour WhatsApp ».');
+    else {
+      // Les notifications ne touchent que ceux qui les ont activées : on propose tout de suite WhatsApp pour les autres
+      const msg = res.sent
+        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoyez aussi le message dans le groupe WhatsApp.`
+        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoyez plutôt le message dans le groupe WhatsApp.';
+      if (await window.RugbyDialog.confirm(msg, { title: res.sent ? 'Relance envoyée' : 'Relance non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev, names));
+    }
   }
 
   /* ---------- Page Agenda ---------- */
@@ -7968,7 +8066,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     }
     if (!team) {
       const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
-      box.appendChild(btn('Rejoindre ou créer mon équipe', 'primary', () => E.go('team')));
+      box.appendChild(btn('Rejoindre mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
     if (eventId && quick) return renderQuick(root, eventId, my);
@@ -8146,12 +8244,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (staff && sum.none && !ev.cancelled) {
       const nonRep = players.filter(p => !sum.byUser[p.id]);
       const acts = el('div', 'ev-remind');
-      acts.appendChild(btn(`Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev)));
-      acts.appendChild(btn('Copier pour WhatsApp', 'outline', () => {
-        const text = `${short(ev)} à ${time(ev.starts_at)}${ev.location ? ' (' + ev.location + ')' : ''} : merci de répondre dans l’appli. Pas encore de réponse : ${nonRep.map(p => p.name).join(', ')}.`;
-        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));
-        else window.RugbyDialog.copy(text, { title: 'Message à copier' });
-      }));
+      acts.appendChild(btn(`Relancer ${nonRep.length > 1 ? 'les ' + nonRep.length + ' joueurs' : 'le joueur'} sans réponse`, 'primary', () => remind(ev, nonRep.map(p => p.name))));
+      acts.appendChild(btn('Envoyer sur WhatsApp', 'outline', () => openWhatsApp(waText(ev, nonRep.map(p => p.name)))));
       who.appendChild(acts);
     }
     const person = (m, r) => {
@@ -8169,14 +8263,24 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
       return row;
     };
+    // « Sans réponse » en premier : c'est ce que le staff vient chercher
+    const head = (key, text) => { const h = el('h4', 'home-h4', text); h.id = 'grp-' + key; h.tabIndex = -1; return h; };
+    const none = players.filter(p => !sum.byUser[p.id]);
+    if (none.length) { who.appendChild(head('w', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
     groups.forEach(([s, l]) => {
       const list = players.filter(m => sum.byUser[m.id] && sum.byUser[m.id].status === s);
       if (!list.length) return;
-      who.appendChild(el('h4', 'home-h4', `${l} (${list.length})`));
+      who.appendChild(head({ yes: 'y', maybe: 'm', no: 'n' }[s], `${l} (${list.length})`));
       list.forEach(m => who.appendChild(person(m, sum.byUser[m.id])));
     });
-    const none = players.filter(p => !sum.byUser[p.id]);
-    if (none.length) { who.appendChild(el('h4', 'home-h4', `Sans réponse (${none.length})`)); none.forEach(m => who.appendChild(person(m, null))); }
+    // Les compteurs mènent à la liste correspondante
+    who.querySelectorAll('.pres-legend span').forEach(sp => {
+      const key = sp.className, target = () => who.querySelector('#grp-' + key);
+      if (!target()) return;
+      sp.classList.add('linkish'); sp.setAttribute('role', 'link'); sp.tabIndex = 0;
+      const goTo = () => { const t = target(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); t.focus({ preventScroll: true }); };
+      sp.onclick = goTo; sp.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTo(); } };
+    });
     if (staffList.length && staff) { who.appendChild(el('h4', 'home-h4 muted', `Staff non convoqué (${staffList.length})`)); staffList.forEach(m => who.appendChild(person(m, null))); }
     root.appendChild(who);
   }
@@ -8323,7 +8427,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#ev-apply-series').checked = false;
     // Création : prévenir par défaut ; modification : au choix (un changement d'horaire ou de lieu mérite une notification)
     $('#ev-notify').checked = !ev;
-    $('#ev-notify-label').textContent = ev ? 'Prévenir l’équipe du changement' : 'Prévenir l’équipe par notification';
+    $('#ev-notify-label').textContent = ev ? 'Prévenir l’équipe du changement (notification)' : 'Envoyer la convocation à l’équipe (notification)';
     $('#ev-error').textContent = '';
     syncKind();
     syncRecur();
@@ -8407,8 +8511,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       b.disabled = false;
       firstId = editing.id;
       const warn = $('#ev-notify').checked;
-      if (warn) notify(changed.length > 1 ? changed : editing.id, 'event_updated');
-      E.toast((extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}` : 'Événement modifié') + (warn ? ', l’équipe est prévenue.' : '.'));
+      if (warn) report(notify(changed.length > 1 ? changed : editing.id, 'event_updated'), Object.assign({}, editing, base), 'Changement');
+      else E.toast(extra ? `Séance et ${plural(extra, 'suivante modifiée', 'suivantes modifiées')}.` : 'Événement modifié.');
     } else {
       // Planning de la saison : chaque jour coché, à la même heure, jusqu'à la date de fin
       const recurring = kind === 'training' && $('#ev-recurring').checked;
@@ -8418,7 +8522,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
         if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
-        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
+        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifiez les jours et la date de fin.'; return; }
       }
       const series = dates.length > 1 ? crypto.randomUUID() : null;
       const meetDelta = meet ? start - meet : 0;
@@ -8428,8 +8532,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (error) { $('#ev-error').textContent = error.message; return; }
       firstId = rows[0].id; n = rows.length;
       track('event_create', { kind, repeat: n });
-      if ($('#ev-notify').checked) notify(n > 1 ? rows.map(r => r.id) : firstId, 'event_new');
-      E.toast(n > 1 ? `Planning créé : ${n} entraînements${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.` : `${KIND[kind]} créé${$('#ev-notify').checked ? ', l’équipe est prévenue' : ''}.`);
+      if ($('#ev-notify').checked) report(notify(n > 1 ? rows.map(r => r.id) : firstId, 'event_new'), rows[0], n > 1 ? `Planning (${n} entraînements)` : 'Convocation');
+      else E.toast(n > 1 ? `Planning créé : ${n} entraînements.` : `${KIND[kind]} créé.`);
     }
     E.closeModal('modal-event');
     if (location.hash === '#/agenda/' + firstId) E.refreshView(); else E.go('agenda', n > 1 ? '' : firstId);
@@ -9276,7 +9380,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const { ev, settings, sheet } = cur;
     const head = el('div', 'sheet-head');
     head.appendChild(el('div', '', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${esc(dayLong(ev.starts_at))} · ${time(ev.starts_at)}</span></div><h2 class="page-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</h2>`));
-    const status = el('span', 'sheet-status muted', cur.row ? (cur.row.published ? 'Publiée' : 'Brouillon enregistré') : 'Nouvelle feuille');
+    const status = el('span', 'sheet-status sheet-st ' + (cur.row ? (cur.row.published ? 'pub' : 'draft') : 'none'), cur.row ? (cur.row.published ? 'Publiée' : 'Brouillon') : 'Nouvelle feuille');
     status.id = 'sheet-status';
     head.appendChild(status);
     root.appendChild(head);
@@ -9520,7 +9624,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const st = $('#sheet-status');
     if (error) { if (st) st.textContent = 'Erreur d’enregistrement'; E.toast('Enregistrement impossible : ' + error.message); return; }
     if (data) cur.row = data;
-    if (st) st.textContent = cur.row && cur.row.published ? 'Publiée · enregistré ✓' : 'Brouillon enregistré ✓';
+    if (st) { const pub = !!(cur.row && cur.row.published); st.className = 'sheet-status sheet-st ' + (pub ? 'pub' : 'draft'); st.textContent = pub ? 'Publiée · enregistrée ✓' : 'Brouillon enregistré ✓'; }
   }
   async function publish(on) {
     clearTimeout(saveTimer); await saveSheet();
@@ -9980,7 +10084,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
-    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), btn('Essayer sans compte', 'ghost', () => E.go('editor')));
+    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), twoLines(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), 'visiter un club fictif, sans compte'), twoLines(btn('Essayer l’éditeur', 'ghost', () => E.go('editor')), 'dessiner une stratégie sans compte'));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));
     box.appendChild(btns);
     if (active) {
@@ -10033,6 +10137,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       slot.insertBefore(box, slot.firstChild);
     });
   }
+  /** Bouton avec une précision en petit dessous (« Voir la démo » : visiter un club fictif). */
+  const twoLines = (b, sub) => { b.classList.add('two-lines'); b.appendChild(el('small', '', sub)); return b; };
+  /** « de » ou « d’ » devant un prénom (d’Emma, de Léo). */
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');
   function hello(root, sub) {
     const p = A.ownProfile ? A.ownProfile() : A.profile();   // un parent est salué lui-même, pas son jeune
     const name = ((p && p.display_name) || '').split(' ')[0];
@@ -10053,10 +10161,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const c = el('div', 'todo-card', kids.length
           ? `<div class="todo-head">Dernière étape : leurs équipes</div><p class="muted">Club « ${esc(club.name)} » : choisissez l’équipe de chaque jeune. Le coach ou le bureau du club validera la demande.</p>`
           : `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
-        if (kids.length) kids.forEach(k => c.appendChild(btn(`Choisir l’équipe de ${k.display_name}`, 'primary', () => A.openTeamPicker(club.id, k.id))));
+        const pending = A.pendingTeams();
+        if (kids.length) kids.forEach(k => {
+          // Demande déjà envoyée pour ce jeune : on le dit, au lieu de reproposer le même bouton
+          const sent = pending.filter(t => t.who === k.id);
+          const first = (k.display_name || '').split(' ')[0];
+          if (sent.length) {
+            c.appendChild(el('p', 'kid-sent', `✓ Demande envoyée pour <strong>${esc(first)}</strong> à ${sent.map(t => '« ' + esc(t.name) + ' »').join(', ')} : le coach doit la valider.`));
+            c.appendChild(btn(`Ajouter une autre équipe ${de(first)}${first}`, 'ghost small', () => A.openTeamPicker(club.id, k.id)));
+          } else c.appendChild(btn(`Choisir l’équipe ${de(first)}${first}`, 'primary', () => A.openTeamPicker(club.id, k.id)));
+        });
         else c.appendChild(btn('Choisir mes équipes', 'primary', () => A.openTeamPicker(club.id)));
         root.appendChild(c);
-        A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation.`)));
+        pending.filter(t => !t.who).forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} » : en attente de validation.`)));
         return;
       }
       const card = el('div', 'todo-card', kids.length

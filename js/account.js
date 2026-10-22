@@ -1,6 +1,7 @@
 /* Comptes, équipes et partage des stratégies via Supabase.
    Inactif (mode local) tant que js/config.js ne contient pas d'URL et de clé. */
 (function () {
+  const de = name => (/^[aeiouyàâäéèêëîïôöùûü]/i.test(name || '') ? 'd’' : 'de ');   // d’Emma, de Léo
   'use strict';
 
   const cfg = window.RUGBY_CONFIG || {};
@@ -249,7 +250,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     i.setAttribute('aria-label', 'Prénom et nom du jeune');
     list.appendChild(i);
     $('#auth-kids .auth-kids-label').textContent = list.children.length > 1 ? 'Prénom et nom des jeunes' : 'Prénom et nom du jeune';
+    i.oninput = parentWho; parentWho();
     return i;
+  }
+  /** Accord parental : on nomme le ou les jeunes (« Je suis le parent d’Emma »). */
+  function parentWho() {
+    const names = [...document.querySelectorAll('#auth-kid-list input')].map(i => i.value.trim().split(' ')[0]).filter(Boolean);
+    const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' et ' + names[names.length - 1] : names[0];
+    $('#auth-parent-who').textContent = list ? `Je suis le parent (ou le représentant légal) ${de(list)}${list}` : 'Je suis son parent (ou son représentant légal)';
   }
   $('#auth-kid-add').onclick = () => { const i = addKidInput(); if (i) i.focus(); };
   function setSignupWho(who) {
@@ -265,7 +273,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (parent && !$('#auth-kid-list').children.length) addKidInput();
     setAuthMsg('');
   }
-  document.querySelectorAll('#auth-who .who-card').forEach(b => { b.onclick = () => { setSignupWho(b.dataset.who); const f = b.dataset.who === 'parent' ? $('#auth-kid-list input') : $('#auth-name'); if (f) f.focus(); }; });
+  document.querySelectorAll('#auth-who .who-card').forEach(b => { b.onclick = () => {
+    const who = b.dataset.who;
+    if (who === 'login') return setAuthMode('login');
+    if (who === 'kid') { $('#auth-kid-info').classList.toggle('hidden'); return; }
+    setSignupWho(who); const f = who === 'parent' ? $('#auth-kid-list input') : $('#auth-name'); if (f) f.focus();
+  }; });
+  // Moins de 15 ans : on envoie le lien (avec le code d'invitation s'il y en a un) à un parent
+  $('#auth-kid-share').onclick = () => {
+    const code = pendingJoin();
+    const link = code ? joinLink(code) : `${location.origin}${location.pathname}`;
+    const text = `Bonjour ! Pour que je puisse suivre mon équipe de rugby sur Rugbeo (convocations, compos), il faut qu’un parent crée mon compte. Choisissez « Je suis parent d’un joueur de moins de 15 ans » : ${link}`;
+    track('kid_share_parent');
+    if (navigator.share) navigator.share({ title: 'Rugbeo', text }).catch(() => {});
+    else window.RugbyDialog.copy(text, { title: 'Message pour votre parent', message: 'Copiez ce message et envoyez-le à un parent (SMS, WhatsApp…).' });
+  };
   $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho(''); };
   function setAuthMode(mode) {
     showPending(false);
@@ -329,6 +351,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function startPending(email, password) {
     Object.assign(pending, { email, password, until: Date.now() + 30 * 60 * 1000 });
     $('#auth-pending-email').textContent = email;
+    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, vous rejoindrez automatiquement l’équipe de l’invitation.' : 'Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.';
     $('#auth-pending-msg').textContent = '';
     showPending(true);
     clearInterval(pending.timer);
@@ -442,8 +465,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const isFor = t => (t.who || S.user.id) === forId;
     const mine = new Set(S.teams.filter(t => !t.notMember && isFor(t)).map(t => t.id)), asked = new Set((S.pending || []).filter(isFor).map(t => t.id));
     const body = $('#club-teams-body'); body.replaceChildren();
-    $('#club-teams-title').textContent = (kid ? `Les équipes de ${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
-    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes de ${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
+    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
+    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
     (teams || []).forEach(t => {
       const row = el('div', 'pick-row');
@@ -479,7 +502,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
   function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre ou créer' : 'Rejoindre votre club'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre votre club'));
     if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
     box.appendChild(head);
     const part = (title, help) => { const d = el('div', 'forms-part'); d.appendChild(el('strong', 'forms-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); box.appendChild(d); return d; };
@@ -514,16 +537,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       p.appendChild(f);
     });
 
-    // 3. Nouveau club : ouvert ou sur invitation selon l'interrupteur du back-office
-    const p3 = part('Créer un nouveau club', '');
+    // 3. Nouveau club : seulement quand le back-office l'ouvre (création volontairement fermée pour l'instant,
+    //    pour éviter les comptes et équipes en série). Fermée : pas de bouton grisé, on dit simplement quoi faire.
+    const p3 = part('Créer un nouveau club', 'Vous serez au bureau du club et coach de sa première équipe.');
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom du club" required minlength="2" maxlength="60" aria-label="Nom du nouveau club"><button class="btn outline small" type="submit">Créer le club</button>');
     f1.onsubmit = e => { e.preventDefault(); createClub(f1.querySelector('input').value); };
-    const note = p3.querySelector('.help') || el('p', 'help', '');
-    p3.append(f1, note);
+    p3.appendChild(f1);
+    p3.classList.add('hidden');
+    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach.');
+    p1.appendChild(noCode);
     clubCreationOpen().then(open => {
-      f1.querySelectorAll('input, button').forEach(x => { x.disabled = !open; });
-      f1.classList.toggle('is-disabled', !open);
-      note.textContent = open ? 'Vous serez au bureau du club et coach de sa première équipe.' : 'Sur invitation pour le moment : demandez le code de votre club.';
+      p3.classList.toggle('hidden', !open);
+      head.firstChild.textContent = open && (S.teams.length || S.clubs.length) ? 'Rejoindre ou créer' : head.firstChild.textContent;
+      if (open) return;
+      noCode.innerHTML = 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach. Votre club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écrivez-nous</a>.';
+      noCode.querySelector('a').onclick = e => {
+        e.preventDefault(); if (!window.RugbyAdmin) return;
+        window.RugbyAdmin.openFeedback();
+        const m = $('#feedback-message'); if (m && !m.value) m.value = 'Je voudrais ouvrir mon club sur Rugbeo. Nom du club : … Ville : … Mon rôle : …';
+      };
     });
     return box;
   }
@@ -589,10 +621,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="18" cy="12" r="1.8" fill="currentColor"/></svg>'
     };
     const links = el('div', 'invite-icons');
+    // Un mot sous chaque icône : on sait ce que fait le bouton sans le deviner
+    const CAPTIONS = { whatsapp: 'WhatsApp', sms: 'SMS', email: 'E-mail', more: 'Autre' };
+    const caption = (node, text) => { const w = el('div', 'invite-item'); w.append(node, el('span', '', text)); w.lastChild.setAttribute('aria-hidden', 'true'); return w; };
     const icon = (key, label, href) => {
       const a = el('a', 'invite-icon ' + key, ICONS[key]); a.href = href(); a.target = '_blank'; a.rel = 'noopener'; a.title = label; a.setAttribute('aria-label', label);
       a.onclick = () => { a.href = href(); track('invite', { channel: key }); };
-      return a;
+      return caption(a, CAPTIONS[key]);
     };
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
@@ -602,7 +637,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
       more.onclick = () => { track('invite', { channel: 'share' }); navigator.share({ title: 'Rugbeo', text: msg.value }).catch(() => {}); };
-      links.appendChild(more);
+      links.appendChild(caption(more, CAPTIONS.more));
     }
     body.appendChild(links);
     body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
@@ -666,7 +701,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (fromLink || joinFromLink) {
         joinFromLink = false;
         openAuth('signup');
-        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : créez votre compte (ou connectez-vous), vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
+        $('#auth-who .who-login').classList.remove('hidden');   // « J’ai déjà un compte » en premier choix
+        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : connectez-vous ou créez votre compte, vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
       }
       return;
     }
@@ -836,6 +872,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (mine.has(t.id)) row.appendChild(el('span', 'role-badge player', 'Mon équipe'));
       else if (asked.has(t.id)) row.appendChild(el('span', 'vis-badge proposed', 'Demande envoyée'));
       const open = S.teams.find(x => x.id === t.id);
+      if (open && S.team && S.team.id === t.id) row.appendChild(el('span', 'vis-badge team', 'Équipe affichée'));
       if (open && (S.team && S.team.id !== t.id)) row.appendChild(btn('Ouvrir', 'outline small', () => { setTeam(open); teamTab = 'members'; renderTeamPage(); }));
       if (!open && !asked.has(t.id)) {
         const ask = btn('Demander à rejoindre', 'secondary small', () => window.RugbySelect.openMenu(ask, [
@@ -1096,7 +1133,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const acts = el('div', 'member-actions');
         // Une demande « comme coach / encadrant » acceptée donne le rôle Coach (modifiable ensuite)
         acts.appendChild(btn('Accepter', 'primary small', () => setMember(m, asStaff ? { status: 'active', role: 'coach' } : { status: 'active' })));
-        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande de ${nameOf(m)} ?`)));
+        acts.appendChild(btn('Refuser', 'outline small danger', () => setMember(m, null, `Refuser la demande ${de(nameOf(m))}${nameOf(m)} ?`)));
         row.appendChild(acts);
         list.appendChild(row);
       });
@@ -1330,7 +1367,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
 
   /* ---------- Page Stratégies ---------- */
-  let libTab = 'mine';
+  let libTab = null;   // au premier affichage : « De l’équipe » pour un joueur, « Mes dessins » pour le staff
   let renderSeq = 0;
   async function renderStrats() {
     const seq = ++renderSeq;
@@ -1348,7 +1385,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isClubMember()) {
       tabs.classList.add('hidden');
       const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
-      box.appendChild(btn('Rejoindre ou créer mon club', 'primary', () => E.go('team')));
+      box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
       root.appendChild(box);
       const pend = pendingCard(); if (pend) root.appendChild(pend);
       return;
@@ -1358,8 +1395,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     let proposals = 0;
     if (isCoach() && S.team) { const { count } = await sb.from('drawings').select('id', { count: 'exact', head: true }).eq('team_id', S.team.id).eq('visibility', 'proposed'); proposals = count || 0; }
     if (seq !== renderSeq) return;
+    if (!libTab) libTab = isStaff() ? 'mine' : 'team';
     if (libTab === 'proposed' && !isCoach()) libTab = 'mine';
-    const defs = [['mine', 'Mes dessins'], ['team', 'De l’équipe']];
+    const defs = isStaff() ? [['mine', 'Mes dessins'], ['team', 'De l’équipe']] : [['team', 'De l’équipe'], ['mine', 'Mes dessins']];
     if (isCoach()) defs.push(['proposed', 'Propositions']);
     // « Sur cet appareil » : seulement s'il reste des dessins faits sans compte (pour les envoyer dans le compte)
     const localCount = E.readLib().length;
@@ -1434,9 +1472,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary small', () => setVis('proposed')));
     if (row.visibility === 'team') {
       const vc = viewCounts[row.id];
-      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`👁 ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
+      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`Vue par ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
       const n = commentCounts[row.id] || 0;
-      btns.appendChild(btn(n ? `💬 ${n}` : '💬', 'outline small', () => openComments(row, refresh))).title = n ? 'Commentaires' : 'Commenter';
+      btns.appendChild(btn(n ? `${n} commentaire${n > 1 ? 's' : ''}` : 'Commenter', 'outline small', () => openComments(row, refresh)));
     }
     menu.push(['Ouvrir', () => loadCloud(row)]);
     const canCopy = mine || isCoach() || mode !== 'app';
