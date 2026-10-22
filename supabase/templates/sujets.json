@@ -1,0 +1,22 @@
+{
+  "confirmation": {
+    "name": "Confirm signup",
+    "subject": "Confirmez votre adresse pour Rugbeo"
+  },
+  "recuperation": {
+    "name": "Reset password",
+    "subject": "Rugbeo : choisissez votre mot de passe"
+  },
+  "invitation": {
+    "name": "Invite user",
+    "subject": "Une invitation vous attend sur Rugbeo"
+  },
+  "lien-connexion": {
+    "name": "Magic link",
+    "subject": "Votre lien de connexion Rugbeo"
+  },
+  "changement-email": {
+    "name": "Change email address",
+    "subject": "Rugbeo : confirmez votre nouvelle adresse"
+  }
+}
