@@ -14,8 +14,13 @@ const view = process.argv[2] || 'telephone';
   }
   // Aucune écriture ne doit partir vers la base pendant la démo
   const writes = [];
-  page.on('request', r => { if (/\/rest\/v1\//.test(r.url()) && !/demo_snapshot/.test(r.url()) && r.method() !== 'GET' && r.method() !== 'HEAD') writes.push(r.method() + ' ' + r.url()); });
+  page.on('request', r => { if (/\/rest\/v1\//.test(r.url()) && !/demo_snapshot|count_demo/.test(r.url()) && r.method() !== 'GET' && r.method() !== 'HEAD') writes.push(r.method() + ' ' + r.url()); });
   await page.click('button:has-text("Voir la démo")');
+  t.check(await page.waitForSelector('.dialog-choices button:has-text("Comme joueur")', { timeout: 5000 }).then(() => true, () => false), 'démo : choix « comme coach » ou « comme joueur »');
+  await t.shot(page, `${view}-lot1-8-demo-choix`);
+  const counted = page.waitForRequest(r => /count_demo/.test(r.url()) && /coach/.test(r.postData() || ''), { timeout: 5000 }).then(() => true, () => false);
+  await page.click('.dialog-choices button:has-text("Comme coach")');
+  t.check(await counted, 'démo : ouverture comptée (compteur anonyme)');
   await page.waitForLoadState('load');
   t.check(await t.waitText(page, 'Bonjour Julien'), 'démo : accueil du coach du club démo');
   t.check(await page.isVisible('.demo-banner'), 'bandeau « Démo » visible');
@@ -38,6 +43,25 @@ const view = process.argv[2] || 'telephone';
   await t.go(page, '#/team');
   await t.waitText(page, 'membres');
   await t.shot(page, `${view}-lot1-12-demo-equipe`);
+  // Exporter une stratégie : pas de téléchargement, on propose de créer un compte
+  await t.go(page, '#/strategies');
+  await page.click('.tabs .tab:has-text("De l’équipe")').catch(() => {});
+  await t.waitText(page, 'Croisée 10-12');
+  await page.click('.lib-card:has-text("Croisée 10-12") .thumb');
+  await page.waitForTimeout(1500);
+  const tour = await page.$('.tour-card'); if (tour) { await page.click('.tour-skip'); await page.waitForTimeout(300); }
+  await page.click('#btn-export');
+  t.check(await page.waitForSelector('.dialog-modal:not(.hidden) >> text=créez votre compte gratuit', { timeout: 5000 }).then(() => true, () => false) && !(await page.isVisible('#export-menu:not(.hidden)')), 'démo : « Exporter » propose de créer un compte (rien n’est téléchargé)');
+  t.check(!(await page.isVisible('.demo-banner')), 'démo : le bandeau ne cache pas la fenêtre');
+  await t.shot(page, `${view}-lot1-12b-demo-exporter`);
+  await page.click('.dialog-cancel');
+  t.check(await page.evaluate(() => !(localStorage.getItem('rugby-drawing-current-v1') || '').includes('Croisée')), 'démo : la stratégie n’est pas gardée sur l’appareil');
+  // Vue joueur
+  await page.click('.demo-banner button:has-text("Voir comme joueur")');
+  await page.waitForLoadState('load');
+  t.check(await t.waitText(page, 'Bonjour Kevin'), 'démo comme joueur : accueil de Kevin (joueur)');
+  t.check(await t.waitText(page, 'vue joueur'), 'démo comme joueur : bandeau « vue joueur »');
+  await t.shot(page, `${view}-lot1-12c-demo-joueur`);
   t.check(writes.length === 0, `aucune écriture envoyée à la base (${writes.length})`);
   if (writes.length) console.log(writes.slice(0, 5).join('\n'));
   await page.click('.demo-banner button:has-text("Quitter la démo")');

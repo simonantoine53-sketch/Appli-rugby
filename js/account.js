@@ -83,6 +83,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       await loadTeams();
       watchMyMemberships();
       checkTerms();
+      claimDemoStrategy();
     } else { S.profile = null; S.kids = []; S.teams = []; S.clubs = []; setTeam(null); watchMyMemberships(); }
     renderAccountButton();
     ready = true;
@@ -411,6 +412,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
         if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
+        if (window.RugbyDemo) window.RugbyDemo.signedUp();   // mesure anonyme : compte créé après avoir vu la démo ?
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -1598,6 +1600,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const wrap = el('div', 'card-btns'); wrap.appendChild(b); c.appendChild(wrap);
       root.appendChild(c);
     });
+  }
+
+  /** « Exporter » dans la démo puis inscription : la stratégie du club démo est copiée dans le compte et ouverte, prête à exporter. */
+  async function claimDemoStrategy() {
+    if (!window.RugbyDemo || window.RugbyDemo.isOn() || !S.user) return;
+    const copy = await window.RugbyDemo.claimStrategy(sb, actorId(), S.team ? S.team.id : null).catch(() => null);
+    if (!copy) return;
+    S.current = { visibility: 'private', team_id: S.team ? S.team.id : null, owner_id: actorId() };
+    E.loadDrawing(E.clone(copy)); E.markSaved && E.markSaved(); E.go('editor');
+    E.toast(`« ${copy.title} » a été ajoutée à vos stratégies : touchez « Exporter » pour la télécharger.`);
   }
 
   /** Ouvre la page d'une équipe (super-admin : n'importe quelle équipe). */

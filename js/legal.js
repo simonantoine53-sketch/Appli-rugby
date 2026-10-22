@@ -119,11 +119,12 @@
         <li>l’équipe que vous avez choisie et les stratégies déjà vues ;</li>
         <li>les dessins faits sans compte et le dessin en cours ;</li>
         <li>vos préférences (tutoriel déjà vu, notifications déjà proposées, lieux récents de l’agenda, apparence claire ou sombre) ;</li>
+        <li>la date à laquelle vous avez ouvert la démo, effacée à la création de votre compte ou au bout de 30 jours (pour compter, sans savoir qui, les comptes créés après la démo) ;</li>
         <li>pour le mode hors ligne : une copie de l’appli et des dernières données de vos équipes que vous avez consultées, ainsi que les réponses aux convocations données sans réseau, le temps de les envoyer. Cette copie est effacée quand vous vous déconnectez ;</li>
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
       <h4>Mesure d’audience anonyme</h4>
-      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
+      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, ou que la démo a été ouverte 30 fois, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
       <p><button type="button" class="btn outline small" data-anon-toggle></button> <span class="muted small" data-anon-state></span></p>
       <h4>Mesure d’usage détaillée : seulement avec votre accord</h4>
       <p>Si vous l’acceptez, l’appli enregistre les pages et fonctions utilisées et la durée des visites, liées à votre compte, pour comprendre ce qui sert et l’améliorer. Ces données restent chez nous, ne servent jamais à la publicité et sont effacées après 13 mois. Refuser ne change rien au fonctionnement de l’appli.</p>

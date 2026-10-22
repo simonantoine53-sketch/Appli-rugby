@@ -1077,7 +1077,9 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-form { gap: 14px; }
 .dialog-msg { margin: 0; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
 .dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
-.dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden { display: none; }
+.dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden, .dialog-choices.hidden, .dialog-ok.hidden { display: none; }
+.dialog-choices { display: grid; gap: 10px; }
+.dialog-choices .btn { width: 100%; justify-content: center; min-height: 56px; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
 .btn.primary.danger-solid { background: var(--danger-fill); }
@@ -1630,7 +1632,7 @@ a:not([class]) { color: var(--primary); }
   .legal-table td:nth-child(3)::before { content: 'Base légale : '; font-weight: 700; }
 }
 /* Visite guidée dans la démo : la bulle passe devant, le bandeau de la démo se retire le temps de la visite */
-body:has(.tour) .demo-banner { display: none; }
+body:has(.tour) .demo-banner, body:has(.modal:not(.hidden)) .demo-banner { display: none; }
 /* Boutons à icône de l'éditeur : un mot sous l'icône (on n'a plus à deviner) */
 .fab-history button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
 .fab-history button { width: 54px; height: 50px; }
@@ -2503,11 +2505,12 @@ img, svg { -webkit-user-drag: none; }
         <li>l’équipe que vous avez choisie et les stratégies déjà vues ;</li>
         <li>les dessins faits sans compte et le dessin en cours ;</li>
         <li>vos préférences (tutoriel déjà vu, notifications déjà proposées, lieux récents de l’agenda, apparence claire ou sombre) ;</li>
+        <li>la date à laquelle vous avez ouvert la démo, effacée à la création de votre compte ou au bout de 30 jours (pour compter, sans savoir qui, les comptes créés après la démo) ;</li>
         <li>pour le mode hors ligne : une copie de l’appli et des dernières données de vos équipes que vous avez consultées, ainsi que les réponses aux convocations données sans réseau, le temps de les envoyer. Cette copie est effacée quand vous vous déconnectez ;</li>
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
       <h4>Mesure d’audience anonyme</h4>
-      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
+      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, ou que la démo a été ouverte 30 fois, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
       <p><button type="button" class="btn outline small" data-anon-toggle></button> <span class="muted small" data-anon-state></span></p>
       <h4>Mesure d’usage détaillée : seulement avec votre accord</h4>
       <p>Si vous l’acceptez, l’appli enregistre les pages et fonctions utilisées et la durée des visites, liées à votre compte, pour comprendre ce qui sert et l’améliorer. Ces données restent chez nous, ne servent jamais à la publicité et sont effacées après 13 mois. Refuser ne change rien au fonctionnement de l’appli.</p>
@@ -2840,7 +2843,8 @@ img, svg { -webkit-user-drag: none; }
 /* Fenêtres de dialogue de l'appli : remplacent les fenêtres grises du navigateur (confirm, prompt).
    RugbyDialog.confirm(message, options) → Promise<boolean>
    RugbyDialog.prompt(libellé, valeur, options) → Promise<string | null>
-   RugbyDialog.copy(texte, options)       → affiche un texte à copier (bouton « Copier ») */
+   RugbyDialog.copy(texte, options)       → affiche un texte à copier (bouton « Copier »)
+   RugbyDialog.choose(titre, message, [{ value, label, sub }]) → Promise<value | null> (un bouton par choix) */
 (function () {
   'use strict';
 
@@ -2856,6 +2860,7 @@ img, svg { -webkit-user-drag: none; }
         <p class="dialog-msg"></p>
         <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off"></label>
         <textarea class="dialog-text admin-textarea" readonly rows="4"></textarea>
+        <div class="dialog-choices"></div>
         <div class="dialog-actions"><button type="button" class="btn outline dialog-cancel">Annuler</button><button type="submit" class="btn primary dialog-ok">OK</button></div>
       </form></div>`;
     document.body.appendChild(box);
@@ -2884,7 +2889,17 @@ img, svg { -webkit-user-drag: none; }
     $('.dialog-label').textContent = o.label || '';
     input.value = o.value == null ? '' : o.value; input.placeholder = o.placeholder || ''; input.maxLength = o.maxLength || 120;
     text.value = o.text || '';
+    const choices = $('.dialog-choices');
+    choices.replaceChildren(...(o.choices || []).map(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn outline two-lines';
+      b.textContent = c.label;
+      if (c.sub) { const sm = document.createElement('small'); sm.textContent = c.sub; b.appendChild(sm); }
+      b.onclick = () => finish(c.value);
+      return b;
+    }));
+    choices.classList.toggle('hidden', mode !== 'choose');
     const ok = $('.dialog-ok'), cancel = $('.dialog-cancel');
+    ok.classList.toggle('hidden', mode === 'choose');
     ok.textContent = o.ok || (mode === 'confirm' ? 'Confirmer' : mode === 'copy' ? 'Copier' : 'Valider');
     ok.classList.toggle('danger-solid', !!o.danger);
     cancel.textContent = mode === 'copy' ? 'Fermer' : (o.cancel || 'Annuler');
@@ -2898,7 +2913,7 @@ img, svg { -webkit-user-drag: none; }
       } else finish(true);
     };
     box.classList.remove('hidden');
-    requestAnimationFrame(() => { if (mode === 'prompt') { input.focus(); input.select(); } else if (mode === 'copy') { text.focus(); text.select(); } else ok.focus(); });
+    requestAnimationFrame(() => { if (mode === 'prompt') { input.focus(); input.select(); } else if (mode === 'copy') { text.focus(); text.select(); } else if (mode === 'choose') { const c = choices.querySelector('button'); if (c) c.focus(); } else ok.focus(); });
     return new Promise(resolve => { done = resolve; });
   }
 
@@ -2910,7 +2925,8 @@ img, svg { -webkit-user-drag: none; }
       return show('confirm', opts).then(v => v === true);
     },
     prompt: (label, value, o) => show('prompt', Object.assign({ label, value }, o || {})),
-    copy: (text, o) => show('copy', Object.assign({ text }, o || {}))
+    copy: (text, o) => show('copy', Object.assign({ text }, o || {})),
+    choose: (title, message, choices) => show('choose', { title, message, choices })
   };
 
   /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */
@@ -3926,18 +3942,76 @@ img, svg { -webkit-user-drag: none; }
 </script>
 <script>
 /* « Voir la démo » : l'appli tourne sur une copie en lecture seule du club démo (fonction demo_snapshot de la base),
-   vue comme le coach de l'équipe. Rien n'est envoyé à la base : les écritures sont ignorées (toast « Mode démo »),
-   aucune notification, aucun e-mail. Activé pour l'onglet en cours seulement (sessionStorage). */
+   vue comme le coach de l'équipe ou comme un joueur, au choix. Rien n'est envoyé à la base : les écritures sont ignorées
+   (toast « Mode démo »), aucune notification, aucun e-mail. Activé pour l'onglet en cours seulement (sessionStorage).
+   Mesure anonyme (count_demo) : ouvertures de la démo par rôle, et comptes créés sur un appareil où elle a été ouverte. */
 (function () {
   'use strict';
-  const KEY = 'rs-demo';
-  let on = false;
-  try { on = sessionStorage.getItem(KEY) === '1'; } catch (e) { /* stockage indisponible : pas de démo */ }
+  const KEY = 'rs-demo', SEEN = 'rs-demo-vu', WANT = 'rs-demo-strategie', MONTH = 30 * 864e5;
+  let role = null;
+  try { const v = sessionStorage.getItem(KEY); role = v === 'joueur' ? 'joueur' : v ? 'coach' : null; } catch (e) { /* stockage indisponible : pas de démo */ }
+  const on = !!role;
+  try { const t = +localStorage.getItem(SEEN) || 0; if (t && Date.now() - t > MONTH) localStorage.removeItem(SEEN); } catch (e) { /* ignore */ }
+  const toSignup = () => { try { sessionStorage.removeItem(KEY); sessionStorage.setItem('rs-after-demo', 'signup'); } catch (e) { /* ignore */ } reload(); };
   const reload = () => { location.hash = '#/'; location.reload(); };
+  // Compteur anonyme (sans identifiant), sauf si la personne s'est opposée à la mesure d'audience ; keepalive : survit au rechargement
+  function count(kind) {
+    const C = window.RUGBY_CONFIG, consent = window.RugbyConsent;
+    if (!C || (consent && consent.anon && !consent.anon())) return;
+    try {
+      fetch(C.supabaseUrl + '/rest/v1/rpc/count_demo', { method: 'POST', keepalive: true, headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_kind: kind }) }).catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+  function open(r) {
+    try { sessionStorage.setItem(KEY, r); localStorage.setItem(SEEN, String(Date.now())); } catch (e) { return; }
+    count(r); reload();
+  }
   window.RugbyDemo = {
     isOn: () => on,
-    start() { try { sessionStorage.setItem(KEY, '1'); } catch (e) { return; } reload(); },
-    stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); }
+    role: () => role,
+    /** Sans rôle : demande « comme coach » ou « comme joueur ». */
+    start(r) {
+      if (r === 'coach' || r === 'joueur') { open(r); return; }
+      const D = window.RugbyDialog;
+      if (!D || !D.choose) { open('coach'); return; }
+      D.choose('Voir la démo', 'Visitez le RC Démo, un club fictif. Rien n’est enregistré.', [
+        { value: 'coach', label: 'Comme coach', sub: 'convoquer, dessiner les stratégies, faire la compo' },
+        { value: 'joueur', label: 'Comme joueur', sub: 'répondre aux convocations, voir les stratégies et la compo' }
+      ]).then(v => { if (v) open(v); });
+    },
+    stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); },
+    /** Exporter dans la démo : on propose de créer un compte ; la stratégie y sera copiée à la première connexion. */
+    wantExport(id, title) {
+      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), créez votre compte gratuit : la stratégie sera ajoutée à vos stratégies dès votre inscription.`,
+        { title: 'Créez votre compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
+        if (!ok) return;
+        try { localStorage.setItem(WANT, JSON.stringify({ id, at: Date.now() })); } catch (e) { /* ignore */ }
+        toSignup();
+      });
+    },
+    /** Première connexion après « Exporter » dans la démo : copie la stratégie du club démo dans le compte. Renvoie la copie, ou null. */
+    async claimStrategy(sb, owner, team) {
+      let w = null;
+      try { w = JSON.parse(localStorage.getItem(WANT) || 'null'); } catch (e) { /* ignore */ }
+      if (!w || !w.id) return null;
+      const drop = () => { try { localStorage.removeItem(WANT); } catch (e) { /* ignore */ } };
+      if (Date.now() - (w.at || 0) > MONTH) { drop(); return null; }
+      const { data } = await sb.rpc('demo_snapshot');
+      const row = data && (data.drawings || []).find(d => d.id === w.id);
+      if (!row) { drop(); return null; }
+      const copy = JSON.parse(JSON.stringify(row.data || {}));
+      copy.id = crypto.randomUUID(); copy.title = row.title;
+      const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: owner, title: copy.title, data: copy, team_id: team, visibility: 'private' });
+      if (error) return null;   // réessayé à la prochaine connexion
+      drop();
+      return copy;
+    },
+    /** Compte créé : compté « après démo » si la démo a été ouverte sur cet appareil dans les 30 derniers jours. */
+    signedUp() {
+      let t = 0;
+      try { t = +localStorage.getItem(SEEN) || 0; localStorage.removeItem(SEEN); } catch (e) { return; }
+      if (t && Date.now() - t < MONTH) count('inscription');
+    }
   };
   if (!on || !window.supabase || !window.supabase.createClient) return;
 
@@ -3954,8 +4028,10 @@ img, svg { -webkit-user-drag: none; }
       team_events: snap.team_events, event_responses: snap.event_responses, drawings: snap.drawings, drawing_views: snap.drawing_views,
       drawing_comments: snap.drawing_comments, match_sheets: snap.match_sheets, formations: [], announcements: [], feature_flags: [], feedback: []
     };
-    const coach = snap.team_members.find(m => m.role === 'coach') || snap.team_members[0];
-    ME = coach && coach.user_id;
+    // Vue joueur : un joueur de l'équipe (le premier par ordre d'arrivée), sinon le coach
+    const players = snap.team_members.filter(m => m.role === 'player' && m.status === 'active').sort((a, b) => String(a.user_id).localeCompare(String(b.user_id)));
+    const me = (role === 'joueur' && players[0]) || snap.team_members.find(m => m.role === 'coach') || snap.team_members[0];
+    ME = me && me.user_id;
     const legal = window.RugbyLegal;
     DB.profile_private = [{ user_id: ME, terms_version: legal ? legal.version : '' }];
   }
@@ -4072,12 +4148,15 @@ img, svg { -webkit-user-drag: none; }
   const banner = () => {
     const b = document.createElement('div');
     b.className = 'demo-banner'; b.setAttribute('role', 'status');
-    b.innerHTML = '<span><strong>Démo</strong> · club fictif, rien n’est enregistré</span>';
+    b.innerHTML = `<span><strong>Démo</strong> · vue ${role === 'joueur' ? 'joueur' : 'coach'}, rien n’est enregistré</span>`;
+    const other = role === 'joueur' ? 'coach' : 'joueur';
+    const swap = document.createElement('button'); swap.type = 'button'; swap.className = 'btn outline small'; swap.textContent = 'Voir comme ' + other;
+    swap.onclick = () => window.RugbyDemo.start(other);
     const signup = document.createElement('button'); signup.type = 'button'; signup.className = 'btn primary small'; signup.textContent = 'Créer mon compte';
-    signup.onclick = () => { try { sessionStorage.removeItem(KEY); sessionStorage.setItem('rs-after-demo', 'signup'); } catch (e) { /* ignore */ } reload(); };
+    signup.onclick = toSignup;
     const quit = document.createElement('button'); quit.type = 'button'; quit.className = 'btn ghost small'; quit.textContent = 'Quitter la démo';
     quit.onclick = () => window.RugbyDemo.stop();
-    b.append(signup, quit);
+    b.append(swap, signup, quit);
     document.body.appendChild(b);
     document.documentElement.classList.add('demo-on');
   };
@@ -4115,6 +4194,7 @@ img, svg { -webkit-user-drag: none; }
 
   const svg = $('#canvas');
   const wrap = $('#canvas-wrap');
+  const isDemo = () => !!(window.RugbyDemo && window.RugbyDemo.isOn());
   const fieldG = svgEl('g');
   const objectsG = svgEl('g', { class: 'objects' });
   const overlayG = svgEl('g', { class: 'overlay' });
@@ -4144,7 +4224,8 @@ img, svg { -webkit-user-drag: none; }
     $('#fab-undo').disabled = !state.history.length;
     $('#fab-redo').disabled = !state.future.length;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
+    // Pas en démo : une stratégie du club fictif ne doit pas rester sur l'appareil après la démo
+    saveTimer = setTimeout(() => { if (isDemo()) return; try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
   }
 
   /* ---------- Rendu ---------- */
@@ -4382,7 +4463,7 @@ img, svg { -webkit-user-drag: none; }
   /* ---------- Formations enregistrées ---------- */
   const FORM_KEY = 'rugby-formations-v1';
   const readForms = () => { try { return JSON.parse(localStorage.getItem(FORM_KEY) || '[]'); } catch (e) { return []; } };
-  const writeForms = list => { try { localStorage.setItem(FORM_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } };
+  const writeForms = list => { if (isDemo()) return; try { localStorage.setItem(FORM_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } };
   const acc = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount : null;
 
   async function saveCurrentFormation() {
@@ -5099,7 +5180,11 @@ img, svg { -webkit-user-drag: none; }
   /* ---------- Menu d'export & exports animés ---------- */
   const exportMenu = $('#export-menu');
   /** Stratégie que le coach a réservée à l'appli : ni export, ni fichier. */
-  const lockedByCoach = () => { if (state.drawing.__share !== 'app') return false; toast('Le coach a réservé cette stratégie à l’appli : pas de téléchargement.'); return true; };
+  const lockedByCoach = () => {
+    // Démo : pas de téléchargement sans compte ; on propose de s'inscrire, et la stratégie attend dans le nouveau compte
+    if (isDemo()) { window.RugbyDemo.wantExport(state.drawing.id, state.drawing.title); return true; }
+    if (state.drawing.__share !== 'app') return false; toast('Le coach a réservé cette stratégie à l’appli : pas de téléchargement.'); return true;
+  };
   $('#btn-export').onclick = e => { e.stopPropagation(); if (lockedByCoach()) return; exportMenu.classList.toggle('hidden'); };
   document.addEventListener('click', () => exportMenu.classList.add('hidden'));
   exportMenu.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
@@ -5157,7 +5242,7 @@ img, svg { -webkit-user-drag: none; }
 
   /* ---------- Bibliothèque (localStorage) ---------- */
   function readLib() { try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); } catch (e) { return []; } }
-  function writeLib(list) { try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } }
+  function writeLib(list) { if (isDemo()) return; try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } }
   function saveDrawing() {
     state.drawing.title = $('#title').value.trim() || 'Sans titre';
     const list = readLib(); const d = clone(state.drawing); d.updatedAt = Date.now();
@@ -5472,6 +5557,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       await loadTeams();
       watchMyMemberships();
       checkTerms();
+      claimDemoStrategy();
     } else { S.profile = null; S.kids = []; S.teams = []; S.clubs = []; setTeam(null); watchMyMemberships(); }
     renderAccountButton();
     ready = true;
@@ -5800,6 +5886,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
         if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
+        if (window.RugbyDemo) window.RugbyDemo.signedUp();   // mesure anonyme : compte créé après avoir vu la démo ?
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -6989,6 +7076,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     });
   }
 
+  /** « Exporter » dans la démo puis inscription : la stratégie du club démo est copiée dans le compte et ouverte, prête à exporter. */
+  async function claimDemoStrategy() {
+    if (!window.RugbyDemo || window.RugbyDemo.isOn() || !S.user) return;
+    const copy = await window.RugbyDemo.claimStrategy(sb, actorId(), S.team ? S.team.id : null).catch(() => null);
+    if (!copy) return;
+    S.current = { visibility: 'private', team_id: S.team ? S.team.id : null, owner_id: actorId() };
+    E.loadDrawing(E.clone(copy)); E.markSaved && E.markSaved(); E.go('editor');
+    E.toast(`« ${copy.title} » a été ajoutée à vos stratégies : touchez « Exporter » pour la télécharger.`);
+  }
+
   /** Ouvre la page d'une équipe (super-admin : n'importe quelle équipe). */
   async function openTeam(id) {
     if (!S.teams.find(t => t.id === id)) await loadTeams();
@@ -7857,9 +7954,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   let period = 12;
 
   async function renderOverview() {
-    const [m, pend] = await Promise.all([
+    const [m, pend, demo] = await Promise.all([
       sb.rpc('admin_metrics', { p_weeks: period }).then(must),
-      sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending')
+      sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending'),
+      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null)
     ]);
     cache.feedbackNew = m.feedback_new; cache.pending = pend.count || 0;
     const W = m.weeks || [];
@@ -7890,6 +7988,20 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       weekChart('Nouvelles équipes et nouveaux clubs', W, [{ name: 'Équipes', values: m.new.teams, color: 'var(--chart-1)' }, { name: 'Clubs', values: m.new.clubs, color: 'var(--chart-2)' }])
     );
     out.push(c1);
+    // La démo (club fictif) : qui la regarde, et qui crée un compte ensuite. Ses comptes ne comptent pas dans les chiffres ci-dessus.
+    if (demo) {
+      const t = demo.total || {}, opened = (t.coach || 0) + (t.joueur || 0);
+      const gd = el('div', 'kpi-grid');
+      gd.append(
+        kpi('Démo ouverte', opened, `${t.coach || 0} comme coach · ${t.joueur || 0} comme joueur`),
+        kpi('Comptes créés après la démo', t.inscription || 0, opened ? `${pct(t.inscription || 0, opened)} des ouvertures` : 'sur la période')
+      );
+      out.push(gd);
+      const cd = el('div', 'admin-grid');
+      cd.append(weekChart('Démo par semaine', W, [{ name: 'Comme coach', values: demo.coach, color: 'var(--chart-1)' }, { name: 'Comme joueur', values: demo.joueur, color: 'var(--chart-2)' }, { name: 'Comptes créés après', values: demo.inscription, color: 'var(--chart-3)' }],
+        { wide: true, note: 'Compteur anonyme, démarré avec cette version. « Après » : compte créé sur un appareil où la démo a été ouverte dans les 30 jours. Les comptes fictifs du club démo ne comptent dans aucun chiffre du tableau de bord.' }));
+      out.push(cd);
+    }
 
     // 2. Onglets
     out.push(section(2, 'Ce qui est utilisé', 'Onglets ouverts et origine des clics : compteurs anonymes, sauf pour les personnes qui s’y opposent.'));
@@ -10536,7 +10648,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
-    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), twoLines(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), 'visiter un club fictif, sans compte'), twoLines(btn('Essayer l’éditeur', 'ghost', () => E.go('editor')), 'dessiner une stratégie sans compte'));
+    if (active) btns.append(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')), twoLines(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()), 'comme coach ou comme joueur, sans compte'), twoLines(btn('Essayer l’éditeur', 'ghost', () => E.go('editor')), 'dessiner une stratégie sans compte'));
     else btns.append(btn('Dessiner une stratégie', 'primary', () => E.go('editor')), btn('Mes dessins', 'outline', () => E.go('strats')));
     box.appendChild(btns);
     if (active) {

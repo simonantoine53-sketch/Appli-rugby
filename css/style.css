@@ -1008,7 +1008,9 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-form { gap: 14px; }
 .dialog-msg { margin: 0; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
 .dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
-.dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden { display: none; }
+.dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden, .dialog-choices.hidden, .dialog-ok.hidden { display: none; }
+.dialog-choices { display: grid; gap: 10px; }
+.dialog-choices .btn { width: 100%; justify-content: center; min-height: 56px; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
 .btn.primary.danger-solid { background: var(--danger-fill); }
@@ -1561,7 +1563,7 @@ a:not([class]) { color: var(--primary); }
   .legal-table td:nth-child(3)::before { content: 'Base légale : '; font-weight: 700; }
 }
 /* Visite guidée dans la démo : la bulle passe devant, le bandeau de la démo se retire le temps de la visite */
-body:has(.tour) .demo-banner { display: none; }
+body:has(.tour) .demo-banner, body:has(.modal:not(.hidden)) .demo-banner { display: none; }
 /* Boutons à icône de l'éditeur : un mot sous l'icône (on n'a plus à deviner) */
 .fab-history button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
 .fab-history button { width: 54px; height: 50px; }

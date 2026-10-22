@@ -1,7 +1,8 @@
 /* Fenêtres de dialogue de l'appli : remplacent les fenêtres grises du navigateur (confirm, prompt).
    RugbyDialog.confirm(message, options) → Promise<boolean>
    RugbyDialog.prompt(libellé, valeur, options) → Promise<string | null>
-   RugbyDialog.copy(texte, options)       → affiche un texte à copier (bouton « Copier ») */
+   RugbyDialog.copy(texte, options)       → affiche un texte à copier (bouton « Copier »)
+   RugbyDialog.choose(titre, message, [{ value, label, sub }]) → Promise<value | null> (un bouton par choix) */
 (function () {
   'use strict';
 
@@ -17,6 +18,7 @@
         <p class="dialog-msg"></p>
         <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off"></label>
         <textarea class="dialog-text admin-textarea" readonly rows="4"></textarea>
+        <div class="dialog-choices"></div>
         <div class="dialog-actions"><button type="button" class="btn outline dialog-cancel">Annuler</button><button type="submit" class="btn primary dialog-ok">OK</button></div>
       </form></div>`;
     document.body.appendChild(box);
@@ -45,7 +47,17 @@
     $('.dialog-label').textContent = o.label || '';
     input.value = o.value == null ? '' : o.value; input.placeholder = o.placeholder || ''; input.maxLength = o.maxLength || 120;
     text.value = o.text || '';
+    const choices = $('.dialog-choices');
+    choices.replaceChildren(...(o.choices || []).map(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn outline two-lines';
+      b.textContent = c.label;
+      if (c.sub) { const sm = document.createElement('small'); sm.textContent = c.sub; b.appendChild(sm); }
+      b.onclick = () => finish(c.value);
+      return b;
+    }));
+    choices.classList.toggle('hidden', mode !== 'choose');
     const ok = $('.dialog-ok'), cancel = $('.dialog-cancel');
+    ok.classList.toggle('hidden', mode === 'choose');
     ok.textContent = o.ok || (mode === 'confirm' ? 'Confirmer' : mode === 'copy' ? 'Copier' : 'Valider');
     ok.classList.toggle('danger-solid', !!o.danger);
     cancel.textContent = mode === 'copy' ? 'Fermer' : (o.cancel || 'Annuler');
@@ -59,7 +71,7 @@
       } else finish(true);
     };
     box.classList.remove('hidden');
-    requestAnimationFrame(() => { if (mode === 'prompt') { input.focus(); input.select(); } else if (mode === 'copy') { text.focus(); text.select(); } else ok.focus(); });
+    requestAnimationFrame(() => { if (mode === 'prompt') { input.focus(); input.select(); } else if (mode === 'copy') { text.focus(); text.select(); } else if (mode === 'choose') { const c = choices.querySelector('button'); if (c) c.focus(); } else ok.focus(); });
     return new Promise(resolve => { done = resolve; });
   }
 
@@ -71,7 +83,8 @@
       return show('confirm', opts).then(v => v === true);
     },
     prompt: (label, value, o) => show('prompt', Object.assign({ label, value }, o || {})),
-    copy: (text, o) => show('copy', Object.assign({ text }, o || {}))
+    copy: (text, o) => show('copy', Object.assign({ text }, o || {})),
+    choose: (title, message, choices) => show('choose', { title, message, choices })
   };
 
   /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */

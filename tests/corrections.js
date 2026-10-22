@@ -18,7 +18,7 @@ const has = (page, text) => page.waitForFunction(x => document.body.innerText.in
   await v.goto(BASE + '#/'); await v.waitForTimeout(1800);
   const barH = await v.$eval('.consent-bar', e => e.getBoundingClientRect().height).catch(() => 0);
   t.check(barH > 0 && barH < (view === 'telephone' ? 150 : 90), `bandeau de mesure compact (${Math.round(barH)} px)`);
-  t.check(await has(v, 'visiter un club fictif'), 'accueil visiteur : « Voir la démo » expliqué');
+  t.check(await has(v, 'comme coach ou comme joueur'), 'accueil visiteur : « Voir la démo » expliqué');
   await t.shot(v, `${view}-corr-1-visiteur`);
   await v.evaluate(() => window.RugbyAccount.openAuth('login'));
   await v.waitForTimeout(400);

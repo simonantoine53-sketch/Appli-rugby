@@ -27,6 +27,7 @@
 
   const svg = $('#canvas');
   const wrap = $('#canvas-wrap');
+  const isDemo = () => !!(window.RugbyDemo && window.RugbyDemo.isOn());
   const fieldG = svgEl('g');
   const objectsG = svgEl('g', { class: 'objects' });
   const overlayG = svgEl('g', { class: 'overlay' });
@@ -56,7 +57,8 @@
     $('#fab-undo').disabled = !state.history.length;
     $('#fab-redo').disabled = !state.future.length;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
+    // Pas en démo : une stratégie du club fictif ne doit pas rester sur l'appareil après la démo
+    saveTimer = setTimeout(() => { if (isDemo()) return; try { localStorage.setItem(CUR_KEY, snapshot()); } catch (e) { /* stockage indisponible */ } }, 300);
   }
 
   /* ---------- Rendu ---------- */
@@ -294,7 +296,7 @@
   /* ---------- Formations enregistrées ---------- */
   const FORM_KEY = 'rugby-formations-v1';
   const readForms = () => { try { return JSON.parse(localStorage.getItem(FORM_KEY) || '[]'); } catch (e) { return []; } };
-  const writeForms = list => { try { localStorage.setItem(FORM_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } };
+  const writeForms = list => { if (isDemo()) return; try { localStorage.setItem(FORM_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } };
   const acc = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount : null;
 
   async function saveCurrentFormation() {
@@ -1011,7 +1013,11 @@
   /* ---------- Menu d'export & exports animés ---------- */
   const exportMenu = $('#export-menu');
   /** Stratégie que le coach a réservée à l'appli : ni export, ni fichier. */
-  const lockedByCoach = () => { if (state.drawing.__share !== 'app') return false; toast('Le coach a réservé cette stratégie à l’appli : pas de téléchargement.'); return true; };
+  const lockedByCoach = () => {
+    // Démo : pas de téléchargement sans compte ; on propose de s'inscrire, et la stratégie attend dans le nouveau compte
+    if (isDemo()) { window.RugbyDemo.wantExport(state.drawing.id, state.drawing.title); return true; }
+    if (state.drawing.__share !== 'app') return false; toast('Le coach a réservé cette stratégie à l’appli : pas de téléchargement.'); return true;
+  };
   $('#btn-export').onclick = e => { e.stopPropagation(); if (lockedByCoach()) return; exportMenu.classList.toggle('hidden'); };
   document.addEventListener('click', () => exportMenu.classList.add('hidden'));
   exportMenu.querySelectorAll('[data-export]').forEach(b => b.onclick = () => {
@@ -1069,7 +1075,7 @@
 
   /* ---------- Bibliothèque (localStorage) ---------- */
   function readLib() { try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); } catch (e) { return []; } }
-  function writeLib(list) { try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } }
+  function writeLib(list) { if (isDemo()) return; try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch (e) { toast('Stockage local indisponible.'); } }
   function saveDrawing() {
     state.drawing.title = $('#title').value.trim() || 'Sans titre';
     const list = readLib(); const d = clone(state.drawing); d.updatedAt = Date.now();

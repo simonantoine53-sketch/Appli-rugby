@@ -1,16 +1,74 @@
 /* « Voir la démo » : l'appli tourne sur une copie en lecture seule du club démo (fonction demo_snapshot de la base),
-   vue comme le coach de l'équipe. Rien n'est envoyé à la base : les écritures sont ignorées (toast « Mode démo »),
-   aucune notification, aucun e-mail. Activé pour l'onglet en cours seulement (sessionStorage). */
+   vue comme le coach de l'équipe ou comme un joueur, au choix. Rien n'est envoyé à la base : les écritures sont ignorées
+   (toast « Mode démo »), aucune notification, aucun e-mail. Activé pour l'onglet en cours seulement (sessionStorage).
+   Mesure anonyme (count_demo) : ouvertures de la démo par rôle, et comptes créés sur un appareil où elle a été ouverte. */
 (function () {
   'use strict';
-  const KEY = 'rs-demo';
-  let on = false;
-  try { on = sessionStorage.getItem(KEY) === '1'; } catch (e) { /* stockage indisponible : pas de démo */ }
+  const KEY = 'rs-demo', SEEN = 'rs-demo-vu', WANT = 'rs-demo-strategie', MONTH = 30 * 864e5;
+  let role = null;
+  try { const v = sessionStorage.getItem(KEY); role = v === 'joueur' ? 'joueur' : v ? 'coach' : null; } catch (e) { /* stockage indisponible : pas de démo */ }
+  const on = !!role;
+  try { const t = +localStorage.getItem(SEEN) || 0; if (t && Date.now() - t > MONTH) localStorage.removeItem(SEEN); } catch (e) { /* ignore */ }
+  const toSignup = () => { try { sessionStorage.removeItem(KEY); sessionStorage.setItem('rs-after-demo', 'signup'); } catch (e) { /* ignore */ } reload(); };
   const reload = () => { location.hash = '#/'; location.reload(); };
+  // Compteur anonyme (sans identifiant), sauf si la personne s'est opposée à la mesure d'audience ; keepalive : survit au rechargement
+  function count(kind) {
+    const C = window.RUGBY_CONFIG, consent = window.RugbyConsent;
+    if (!C || (consent && consent.anon && !consent.anon())) return;
+    try {
+      fetch(C.supabaseUrl + '/rest/v1/rpc/count_demo', { method: 'POST', keepalive: true, headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_kind: kind }) }).catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
+  function open(r) {
+    try { sessionStorage.setItem(KEY, r); localStorage.setItem(SEEN, String(Date.now())); } catch (e) { return; }
+    count(r); reload();
+  }
   window.RugbyDemo = {
     isOn: () => on,
-    start() { try { sessionStorage.setItem(KEY, '1'); } catch (e) { return; } reload(); },
-    stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); }
+    role: () => role,
+    /** Sans rôle : demande « comme coach » ou « comme joueur ». */
+    start(r) {
+      if (r === 'coach' || r === 'joueur') { open(r); return; }
+      const D = window.RugbyDialog;
+      if (!D || !D.choose) { open('coach'); return; }
+      D.choose('Voir la démo', 'Visitez le RC Démo, un club fictif. Rien n’est enregistré.', [
+        { value: 'coach', label: 'Comme coach', sub: 'convoquer, dessiner les stratégies, faire la compo' },
+        { value: 'joueur', label: 'Comme joueur', sub: 'répondre aux convocations, voir les stratégies et la compo' }
+      ]).then(v => { if (v) open(v); });
+    },
+    stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); },
+    /** Exporter dans la démo : on propose de créer un compte ; la stratégie y sera copiée à la première connexion. */
+    wantExport(id, title) {
+      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), créez votre compte gratuit : la stratégie sera ajoutée à vos stratégies dès votre inscription.`,
+        { title: 'Créez votre compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
+        if (!ok) return;
+        try { localStorage.setItem(WANT, JSON.stringify({ id, at: Date.now() })); } catch (e) { /* ignore */ }
+        toSignup();
+      });
+    },
+    /** Première connexion après « Exporter » dans la démo : copie la stratégie du club démo dans le compte. Renvoie la copie, ou null. */
+    async claimStrategy(sb, owner, team) {
+      let w = null;
+      try { w = JSON.parse(localStorage.getItem(WANT) || 'null'); } catch (e) { /* ignore */ }
+      if (!w || !w.id) return null;
+      const drop = () => { try { localStorage.removeItem(WANT); } catch (e) { /* ignore */ } };
+      if (Date.now() - (w.at || 0) > MONTH) { drop(); return null; }
+      const { data } = await sb.rpc('demo_snapshot');
+      const row = data && (data.drawings || []).find(d => d.id === w.id);
+      if (!row) { drop(); return null; }
+      const copy = JSON.parse(JSON.stringify(row.data || {}));
+      copy.id = crypto.randomUUID(); copy.title = row.title;
+      const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: owner, title: copy.title, data: copy, team_id: team, visibility: 'private' });
+      if (error) return null;   // réessayé à la prochaine connexion
+      drop();
+      return copy;
+    },
+    /** Compte créé : compté « après démo » si la démo a été ouverte sur cet appareil dans les 30 derniers jours. */
+    signedUp() {
+      let t = 0;
+      try { t = +localStorage.getItem(SEEN) || 0; localStorage.removeItem(SEEN); } catch (e) { return; }
+      if (t && Date.now() - t < MONTH) count('inscription');
+    }
   };
   if (!on || !window.supabase || !window.supabase.createClient) return;
 
@@ -27,8 +85,10 @@
       team_events: snap.team_events, event_responses: snap.event_responses, drawings: snap.drawings, drawing_views: snap.drawing_views,
       drawing_comments: snap.drawing_comments, match_sheets: snap.match_sheets, formations: [], announcements: [], feature_flags: [], feedback: []
     };
-    const coach = snap.team_members.find(m => m.role === 'coach') || snap.team_members[0];
-    ME = coach && coach.user_id;
+    // Vue joueur : un joueur de l'équipe (le premier par ordre d'arrivée), sinon le coach
+    const players = snap.team_members.filter(m => m.role === 'player' && m.status === 'active').sort((a, b) => String(a.user_id).localeCompare(String(b.user_id)));
+    const me = (role === 'joueur' && players[0]) || snap.team_members.find(m => m.role === 'coach') || snap.team_members[0];
+    ME = me && me.user_id;
     const legal = window.RugbyLegal;
     DB.profile_private = [{ user_id: ME, terms_version: legal ? legal.version : '' }];
   }
@@ -145,12 +205,15 @@
   const banner = () => {
     const b = document.createElement('div');
     b.className = 'demo-banner'; b.setAttribute('role', 'status');
-    b.innerHTML = '<span><strong>Démo</strong> · club fictif, rien n’est enregistré</span>';
+    b.innerHTML = `<span><strong>Démo</strong> · vue ${role === 'joueur' ? 'joueur' : 'coach'}, rien n’est enregistré</span>`;
+    const other = role === 'joueur' ? 'coach' : 'joueur';
+    const swap = document.createElement('button'); swap.type = 'button'; swap.className = 'btn outline small'; swap.textContent = 'Voir comme ' + other;
+    swap.onclick = () => window.RugbyDemo.start(other);
     const signup = document.createElement('button'); signup.type = 'button'; signup.className = 'btn primary small'; signup.textContent = 'Créer mon compte';
-    signup.onclick = () => { try { sessionStorage.removeItem(KEY); sessionStorage.setItem('rs-after-demo', 'signup'); } catch (e) { /* ignore */ } reload(); };
+    signup.onclick = toSignup;
     const quit = document.createElement('button'); quit.type = 'button'; quit.className = 'btn ghost small'; quit.textContent = 'Quitter la démo';
     quit.onclick = () => window.RugbyDemo.stop();
-    b.append(signup, quit);
+    b.append(swap, signup, quit);
     document.body.appendChild(b);
     document.documentElement.classList.add('demo-on');
   };
