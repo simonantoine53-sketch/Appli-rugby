@@ -247,6 +247,9 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: var(--text); color: var(--panel); padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast { max-width: calc(100% - 32px); text-align: center; box-shadow: var(--shadow); }
+/* Au-dessus de la barre d'onglets du téléphone, sans la recouvrir */
+@media (max-width: 760px) { .toast { bottom: calc(68px + var(--bar-safe)); } }
 
 /* ---------- Formations ---------- */
 .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1244,10 +1247,15 @@ button.switch { border: 0; padding: 0; }
 :root { --bar-safe: env(safe-area-inset-bottom, 0px); }
 @media (display-mode: standalone) { :root { --bar-safe: max(14px, env(safe-area-inset-bottom, 0px)); } }
 
-/* Bandeau de consentement (mesure d'usage) : non bloquant, au-dessus de la barre du bas */
-.consent-bar { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(12px + var(--bar-safe)); max-width: 520px; margin: 0 auto; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-.consent-bar p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13.5px; }
+/* Bandeaux (mesure d'usage, conditions) : un seul à la fois, compact, non bloquant, au-dessus de la barre du bas.
+   Masqués tant qu'une fenêtre (connexion, inscription…) est ouverte. */
+.consent-bar { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(12px + var(--bar-safe)); max-width: 560px; margin: 0 auto; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.consent-bar p { margin: 0; color: var(--muted); line-height: 1.4; font-size: 13.5px; }
+.consent-bar p strong { color: var(--text); }
 .consent-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.consent-actions .btn { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+@media (min-width: 761px) { .consent-bar { flex-direction: row; align-items: center; gap: 14px; } .consent-bar p { flex: 1; } .consent-actions { flex: 0 0 auto; } }
+body:has(.modal:not(.hidden)) .consent-bar, body:has(.tour) .consent-bar { display: none; }
 @media (max-width: 760px) { .consent-bar { bottom: calc(68px + var(--bar-safe)); } }
 
 /* Inscription : âge, accord parental, conditions */
@@ -1257,8 +1265,6 @@ button.switch { border: 0; padding: 0; }
 label.check { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.4; font-weight: 400; }
 label.check input { margin-top: 2px; flex: 0 0 auto; }
 #modal-legal { z-index: 90; }
-.terms-bar { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
-@media (max-width: 760px) { .terms-bar { bottom: auto; } }
 .consent-actions.single { grid-template-columns: 1fr; }
 .form .auth-extra label.check { align-items: flex-start; font-weight: 400; font-size: 13.5px; }
 .form .auth-extra input[type="checkbox"], .form .auth-extra input[type="radio"] { width: auto; margin: 2px 0 0; flex: 0 0 auto; }

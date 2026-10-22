@@ -8,7 +8,7 @@
 
   const STEPS = {
     coach: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'En une minute, voici ce que vous pouvez faire depuis l’accueil. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour découvrir l’accueil ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
       { sel: '.todo-card.onboarding', title: 'Démarrer avec votre équipe', text: 'Les premières étapes pour lancer votre équipe : inviter les joueurs, publier une stratégie, créer un match. Ce bloc disparaît quand tout est fait.' },
       { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Ce qui demande votre attention : joueurs sans réponse à relancer, demandes d’adhésion à valider, stratégies peu vues, compo à préparer.' },
       { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Dessinez vos combinaisons étape par étape, publiez-les à l’équipe et voyez qui les a regardées. Les joueurs peuvent aussi vous proposer leurs idées.' },
@@ -22,7 +22,7 @@
       { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
     ],
     player: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'En une minute, voici comment suivre votre équipe. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre votre équipe ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
       { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Répondez aux convocations d’un appui (Présent, Peut-être, Absent) et retrouvez les stratégies à regarder avant le match.' },
       { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Les combinaisons publiées par le coach, animées étape par étape. Vous pouvez aussi dessiner vos idées et les proposer au coach.' },
       { sel: '[data-tile="team"]', title: 'Équipe', text: 'Tous les membres de l’équipe et leurs postes. L’onglet Club liste les autres équipes du club : vous pouvez demander à en rejoindre une, comme joueur ou comme coach.' },
@@ -72,7 +72,8 @@
     layer.querySelector('.tour-title').textContent = s.title;
     layer.querySelector('.tour-text').textContent = s.text;
     layer.querySelector('.tour-prev').classList.toggle('hidden', i === 0);
-    layer.querySelector('.tour-next').textContent = i === steps.length - 1 ? 'C’est parti !' : 'Suivant';
+    layer.querySelector('.tour-next').textContent = i === 0 ? 'Faire la visite' : i === steps.length - 1 ? 'C’est parti !' : 'Suivant';
+    layer.querySelector('.tour-skip').textContent = i === 0 ? 'Plus tard' : 'Passer';
     const t = target(s);
     if (t) t.scrollIntoView({ block: 'center', behavior: 'smooth' });
     place(); if (t) { setTimeout(place, 350); setTimeout(place, 800); }

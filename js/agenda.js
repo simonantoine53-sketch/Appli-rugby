@@ -81,6 +81,8 @@
     };
   }
 
+  // Après une réponse, on propose d'activer les notifications (au plus une fois par semaine, voir js/push.js)
+  const askPush = () => setTimeout(() => { if (window.RugbyPush && window.RugbyPush.maybeAsk) window.RugbyPush.maybeAsk(); }, 1500);
   async function answer(evId, status, userId, comment) {
     const me = A.user().id, uid = userId || me;
     const row = { event_id: evId, user_id: uid, status, set_by: me };
@@ -94,6 +96,7 @@
     }
     if (error) { E.toast('Réponse impossible : ' + error.message); return false; }
     track('rsvp', { status, for_other: uid !== me });
+    askPush();
     return true;
   }
   async function clearAnswer(evId, userId) {

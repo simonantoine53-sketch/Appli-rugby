@@ -20,19 +20,26 @@
     if (bar || (!force && read())) return;
     bar = document.createElement('div');
     bar.className = 'consent-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-labelledby', 'consent-title');
-    bar.innerHTML = `<strong id="consent-title">Vos données, votre choix</strong>
-      <p>Rugbeo n’utilise ni cookie ni publicité. Nous comptons les onglets ouverts de façon anonyme. Avec votre accord, nous mesurons aussi votre usage en détail (temps passé, fonctions utilisées) pour améliorer l’appli. Refuser ne change rien au fonctionnement. <a href="#" data-legal="cookies">En savoir plus</a></p>
+    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> Pouvons-nous mesurer votre usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
       <div class="consent-actions"><button type="button" class="btn outline" data-c="0">Refuser</button><button type="button" class="btn outline" data-c="1">Accepter</button></div>`;
     bar.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
       const ok = b.dataset.c === '1';
       write(ok); bar.remove(); bar = null;
       document.querySelectorAll('[data-consent-state]').forEach(s => { s.textContent = label(); });
-      if (window.RugbyEditor && window.RugbyEditor.toast) window.RugbyEditor.toast(ok ? 'Merci : mesure d’usage acceptée.' : 'C’est noté : pas de mesure détaillée.');
+      if (force && window.RugbyEditor && window.RugbyEditor.toast) window.RugbyEditor.toast(ok ? 'Merci : mesure d’usage acceptée.' : 'C’est noté : pas de mesure détaillée.');
+      free();
     });
     document.body.appendChild(bar);
   }
+  /* Une seule fenêtre à la fois : les bandeaux suivants (conditions, visite guidée…) attendent
+     que le bandeau affiché soit refermé. */
+  let waiting = [];
+  const busy = () => !!document.querySelector('.consent-bar');
+  function free() { if (busy()) return; const w = waiting; waiting = []; w.forEach(cb => cb()); }
+  function whenFree(cb) { if (busy()) waiting.push(cb); else cb(); }
+
   // Premier passage (ou choix de plus de 13 mois) : on demande, sans bloquer l'appli
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ask(false)); else ask(false);
 
-  window.RugbyConsent = { stats, ask, label, anon, setAnon };
+  window.RugbyConsent = { stats, ask, label, anon, setAnon, whenFree, free };
 })();

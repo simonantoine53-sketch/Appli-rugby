@@ -247,11 +247,12 @@
     slot.appendChild(tiles(d, staff));
     // Partenaires du club : bloc discret en bas de l'accueil
     if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
-    // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
-    const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
-    setTimeout(() => {
-      if (my !== seq || E.currentView() !== 'home') return;
-      if (window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player', askPush); else askPush();
+    // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.
+    // Les notifications sont proposées plus tard, après la première réponse à une convocation.
+    setTimeout(async () => {
+      await A.termsChecked();
+      const go = () => { if (my === seq && E.currentView() === 'home' && window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player'); };
+      if (window.RugbyConsent) window.RugbyConsent.whenFree(go); else go();
     }, 600);
   }
 

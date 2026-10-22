@@ -108,14 +108,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.kids.length) { const { data: lg } = await sb.rpc('my_kids_login'); (lg || []).forEach(r => { S.kidLogins[r.id] = r.email; }); }
   }
 
-  /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
-  async function checkTerms() {
+  /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants,
+     après le bandeau de mesure d'usage (une seule fenêtre à la fois). */
+  function checkTerms() {
+    if (!S.termsCheck) S.termsCheck = showTerms().finally(() => { S.termsCheck = null; });
+    return S.termsCheck;
+  }
+  async function showTerms() {
     const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
     const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
     if (data && data.terms_version === L.version) return;
-    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo${L.changes ? ` (${esc(L.changes)})` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
+    await new Promise(res => (window.RugbyConsent ? window.RugbyConsent.whenFree(res) : res()));
+    if (!S.user || document.querySelector('.terms-bar')) return;
+    const bar = el('div', 'consent-bar terms-bar', `<p><strong>Nos conditions ont changé</strong>${L.changes ? ` : ${esc(L.changes)}` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
     bar.setAttribute('role', 'dialog');
-    const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
+    const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); if (window.RugbyConsent) window.RugbyConsent.free(); });
     const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
     document.body.appendChild(bar);
   }
@@ -1531,6 +1538,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
   function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, errMsg, roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, errMsg, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

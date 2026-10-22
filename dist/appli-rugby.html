@@ -264,6 +264,9 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: var(--text); color: var(--panel); padding: 10px 18px; border-radius: 8px; opacity: 0; transition: .25s; pointer-events: none; z-index: 60; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast { max-width: calc(100% - 32px); text-align: center; box-shadow: var(--shadow); }
+/* Au-dessus de la barre d'onglets du téléphone, sans la recouvrir */
+@media (max-width: 760px) { .toast { bottom: calc(68px + var(--bar-safe)); } }
 
 /* ---------- Formations ---------- */
 .swatches { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1261,10 +1264,15 @@ button.switch { border: 0; padding: 0; }
 :root { --bar-safe: env(safe-area-inset-bottom, 0px); }
 @media (display-mode: standalone) { :root { --bar-safe: max(14px, env(safe-area-inset-bottom, 0px)); } }
 
-/* Bandeau de consentement (mesure d'usage) : non bloquant, au-dessus de la barre du bas */
-.consent-bar { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(12px + var(--bar-safe)); max-width: 520px; margin: 0 auto; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-.consent-bar p { margin: 0; color: var(--muted); line-height: 1.45; font-size: 13.5px; }
+/* Bandeaux (mesure d'usage, conditions) : un seul à la fois, compact, non bloquant, au-dessus de la barre du bas.
+   Masqués tant qu'une fenêtre (connexion, inscription…) est ouverte. */
+.consent-bar { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(12px + var(--bar-safe)); max-width: 560px; margin: 0 auto; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.consent-bar p { margin: 0; color: var(--muted); line-height: 1.4; font-size: 13.5px; }
+.consent-bar p strong { color: var(--text); }
 .consent-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.consent-actions .btn { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+@media (min-width: 761px) { .consent-bar { flex-direction: row; align-items: center; gap: 14px; } .consent-bar p { flex: 1; } .consent-actions { flex: 0 0 auto; } }
+body:has(.modal:not(.hidden)) .consent-bar, body:has(.tour) .consent-bar { display: none; }
 @media (max-width: 760px) { .consent-bar { bottom: calc(68px + var(--bar-safe)); } }
 
 /* Inscription : âge, accord parental, conditions */
@@ -1274,8 +1282,6 @@ button.switch { border: 0; padding: 0; }
 label.check { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.4; font-weight: 400; }
 label.check input { margin-top: 2px; flex: 0 0 auto; }
 #modal-legal { z-index: 90; }
-.terms-bar { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
-@media (max-width: 760px) { .terms-bar { bottom: auto; } }
 .consent-actions.single { grid-template-columns: 1fr; }
 .form .auth-extra label.check { align-items: flex-start; font-weight: 400; font-size: 13.5px; }
 .form .auth-extra input[type="checkbox"], .form .auth-extra input[type="radio"] { width: auto; margin: 2px 0 0; flex: 0 0 auto; }
@@ -2464,21 +2470,28 @@ a.sponsor-item:hover img { opacity: .8; }
     if (bar || (!force && read())) return;
     bar = document.createElement('div');
     bar.className = 'consent-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-labelledby', 'consent-title');
-    bar.innerHTML = `<strong id="consent-title">Vos données, votre choix</strong>
-      <p>Rugbeo n’utilise ni cookie ni publicité. Nous comptons les onglets ouverts de façon anonyme. Avec votre accord, nous mesurons aussi votre usage en détail (temps passé, fonctions utilisées) pour améliorer l’appli. Refuser ne change rien au fonctionnement. <a href="#" data-legal="cookies">En savoir plus</a></p>
+    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> Pouvons-nous mesurer votre usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
       <div class="consent-actions"><button type="button" class="btn outline" data-c="0">Refuser</button><button type="button" class="btn outline" data-c="1">Accepter</button></div>`;
     bar.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
       const ok = b.dataset.c === '1';
       write(ok); bar.remove(); bar = null;
       document.querySelectorAll('[data-consent-state]').forEach(s => { s.textContent = label(); });
-      if (window.RugbyEditor && window.RugbyEditor.toast) window.RugbyEditor.toast(ok ? 'Merci : mesure d’usage acceptée.' : 'C’est noté : pas de mesure détaillée.');
+      if (force && window.RugbyEditor && window.RugbyEditor.toast) window.RugbyEditor.toast(ok ? 'Merci : mesure d’usage acceptée.' : 'C’est noté : pas de mesure détaillée.');
+      free();
     });
     document.body.appendChild(bar);
   }
+  /* Une seule fenêtre à la fois : les bandeaux suivants (conditions, visite guidée…) attendent
+     que le bandeau affiché soit refermé. */
+  let waiting = [];
+  const busy = () => !!document.querySelector('.consent-bar');
+  function free() { if (busy()) return; const w = waiting; waiting = []; w.forEach(cb => cb()); }
+  function whenFree(cb) { if (busy()) waiting.push(cb); else cb(); }
+
   // Premier passage (ou choix de plus de 13 mois) : on demande, sans bloquer l'appli
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => ask(false)); else ask(false);
 
-  window.RugbyConsent = { stats, ask, label, anon, setAnon };
+  window.RugbyConsent = { stats, ask, label, anon, setAnon, whenFree, free };
 })();
 
 </script>
@@ -5157,14 +5170,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (S.kids.length) { const { data: lg } = await sb.rpc('my_kids_login'); (lg || []).forEach(r => { S.kidLogins[r.id] = r.email; }); }
   }
 
-  /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants */
-  async function checkTerms() {
+  /* Conditions et politique de confidentialité mises à jour : on le signale une fois aux comptes existants,
+     après le bandeau de mesure d'usage (une seule fenêtre à la fois). */
+  function checkTerms() {
+    if (!S.termsCheck) S.termsCheck = showTerms().finally(() => { S.termsCheck = null; });
+    return S.termsCheck;
+  }
+  async function showTerms() {
     const L = window.RugbyLegal; if (!L || !S.user || document.querySelector('.terms-bar')) return;
     const { data } = await sb.from('profile_private').select('terms_version').eq('user_id', S.user.id).maybeSingle();
     if (data && data.terms_version === L.version) return;
-    const bar = el('div', 'consent-bar terms-bar', `<strong>Nos conditions évoluent</strong><p>Nous avons mis à jour la politique de confidentialité et les conditions d’utilisation de Rugbeo${L.changes ? ` (${esc(L.changes)})` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
+    await new Promise(res => (window.RugbyConsent ? window.RugbyConsent.whenFree(res) : res()));
+    if (!S.user || document.querySelector('.terms-bar')) return;
+    const bar = el('div', 'consent-bar terms-bar', `<p><strong>Nos conditions ont changé</strong>${L.changes ? ` : ${esc(L.changes)}` : ''}. <a href="#" data-legal="privacy">Les lire</a></p>`);
     bar.setAttribute('role', 'dialog');
-    const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); });
+    const ok = btn('J’ai compris', 'primary', async () => { ok.disabled = true; const { error } = await sb.rpc('accept_terms', { p_version: L.version }); if (error) { ok.disabled = false; return E.toast(errMsg(error)); } bar.remove(); if (window.RugbyConsent) window.RugbyConsent.free(); });
     const acts = el('div', 'consent-actions single'); acts.appendChild(ok); bar.appendChild(acts);
     document.body.appendChild(bar);
   }
@@ -6580,7 +6600,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
   function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, errMsg, roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, errMsg, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
 
@@ -7878,6 +7898,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     };
   }
 
+  // Après une réponse, on propose d'activer les notifications (au plus une fois par semaine, voir js/push.js)
+  const askPush = () => setTimeout(() => { if (window.RugbyPush && window.RugbyPush.maybeAsk) window.RugbyPush.maybeAsk(); }, 1500);
   async function answer(evId, status, userId, comment) {
     const me = A.user().id, uid = userId || me;
     const row = { event_id: evId, user_id: uid, status, set_by: me };
@@ -7891,6 +7913,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     }
     if (error) { E.toast('Réponse impossible : ' + error.message); return false; }
     track('rsvp', { status, for_other: uid !== me });
+    askPush();
     return true;
   }
   async function clearAnswer(evId, userId) {
@@ -9699,7 +9722,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   const STEPS = {
     coach: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'En une minute, voici ce que vous pouvez faire depuis l’accueil. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour découvrir l’accueil ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
       { sel: '.todo-card.onboarding', title: 'Démarrer avec votre équipe', text: 'Les premières étapes pour lancer votre équipe : inviter les joueurs, publier une stratégie, créer un match. Ce bloc disparaît quand tout est fait.' },
       { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Ce qui demande votre attention : joueurs sans réponse à relancer, demandes d’adhésion à valider, stratégies peu vues, compo à préparer.' },
       { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Dessinez vos combinaisons étape par étape, publiez-les à l’équipe et voyez qui les a regardées. Les joueurs peuvent aussi vous proposer leurs idées.' },
@@ -9713,7 +9736,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
     ],
     player: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'En une minute, voici comment suivre votre équipe. Vous pourrez revoir ce tutoriel à tout moment depuis la page Compte.' },
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre votre équipe ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
       { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Répondez aux convocations d’un appui (Présent, Peut-être, Absent) et retrouvez les stratégies à regarder avant le match.' },
       { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Les combinaisons publiées par le coach, animées étape par étape. Vous pouvez aussi dessiner vos idées et les proposer au coach.' },
       { sel: '[data-tile="team"]', title: 'Équipe', text: 'Tous les membres de l’équipe et leurs postes. L’onglet Club liste les autres équipes du club : vous pouvez demander à en rejoindre une, comme joueur ou comme coach.' },
@@ -9763,7 +9786,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     layer.querySelector('.tour-title').textContent = s.title;
     layer.querySelector('.tour-text').textContent = s.text;
     layer.querySelector('.tour-prev').classList.toggle('hidden', i === 0);
-    layer.querySelector('.tour-next').textContent = i === steps.length - 1 ? 'C’est parti !' : 'Suivant';
+    layer.querySelector('.tour-next').textContent = i === 0 ? 'Faire la visite' : i === steps.length - 1 ? 'C’est parti !' : 'Suivant';
+    layer.querySelector('.tour-skip').textContent = i === 0 ? 'Plus tard' : 'Passer';
     const t = target(s);
     if (t) t.scrollIntoView({ block: 'center', behavior: 'smooth' });
     place(); if (t) { setTimeout(place, 350); setTimeout(place, 800); }
@@ -10066,11 +10090,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     slot.appendChild(tiles(d, staff));
     // Partenaires du club : bloc discret en bas de l'accueil
     if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
-    // Première connexion : visite guidée de l'accueil, puis proposition d'activer les notifications
-    const askPush = () => { if (P() && P().maybeAsk) P().maybeAsk(); };
-    setTimeout(() => {
-      if (my !== seq || E.currentView() !== 'home') return;
-      if (window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player', askPush); else askPush();
+    // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.
+    // Les notifications sont proposées plus tard, après la première réponse à une convocation.
+    setTimeout(async () => {
+      await A.termsChecked();
+      const go = () => { if (my === seq && E.currentView() === 'home' && window.RugbyTour) window.RugbyTour.maybeStart(A.user().id, staff ? 'coach' : 'player'); };
+      if (window.RugbyConsent) window.RugbyConsent.whenFree(go); else go();
     }, 600);
   }
 
