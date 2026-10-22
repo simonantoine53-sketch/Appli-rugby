@@ -1576,3 +1576,9 @@ body:has(.tour) .demo-banner { display: none; }
 .offline-card .boot-tile { fill: var(--field); }
 .offline-card .boot-oval { fill: var(--on-color); }
 .offline-card ul { margin: 0; padding-left: 18px; text-align: left; color: var(--muted); line-height: 1.5; font-size: 14px; }
+/* Comportement d'appli, pas de page web : pas de zoom au double appui, pas de sélection ni de menu « Copier »
+   à l'appui long. Le zoom à deux doigts reste possible (accessibilité). Les champs de saisie restent sélectionnables. */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+img, svg { -webkit-user-drag: none; }
