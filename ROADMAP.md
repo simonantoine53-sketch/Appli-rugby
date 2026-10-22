@@ -53,8 +53,7 @@ Priorités décidées le 8 octobre 2026, mises à jour le 21 octobre 2026 (lots 
 - **Effectif** (poste, licence, certificat médical, contact d'urgence) : à creuser, pas tranché.
 
 ## Dépriorisé (bonnes idées, pas maintenant)
-- **Messagerie / annonces** : seulement après toutes les autres fonctions.
-- **Suivi des matchs** (scores, essais, stats) : trop lourd à alimenter, existe déjà côté FFR. Prévoir plutôt **un lien vers la page du club (FFR / « mon club house »)**.
+- **Messagerie / annonces** et **stats des joueurs** : revus le 22 octobre 2026, voir « Futures grandes fonctions » plus bas.
 - **Calendrier de saison** : pas prioritaire, à réfléchir.
 - **Suivi des blessures** : se fait par message aujourd'hui, à réfléchir.
 - **Annotation vidéo** (flèches sur une vidéo de match, comme 360Player / Hudl) : reportée le 13 octobre 2026, trop complexe pour l'instant (stockage vidéo, export impossible avec YouTube, usage rare). Version légère possible plus tard : importer une capture de match comme fond de l'éditeur et dessiner dessus.
@@ -119,6 +118,19 @@ Priorités décidées le 8 octobre 2026, mises à jour le 21 octobre 2026 (lots 
 - **Cotisations** : suivi de qui a payé et paiement en ligne via SumUp ou HelloAsso. À valider d'abord avec le président du club.
 - **Bibliothèque de départ** de l'éditeur (plans de jeu types 1-3-3-1, 2-4-2, pods…) : choisir les plans avec le coach avant de les construire.
 - **Mesure de l'activation des clubs** : savoir quels clubs utilisent vraiment l'appli (équipes créées, joueurs inscrits, convocations envoyées, réponses) pour aider ceux qui décrochent.
+
+## Futures grandes fonctions (notées le 22 octobre 2026, à lancer après le test au SC Bernay)
+Rien n'est lancé : on attend les retours du club test (stratégies avec les coachs d'abord). Ce sont les fonctions de SportEasy utilisées au club que Rugbeo n'a pas encore.
+
+- **Discussion du match** (priorité de la liste) : un fil de messages par match ou entraînement, entre le coach et les joueurs convoqués.
+  - Pourquoi : au club, les coachs ne sont pas dans le groupe WhatsApp des joueurs. Ils écrivent en direct à chacun, ou passent par le chat du match de SportEasy, que tous les convoqués voient. Beaucoup de clubs n'ont pas de groupe et passent seulement par SportEasy.
+  - Idée : un fil sur la fiche de l'événement (Agenda), avec notification, lisible par les convoqués et le staff ; pièces jointes (image des stats, document).
+  - Coût : élevé (temps réel, notifications, modération, signalement). Seniors d'abord ; les mineurs (moins de 15 ans, comptes gérés par un parent) plus tard, avec des règles à définir (parent en copie, pas de message privé adulte → mineur).
+  - Données personnelles : mettre à jour js/legal.js (messages, durée de conservation).
+- **Statistiques des joueurs** : un coach partage aujourd'hui les stats de l'équipe dans le chat du match de SportEasy.
+  - À faire d'abord : récupérer la fiche de stats du coach (Simon l'envoie) pour savoir quoi saisir (essais, plaquages, temps de jeu, cartons…).
+  - Idée : saisie rapide après le match, reliée à la compo (qui a joué, à quel poste), avec un bilan par joueur et par saison, à côté des présences.
+- **Lien avec la FFR** : SportEasy a un lien avec la FFR. Rugbeo importe déjà le calendrier des matchs de la fédération. À vérifier : ce que le lien de SportEasy apporte en plus (licences, résultats, feuilles officielles ?) et ce que le club utilise vraiment.
 
 ## Modèle économique (hypothèse)
 - Dessiner et prévisualiser : gratuit.
