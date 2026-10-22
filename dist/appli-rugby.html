@@ -1651,6 +1651,8 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 img, svg { -webkit-user-drag: none; }
+.auth-switch { margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
+.auth-note a { font-weight: 600; }
 
 </style>
 
@@ -2114,6 +2116,7 @@ img, svg { -webkit-user-drag: none; }
     </div>
     <form id="auth-form" class="form" data-mode="login">
       <a href="#" id="auth-who-back" class="auth-link hidden">← Retour</a>
+      <p id="auth-switch" class="auth-switch hidden">Vous inscrivez votre enfant de moins de 15 ans ? <a href="#" data-switch="parent">Créer un compte parent</a><br>Vous avez moins de 15 ans ? <a href="#" data-switch="choose">Voir comment faire</a></p>
       <div id="auth-kids" class="auth-kids hidden">
         <span class="auth-kids-label">Prénom et nom du jeune</span>
         <div id="auth-kid-list"></div>
@@ -2990,11 +2993,11 @@ img, svg { -webkit-user-drag: none; }
     icon: `<circle cx="14" cy="17" r="10" fill="#1e88e5"/><ellipse cx="24" cy="9" rx="6.5" ry="4" fill="#fff" stroke="#333" stroke-width="1.3" transform="rotate(-30 24 9)"/>` });
 
   const TOOL_GROUPS = [
-    // Joueurs d'abord : c'est ce qu'on pose en premier (test utilisateur : la section était sous le pli)
+    // Formations toutes prêtes (mêlée, touche…) en premier pour démarrer vite, puis les joueurs
+    { id: 'formations', title: 'Formations', tools: formationTools },
     { id: 'players', title: 'Joueurs', tools: playerTools },
     { id: 'shapes', title: 'Courses, passes et formes', tools: shapeTools },
-    { id: 'equip', title: 'Ballon et équipement', tools: equipTools },
-    { id: 'formations', title: 'Formations', tools: formationTools }
+    { id: 'equip', title: 'Ballon et équipement', tools: equipTools }
   ];
 
   const TOOLS = {};
@@ -5593,7 +5596,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const choose = !who, parent = who === 'parent';
     $('#auth-who').classList.toggle('hidden', !choose);
     $('#auth-form').classList.toggle('hidden', choose);
-    $('#auth-who-back').classList.toggle('hidden', choose);
+    $('#auth-who-back').classList.toggle('hidden', who !== 'parent');
+    $('#auth-switch').classList.toggle('hidden', who !== 'adult');
     $('#auth-kids').classList.toggle('hidden', !parent);
     $('#auth-parent').classList.toggle('hidden', !parent);
     $('#auth-name-label').textContent = parent ? 'Votre prénom et nom (parent)' : 'Prénom et nom';
@@ -5616,7 +5620,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (navigator.share) navigator.share({ title: 'Rugbeo', text }).catch(() => {});
     else window.RugbyDialog.copy(text, { title: 'Message pour votre parent', message: 'Copiez ce message et envoyez-le à un parent (SMS, WhatsApp…).' });
   };
-  $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho(''); };
+  $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho('adult'); };
+  // Cas moins fréquents (parent d'un enfant, moins de 15 ans) : un lien sous le formulaire, plutôt qu'une étape de choix
+  document.querySelectorAll('#auth-switch [data-switch]').forEach(a => { a.onclick = e => { e.preventDefault(); setSignupWho(a.dataset.switch === 'parent' ? 'parent' : ''); }; });
   function setAuthMode(mode) {
     showPending(false);
     const tabs = mode === 'login' || mode === 'signup';
@@ -5639,8 +5645,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
-    if (mode === 'signup') setSignupWho('');
-    else { $('#auth-who').classList.add('hidden'); $('#auth-who-back').classList.add('hidden'); $('#auth-kids').classList.add('hidden'); $('#auth-form').classList.remove('hidden'); }
+    if (mode === 'signup') setSignupWho('adult');
+    else { $('#auth-who').classList.add('hidden'); $('#auth-who-back').classList.add('hidden'); $('#auth-switch').classList.add('hidden'); $('#auth-kids').classList.add('hidden'); $('#auth-form').classList.remove('hidden'); }
   }
   /* Solidité du mot de passe : longueur, minuscules/majuscules, chiffres, symboles (indicatif, seul le minimum de 6 est imposé). */
   function pwStrength(pw) {
@@ -6023,11 +6029,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!m) return;
     setPendingJoin(m[1].toUpperCase());
     joinFromLink = true;
-    history.replaceState(null, '', location.pathname + location.search + '#/');
+    // On garde #/rejoindre/CODE dans l'adresse jusqu'à son usage : la personne peut ouvrir le lien dans
+    // WhatsApp puis « Ouvrir dans le navigateur », ou recharger la page, sans perdre l'invitation.
     if (ready) usePendingJoin(true);
   }
   window.addEventListener('hashchange', readJoinRoute);
   readJoinRoute();
+  /** Fenêtre d'inscription ouverte par un lien d'invitation : qui invite, et « J'ai déjà un compte ». */
+  async function showInvite(code) {
+    const note = $('#auth-note');
+    const put = who => {
+      note.innerHTML = `<strong>${who ? `Vous êtes invité à rejoindre ${who}` : 'Vous avez reçu une invitation'}</strong><br>Créez votre compte ci-dessous : vous rejoindrez ensuite l’équipe automatiquement. Déjà un compte ? <a href="#" data-login>Se connecter</a>`;
+      note.querySelector('[data-login]').onclick = e => { e.preventDefault(); setAuthMode('login'); };
+      note.classList.remove('hidden');
+    };
+    put('');
+    const { data } = await sb.rpc('invite_info', { p_code: code });
+    const i = data && data[0];
+    if (i && !S.user) put(i.kind === 'team' ? `« ${esc(i.team)} »${i.club ? ` · ${esc(i.club)}` : ''}` : `le club « ${esc(i.club)} »`);
+  }
   /** Connecté : on rejoint tout de suite. Visiteur : création de compte, le code est gardé (navigateur et compte). */
   async function usePendingJoin(fromLink) {
     const meta = (S.user && S.user.user_metadata) || {};
@@ -6037,13 +6057,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (fromLink || joinFromLink) {
         joinFromLink = false;
         openAuth('signup');
-        $('#auth-who .who-login').classList.remove('hidden');   // « J’ai déjà un compte » en premier choix
-        const note = $('#auth-note'); note.textContent = 'Vous avez reçu une invitation : connectez-vous ou créez votre compte, vous rejoindrez ensuite l’équipe automatiquement.'; note.classList.remove('hidden');
+        showInvite(code);
       }
       return;
     }
     setPendingJoin('');
     $('#auth-note').classList.add('hidden');
+    if (/^#\/rejoindre\//.test(location.hash)) history.replaceState(null, '', location.pathname + location.search + '#/');   // invitation utilisée
     if (meta.join_code) sb.auth.updateUser({ data: { join_code: null } }).catch(() => {});
     track('join_link');
     if (S.kids.length) {

@@ -30,7 +30,9 @@ const has = (page, text) => page.waitForFunction(x => document.body.innerText.in
   await v.click('.consent-bar button:has-text("Refuser")');
   // Lien d'invitation : « J'ai déjà un compte » en premier ; carte « moins de 15 ans » ; accord parental nommé
   await v.goto(BASE + '#/rejoindre/TESTSEN1'); await v.waitForTimeout(1500);
-  t.check(await v.isVisible('#auth-who .who-login'), 'invitation : « J’ai déjà un compte Rugbeo » proposé');
+  t.check(await v.isVisible('#auth-note [data-login]'), 'invitation : « Déjà un compte ? Se connecter » proposé');
+  await t.shot(v, `${view}-corr-2a-invitation`);
+  await v.click('#auth-switch [data-switch="choose"]');
   await v.click('#auth-who [data-who="kid"]');
   t.check(await v.isVisible('#auth-kid-share'), 'moins de 15 ans : explication et « Envoyer le lien à un parent »');
   await t.shot(v, `${view}-corr-2-invitation`);

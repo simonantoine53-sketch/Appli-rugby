@@ -1582,3 +1582,5 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 img, svg { -webkit-user-drag: none; }
+.auth-switch { margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
+.auth-note a { font-weight: 600; }
