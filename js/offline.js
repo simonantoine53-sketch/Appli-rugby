@@ -70,5 +70,18 @@
   const start = () => { banner(); setTimeout(flush, 3000); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
-  window.RugbyOffline = { queueAnswer, pending, flush, clearData, isNetwork };
+  /** Écran « Pas de réseau » à la place d'une page qui n'a jamais été ouverte avec du réseau (rien en mémoire). */
+  function card(retry) {
+    const box = document.createElement('div'); box.className = 'offline-card'; box.setAttribute('role', 'status');
+    box.innerHTML = `<svg viewBox="0 0 32 32" width="56" height="56" aria-hidden="true"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg>
+      <h2>Pas de réseau</h2>
+      <p>Cette page n’a pas encore été ouverte sur ce téléphone, elle ne peut donc pas s’afficher sans réseau.</p>
+      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Vos réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = 'Réessayer';
+    b.onclick = () => (retry ? retry() : location.reload());
+    box.appendChild(b);
+    if (retry) window.addEventListener('online', function again() { window.removeEventListener('online', again); if (box.isConnected) retry(); });
+    return box;
+  }
+  window.RugbyOffline = { queueAnswer, pending, flush, clearData, isNetwork, card };
 })();

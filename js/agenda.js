@@ -200,7 +200,7 @@
     q = tab === 'next' ? q.gte('starts_at', new Date(now - 3 * 3600e3).toISOString()).order('starts_at').limit(60) : q.lt('starts_at', new Date(now - 3 * 3600e3).toISOString()).order('starts_at', { ascending: false }).limit(40);
     const { data: evs, error } = await q;
     if (my !== seq) return;
-    if (error) { list.replaceChildren(el('p', 'library-empty', 'Erreur : ' + esc(error.message))); return; }
+    if (error) { list.replaceChildren(window.RugbyOffline && window.RugbyOffline.isNetwork(error) ? window.RugbyOffline.card(() => render(root)) : el('p', 'library-empty', 'Erreur : ' + esc(error.message))); return; }
     const [resp, team_] = await Promise.all([responsesFor(evs.map(e => e.id)), members(team.id)]);
     if (my !== seq) return;
     list.replaceChildren();

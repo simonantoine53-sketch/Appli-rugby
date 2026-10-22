@@ -15,6 +15,52 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugbeo">
   <style>
+    /* Écran de démarrage : doit s'afficher avant le téléchargement de css/style.css (réseau lent).
+       Variables reprises de css/style.css (mêmes valeurs, voir docs/charte-couleurs.md) */
+    :root { --bg: #f4f6f8; --text: #1f2933; --muted: #5f6672; --subtle: #f1f3f5; --field: #4a9e4f; --on-color: #ffffff; --primary-fill: #1a73e8; }
+    :root[data-theme="dark"] { --bg: #0d1117; --text: #e6edf3; --muted: #9da7b3; --subtle: #1d252e; --primary-fill: #1a6fd0; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { --bg: #0d1117; --text: #e6edf3; --muted: #9da7b3; --subtle: #1d252e; --primary-fill: #1a6fd0; } }
+    .boot { position: fixed; inset: 0; z-index: 6000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+    .boot-tile { fill: var(--field); }
+    .boot-oval { fill: var(--on-color); }
+    .boot-ball { animation: boot-bounce 1.1s ease-in-out infinite; }
+    .boot-name { font-size: 26px; color: var(--text); }
+    .boot-msg { margin: 0; color: var(--muted); max-width: 300px; line-height: 1.45; }
+    .boot-bar { width: 160px; height: 4px; border-radius: 2px; background: var(--subtle); overflow: hidden; }
+    .boot-bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: var(--primary-fill); animation: boot-bar 1.2s ease-in-out infinite; }
+    @keyframes boot-bounce { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(-8deg); } }
+    @keyframes boot-bar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    @media (prefers-reduced-motion: reduce) { .boot-ball, .boot-bar i { animation: none; } }
+    .boot.boot-out { opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .boot { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    .boot .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Écran de démarrage : visible pendant le téléchargement de l'appli (réseau lent), retiré dès qu'elle est prête -->
+<div id="boot" class="boot" role="status" aria-live="polite">
+  <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 32 32" width="64" height="64"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg></div>
+  <strong class="boot-name">Rugbeo</strong>
+  <p class="boot-msg">Chargement de votre club…</p>
+  <div class="boot-bar" aria-hidden="true"><i></i></div>
+  <button type="button" class="btn outline boot-retry hidden" onclick="location.reload()">Réessayer</button>
+</div>
+<script>
+  /* Réseau lent ou absent pendant le démarrage : on le dit, avec un bouton pour réessayer */
+  (function () {
+    var b = document.getElementById('boot'), m = b.querySelector('.boot-msg'), r = b.querySelector('.boot-retry');
+    function say(t, retry) { if (!b.isConnected) return; m.textContent = t; if (retry) r.classList.remove('hidden'); }
+    function offline() { say('Pas de réseau pour le moment. Rugbeo s’ouvrira dès que votre téléphone captera.', true); }
+    if (navigator.onLine === false) offline();
+    window.addEventListener('offline', offline);
+    window.addEventListener('online', function () { if (b.isConnected) location.reload(); });
+    setTimeout(function () { say('Connexion lente : encore quelques secondes…'); }, 5000);
+    setTimeout(function () { say('Le réseau a du mal à suivre. Vous pouvez patienter ou réessayer.', true); }, 20000);
+  })();
+</script>
+<!-- Feuille de style après l'écran de démarrage : il s'affiche sans l'attendre (réseau lent) -->
+<style>
 /* ---------- Base ---------- */
 :root {
   /* ===== Charte des couleurs (voir docs/charte-couleurs.md) : n'utilisez que ces variables ===== */
@@ -1586,10 +1632,15 @@ body:has(.tour) .demo-banner { display: none; }
 .fab-history button svg { width: 20px; height: 20px; }
 .pick-adults { margin-top: 8px; }
 .pick-adults summary { cursor: pointer; color: var(--muted); padding: 8px 0; min-height: 36px; }
+/* Page jamais ouverte et pas de réseau */
+.offline-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 32px 20px; margin: 12px auto; max-width: 420px; background: var(--panel); border: 1.5px solid var(--border); border-radius: 16px; }
+.offline-card h2 { margin: 4px 0 0; font-size: 20px; }
+.offline-card p { margin: 0; color: var(--muted); line-height: 1.45; }
+.offline-card .boot-tile { fill: var(--field); }
+.offline-card .boot-oval { fill: var(--on-color); }
+.offline-card ul { margin: 0; padding-left: 18px; text-align: left; color: var(--muted); line-height: 1.5; font-size: 14px; }
 
 </style>
-</head>
-<body>
 
 <div id="announce-bar" class="announce-bar hidden"></div>
 
@@ -3818,7 +3869,20 @@ body:has(.tour) .demo-banner { display: none; }
   const start = () => { banner(); setTimeout(flush, 3000); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
-  window.RugbyOffline = { queueAnswer, pending, flush, clearData, isNetwork };
+  /** Écran « Pas de réseau » à la place d'une page qui n'a jamais été ouverte avec du réseau (rien en mémoire). */
+  function card(retry) {
+    const box = document.createElement('div'); box.className = 'offline-card'; box.setAttribute('role', 'status');
+    box.innerHTML = `<svg viewBox="0 0 32 32" width="56" height="56" aria-hidden="true"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg>
+      <h2>Pas de réseau</h2>
+      <p>Cette page n’a pas encore été ouverte sur ce téléphone, elle ne peut donc pas s’afficher sans réseau.</p>
+      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Vos réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = 'Réessayer';
+    b.onclick = () => (retry ? retry() : location.reload());
+    box.appendChild(b);
+    if (retry) window.addEventListener('online', function again() { window.removeEventListener('online', again); if (box.isConnected) retry(); });
+    return box;
+  }
+  window.RugbyOffline = { queueAnswer, pending, flush, clearData, isNetwork, card };
 })();
 
 </script>
@@ -6375,7 +6439,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     list.classList.remove('library-list'); list.classList.add('member-list');
     const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number, guardian_id)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
-    if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
+    if (error) { list.appendChild(window.RugbyOffline && window.RugbyOffline.isNetwork(error) ? window.RugbyOffline.card(() => renderTeamPage()) : el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
     const order = { coach: 0, admin: 1, player: 2 };
     const members = rows.filter(m => m.status === 'active').sort((a, b) => (order[a.role] - order[b.role]) || nameOf(a).localeCompare(nameOf(b)));
@@ -6717,7 +6781,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     q = libTab === 'mine' ? q.eq('owner_id', actorId()) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
-    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); empty(root, 'Erreur : ' + errMsg(error)); return; }
+    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); if (window.RugbyOffline && window.RugbyOffline.isNetwork(error)) root.appendChild(window.RugbyOffline.card(() => renderStrats())); else empty(root, 'Erreur : ' + errMsg(error)); return; }
     await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
     root.replaceChildren(); root.classList.remove('refreshing');
@@ -7415,7 +7479,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const fmtDay = d => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
   const fmtDur = s => { s = Math.round(s || 0); if (s < 60) return s + ' s'; const m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0'); };
   const device = () => (matchMedia('(pointer: coarse)').matches || /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) ? 'mobile' : 'desktop';
-  const build = (() => { const s = document.querySelector('script[src*="admin.js"]'); const m = s && /[?&]v=([^&]+)/.exec(s.src); return m ? m[1] : 'dev'; })();
+  const build = (() => { const s = document.querySelector('script[src*="?v="]'); const m = s && /[?&]v=([^&]+)/.exec(s.src); return m ? m[1] : 'dev'; })();
   const view = () => location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'home';
   const loggedIn = () => A.isLoggedIn() && A.user();
   const teamId = () => { const t = A.team && A.team(); return t ? t.id : null; };
@@ -8309,7 +8373,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     q = tab === 'next' ? q.gte('starts_at', new Date(now - 3 * 3600e3).toISOString()).order('starts_at').limit(60) : q.lt('starts_at', new Date(now - 3 * 3600e3).toISOString()).order('starts_at', { ascending: false }).limit(40);
     const { data: evs, error } = await q;
     if (my !== seq) return;
-    if (error) { list.replaceChildren(el('p', 'library-empty', 'Erreur : ' + esc(error.message))); return; }
+    if (error) { list.replaceChildren(window.RugbyOffline && window.RugbyOffline.isNetwork(error) ? window.RugbyOffline.card(() => render(root)) : el('p', 'library-empty', 'Erreur : ' + esc(error.message))); return; }
     const [resp, team_] = await Promise.all([responsesFor(evs.map(e => e.id)), members(team.id)]);
     if (my !== seq) return;
     list.replaceChildren();
@@ -10476,7 +10540,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (my !== seq) return;
     data = d; renderChrome();
     slot.replaceChildren();
-    if (!d) { slot.appendChild(el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
+    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
     let notifOn = false;
     try { notifOn = P() && P().isOn ? await P().isOn() : false; } catch (e) { /* notifications indisponibles */ }
     if (my !== seq) return;
@@ -10623,6 +10687,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   // L'éditeur a affiché la première page avant le chargement de ce module : on la complète.
   const first = E.currentView();
   if (first !== 'editor' && first !== 'share') E.refreshView();
+  // L'appli est chargée : on retire l'écran de démarrage (en fondu)
+  const boot = document.getElementById('boot');
+  if (boot) { boot.classList.add('boot-out'); setTimeout(() => boot.remove(), 250); }
 })();
 
 </script>

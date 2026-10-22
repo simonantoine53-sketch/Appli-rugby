@@ -258,7 +258,7 @@
     if (my !== seq) return;
     data = d; renderChrome();
     slot.replaceChildren();
-    if (!d) { slot.appendChild(el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
+    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
     let notifOn = false;
     try { notifOn = P() && P().isOn ? await P().isOn() : false; } catch (e) { /* notifications indisponibles */ }
     if (my !== seq) return;
@@ -405,4 +405,7 @@
   // L'éditeur a affiché la première page avant le chargement de ce module : on la complète.
   const first = E.currentView();
   if (first !== 'editor' && first !== 'share') E.refreshView();
+  // L'appli est chargée : on retire l'écran de démarrage (en fondu)
+  const boot = document.getElementById('boot');
+  if (boot) { boot.classList.add('boot-out'); setTimeout(() => boot.remove(), 250); }
 })();

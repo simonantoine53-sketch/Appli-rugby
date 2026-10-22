@@ -1125,7 +1125,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     list.classList.remove('library-list'); list.classList.add('member-list');
     const { data: rows, error } = await sb.from('team_members').select('user_id, role, status, plays, requested_as, joined_at, profiles!team_members_user_profile_fk(display_name, avatar, positions, jersey_number, guardian_id)').eq('team_id', S.team.id);
     if (seq !== teamSeq) return;
-    if (error) { list.appendChild(el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
+    if (error) { list.appendChild(window.RugbyOffline && window.RugbyOffline.isNetwork(error) ? window.RugbyOffline.card(() => renderTeamPage()) : el('p', 'library-empty', 'Erreur : ' + errMsg(error))); return; }
     const nameOf = m => (m.profiles && m.profiles.display_name) || 'Membre';
     const order = { coach: 0, admin: 1, player: 2 };
     const members = rows.filter(m => m.status === 'active').sort((a, b) => (order[a.role] - order[b.role]) || nameOf(a).localeCompare(nameOf(b)));
@@ -1467,7 +1467,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     q = libTab === 'mine' ? q.eq('owner_id', actorId()) : q.eq('team_id', S.team.id).eq('visibility', libTab === 'proposed' ? 'proposed' : 'team');
     const { data, error } = await q;
     if (seq !== renderSeq) return;
-    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); empty(root, 'Erreur : ' + errMsg(error)); return; }
+    if (error) { root.replaceChildren(); root.classList.remove('refreshing'); if (window.RugbyOffline && window.RugbyOffline.isNetwork(error)) root.appendChild(window.RugbyOffline.card(() => renderStrats())); else empty(root, 'Erreur : ' + errMsg(error)); return; }
     await Promise.all([loadCommentCounts(data.filter(r => r.visibility === 'team').map(r => r.id)), libTab === 'team' ? loadViewCounts() : null]);
     if (seq !== renderSeq) return;
     root.replaceChildren(); root.classList.remove('refreshing');
