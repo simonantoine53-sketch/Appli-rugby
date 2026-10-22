@@ -7,7 +7,7 @@ Où : Supabase → Authentication → Emails → Templates. **Base de test (rugb
 | Fichier | Onglet Supabase | Objet |
 |---|---|---|
 | `confirmation.html` | Confirm signup | Confirmez votre adresse pour Rugbeo |
-| `recuperation.html` | Reset password | Rugbeo : choisissez votre mot de passe |
+| `recuperation.html` | Reset password | variable (voir `sujets.json`) : « Tom, votre compte Rugbeo est à vous » pour un jeune, sinon « Rugbeo : choisissez un nouveau mot de passe » |
 | `invitation.html` | Invite user | Une invitation vous attend sur Rugbeo |
 | `lien-connexion.html` | Magic link | Votre lien de connexion Rugbeo |
 | `changement-email.html` | Change email address | Rugbeo : confirmez votre nouvelle adresse |

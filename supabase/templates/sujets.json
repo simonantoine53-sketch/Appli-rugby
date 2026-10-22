@@ -5,7 +5,7 @@
   },
   "recuperation": {
     "name": "Reset password",
-    "subject": "Rugbeo : choisissez votre mot de passe"
+    "subject": "{{ if .Data.managed }}{{ if .Data.first_name }}{{ .Data.first_name }}, votre compte Rugbeo est à vous{{ else }}Votre compte Rugbeo vous attend{{ end }}{{ else }}Rugbeo : choisissez un nouveau mot de passe{{ end }}"
   },
   "invitation": {
     "name": "Invite user",
