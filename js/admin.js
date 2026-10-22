@@ -20,7 +20,7 @@
   const fmtDay = d => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' }) : '—';
   const fmtDur = s => { s = Math.round(s || 0); if (s < 60) return s + ' s'; const m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0'); };
   const device = () => (matchMedia('(pointer: coarse)').matches || /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) ? 'mobile' : 'desktop';
-  const build = (() => { const s = document.querySelector('script[src*="admin.js"]'); const m = s && /[?&]v=([^&]+)/.exec(s.src); return m ? m[1] : 'dev'; })();
+  const build = (() => { const s = document.querySelector('script[src*="?v="]'); const m = s && /[?&]v=([^&]+)/.exec(s.src); return m ? m[1] : 'dev'; })();
   const view = () => location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'home';
   const loggedIn = () => A.isLoggedIn() && A.user();
   const teamId = () => { const t = A.team && A.team(); return t ? t.id : null; };

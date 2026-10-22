@@ -36,6 +36,8 @@ js/export.js    génération des images d'animation, encodeur GIF, vidéo WebM
 js/editor.js    état, interactions, étapes, aperçu, sauvegarde
 ```
 
+**Mise en ligne allégée** : à chaque push sur `main`, GitHub lance `site.js`, qui prépare `_site/` (la version publiée). Les scripts de `js/` y sont regroupés dans un seul `js/app.js` et minifiés, ainsi que la feuille de style ; la liste du service worker suit. Le code du dépôt reste lisible. Pour vérifier en local : `npm install --no-save esbuild@0.24.0 && node site.js`, puis servir `_site/`. Mesure du 22 octobre 2026 (visiteur, 1re ouverture) : 6 fichiers au lieu de 31, 189 Ko au lieu de 254 Ko, 2,6 s au lieu de 3,5 s en 3G. L'écran de démarrage (`#boot` dans `index.html`, styles en tête de page) s'affiche avant le reste et dit « Connexion lente » ou « Pas de réseau ».
+
 ## Format des données
 
 Un dessin est un objet JSON : `{ id, title, settings: { field, orientation, stepDuration }, steps: [ { id, objects: [...] } ] }`.

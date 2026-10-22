@@ -27,8 +27,13 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      # Version publiée allégée : scripts regroupés et minifiés dans _site/ (voir site.js)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save esbuild@0.24.0 && node site.js
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
