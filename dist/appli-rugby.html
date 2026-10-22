@@ -1079,7 +1079,7 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
 .dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden, .dialog-choices.hidden, .dialog-ok.hidden { display: none; }
 .dialog-choices { display: grid; gap: 10px; }
-.dialog-choices .btn { width: 100%; justify-content: center; min-height: 56px; }
+.dialog-choices .btn { width: 100%; min-width: 0; justify-content: center; min-height: 56px; white-space: normal; text-align: center; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
 .btn.primary.danger-solid { background: var(--danger-fill); }
