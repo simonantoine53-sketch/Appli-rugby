@@ -306,9 +306,10 @@
   let period = 12;
 
   async function renderOverview() {
-    const [m, pend] = await Promise.all([
+    const [m, pend, demo] = await Promise.all([
       sb.rpc('admin_metrics', { p_weeks: period }).then(must),
-      sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending')
+      sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending'),
+      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null)
     ]);
     cache.feedbackNew = m.feedback_new; cache.pending = pend.count || 0;
     const W = m.weeks || [];
@@ -339,6 +340,20 @@
       weekChart('Nouvelles équipes et nouveaux clubs', W, [{ name: 'Équipes', values: m.new.teams, color: 'var(--chart-1)' }, { name: 'Clubs', values: m.new.clubs, color: 'var(--chart-2)' }])
     );
     out.push(c1);
+    // La démo (club fictif) : qui la regarde, et qui crée un compte ensuite. Ses comptes ne comptent pas dans les chiffres ci-dessus.
+    if (demo) {
+      const t = demo.total || {}, opened = (t.coach || 0) + (t.joueur || 0);
+      const gd = el('div', 'kpi-grid');
+      gd.append(
+        kpi('Démo ouverte', opened, `${t.coach || 0} comme coach · ${t.joueur || 0} comme joueur`),
+        kpi('Comptes créés après la démo', t.inscription || 0, opened ? `${pct(t.inscription || 0, opened)} des ouvertures` : 'sur la période')
+      );
+      out.push(gd);
+      const cd = el('div', 'admin-grid');
+      cd.append(weekChart('Démo par semaine', W, [{ name: 'Comme coach', values: demo.coach, color: 'var(--chart-1)' }, { name: 'Comme joueur', values: demo.joueur, color: 'var(--chart-2)' }, { name: 'Comptes créés après', values: demo.inscription, color: 'var(--chart-3)' }],
+        { wide: true, note: 'Compteur anonyme, démarré avec cette version. « Après » : compte créé sur un appareil où la démo a été ouverte dans les 30 jours. Les comptes fictifs du club démo ne comptent dans aucun chiffre du tableau de bord.' }));
+      out.push(cd);
+    }
 
     // 2. Onglets
     out.push(section(2, 'Ce qui est utilisé', 'Onglets ouverts et origine des clics : compteurs anonymes, sauf pour les personnes qui s’y opposent.'));
