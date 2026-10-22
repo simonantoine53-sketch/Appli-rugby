@@ -2,13 +2,19 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Rugbeo – L’appli des clubs de rugby</title>
   <meta name="description" content="Rugbeo, l’appli des clubs de rugby : stratégies animées, convocations, compos et feuilles de match. De la convoc’ au maillot, Rugbeo.">
   <meta name="application-name" content="Rugbeo">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
   <meta name="theme-color" content="#4a9e4f">
   <!-- Thème choisi (Compte → Réglages) appliqué avant l'affichage : pas d'éclair blanc en mode sombre -->
+  <script>
+    /* Pas de zoom de la page (choix d'appli) : Safari sur iPhone ignore « user-scalable=no », on bloque donc le geste.
+       Le terrain de l'éditeur garde son propre zoom à deux doigts (il gère ses gestes lui-même). */
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', function (e) { if (e.touches.length > 1 && !(e.target.closest && e.target.closest('#canvas'))) e.preventDefault(); }, { passive: false });
+  </script>
   <script>try { var t = localStorage.getItem('rs-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -1640,8 +1646,8 @@ body:has(.tour) .demo-banner { display: none; }
 .offline-card .boot-oval { fill: var(--on-color); }
 .offline-card ul { margin: 0; padding-left: 18px; text-align: left; color: var(--muted); line-height: 1.5; font-size: 14px; }
 /* Comportement d'appli, pas de page web : pas de zoom au double appui, pas de sélection ni de menu « Copier »
-   à l'appui long. Le zoom à deux doigts reste possible (accessibilité). Les champs de saisie restent sélectionnables. */
-html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+   à l'appui long, pas de zoom à deux doigts (aussi bloqué dans index.html pour iPhone). Les champs de saisie restent sélectionnables. */
+html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }   /* défilement seulement : ni double appui ni zoom à deux doigts */
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 img, svg { -webkit-user-drag: none; }
