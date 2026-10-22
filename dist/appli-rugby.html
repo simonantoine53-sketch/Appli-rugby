@@ -2370,9 +2370,9 @@ body:has(.tour) .demo-banner { display: none; }
   const LEGAL = {
     owner: 'Antoine Simon',            // responsable du traitement, éditeur et directeur de la publication
     email: '',                         // adresse de contact dédiée (vide : le formulaire de l'appli sert de contact)
-    updated: '21 octobre 2026',
-    version: '2026-10-21-2',
-    changes: 'abonnement à l’agenda, rappels de la veille, réponse depuis la notification, mode hors ligne'   // résumé affiché aux comptes existants
+    updated: '22 octobre 2026',
+    version: '2026-10-22-1',
+    changes: 'les e-mails de confirmation et de mot de passe partent désormais par Brevo, un prestataire français'   // résumé affiché aux comptes existants
 
   };
   const $ = s => document.querySelector(s);
@@ -2425,7 +2425,7 @@ body:has(.tour) .demo-banner { display: none; }
           <ul>
             <li><strong>Supabase</strong> (base de données et connexion) : données hébergées <strong>en France, à Paris</strong> (région AWS eu-west-3).</li>
             <li><strong>GitHub</strong> (hébergement des fichiers de l’appli) : ne reçoit aucune donnée de compte, seulement les informations techniques de chargement de la page (adresse IP).</li>
-            <li><strong>Google (Gmail)</strong> : envoi des e-mails de confirmation et de mot de passe oublié (votre adresse e-mail).</li>
+            <li><strong>Brevo</strong> (Sendinblue SAS, société française) : envoi des e-mails de confirmation et de mot de passe oublié. Il reçoit votre adresse e-mail et le contenu de ces e-mails, traités dans l’Union européenne.</li>
             <li><strong>Services de notification</strong> d’Apple, Google ou Mozilla, selon votre appareil : ils transmettent les notifications, dont le contenu est chiffré.</li>
           </ul>
         </li>
@@ -2434,7 +2434,7 @@ body:has(.tour) .demo-banner { display: none; }
       <p>Aucune donnée n’est vendue, louée ou utilisée pour de la publicité.</p>
 
       <h4>4. Transferts hors de l’Union européenne</h4>
-      <p>Vos données sont stockées en France. Supabase, GitHub et Google sont des sociétés américaines : un accès depuis les États-Unis reste possible (maintenance, envoi d’e-mails, chargement de l’appli). Il est encadré par le cadre de protection des données UE–États-Unis (Data Privacy Framework) ou par les clauses contractuelles types de la Commission européenne prévues dans leurs contrats.</p>
+      <p>Vos données sont stockées en France. Supabase et GitHub sont des sociétés américaines, comme Google pour certaines notifications : un accès depuis les États-Unis reste possible (maintenance, chargement de l’appli). Il est encadré par le cadre de protection des données UE–États-Unis (Data Privacy Framework) ou par les clauses contractuelles types de la Commission européenne prévues dans leurs contrats.</p>
 
       <h4>5. Combien de temps ?</h4>
       <ul>
