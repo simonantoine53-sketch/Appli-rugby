@@ -1,10 +1,15 @@
 /* Tutoriel de première connexion : visite guidée de l'accueil, bloc par bloc (coach ou joueur).
-   Affiché une seule fois par compte et par appareil ; « Revoir le tutoriel » dans la page Compte. */
+   Affiché une seule fois par compte et par appareil ; « Revoir le tutoriel » dans la page Compte.
+   Tutoriel « editor » : comment dessiner une stratégie, à la première ouverture de l'éditeur ; bouton « Aide » pour le revoir. */
 (function () {
   const $ = s => document.querySelector(s);
-  const visible = e => !!e && e.offsetParent !== null && e.getBoundingClientRect().width > 0;
+  // Visible et dans l'écran (un panneau replié hors de l'écran sur téléphone ne compte pas ; un élément fixe, oui)
+  const visible = e => { if (!e || !e.getClientRects().length) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.right > 0 && r.left < window.innerWidth; };
   const nav = () => visible($('#app-nav')) ? '#app-nav' : '#hub-tabs';
   const account = () => visible($('#hub-account')) ? '#hub-account' : '#btn-account';
+  // Éditeur : sur ordinateur les panneaux sont affichés, sur téléphone on montre le bouton de la barre du bas
+  const tools = () => visible($('#palette')) ? '#palette' : '.mobile-bar [data-mtab="tools"]';
+  const stepsBox = () => visible($('#steps')) ? '#steps' : '.mobile-bar [data-mtab="steps"]';
 
   const STEPS = {
     coach: [
@@ -20,6 +25,16 @@
       { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui vous attend.' },
       { sel: '#home-new', title: 'Nouveau dessin', text: 'Créez une nouvelle stratégie à tout moment.' },
       { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
+    ],
+    editor: [
+      { title: 'Dessiner une stratégie 🏉', text: 'En 4 temps : placer les joueurs, découper l’action en étapes, regarder l’animation, puis publier à l’équipe. Une minute pour faire le tour ?' },
+      { sel: () => tools(), title: '1. Placez les joueurs', text: 'Le plus rapide : une formation toute prête (mêlée, touche…). Sinon, touchez un joueur dans les outils, puis touchez le terrain pour le poser.' },
+      { sel: '#canvas', title: 'Déplacez et modifiez', text: 'Faites glisser un joueur pour le déplacer. Touchez-le pour changer son numéro, son nom ou lui donner le ballon. Pour une course ou une passe : choisissez la flèche, puis glissez sur le terrain.' },
+      { sel: () => stepsBox(), title: '2. Découpez l’action en étapes', text: 'Une étape = un moment de l’action. Ajoutez une étape : les joueurs restent où ils sont, déplacez-les et l’animation fera le mouvement entre les deux.' },
+      { sel: '#fab-undo', title: 'Une erreur ?', text: '« Annuler » revient en arrière, autant de fois que nécessaire.' },
+      { sel: '#btn-preview', title: '3. Regardez l’animation', text: 'L’aperçu joue la stratégie étape par étape, comme vos joueurs la verront sur leur téléphone.' },
+      { sel: '#btn-save', title: '4. Enregistrez et publiez', text: 'Donnez un nom à la stratégie, puis publiez-la à l’équipe : les joueurs sont prévenus et vous voyez qui l’a regardée.' },
+      { sel: () => (visible($('#fab-help')) ? '#fab-help' : '#fab-help-m'), title: 'Besoin d’un rappel ?', text: 'Le bouton « Aide » (ou « ? » sur téléphone) relance ce tutoriel à tout moment.' }
     ],
     player: [
       { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre votre équipe ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
@@ -87,10 +102,16 @@
     if (!t) { spot.style.cssText = 'display:none'; card.style.cssText = ''; return; }
     const r = t.getBoundingClientRect();
     spot.style.cssText = `display:block; left:${r.left - pad}px; top:${r.top - pad}px; width:${r.width + 2 * pad}px; height:${r.height + 2 * pad}px`;
-    const cw = Math.min(360, W - 24), ch = card.offsetHeight || 180;
+    // Largeur d'abord, puis hauteur réelle du texte : la bulle reste entière dans l'écran
+    const cw = Math.min(360, W - 24);
+    card.style.cssText = `width:${cw}px; left:12px; top:0`;
+    const ch = card.offsetHeight || 180;
     const below = r.bottom + pad + 12 + ch < H, above = r.top - pad - 12 - ch > 0;
-    const top = below ? r.bottom + pad + 12 : above ? r.top - pad - 12 - ch : Math.max(12, H - ch - 12);
-    const left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), W - cw - 12);
+    let top = Math.min(Math.max(12, below ? r.bottom + pad + 12 : above ? r.top - pad - 12 - ch : H - ch - 12), H - ch - 12);
+    let left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), W - cw - 12);
+    // Élément très haut (panneau des outils sur ordinateur) : la bulle se met à côté plutôt que par-dessus
+    if (!below && !above && r.right + pad + 12 + cw < W) { left = r.right + pad + 12; top = Math.min(Math.max(12, r.top + 40), H - ch - 12); }
+    else if (!below && !above && r.left - pad - 12 - cw > 0) { left = r.left - pad - 12 - cw; top = Math.min(Math.max(12, r.top + 40), H - ch - 12); }
     card.style.cssText = `width:${cw}px; left:${left}px; top:${top}px`;
   }
   function finish() {
@@ -103,7 +124,7 @@
     if (cb) cb();
   }
 
-  const key = uid => 'tour-done-' + uid;
+  const key = (uid, role) => (role === 'editor' ? 'tour-editor-' : 'tour-done-') + uid;
   /** Lance la visite ; onDone est appelée à la fin (ou si on la passe). */
   function start(role, onDone) {
     if (layer) return;
@@ -116,7 +137,7 @@
   /** Première connexion : lance la visite si ce compte ne l'a jamais vue sur cet appareil. */
   function maybeStart(uid, role, onDone) {
     let seen = false;
-    try { seen = !!localStorage.getItem(key(uid)); localStorage.setItem(key(uid), '1'); } catch (e) { seen = true; }
+    try { seen = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { seen = true; }
     if (seen) { if (onDone) onDone(); return false; }
     start(role, onDone);
     return true;

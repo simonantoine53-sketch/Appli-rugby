@@ -1160,7 +1160,7 @@
     if (view !== 'share' && preview.drawing) stopPreview();
     if (view !== 'editor') closeDrawer();
     if (view === 'share') { openShare(shareToken()); return; }
-    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); return; }
+    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); editorTour(); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
     if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();
@@ -1182,6 +1182,17 @@
     leaving = false; prevView = v;
     showView(v);
   });
+  /** Première ouverture de l'éditeur (par compte et par appareil) : le tutoriel « comment dessiner une stratégie ».
+      Pas pour un joueur qui regarde la stratégie du coach, ni dans la page publique. */
+  function editorTour() {
+    setTimeout(() => {
+      const T = window.RugbyTour, acc = window.RugbyAccount;
+      if (!T || currentView() !== 'editor' || document.querySelector('.modal:not(.hidden)')) return;
+      const uid = acc && acc.isLoggedIn && acc.isLoggedIn() ? acc.user().id : 'local';
+      T.maybeStart(uid, 'editor');
+    }, 900);
+  }
+  $('#fab-help').onclick = $('#fab-help-m').onclick = () => { if (window.RugbyTour) window.RugbyTour.start('editor'); };
   function startNewDrawing() {
     track('new_drawing');
     const nd = newDrawing();

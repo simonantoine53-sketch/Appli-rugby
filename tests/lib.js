@@ -26,7 +26,7 @@ function harness() {
     // (Brevo envoie pour de vrai depuis la base de test) ; un test qui en a besoin les simule lui-même.
     await page.route(/\/auth\/v1\/(signup|recover|resend|otp)/, route => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
     // Pas de visite guidée ni de demande de notifications pendant les tests
-    await page.addInitScript(() => { const o = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return /^(tour-done-|push-asked-)/.test(k) ? '1' : o.call(this, k); }; });
+    await page.addInitScript(() => { const o = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { return /^(tour-done-|tour-editor-|push-asked-)/.test(k) ? '1' : o.call(this, k); }; });
     await page.goto(BASE + '#/');
     await page.waitForTimeout(1500);
     const refuse = await page.$('.consent-bar button:has-text("Refuser")');

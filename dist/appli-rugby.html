@@ -1653,6 +1653,9 @@ input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; u
 img, svg { -webkit-user-drag: none; }
 .auth-switch { margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
 .auth-note a { font-weight: 600; }
+/* Aide de l'éditeur : à côté d'Annuler / Rétablir sur ordinateur, au-dessus du zoom sur téléphone (la ligne du haut porte le nom du dessin) */
+.zoom-fab .help-m { font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+@media (max-width: 900px) { .fab-history #fab-help { display: none; } }
 
 </style>
 
@@ -1861,6 +1864,7 @@ img, svg { -webkit-user-drag: none; }
     <div class="fab-history">
       <button id="fab-undo" title="Annuler (Ctrl+Z)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Annuler</span></button>
       <button id="fab-redo" title="Rétablir (Ctrl+Y)"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="fab-cap" aria-hidden="true">Rétablir</span></button>
+          <button id="fab-help" title="Comment dessiner une stratégie"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></svg><span class="fab-cap" aria-hidden="true">Aide</span></button>
     </div>
     <div class="fab-left">
       <button id="fab-select" class="fab-select" title="Mode sélection : déplacer et modifier les objets (V ou Échap)">
@@ -1875,6 +1879,7 @@ img, svg { -webkit-user-drag: none; }
       <span class="fab-cap" aria-hidden="true">Aligné</span></button>
     </div>
     <div class="zoom-fab">
+      <button id="fab-help-m" class="help-m" title="Comment dessiner une stratégie" aria-label="Aide : comment dessiner une stratégie">?</button>
       <button data-zoom="in" title="Zoom avant">+</button>
       <button data-zoom="out" title="Zoom arrière">−</button>
       <button data-zoom="fit" title="Ajuster à l’écran"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
@@ -5225,7 +5230,7 @@ img, svg { -webkit-user-drag: none; }
     if (view !== 'share' && preview.drawing) stopPreview();
     if (view !== 'editor') closeDrawer();
     if (view === 'share') { openShare(shareToken()); return; }
-    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); return; }
+    if (view === 'editor') { requestAnimationFrame(() => { fitZoom(); fitTitle(); }); editorTour(); return; }
     if (window.RugbyHub) window.RugbyHub.onView(view);
     if (view === 'strats') { if (/^#\/strategies\/propositions/.test(location.hash) && acc && acc.setLibTab) acc.setLibTab('proposed'); renderStrats(); }
     else if (view === 'team') acc.renderTeamPage();
@@ -5247,6 +5252,17 @@ img, svg { -webkit-user-drag: none; }
     leaving = false; prevView = v;
     showView(v);
   });
+  /** Première ouverture de l'éditeur (par compte et par appareil) : le tutoriel « comment dessiner une stratégie ».
+      Pas pour un joueur qui regarde la stratégie du coach, ni dans la page publique. */
+  function editorTour() {
+    setTimeout(() => {
+      const T = window.RugbyTour, acc = window.RugbyAccount;
+      if (!T || currentView() !== 'editor' || document.querySelector('.modal:not(.hidden)')) return;
+      const uid = acc && acc.isLoggedIn && acc.isLoggedIn() ? acc.user().id : 'local';
+      T.maybeStart(uid, 'editor');
+    }, 900);
+  }
+  $('#fab-help').onclick = $('#fab-help-m').onclick = () => { if (window.RugbyTour) window.RugbyTour.start('editor'); };
   function startNewDrawing() {
     track('new_drawing');
     const nd = newDrawing();
@@ -10184,12 +10200,17 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 </script>
 <script>
 /* Tutoriel de première connexion : visite guidée de l'accueil, bloc par bloc (coach ou joueur).
-   Affiché une seule fois par compte et par appareil ; « Revoir le tutoriel » dans la page Compte. */
+   Affiché une seule fois par compte et par appareil ; « Revoir le tutoriel » dans la page Compte.
+   Tutoriel « editor » : comment dessiner une stratégie, à la première ouverture de l'éditeur ; bouton « Aide » pour le revoir. */
 (function () {
   const $ = s => document.querySelector(s);
-  const visible = e => !!e && e.offsetParent !== null && e.getBoundingClientRect().width > 0;
+  // Visible et dans l'écran (un panneau replié hors de l'écran sur téléphone ne compte pas ; un élément fixe, oui)
+  const visible = e => { if (!e || !e.getClientRects().length) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.right > 0 && r.left < window.innerWidth; };
   const nav = () => visible($('#app-nav')) ? '#app-nav' : '#hub-tabs';
   const account = () => visible($('#hub-account')) ? '#hub-account' : '#btn-account';
+  // Éditeur : sur ordinateur les panneaux sont affichés, sur téléphone on montre le bouton de la barre du bas
+  const tools = () => visible($('#palette')) ? '#palette' : '.mobile-bar [data-mtab="tools"]';
+  const stepsBox = () => visible($('#steps')) ? '#steps' : '.mobile-bar [data-mtab="steps"]';
 
   const STEPS = {
     coach: [
@@ -10205,6 +10226,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui vous attend.' },
       { sel: '#home-new', title: 'Nouveau dessin', text: 'Créez une nouvelle stratégie à tout moment.' },
       { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
+    ],
+    editor: [
+      { title: 'Dessiner une stratégie 🏉', text: 'En 4 temps : placer les joueurs, découper l’action en étapes, regarder l’animation, puis publier à l’équipe. Une minute pour faire le tour ?' },
+      { sel: () => tools(), title: '1. Placez les joueurs', text: 'Le plus rapide : une formation toute prête (mêlée, touche…). Sinon, touchez un joueur dans les outils, puis touchez le terrain pour le poser.' },
+      { sel: '#canvas', title: 'Déplacez et modifiez', text: 'Faites glisser un joueur pour le déplacer. Touchez-le pour changer son numéro, son nom ou lui donner le ballon. Pour une course ou une passe : choisissez la flèche, puis glissez sur le terrain.' },
+      { sel: () => stepsBox(), title: '2. Découpez l’action en étapes', text: 'Une étape = un moment de l’action. Ajoutez une étape : les joueurs restent où ils sont, déplacez-les et l’animation fera le mouvement entre les deux.' },
+      { sel: '#fab-undo', title: 'Une erreur ?', text: '« Annuler » revient en arrière, autant de fois que nécessaire.' },
+      { sel: '#btn-preview', title: '3. Regardez l’animation', text: 'L’aperçu joue la stratégie étape par étape, comme vos joueurs la verront sur leur téléphone.' },
+      { sel: '#btn-save', title: '4. Enregistrez et publiez', text: 'Donnez un nom à la stratégie, puis publiez-la à l’équipe : les joueurs sont prévenus et vous voyez qui l’a regardée.' },
+      { sel: () => (visible($('#fab-help')) ? '#fab-help' : '#fab-help-m'), title: 'Besoin d’un rappel ?', text: 'Le bouton « Aide » (ou « ? » sur téléphone) relance ce tutoriel à tout moment.' }
     ],
     player: [
       { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre votre équipe ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
@@ -10272,10 +10303,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!t) { spot.style.cssText = 'display:none'; card.style.cssText = ''; return; }
     const r = t.getBoundingClientRect();
     spot.style.cssText = `display:block; left:${r.left - pad}px; top:${r.top - pad}px; width:${r.width + 2 * pad}px; height:${r.height + 2 * pad}px`;
-    const cw = Math.min(360, W - 24), ch = card.offsetHeight || 180;
+    // Largeur d'abord, puis hauteur réelle du texte : la bulle reste entière dans l'écran
+    const cw = Math.min(360, W - 24);
+    card.style.cssText = `width:${cw}px; left:12px; top:0`;
+    const ch = card.offsetHeight || 180;
     const below = r.bottom + pad + 12 + ch < H, above = r.top - pad - 12 - ch > 0;
-    const top = below ? r.bottom + pad + 12 : above ? r.top - pad - 12 - ch : Math.max(12, H - ch - 12);
-    const left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), W - cw - 12);
+    let top = Math.min(Math.max(12, below ? r.bottom + pad + 12 : above ? r.top - pad - 12 - ch : H - ch - 12), H - ch - 12);
+    let left = Math.min(Math.max(12, r.left + r.width / 2 - cw / 2), W - cw - 12);
+    // Élément très haut (panneau des outils sur ordinateur) : la bulle se met à côté plutôt que par-dessus
+    if (!below && !above && r.right + pad + 12 + cw < W) { left = r.right + pad + 12; top = Math.min(Math.max(12, r.top + 40), H - ch - 12); }
+    else if (!below && !above && r.left - pad - 12 - cw > 0) { left = r.left - pad - 12 - cw; top = Math.min(Math.max(12, r.top + 40), H - ch - 12); }
     card.style.cssText = `width:${cw}px; left:${left}px; top:${top}px`;
   }
   function finish() {
@@ -10288,7 +10325,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (cb) cb();
   }
 
-  const key = uid => 'tour-done-' + uid;
+  const key = (uid, role) => (role === 'editor' ? 'tour-editor-' : 'tour-done-') + uid;
   /** Lance la visite ; onDone est appelée à la fin (ou si on la passe). */
   function start(role, onDone) {
     if (layer) return;
@@ -10301,7 +10338,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Première connexion : lance la visite si ce compte ne l'a jamais vue sur cet appareil. */
   function maybeStart(uid, role, onDone) {
     let seen = false;
-    try { seen = !!localStorage.getItem(key(uid)); localStorage.setItem(key(uid), '1'); } catch (e) { seen = true; }
+    try { seen = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { seen = true; }
     if (seen) { if (onDone) onDone(); return false; }
     start(role, onDone);
     return true;

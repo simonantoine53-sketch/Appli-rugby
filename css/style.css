@@ -1584,3 +1584,6 @@ input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; u
 img, svg { -webkit-user-drag: none; }
 .auth-switch { margin: 2px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
 .auth-note a { font-weight: 600; }
+/* Aide de l'éditeur : à côté d'Annuler / Rétablir sur ordinateur, au-dessus du zoom sur téléphone (la ligne du haut porte le nom du dessin) */
+.zoom-fab .help-m { font-weight: 800; color: var(--primary); margin-bottom: 6px; }
+@media (max-width: 900px) { .fab-history #fab-help { display: none; } }
