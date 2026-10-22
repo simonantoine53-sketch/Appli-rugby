@@ -1525,3 +1525,6 @@ a:not([class]) { color: var(--primary); }
 .btn.two-lines small { font-size: 12.5px; font-weight: 400; color: var(--muted); }
 .sheet-status.sheet-st { align-self: flex-start; }
 #home-list.refreshing { opacity: .6; transition: opacity .2s; }
+.sheet-absent.unsure { color: var(--warning-ink); }
+.sheet-row.is-unsure input { border-color: var(--warning); }
+.sheet-row.is-unsure .sheet-in input { padding-right: 96px; }

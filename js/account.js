@@ -1195,15 +1195,35 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Sauvegarde dans le cloud ---------- */
   async function save() {
     if (!canUse('save')) return;
-    const d = E.drawing;
+    const d = E.drawing, first = !S.current.owner_id;
     if (!isUuid(d.id)) d.id = crypto.randomUUID();
-    d.title = $('#title').value.trim() || 'Sans titre';
+    // Premier enregistrement sans nom : on le demande (sinon tout s'appelle « Nouveau dessin »)
+    let title = $('#title').value.trim();
+    if (!title || /^(Nouveau dessin|Sans titre)$/.test(title)) {
+      const v = await window.RugbyDialog.prompt('Nom de la stratégie', '', { title: 'Enregistrer', placeholder: 'Ex. Touche à 5, Croisée 10-12', ok: 'Enregistrer', maxLength: 60 });
+      if (v === null) return;
+      title = v; $('#title').value = v;
+    }
+    d.title = title;
     const row = { id: d.id, title: d.title, data: d, owner_id: S.current.owner_id || actorId(), team_id: S.current.team_id || (S.team ? S.team.id : null), visibility: S.current.visibility || 'private' };
     const { error } = await sb.from('drawings').upsert(row);
     if (error) { E.toast('Sauvegarde impossible : ' + errMsg(error)); return; }
     S.current.owner_id = S.current.owner_id || actorId(); S.current.team_id = row.team_id;
-    E.afterChange();
+    E.afterChange(); if (E.markSaved) E.markSaved();
     track('save', { steps: (d.steps || []).length, visibility: row.visibility });
+    // Coach, premier enregistrement d'un dessin : on propose tout de suite de le publier à l'équipe
+    if (first && row.visibility === 'private' && isCoach() && S.team && row.owner_id === actorId()) {
+      if (await window.RugbyDialog.confirm(`Dessin enregistré. Le publier à l’équipe « ${S.team.name} » ? Les joueurs seront prévenus.`, { title: 'Publier à l’équipe ?', ok: 'Publier à l’équipe', cancel: 'Plus tard' })) {
+        const patch = { visibility: 'team', team_id: S.team.id, published_at: new Date().toISOString() };
+        const { error: e2 } = await sb.from('drawings').update(patch).eq('id', d.id);
+        if (e2) return E.toast(errMsg(e2));
+        S.current.visibility = 'team'; S.current.team_id = S.team.id;
+        if (window.RugbyPush) window.RugbyPush.notify(d.id, 'published');
+        track('publish', { steps: (d.steps || []).length, category: d.category || '', from: 'editor' });
+        E.toast(`Publié dans « ${S.team.name} » : toute l’équipe peut la voir.`);
+      }
+      return;
+    }
     E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
   }
   async function saveSmart() {
@@ -1487,7 +1507,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const n = commentCounts[row.id] || 0;
       btns.appendChild(btn(n ? `${n} commentaire${n > 1 ? 's' : ''}` : 'Commenter', 'outline small', () => openComments(row, refresh)));
     }
-    menu.push(['Ouvrir', () => loadCloud(row)]);
+    if (row.owner_id !== actorId() && !isCoach()) menu.push(['Regarder', () => loadCloud(row)], ['Ouvrir dans l’éditeur', () => loadCloud(row, true)]);
+    else menu.push(['Ouvrir', () => loadCloud(row)]);
     const canCopy = mine || isCoach() || mode !== 'app';
     if (canCopy) menu.push(['Dupliquer', duplicate]);
     // Tout le partage dans une seule fenêtre : ce que les joueurs peuvent faire, lien public, copie pour une autre équipe du club
@@ -1513,15 +1534,17 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return b;
   }
 
-  function loadCloud(row) {
+  function loadCloud(row, toEditor) {
     const d = E.clone(row.data); d.id = row.id; d.title = row.title;
     // Joueur sur une stratégie du coach : on garde les droits choisis par le coach avec le dessin
     if (row.owner_id !== actorId() && !isCoach() && row.visibility === 'team') d.__share = shareMode(row); else delete d.__share;
     S.current = { visibility: row.visibility, team_id: row.team_id, owner_id: row.owner_id };
     if (row.visibility === 'team' && row.owner_id !== actorId()) markViewed(row.id, false);
-    E.loadDrawing(d); E.go('editor');
-    // Un joueur qui ouvre une stratégie du coach veut la regarder : l'animation démarre directement
-    if (row.owner_id !== actorId() && !isCoach()) setTimeout(() => E.openPreview(true), 150);
+    E.loadDrawing(d);
+    // Un joueur qui ouvre une stratégie du coach veut la regarder : l'animation démarre directement,
+    // en lecture seule, et il revient à la liste en la fermant (l'éditeur reste accessible par le menu ⋯)
+    if (row.owner_id !== actorId() && !isCoach() && !toEditor) { E.openPreview(true); return; }
+    E.go('editor');
   }
 
   function renderLocal(root) {

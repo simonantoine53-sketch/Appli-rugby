@@ -1029,9 +1029,24 @@
     state.drawing.title = $('#title').value.trim() || 'Sans titre';
     const list = readLib(); const d = clone(state.drawing); d.updatedAt = Date.now();
     const i = list.findIndex(x => x.id === d.id); if (i >= 0) list[i] = d; else list.unshift(d);
-    writeLib(list); toast('Dessin enregistré dans « Mes dessins ».');
+    writeLib(list); toast('Dessin enregistré dans « Mes dessins ».'); markSaved();
   }
-  $('#btn-save').onclick = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.save() : saveDrawing();
+  const saveNow = () => (window.RugbyAccount && window.RugbyAccount.isActive()) ? window.RugbyAccount.save() : saveDrawing();
+  $('#btn-save').onclick = saveNow;
+
+  /* Changements non enregistrés : on prévient avant de quitter l'éditeur */
+  let savedBody = null;
+  const body = () => JSON.stringify(Object.assign({}, state.drawing, { updatedAt: 0 }));
+  function markSaved() { savedBody = body(); }
+  const isDirty = () => savedBody !== null && body() !== savedBody;
+  /** true : on peut quitter (rien à perdre, enregistré, ou abandon choisi). */
+  async function confirmLeave() {
+    if (!isDirty()) return true;
+    const ok = await window.RugbyDialog.confirm('Vos derniers changements ne sont pas enregistrés.', { title: 'Quitter l’éditeur ?', ok: 'Enregistrer', cancel: 'Quitter sans enregistrer' });
+    if (!ok) { markSaved(); return true; }
+    await saveNow();
+    return !isDirty();
+  }
 
   function loadDrawing(d) {
     if (!d || !Array.isArray(d.steps) || !d.steps.length) throw new Error('bad drawing');
@@ -1039,7 +1054,7 @@
     if (d.category === undefined) d.category = ''; if (d.tags === undefined) d.tags = '';
     state.drawing = d; state.step = 0; state.selected = null; state.history = []; state.future = [];
     state.framing = null; $('#frame-bar').classList.add('hidden');
-    renderField_(); applySettingsToUI(); afterChange();
+    renderField_(); applySettingsToUI(); afterChange(); markSaved();
   }
 
   /** Page d'accueil en mode local : dessins stockés sur cet appareil. */
@@ -1135,7 +1150,14 @@
   }
   // Dernière page de l'appli visitée avant l'éditeur, pour la flèche retour
   let lastPage = !/^#\/(editor|s\/|d\/)/.test(location.hash) && location.hash ? location.hash : '#/';
-  window.addEventListener('hashchange', () => { const v = currentView(); if (!['editor', 'share', 'open'].includes(v)) lastPage = location.hash || '#/'; showView(v); });
+  let leaving = false, prevView = currentView();
+  window.addEventListener('hashchange', () => {
+    const v = currentView(); if (!['editor', 'share', 'open'].includes(v)) lastPage = location.hash || '#/';
+    // Retour du navigateur depuis l'éditeur avec des changements : on propose de les enregistrer (le dessin est encore en mémoire)
+    if (prevView === 'editor' && v !== 'editor' && !leaving && isDirty()) confirmLeave();
+    leaving = false; prevView = v;
+    showView(v);
+  });
   function startNewDrawing() {
     track('new_drawing');
     const nd = newDrawing();
@@ -1144,7 +1166,7 @@
   }
   $('#home-new').onclick = startNewDrawing;
   // Flèche de l'éditeur : retour à la page d'où l'on vient (Stratégies, Accueil, Agenda…), Accueil par défaut
-  $('#btn-library').onclick = () => { if (location.hash !== lastPage) location.hash = lastPage; else showView(currentView()); };
+  $('#btn-library').onclick = async () => { if (!await confirmLeave()) return; if (location.hash !== lastPage) { leaving = true; location.hash = lastPage; } else showView(currentView()); };
 
   /* ---------- Modales & toast ---------- */
   function openModal(id) { $('#' + id).classList.remove('hidden'); }
@@ -1157,7 +1179,7 @@
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, refreshView, currentView, startNewDrawing, renderStrats, localCard, openPreview,
+    loadDrawing, newDrawing, markSaved, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, refreshView, currentView, startNewDrawing, renderStrats, localCard, openPreview,
     filterBar, filterDrawings, countByCat, CATEGORIES
   };
 

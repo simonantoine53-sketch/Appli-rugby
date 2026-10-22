@@ -65,6 +65,8 @@
   /* ---------- Contenu d'une feuille ---------- */
   function normSheet(data, settings, ev) {
     const s = Object.assign({ opponent: ev ? (ev.opponent || ev.title || '') : '', meet: ev && ev.meet_at ? toHHMM(ev.meet_at) : '', values: {}, squads: {}, squadValues: {}, notes: '' }, data || {});
+    // Une seule heure de rendez-vous : celle de l'événement (agenda) fait foi
+    if (ev && ev.meet_at) s.meet = toHHMM(ev.meet_at);
     settings.squads.forEach(q => {
       const list = Array.isArray(s.squads[q.id]) ? s.squads[q.id] : [];
       s.squads[q.id] = Array.from({ length: q.size }, (_, i) => Object.assign({ name: '', user_id: null, marks: [] }, list[i] || {}));
@@ -270,6 +272,22 @@
     const { data } = await sb.from('event_responses').select('user_id').eq('event_id', eventId).eq('status', 'no');
     return new Set((data || []).map(r => r.user_id));
   }
+  /** Réponse de chacun à la convocation (pour signaler « Sans réponse » et « Peut-être » dans la compo). */
+  async function loadAnswers(eventId) {
+    const { data } = await sb.from('event_responses').select('user_id, status').eq('event_id', eventId);
+    return new Map((data || []).map(r => [r.user_id, r.status]));
+  }
+  /** Joueurs placés dans la compo qui n'ont pas dit « Présent » (sans réponse ou peut-être). */
+  function unsure() {
+    if (!cur || !cur.answers) return [];
+    return cur.settings.squads.flatMap(q => cur.sheet.squads[q.id]).filter(p => p.user_id && cur.answers.get(p.user_id) !== 'yes' && cur.answers.get(p.user_id) !== 'no');
+  }
+  /** Avant d'imprimer ou de publier : on signale les joueurs incertains. true : on continue. */
+  async function checkUnsure(verb) {
+    const list = unsure(); if (!list.length) return true;
+    const names = list.map(p => p.name).join(', ');
+    return window.RugbyDialog.confirm(`${list.length > 1 ? `${list.length} joueurs de la compo n’ont` : '1 joueur de la compo n’a'} pas confirmé sa présence : ${names}.`, { title: 'Joueurs non confirmés', ok: verb + ' quand même', cancel: 'Revenir à la compo' });
+  }
   /** Matchs à venir avec l'état de leur feuille (pour l'accueil). */
   async function upcoming(team) {
     if (!team) return null;
@@ -348,9 +366,9 @@
       track('sheet_view');
       return;
     }
-    const [members, present, absent] = await Promise.all([loadMembers(team.id), loadPresent(ev.id), loadAbsent(ev.id)]);
+    const [members, present, absent, answers] = await Promise.all([loadMembers(team.id), loadPresent(ev.id), loadAbsent(ev.id), loadAnswers(ev.id)]);
     if (my !== seq) return;
-    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, absent, markButtons: [] };
+    cur = { ev, team, settings, sheet: normSheet(row && row.data, settings, ev), row, members, present, absent, answers, markButtons: [] };
     syncDoubles();
     buildEditor(root);
   }
@@ -372,8 +390,8 @@
     tplSel.onchange = async () => { settings.template = tplSel.value; await saveSettings(settings); E.toast(`Modèle « ${TEMPLATES.find(t => t.id === tplSel.value).name} » choisi pour toute l’équipe.`); };
     acts.append(
       btn('Aperçu', 'outline', () => openPreview()),
-      btn('Imprimer / PDF', 'outline', () => printSheet(html(), 'Feuille de match')),
-      btn('Partager en image', 'outline', () => imageSheet(html(), fileName(ev))),
+      btn('Imprimer / PDF', 'outline', async () => { if (await checkUnsure('Imprimer')) printSheet(html(), 'Feuille de match'); }),
+      btn('Partager en image', 'outline', async () => { if (await checkUnsure('Partager')) imageSheet(html(), fileName(ev)); }),
       tplSel,
       btn('Personnaliser la feuille', 'outline', () => openSettings())
     );
@@ -399,7 +417,18 @@
     top.appendChild(el('div', 'todo-head', 'En-tête'));
     const grid = el('div', 'sheet-grid');
     grid.appendChild(field('Match', sheet.opponent, v => { sheet.opponent = v; }));
-    grid.appendChild(field('H RDV', sheet.meet, v => { sheet.meet = v; }, 'time'));
+    // Changer l'heure ici la change aussi dans l'agenda (une seule heure partout)
+    const meetField = field('H RDV', sheet.meet, v => { sheet.meet = v; }, 'time');
+    meetField.querySelector('input').onchange = async e => {
+      const v = e.target.value; if (!/^\d{2}:\d{2}$/.test(v)) return;
+      const start = new Date(cur.ev.starts_at), m = new Date(start); m.setHours(+v.slice(0, 2), +v.slice(3), 0, 0);
+      if (m > start) m.setDate(m.getDate() - 1);
+      const { error } = await sb.from('team_events').update({ meet_at: m.toISOString() }).eq('id', cur.ev.id);
+      if (error) return E.toast('Heure non reportée dans l’agenda : ' + error.message);
+      cur.ev.meet_at = m.toISOString(); E.toast(`Rendez-vous à ${hhmm(v)}, aussi dans l’agenda.`);
+    };
+    meetField.appendChild(el('small', 'muted', 'Même heure que dans l’agenda.'));
+    grid.appendChild(meetField);
     settings.fields.forEach(f => grid.appendChild(field(f.label, sheet.values[f.id], v => { sheet.values[f.id] = v; }, 'text', 'sheet-names')));
     top.appendChild(grid);
     root.appendChild(top);
@@ -522,6 +551,10 @@
       // Absent connu de la convocation : ligne en rouge, étiquette dans le champ (sans réduire le nom)
       const wrap = el('span', 'sheet-in'); wrap.appendChild(inp);
       if (p.user_id && cur.absent.has(p.user_id)) { r.classList.add('is-absent'); wrap.appendChild(el('span', 'sheet-absent', 'Absent')); inp.title = 'Absent pour ce match'; }
+      else if (p.user_id && cur.answers && cur.answers.get(p.user_id) !== 'yes') {
+        const lbl = cur.answers.get(p.user_id) === 'maybe' ? 'Peut-être' : 'Sans réponse';
+        r.classList.add('is-unsure'); wrap.appendChild(el('span', 'sheet-absent unsure', lbl)); inp.title = lbl + ' à la convocation';
+      }
       r.appendChild(wrap);
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
@@ -607,6 +640,7 @@
     if (st) { const pub = !!(cur.row && cur.row.published); st.className = 'sheet-status sheet-st ' + (pub ? 'pub' : 'draft'); st.textContent = pub ? 'Publiée · enregistrée ✓' : 'Brouillon enregistré ✓'; }
   }
   async function publish(on) {
+    if (on && !await checkUnsure('Publier')) return;
     clearTimeout(saveTimer); await saveSheet();
     const { error } = await sb.from('match_sheets').update({ published: on, published_at: on ? new Date().toISOString() : null }).eq('event_id', cur.ev.id);
     if (error) return E.toast(error.message);
