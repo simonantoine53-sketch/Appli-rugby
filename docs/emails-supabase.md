@@ -11,6 +11,9 @@ Où : Supabase → Authentication → Emails → Templates. **Base de test (rugb
 | `invitation.html` | Invite user | Une invitation vous attend sur Rugbeo |
 | `lien-connexion.html` | Magic link | Votre lien de connexion Rugbeo |
 | `changement-email.html` | Change email address | Rugbeo : confirmez votre nouvelle adresse |
+| `mot-de-passe-modifie.html` | Security → Password changed (interrupteur à activer) | Rugbeo : votre mot de passe a été modifié |
+
+**Utilisés aujourd'hui** : Confirm sign up, Reset password et l'alerte Password changed. Les autres sont prêts mais pas nécessaires (l'appli n'utilise ni invitation Supabase, ni lien de connexion, ni changement d'adresse).
 
 Un même contenu s'adapte à la situation grâce aux données du compte (`.Data`, rempli à l'inscription par `js/account.js`) :
 - **Confirmation** : `kids` (un parent crée le compte de son enfant), sinon `join_code` (venu par un lien d'invitation : il rejoindra l'équipe automatiquement), sinon inscription simple.

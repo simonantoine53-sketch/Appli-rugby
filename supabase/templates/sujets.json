@@ -18,5 +18,9 @@
   "changement-email": {
     "name": "Change email address",
     "subject": "Rugbeo : confirmez votre nouvelle adresse"
+  },
+  "mot-de-passe-modifie": {
+    "name": "Password changed",
+    "subject": "Rugbeo : votre mot de passe a été modifié"
   }
 }
