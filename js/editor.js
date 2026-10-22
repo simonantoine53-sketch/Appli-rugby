@@ -3,7 +3,7 @@
   'use strict';
 
   const { svgEl, fieldSpec, renderField, frameRect, lerpFrame, SVG_NS, M, PAD } = window.RugbyField;
-  const { renderObject, bounds, move, lerpObject, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
+  const { renderObject, bounds, move, lerpObject, tweenStep, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
   const { TOOL_GROUPS, TOOLS, COLORS } = window.RugbyPalette;
 
   const $ = s => document.querySelector(s);
@@ -718,7 +718,17 @@
       add(nameInp);
       btn('Maillot', 'Afficher en maillot', obj.jersey, () => { obj.jersey = !obj.jersey; });
       // Un seul porteur du ballon par étape
-      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => { obj.ball = !obj.ball; if (obj.ball) curObjects().forEach(o => { if (o !== obj && o.type === 'player') o.ball = false; }); });
+      btn('Ballon', 'Ce joueur porte le ballon', obj.ball, () => {
+        obj.ball = !obj.ball;
+        if (!obj.ball) return;
+        curObjects().forEach(o => { if (o !== obj && o.type === 'player') o.ball = false; });
+        // Le porteur change par rapport à l'étape d'avant : l'animation fera la passe
+        const prev = state.step > 0 && state.drawing.steps[state.step - 1].objects.find(o => o.type === 'player' && o.ball);
+        if (prev && prev.id !== obj.id && curObjects().some(o => o.id === prev.id)) {
+          const who = p => (p.name || (p.label ? 'n° ' + p.label : 'le joueur'));
+          toast(`Passe : dans l’animation, le ballon ira de ${who(prev)} à ${who(obj)}.`);
+        }
+      });
     }
     if (obj.type === 'text') {
       btn('Modifier', 'Modifier le texte', false, () => { window.RugbyDialog.prompt('Texte', obj.text, { title: 'Modifier le texte', maxLength: 80 }).then(t => { if (t !== null) { const s2 = snapshot(); obj.text = t; commit(s2); } }); });
@@ -888,9 +898,7 @@
     const t0 = performance.now();
     const frame = now => {
       const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      const list = [];
-      a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
-      b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
+      const list = tweenStep(a, b, e);
       const fa = d.steps[preview.step].frame, fb = d.steps[next].frame;
       showPreviewStep(next, list, (fa || fb) ? lerpFrame(d.settings, fa, fb, e) : null);
       if (t < 1) preview.raf = requestAnimationFrame(frame); else { preview.step = next; showPreviewStep(next); done && done(); }

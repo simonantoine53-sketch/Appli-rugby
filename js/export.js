@@ -3,8 +3,7 @@
   'use strict';
 
   const { fieldSpec, lerpFrame } = global.RugbyField;
-  const { lerpObject } = global.RugbyObjects;
-  const clone = o => JSON.parse(JSON.stringify(o));
+  const { tweenStep } = global.RugbyObjects;
   const ease = t => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
   /** Liste des images (listes d'objets) pour toute l'animation, à intervalle dt (ms). */
@@ -21,9 +20,7 @@
       if (!next) return;
       const a = st.objects, b = next.objects;
       for (let t = dt; t < trans; t += dt) {
-        const e = ease(t / trans), list = [];
-        a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(clone(o), { opacity: 1 - e })); });
-        b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(clone(o), { opacity: e })); });
+        const e = ease(t / trans), list = tweenStep(a, b, e);
         push(list, next.note, (st.frame || next.frame) ? lerpFrame(drawing.settings, st.frame, next.frame, e) : null);
       }
     });

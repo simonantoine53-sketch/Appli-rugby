@@ -265,5 +265,26 @@
     return out;
   }
 
-  global.RugbyObjects = { renderObject, bounds, move, lerpObject, polyPoints, lineSamples, EQUIP_SIZE, PLAYER_R, colorOf };
+  /** Image intermédiaire entre deux étapes (aperçu, page publique, exports) : chaque objet est interpolé ;
+   *  si le porteur du ballon change d'une étape à l'autre, le ballon vole de l'ancien porteur au nouveau (la passe). */
+  function tweenStep(a, b, e) {
+    const list = [];
+    a.forEach(o => { if (!b.find(x => x.id === o.id)) list.push(Object.assign(JSON.parse(JSON.stringify(o)), { opacity: 1 - e })); });
+    b.forEach(o => { const prev = a.find(x => x.id === o.id); list.push(prev ? lerpObject(prev, o, e, a) : Object.assign(JSON.parse(JSON.stringify(o)), { opacity: e })); });
+    const from = a.find(o => o.type === 'player' && o.ball), to = b.find(o => o.type === 'player' && o.ball);
+    if (!from || !to || from.id === to.id || e >= 1) return list;
+    const pa = list.find(o => o.id === from.id), pb = list.find(o => o.id === to.id);
+    if (!pa || !pb) return list;
+    pa.ball = false; pb.ball = false;   // le ballon est en l'air pendant la passe
+    // Départ et arrivée : la place du ballon tenu (en haut à droite du joueur)
+    const hand = p => { const sc = p.scale || 1; return [p.x + PLAYER_R * 0.95 * sc, p.y - PLAYER_R * 0.9 * sc]; };
+    const [x0, y0] = hand(pa), [x1, y1] = hand(pb);
+    const dist = Math.hypot(x1 - x0, y1 - y0), lift = Math.min(70, dist * 0.22) * Math.sin(Math.PI * e);   // petite cloche
+    const x = x0 + (x1 - x0) * e, y = y0 + (y1 - y0) * e - lift;
+    const ang = Math.atan2(y1 - y0 - lift * 0, x1 - x0) * 180 / Math.PI;
+    list.push({ id: '__ballon-en-passe', type: 'equip', kind: 'ball', x, y, rot: ang + (e - 0.5) * 30, scale: 0.68 });
+    return list;
+  }
+
+  global.RugbyObjects = { renderObject, bounds, move, lerpObject, tweenStep, polyPoints, lineSamples, EQUIP_SIZE, PLAYER_R, colorOf };
 })(window);
