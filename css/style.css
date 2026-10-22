@@ -680,6 +680,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .zoom { display: none; }
   .hint { display: none; position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
   .hint.tool-on { display: block; }
+  body:has(#props:not(.hidden)) .hint.tool-on { display: none; }   /* ne cache pas « Supprimer » quand un objet est sélectionné */
   .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
   .title-wrap { flex: 1 1 auto; min-width: 0; }
   .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 4px 6px; }
@@ -853,7 +854,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   color-scheme: light;
   }
 }
-:root { --tap: 44px; --tap-sm: 40px; --gap: 8px; --radius-btn: 10px; }
+:root { --tap: 44px; --tap-sm: 44px; --gap: 8px; --radius-btn: 10px; }   /* 44 px au doigt (recommandation d'accessibilité) */
 @media (pointer: fine) { :root { --tap: 40px; --tap-sm: 36px; } }
 
 /* Boutons : texte centré, marges intérieures identiques des deux côtés */
@@ -1406,9 +1407,9 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 @media (max-width: 560px) {
   .sheet-row { gap: 5px; }
   .sheet-num { width: 20px; font-size: 13px; }
-  .sheet-marks { gap: 3px; }
-  .sheet-mark { width: 30px; height: 30px; font-size: 12px; }
-  .sheet-clear { width: 24px; height: 30px; }
+  .sheet-marks { gap: 4px; }
+  .sheet-mark { width: 38px; height: 38px; font-size: 13px; }
+  .sheet-clear { width: 36px; height: 38px; margin-left: 6px; }
   .sheet-choice { margin-left: 25px; }
 }
 
@@ -1528,3 +1529,29 @@ a:not([class]) { color: var(--primary); }
 .sheet-absent.unsure { color: var(--warning-ink); }
 .sheet-row.is-unsure input { border-color: var(--warning); }
 .sheet-row.is-unsure .sheet-in input { padding-right: 96px; }
+.sheet-legend { font-size: 12.5px; margin: 0 0 6px; }
+/* Chargement : formes grises (pas d'écran faux pendant que le compte se charge) */
+.skel { display: flex; flex-direction: column; gap: 14px; }
+.skel-line { height: 14px; border-radius: 7px; background: var(--subtle); margin: 6px 0; animation: skel 1.2s ease-in-out infinite alternate; }
+.skel-line.title { height: 26px; width: 55%; }
+.skel-line.short { width: 60%; }
+.skel-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.skel-tiles div { height: 96px; border-radius: 14px; background: var(--subtle); animation: skel 1.2s ease-in-out infinite alternate; }
+@keyframes skel { from { opacity: 1; } to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .skel-line, .skel-tiles div { animation: none; } }
+/* Filtres et puces : au moins 36 px de haut au doigt */
+@media (pointer: coarse) { .chip { min-height: 36px; } }
+/* Politique de confidentialité sur téléphone : une fiche par ligne du tableau, onglets sur deux lignes */
+@media (max-width: 600px) {
+  .legal-tabs { white-space: normal; display: flex; flex-wrap: wrap; overflow-x: visible; }
+  .legal-tabs .tab { padding: 10px 6px; margin-right: 8px; }
+  .legal-table-wrap { border: 0; overflow: visible; }
+  .legal-table { min-width: 0; }
+  .legal-table thead { display: none; }
+  .legal-table tr { display: block; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+  .legal-table td { display: block; border-bottom: 0; padding: 6px 10px; }
+  .legal-table td:nth-child(2)::before { content: 'À quoi elles servent : '; font-weight: 700; }
+  .legal-table td:nth-child(3)::before { content: 'Base légale : '; font-weight: 700; }
+}
+/* Visite guidée dans la démo : la bulle passe devant, le bandeau de la démo se retire le temps de la visite */
+body:has(.tour) .demo-banner { display: none; }

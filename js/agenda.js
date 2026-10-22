@@ -157,8 +157,12 @@
       .subscribe();
   }
   /** quick : écran de réponse directe, ouvert depuis la notification (iPhone : pas de boutons dans la notification). */
-  async function render(root, eventId, quick) {
+  async function render(root, eventId, quick, keep) {
     const my = ++seq;
+    // Rafraîchissement après une réponse : on garde la position dans la page (on voit son bouton devenir vert)
+    const sc = keep ? scroller(root) : null, y = sc ? sc.scrollTop : 0;
+    if (sc) root.style.minHeight = root.offsetHeight + 'px';
+    const restore = () => { if (sc && my === seq) { sc.scrollTop = y; root.style.minHeight = ''; } };
     root.replaceChildren();
     const team = A.team();
     if (!A.isLoggedIn()) {
@@ -210,13 +214,19 @@
       }
       list.appendChild(empty); return;
     }
-    watch(evs.map(e => e.id), () => { if (my === seq) render(root); });
+    watch(evs.map(e => e.id), () => { if (my === seq) render(root, undefined, undefined, true); });
     let lastWeek = '';
     evs.forEach(ev => {
       const w = weekLabel(ev.starts_at);
       if (w !== lastWeek) { list.appendChild(el('h4', 'home-h4 agenda-week', w)); lastWeek = w; }
-      list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root)));
+      list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root, undefined, undefined, true)));
     });
+    restore();
+  }
+  /** Élément qui défile (la page de la vue, sinon le document). */
+  function scroller(node) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n; }
+    return document.scrollingElement;
   }
 
   function dateBlock(ev) {
@@ -254,17 +264,10 @@
     const mine = sum.byUser[A.user().id];
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
-    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé. En bas de la carte, discret.
-    if (staff && new Date(ev.starts_at) > Date.now()) {
-      const foot = el('div', 'ev-foot');
-      foot.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
-        if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
-        setCancelled([ev], !ev.cancelled, refresh);
-      }));
-      body.appendChild(foot);
-    }
+    // Annuler, rétablir, supprimer : dans la fiche de l'événement (menu ⋯), plus sur chaque carte de la liste
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(body.querySelector('.ev-title'), `${label(ev)}, ${short(ev)} : ouvrir la fiche`);
     return c;
   }
 
@@ -302,13 +305,19 @@
         const next = await seriesFrom(ev);
         choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
       };
-      tools.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
-        : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))));
-      tools.appendChild(btn('Supprimer', 'outline small danger', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
-        const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
-        if (err) return E.toast(err.message);
-        E.toast(list.length > 1 ? `${list.length} séances supprimées.` : 'Événement supprimé.'); E.go('agenda');
-      })));
+      // Actions rares et sensibles : rangées dans le menu ⋯, avec confirmation
+      const items = [
+        [ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', ev.cancelled ? () => setCancelled([ev], false, refresh)
+          : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))],
+        ['Supprimer définitivement', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
+          const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
+          if (err) return E.toast(err.message);
+          E.toast(list.length > 1 ? `${list.length} séances supprimées.` : 'Événement supprimé.'); E.go('agenda');
+        })]
+      ];
+      const more = btn('⋯', 'outline small', () => window.RugbySelect.openMenu(more, items, label(ev)));
+      more.title = 'Annuler ou supprimer'; more.setAttribute('aria-label', 'Plus d’actions : annuler ou supprimer'); more.setAttribute('aria-haspopup', 'menu');
+      tools.appendChild(more);
     }
     info.appendChild(tools);
     root.appendChild(info);
@@ -362,7 +371,7 @@
         [['', '—'], ['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = (r ? r.status : '') === v; sel.appendChild(o); });
         sel.onclick = e => e.stopPropagation();
         sel.onchange = async () => { if (sel.value) await answer(ev.id, sel.value, m.id); else await clearAnswer(ev.id, m.id); refresh(); };
-        sel.title = 'Saisir la réponse à sa place';
+        sel.title = 'Saisir la réponse à sa place'; sel.setAttribute('aria-label', `Réponse de ${m.name}`);
         row.appendChild(sel);
       }
       return row;

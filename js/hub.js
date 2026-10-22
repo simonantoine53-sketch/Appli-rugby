@@ -192,6 +192,10 @@
       slot.insertBefore(box, slot.firstChild);
     });
   }
+  /** Écran de chargement : quelques formes grises à la place des blocs de l'accueil. */
+  function skeleton() {
+    return el('div', 'skel', '<div class="skel-line title"></div><div class="todo-card"><div class="skel-line"></div><div class="skel-line"></div><div class="skel-line short"></div></div><div class="skel-tiles"><div></div><div></div><div></div><div></div></div><span class="sr-only">Chargement…</span>');
+  }
   /** Bouton avec une précision en petit dessous (« Voir la démo » : visiter un club fictif). */
   const twoLines = (b, sub) => { b.classList.add('two-lines'); b.appendChild(el('small', '', sub)); return b; };
   /** « de » ou « d’ » devant un prénom (d’Emma, de Léo). */
@@ -205,7 +209,9 @@
   async function renderHome() {
     const my = ++seq;
     const root = $('#hub-home'); root.replaceChildren();
-    if (!active || !A.isLoggedIn()) { if (active && !A.isReady()) { root.appendChild(el('p', 'muted center', 'Chargement…')); return; } hero(root); return; }
+    // Compte en cours de chargement (ouverture, juste après la connexion) : formes grises neutres, pas d'écran faux
+    if (active && !A.isReady()) { root.appendChild(skeleton()); return; }
+    if (!active || !A.isLoggedIn()) { hero(root); return; }
     const team = A.team();
     if (!team) {
       hello(root, 'Bienvenue sur Rugbeo.');
@@ -243,7 +249,7 @@
     const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'bureau du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)}${team.kidName ? ' · ' + esc(team.kidName) : ''} · ${roleLabel}`);
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
-    slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
+    slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><div class="skel-line"></div><div class="skel-line short"></div><span class="sr-only">Chargement…</span>'));
     let d;
     try {
       const [hd, ag, sh] = await Promise.all([A.homeData(), AG() ? AG().upcoming(team).catch(() => null) : null, SH() ? SH().upcoming(team).catch(() => null) : null]);

@@ -697,6 +697,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .zoom { display: none; }
   .hint { display: none; position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
   .hint.tool-on { display: block; }
+  body:has(#props:not(.hidden)) .hint.tool-on { display: none; }   /* ne cache pas « Supprimer » quand un objet est sélectionné */
   .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
   .title-wrap { flex: 1 1 auto; min-width: 0; }
   .title-input { width: 100%; min-width: 0; font-size: 16px; padding: 4px 6px; }
@@ -870,7 +871,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   color-scheme: light;
   }
 }
-:root { --tap: 44px; --tap-sm: 40px; --gap: 8px; --radius-btn: 10px; }
+:root { --tap: 44px; --tap-sm: 44px; --gap: 8px; --radius-btn: 10px; }   /* 44 px au doigt (recommandation d'accessibilité) */
 @media (pointer: fine) { :root { --tap: 40px; --tap-sm: 36px; } }
 
 /* Boutons : texte centré, marges intérieures identiques des deux côtés */
@@ -1423,9 +1424,9 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 @media (max-width: 560px) {
   .sheet-row { gap: 5px; }
   .sheet-num { width: 20px; font-size: 13px; }
-  .sheet-marks { gap: 3px; }
-  .sheet-mark { width: 30px; height: 30px; font-size: 12px; }
-  .sheet-clear { width: 24px; height: 30px; }
+  .sheet-marks { gap: 4px; }
+  .sheet-mark { width: 38px; height: 38px; font-size: 13px; }
+  .sheet-clear { width: 36px; height: 38px; margin-left: 6px; }
   .sheet-choice { margin-left: 25px; }
 }
 
@@ -1545,6 +1546,32 @@ a:not([class]) { color: var(--primary); }
 .sheet-absent.unsure { color: var(--warning-ink); }
 .sheet-row.is-unsure input { border-color: var(--warning); }
 .sheet-row.is-unsure .sheet-in input { padding-right: 96px; }
+.sheet-legend { font-size: 12.5px; margin: 0 0 6px; }
+/* Chargement : formes grises (pas d'écran faux pendant que le compte se charge) */
+.skel { display: flex; flex-direction: column; gap: 14px; }
+.skel-line { height: 14px; border-radius: 7px; background: var(--subtle); margin: 6px 0; animation: skel 1.2s ease-in-out infinite alternate; }
+.skel-line.title { height: 26px; width: 55%; }
+.skel-line.short { width: 60%; }
+.skel-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.skel-tiles div { height: 96px; border-radius: 14px; background: var(--subtle); animation: skel 1.2s ease-in-out infinite alternate; }
+@keyframes skel { from { opacity: 1; } to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .skel-line, .skel-tiles div { animation: none; } }
+/* Filtres et puces : au moins 36 px de haut au doigt */
+@media (pointer: coarse) { .chip { min-height: 36px; } }
+/* Politique de confidentialité sur téléphone : une fiche par ligne du tableau, onglets sur deux lignes */
+@media (max-width: 600px) {
+  .legal-tabs { white-space: normal; display: flex; flex-wrap: wrap; overflow-x: visible; }
+  .legal-tabs .tab { padding: 10px 6px; margin-right: 8px; }
+  .legal-table-wrap { border: 0; overflow: visible; }
+  .legal-table { min-width: 0; }
+  .legal-table thead { display: none; }
+  .legal-table tr { display: block; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+  .legal-table td { display: block; border-bottom: 0; padding: 6px 10px; }
+  .legal-table td:nth-child(2)::before { content: 'À quoi elles servent : '; font-weight: 700; }
+  .legal-table td:nth-child(3)::before { content: 'Base légale : '; font-weight: 700; }
+}
+/* Visite guidée dans la démo : la bulle passe devant, le bandeau de la démo se retire le temps de la visite */
+body:has(.tour) .demo-banner { display: none; }
 
 </style>
 </head>
@@ -1568,12 +1595,12 @@ a:not([class]) { color: var(--primary); }
 </header>
 
 <!-- ===== Accueil : « À faire » + tuiles ===== -->
-<div id="view-home" class="view">
+<div id="view-home" role="main" class="view">
   <div class="home-body" id="hub-home"></div>
 </div>
 
 <!-- ===== Stratégies (bibliothèque de dessins) ===== -->
-<div id="view-strats" class="view hidden">
+<div id="view-strats" role="main" class="view hidden">
   <div class="home-body">
     <div id="home-tabs" class="tabs small"></div>
     <div id="home-list" class="library-list"></div>
@@ -1581,27 +1608,27 @@ a:not([class]) { color: var(--primary); }
 </div>
 
 <!-- ===== Agenda (bientôt : convocations) ===== -->
-<div id="view-agenda" class="view hidden">
+<div id="view-agenda" role="main" class="view hidden">
   <div class="home-body" id="hub-agenda"></div>
 </div>
 
 <!-- ===== Compositions et feuilles de match ===== -->
-<div id="view-compos" class="view hidden">
+<div id="view-compos" role="main" class="view hidden">
   <div class="home-body" id="hub-compos"></div>
 </div>
 
 <!-- ===== Fonctionnalité à venir ===== -->
-<div id="view-soon" class="view hidden">
+<div id="view-soon" role="main" class="view hidden">
   <div class="home-body" id="hub-soon"></div>
 </div>
 
 <!-- ===== Équipe ===== -->
-<div id="view-team" class="view hidden">
+<div id="view-team" role="main" class="view hidden">
   <div class="home-body" id="team-page"></div>
 </div>
 
 <!-- ===== Compte ===== -->
-<div id="view-account" class="view hidden">
+<div id="view-account" role="main" class="view hidden">
   <div class="home-body account-page">
     <!-- Page Compte en cinq groupes courts : Mon profil, Mon club et mes équipes, Réglages, Aide, Compte (js/compte.js) -->
     <section class="acc-group">
@@ -1659,7 +1686,7 @@ a:not([class]) { color: var(--primary); }
         <form id="password-form" class="form password-form hidden" novalidate>
           <label>Nouveau mot de passe<input id="password-new" type="password" autocomplete="new-password" minlength="6" required></label>
           <label>Retapez-le<input id="password-again" type="password" autocomplete="new-password" minlength="6" required></label>
-          <p id="password-msg" class="form-error"></p>
+          <p id="password-msg" class="form-error" role="alert"></p>
           <div class="row-wrap"><button id="password-save" class="btn primary small" type="submit">Enregistrer</button><button id="password-cancel" class="btn ghost small" type="button">Annuler</button></div>
         </form>
         <button id="btn-logout" class="acc-row">Se déconnecter</button>
@@ -1670,12 +1697,12 @@ a:not([class]) { color: var(--primary); }
 </div>
 
 <!-- ===== Back-office super-admin ===== -->
-<div id="view-admin" class="view hidden">
+<div id="view-admin" role="main" class="view hidden">
   <div class="home-body admin-page" id="admin-page"></div>
 </div>
 
 <!-- ===== Stratégie partagée par lien (lecture seule, sans compte) ===== -->
-<div id="view-share" class="view hidden">
+<div id="view-share" role="main" class="view hidden">
   <header class="topbar home-bar">
     <div class="brand">
       <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
@@ -2032,7 +2059,7 @@ a:not([class]) { color: var(--primary); }
         <p class="help auth-terms">En créant un compte, vous acceptez les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Vos données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
       </div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
-      <p id="auth-error" class="form-error"></p>
+      <p id="auth-error" class="form-error" role="alert"></p>
       <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
       <a href="#" id="auth-back" class="auth-link center hidden">← Retour à la connexion</a>
       <p class="help">Gratuit, sans publicité. Votre compte garde vos dessins sur tous vos appareils et vous relie à votre équipe. <a href="#" data-legal="privacy">Confidentialité</a> · <a href="#" data-legal="legal">Mentions légales</a></p>
@@ -2044,7 +2071,7 @@ a:not([class]) { color: var(--primary); }
       <p>Cliquez sur le lien qu’il contient : <strong>vous serez connecté automatiquement</strong>, même si vous l’ouvrez sur un autre appareil.</p>
       <p id="auth-pending-next">Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.</p>
       <p class="muted small">Rien reçu ? Regardez dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
-      <p id="auth-pending-msg" class="form-error"></p>
+      <p id="auth-pending-msg" class="form-error" role="alert"></p>
       <button id="auth-resend" class="btn outline wide" type="button">Renvoyer l’e-mail</button>
       <button id="auth-change" class="btn ghost wide" type="button">Changer d’adresse e-mail</button>
     </div>
@@ -2098,7 +2125,7 @@ a:not([class]) { color: var(--primary); }
       </div>
       <label id="ev-series-field" class="check hidden"><input id="ev-apply-series" type="checkbox"> Appliquer aussi aux séances suivantes de ce planning</label>
       <label class="check"><input id="ev-notify" type="checkbox" checked> <span id="ev-notify-label">Envoyer la convocation à l’équipe (notification)</span></label>
-      <p id="ev-error" class="form-error"></p>
+      <p id="ev-error" class="form-error" role="alert"></p>
       <button id="ev-submit" class="btn primary wide" type="submit">Enregistrer</button>
     </form>
   </div>
@@ -2218,7 +2245,7 @@ a:not([class]) { color: var(--primary); }
         <label><input type="radio" name="feedback-kind" value="other"> Autre</label>
       </div>
       <textarea id="feedback-message" class="admin-textarea" rows="5" maxlength="2000" placeholder="Qu’est-ce qui ne marche pas, ou qu’est-ce qui vous aiderait ? Pour un bug, dites ce que vous faisiez."></textarea>
-      <p id="feedback-error" class="form-error"></p>
+      <p id="feedback-error" class="form-error" role="alert"></p>
       <button id="feedback-submit" class="btn primary wide" type="submit">Envoyer</button>
       <p class="help">La page, l’appareil et la version de l’appli sont joints automatiquement pour nous aider à comprendre.</p>
     </form>
@@ -2800,6 +2827,20 @@ a:not([class]) { color: var(--primary); }
     prompt: (label, value, o) => show('prompt', Object.assign({ label, value }, o || {})),
     copy: (text, o) => show('copy', Object.assign({ text }, o || {}))
   };
+
+  /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */
+  window.RugbyA11y = {
+    clickable(node, label) {
+      if (!node || node.dataset.kbd) return node;
+      node.dataset.kbd = '1'; node.tabIndex = 0; node.setAttribute('role', 'button');
+      if (label) node.setAttribute('aria-label', label);
+      node.addEventListener('keydown', e => {
+        if (e.target !== node || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault(); node.click();
+      });
+      return node;
+    }
+  };
 })();
 
 </script>
@@ -2872,10 +2913,11 @@ a:not([class]) { color: var(--primary); }
     icon: `<circle cx="14" cy="17" r="10" fill="#1e88e5"/><ellipse cx="24" cy="9" rx="6.5" ry="4" fill="#fff" stroke="#333" stroke-width="1.3" transform="rotate(-30 24 9)"/>` });
 
   const TOOL_GROUPS = [
-    { id: 'formations', title: 'Formations', tools: formationTools },
-    { id: 'shapes', title: 'Formes', tools: shapeTools },
-    { id: 'equip', title: 'Équipement', tools: equipTools },
-    { id: 'players', title: 'Joueurs', tools: playerTools }
+    // Joueurs d'abord : c'est ce qu'on pose en premier (test utilisateur : la section était sous le pli)
+    { id: 'players', title: 'Joueurs', tools: playerTools },
+    { id: 'shapes', title: 'Courses, passes et formes', tools: shapeTools },
+    { id: 'equip', title: 'Ballon et équipement', tools: equipTools },
+    { id: 'formations', title: 'Formations', tools: formationTools }
   ];
 
   const TOOLS = {};
@@ -3865,6 +3907,21 @@ a:not([class]) { color: var(--primary); }
           return { user_id: m.user_id, display_name: p.display_name, role: m.role, views: v ? v.views : 0, played: !!(v && v.played), first_seen_at: v && v.first_seen_at, last_seen_at: v && v.last_seen_at }; }), error: null };
       }
       if (name === 'club_creation_open') return { data: false, error: null };
+      // Présences de la saison : la démo n'a pas d'historique, on en fabrique un, stable d'une visite à l'autre
+      if (name === 'attendance_stats') {
+        const members = DB.team_members.filter(m => m.team_id === a.p_team && m.status === 'active' && (m.role === 'player' || m.plays));
+        const seed = id => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+        const rows = [];
+        members.forEach(m => {
+          const p = DB.profiles.find(x => x.id === m.user_id) || {}, h = seed(m.user_id);
+          [['training', 14], ['match', 5]].forEach(([kind, total], k) => {
+            const present = Math.max(0, total - (h >> (k * 3)) % (kind === 'match' ? 3 : 6)), absent = Math.min(total - present, (h >> 7) % 3);
+            const maybe = Math.min(total - present - absent, (h >> 9) % 2);
+            rows.push({ user_id: m.user_id, display_name: p.display_name, kind, total, present, maybe, absent, unanswered: total - present - absent - maybe });
+          });
+        });
+        return { data: rows, error: null };
+      }
       if (!['touch_activity', 'count_page', 'mark_drawing_viewed', 'my_kids_login', 'claim_my_account'].includes(name)) warn();
       return { data: null, error: null };
     });
@@ -4133,6 +4190,10 @@ a:not([class]) { color: var(--primary); }
   svg.addEventListener('pointercancel', endTouch, true);
 
   /* ---------- Palette ---------- */
+  /** Boutons à icône seule : le nom lu par les lecteurs d'écran reprend l'info-bulle. */
+  function nameIconButtons() {
+    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
+  }
   function buildPalette() {
     const root = $('#palette');
     TOOL_GROUPS.forEach((g, gi) => {
@@ -4151,6 +4212,7 @@ a:not([class]) { color: var(--primary); }
       root.appendChild(sec);
     });
     $('#btn-list-formations').onclick = openSavedFormations;
+    nameIconButtons();
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
@@ -4698,6 +4760,7 @@ a:not([class]) { color: var(--primary); }
         card.appendChild(opts);
       }
       card.onclick = () => { if (state.framing) endFraming(true); state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(card, `Étape ${i + 1}`);
       card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects), frame: st.frame ? clone(st.frame) : undefined }); state.step = i + 1; state.selected = null; commit(b); };
       card.querySelector('.del').onclick = async e => {
         e.stopPropagation();
@@ -4813,7 +4876,7 @@ a:not([class]) { color: var(--primary); }
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
   const previewPrev = () => { setPlaying(false); animateTo((preview.step - 1 + pd().steps.length) % pd().steps.length); };
-  $('#btn-preview').onclick = () => openPreview();
+  $('#btn-preview').onclick = () => { state.step = 0; renderSteps(); render(); openPreview(true); };   // l'aperçu part de l'étape 1 et s'anime
   $('#preview-play').onclick = () => setPlaying(!preview.playing);
   $('#preview-next').onclick = previewNext;
   $('#preview-prev').onclick = previewPrev;
@@ -5019,6 +5082,7 @@ a:not([class]) { color: var(--primary); }
     c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${escHtml(d.category)}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${escHtml(d.tags)}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
     c.querySelector('.del').onclick = async e => { e.stopPropagation(); if (await window.RugbyDialog.confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
     return c;
   }
@@ -5046,6 +5110,10 @@ a:not([class]) { color: var(--primary); }
     if (view === 'admin' && !(active && acc.isSuper())) view = 'home';
     if (view === 'open') { view = 'strats'; if (active && !waiting && acc.openById) acc.openById(location.hash.slice(4).split(/[?&]/)[0]); }
     ['home', 'strats', 'agenda', 'compos', 'soon', 'team', 'account', 'admin', 'editor', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    // Titre de l'onglet du navigateur : la page, puis l'équipe (repère pour les lecteurs d'écran et l'historique)
+    const team = active && acc.team && acc.team();
+    const PAGE = { home: 'Accueil', strats: 'Stratégies', agenda: 'Agenda', compos: 'Compos', soon: 'Bientôt', team: 'Équipe', account: 'Compte', admin: 'Back-office', editor: 'Éditeur', share: 'Stratégie partagée' };
+    document.title = [PAGE[view], team && team.name, 'Rugbeo'].filter(Boolean).join(' – ');
     const hub = HUB_VIEWS.includes(view);
     $('#hub-bar').classList.toggle('hidden', !hub); $('#app-nav').classList.toggle('hidden', !hub);
     if (view !== 'share' && preview.drawing) stopPreview();
@@ -5084,8 +5152,31 @@ a:not([class]) { color: var(--primary); }
   $('#btn-library').onclick = async () => { if (!await confirmLeave()) return; if (location.hash !== lastPage) { leaving = true; location.hash = lastPage; } else showView(currentView()); };
 
   /* ---------- Modales & toast ---------- */
-  function openModal(id) { $('#' + id).classList.remove('hidden'); }
-  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); } }
+  /* Fenêtres : vraie fenêtre pour les lecteurs d'écran, curseur placé dedans, Échap ferme, retour à l'élément d'origine */
+  const opener = {};
+  function openModal(id) {
+    const m = $('#' + id), wasHidden = m.classList.contains('hidden');
+    m.classList.remove('hidden');
+    if (!wasHidden) return;
+    m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    const head = m.querySelector('.modal-head strong, h2, h3'); if (head) { if (!head.id) head.id = id + '-title'; m.setAttribute('aria-labelledby', head.id); }
+    opener[id] = document.activeElement;
+    requestAnimationFrame(() => {
+      if (m.contains(document.activeElement)) return;
+      const f = m.querySelector('input:not([type=hidden]):not([disabled]), textarea, select, button:not(.btn-close)') || m.querySelector('.btn-close');
+      if (f && f.offsetParent !== null) f.focus();
+    });
+  }
+  function closeModal(id) {
+    $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); }
+    const o = opener[id]; delete opener[id];
+    if (o && o.isConnected && o.focus) o.focus();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    const open = [...document.querySelectorAll('.modal:not(.hidden):not(.dialog-modal)')].filter(m => m.id !== 'modal-preview');
+    if (open.length && !document.querySelector('.dialog-modal:not(.hidden), .rs-pop')) { e.preventDefault(); closeModal(open[open.length - 1].id); }
+  });
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
   let toastTimer;
@@ -5196,6 +5287,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
+    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoignez votre club »
+    if (session && !S.user && ready) { ready = false; if (E.currentView() === 'home') E.refreshView(); }
     S.user = session ? session.user : null;
     if (S.user) {
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
@@ -6037,13 +6130,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
           E.toast(sel.value ? `${nameOf(r)} : ${sel.value}. Gère maintenant toutes les équipes du club.` : `${nameOf(r)} n’est plus au bureau du club.`); refresh();
         };
         acts.appendChild(sel);
-        if (r.user_id !== actorId()) acts.appendChild(btn('Retirer du club', 'outline small danger', async () => {
-          if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Il quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
+        if (r.user_id !== actorId()) acts.appendChild(moreMenu([[`Retirer ${nameOf(r)} du club`, async () => {
+          if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Cette personne quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
           if (teamIds.length) { const { error: e1 } = await sb.from('team_members').delete().eq('user_id', r.user_id).in('team_id', teamIds); if (e1) return E.toast(errMsg(e1)); }
           const { error } = await sb.from('club_members').delete().match({ club_id: club.id, user_id: r.user_id });
           if (error) return E.toast(errMsg(error));
           E.toast(`${nameOf(r)} ne fait plus partie du club.`); refresh();
-        }));
+        }]], nameOf(r)));
         row.appendChild(acts);
         ms.appendChild(row);
       });
@@ -6281,6 +6374,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}${pr.guardian_id && staff ? ' · compte géré par un parent' : ''}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(row.querySelector('.who'), `Fiche de ${name}`);
       // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)
       const playsToggle = () => {
         const l = el('label', 'plays-toggle' + (m.plays ? ' on' : ''), '<input type="checkbox"> Joue aussi');
@@ -6293,12 +6387,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (staff && m.user_id !== actorId()) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
-        sel.onchange = () => setMember(m, { role: sel.value });
-        // Rôle, « Joue aussi » et « Retirer » toujours regroupés, à la même place sur chaque ligne
+        sel.setAttribute('aria-label', `Rôle ${de(name)}${name}`);
+        sel.onclick = e => e.stopPropagation();
+        // Changer un rôle donne ou retire des droits : on confirme (un geste de travers ne suffit plus)
+        sel.onchange = async () => {
+          const label = sel.options[sel.selectedIndex].textContent;
+          if (!await window.RugbyDialog.confirm(`${name} devient ${label.toLowerCase()} de « ${S.team.name} ».`, { title: 'Changer le rôle ?', ok: 'Changer le rôle' })) { sel.value = m.role; return; }
+          setMember(m, { role: sel.value });
+        };
+        // Rôle et « Joue aussi » visibles ; « Retirer » rangé dans le menu ⋯ (action rare et sensible)
         const acts = el('div', 'member-actions');
         acts.appendChild(sel);
         if (m.role !== 'player') acts.appendChild(playsToggle());
-        acts.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
+        const more = moreMenu([[`Retirer ${name} de l’équipe`, () => setMember(m, null, `Retirer ${name} de l’équipe ?`)]], name);
+        more.addEventListener('click', e => e.stopPropagation());
+        acts.appendChild(more);
         row.appendChild(acts);
       } else if (staff && m.role !== 'player') {
         // Ma propre ligne de coach / admin : mon rôle + la case pour me convoquer moi-même
@@ -6606,6 +6709,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const modeBadge = mode && mode !== 'public' ? `<span class="vis-badge share-${mode}">${SHARE[mode].label}</span> ` : '';
     c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${mine ? '' : esc((row.owner && row.owner.display_name) || '') + ' · '}${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}`;   // l'essentiel seulement : auteur (si ce n'est pas moi), étapes, date
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c.querySelector('.body'), `Ouvrir « ${row.title} »`);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
       if (visibility !== 'private' && !S.team) { E.toast('Rejoignez ou créez d’abord une équipe.'); return; }
@@ -7139,12 +7243,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const acts = el('div', 'row-wrap');
         acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
         acts.appendChild(btn(logins[k.id] ? 'Renvoyer le lien' : 'Lui donner son compte', 'outline small', () => handOver(k)));
-        acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
+        const more = btn('⋯', 'ghost small', () => window.RugbySelect.openMenu(more, [[`Retirer ${k.display_name} de mon compte`, async () => {
           if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
           const { error } = await sb.rpc('remove_child', { p_child: k.id });
           if (error) return E.toast(errMsg(error));
-          await A.reloadKids(); render(); E.toast(`${k.display_name} a été retiré de votre compte.`);
-        }));
+          await A.reloadKids(); render(); E.toast(`${k.display_name} n’est plus rattaché à votre compte.`);
+        }]], k.display_name));
+        more.title = 'Plus d’actions'; more.setAttribute('aria-label', `Plus d’actions pour ${k.display_name}`);
+        acts.appendChild(more);
         row.appendChild(acts);
         box.appendChild(row);
         if (logins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(logins[k.id])} : vous le gérez jusqu’à sa première connexion.`));
@@ -8120,8 +8226,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       .subscribe();
   }
   /** quick : écran de réponse directe, ouvert depuis la notification (iPhone : pas de boutons dans la notification). */
-  async function render(root, eventId, quick) {
+  async function render(root, eventId, quick, keep) {
     const my = ++seq;
+    // Rafraîchissement après une réponse : on garde la position dans la page (on voit son bouton devenir vert)
+    const sc = keep ? scroller(root) : null, y = sc ? sc.scrollTop : 0;
+    if (sc) root.style.minHeight = root.offsetHeight + 'px';
+    const restore = () => { if (sc && my === seq) { sc.scrollTop = y; root.style.minHeight = ''; } };
     root.replaceChildren();
     const team = A.team();
     if (!A.isLoggedIn()) {
@@ -8173,13 +8283,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
       list.appendChild(empty); return;
     }
-    watch(evs.map(e => e.id), () => { if (my === seq) render(root); });
+    watch(evs.map(e => e.id), () => { if (my === seq) render(root, undefined, undefined, true); });
     let lastWeek = '';
     evs.forEach(ev => {
       const w = weekLabel(ev.starts_at);
       if (w !== lastWeek) { list.appendChild(el('h4', 'home-h4 agenda-week', w)); lastWeek = w; }
-      list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root)));
+      list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root, undefined, undefined, true)));
     });
+    restore();
+  }
+  /** Élément qui défile (la page de la vue, sinon le document). */
+  function scroller(node) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) { const o = getComputedStyle(n).overflowY; if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight) return n; }
+    return document.scrollingElement;
   }
 
   function dateBlock(ev) {
@@ -8217,17 +8333,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const mine = sum.byUser[A.user().id];
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) body.appendChild(rsvpButtons(ev, mine && mine.status, refresh));
     if (!ev.cancelled) body.appendChild(counts(sum));   // tout le monde voit qui vient
-    // Annulation en un appui (vacances, terrain impraticable…) ; « Rétablir » si on s'est trompé. En bas de la carte, discret.
-    if (staff && new Date(ev.starts_at) > Date.now()) {
-      const foot = el('div', 'ev-foot');
-      foot.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'ghost ev-quick', async () => {
-        if (!ev.cancelled && !await window.RugbyDialog.confirm(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, { title: 'Annuler l’événement', ok: 'Annuler l’événement', danger: true })) return;
-        setCancelled([ev], !ev.cancelled, refresh);
-      }));
-      body.appendChild(foot);
-    }
+    // Annuler, rétablir, supprimer : dans la fiche de l'événement (menu ⋯), plus sur chaque carte de la liste
     c.appendChild(body);
     c.onclick = () => E.go('agenda', ev.id);
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(body.querySelector('.ev-title'), `${label(ev)}, ${short(ev)} : ouvrir la fiche`);
     return c;
   }
 
@@ -8265,13 +8374,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const next = await seriesFrom(ev);
         choose(info, question, [[`Seulement le ${dayShort(ev.starts_at)}`, () => run([ev])], [`Celle-ci et les ${next.length - 1} suivantes`, () => run(next)]]);
       };
-      tools.appendChild(btn(ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', 'outline small', ev.cancelled ? () => setCancelled([ev], false, refresh)
-        : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))));
-      tools.appendChild(btn('Supprimer', 'outline small danger', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
-        const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
-        if (err) return E.toast(err.message);
-        E.toast(list.length > 1 ? `${list.length} séances supprimées.` : 'Événement supprimé.'); E.go('agenda');
-      })));
+      // Actions rares et sensibles : rangées dans le menu ⋯, avec confirmation
+      const items = [
+        [ev.cancelled ? 'Rétablir l’événement' : 'Annuler l’événement', ev.cancelled ? () => setCancelled([ev], false, refresh)
+          : scope(`Annuler « ${label(ev)} » ? Les membres seront prévenus.`, list => setCancelled(list, true, refresh))],
+        ['Supprimer définitivement', scope(`Supprimer définitivement « ${label(ev)} » et les réponses ?`, async list => {
+          const { error: err } = await sb.from('team_events').delete().in('id', list.map(x => x.id));
+          if (err) return E.toast(err.message);
+          E.toast(list.length > 1 ? `${list.length} séances supprimées.` : 'Événement supprimé.'); E.go('agenda');
+        })]
+      ];
+      const more = btn('⋯', 'outline small', () => window.RugbySelect.openMenu(more, items, label(ev)));
+      more.title = 'Annuler ou supprimer'; more.setAttribute('aria-label', 'Plus d’actions : annuler ou supprimer'); more.setAttribute('aria-haspopup', 'menu');
+      tools.appendChild(more);
     }
     info.appendChild(tools);
     root.appendChild(info);
@@ -8325,7 +8440,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         [['', '—'], ['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = (r ? r.status : '') === v; sel.appendChild(o); });
         sel.onclick = e => e.stopPropagation();
         sel.onchange = async () => { if (sel.value) await answer(ev.id, sel.value, m.id); else await clearAnswer(ev.id, m.id); refresh(); };
-        sel.title = 'Saisir la réponse à sa place';
+        sel.title = 'Saisir la réponse à sa place'; sel.setAttribute('aria-label', `Réponse de ${m.name}`);
         row.appendChild(sel);
       }
       return row;
@@ -8690,6 +8805,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
           const r = el('button', 'st-row'); r.type = 'button';
           r.innerHTML = `<span class="st-name">${esc(p.name)}</span><span>${cell(p.training)}</span><span>${cell(p.match)}</span><span class="${unanswered(p) ? 'st-none' : 'muted'}">${unanswered(p)}</span>`;
           r.onclick = () => window.RugbyProfile && window.RugbyProfile.viewMember && window.RugbyProfile.viewMember(p.id, 'player');
+          if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(r);
           t.appendChild(r);
         });
         box.appendChild(t);
@@ -9241,7 +9357,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const vars = `--c1:${esc(settings.primary)};--c2:${esc(settings.accent)}`;
     const fieldVal = f => esc(sheet.values[f.id] || '');
     const isMe = p => me && p.user_id === me;
-    const nSq = settings.squads.length;
+    // Une équipe B (ou plus) vide n'est ni affichée ni imprimée
+    const squads = settings.squads.filter((q, i) => i === 0 || sheet.squads[q.id].some(p => p.name));
+    const nSq = squads.length;
     let h = '';
     if (settings.template === 'classic') {
       h += `<div class="ms-top"><div class="ms-fields">`;
@@ -9251,7 +9369,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       settings.fields.forEach(f => { h += `<div class="ms-f"><span>${esc(f.label)} :</span><b>${fieldVal(f)}</b></div>`; });
       h += `</div><div class="ms-logo">${logoHtml(settings, club)}</div></div>`;
       h += `<div class="ms-squads" style="grid-template-columns:repeat(${nSq},1fr)">`;
-      settings.squads.forEach(q => {
+      squads.forEach(q => {
         h += `<div><table><tr><th colspan="3">${esc(q.label)}</th></tr>`;
         sheet.squads[q.id].forEach((p, i) => { h += `<tr class="${isMe(p) ? 'ms-me' : ''}"><td class="n">${i + 1}</td><td>${esc(p.name)}</td><td class="m">${marksHtml(p, settings)}</td></tr>`; });
         h += `</table>${settings.squadFields.map(f => `<div class="ms-sq-foot">${esc(f.label)} : <b>${esc((sheet.squadValues[q.id] || {})[f.id] || '')}</b></div>`).join('')}</div>`;
@@ -9266,7 +9384,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (settings.template === 'modern') {
         if (filled.length) h += `<div class="ms-chips">${filled.map(f => `<span class="ms-chip"><span>${esc(f.label)} :</span> <b>${fieldVal(f)}</b></span>`).join('')}</div>`;
         h += `<div class="ms-squads" style="grid-template-columns:repeat(${Math.min(nSq, 2)},1fr)">`;
-        settings.squads.forEach(q => {
+        squads.forEach(q => {
           h += `<div><h2>${esc(q.label)}</h2>`;
           sheet.squads[q.id].forEach((p, i) => {
             const pos = settings.showPositions ? `<span class="ms-pos">${i < 15 ? POSITIONS[i] : 'Remplaçant'}</span>` : '';
@@ -9311,7 +9429,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const w = window.open('', '_blank');
     if (!w) { E.toast('Autorisez les fenêtres surgissantes pour imprimer la feuille.'); return; }
     w.document.open();
-    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=800"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
     w.document.close(); w.focus();
     setTimeout(() => { try { w.print(); } catch (e) { /* bouton dans la page */ } }, 500);
     track('sheet_print');
@@ -9422,6 +9540,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
       wrap.appendChild(c);
     });
     root.appendChild(wrap);
@@ -9592,15 +9711,22 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const list = sheet.squads[q.id];
     const card = el('div', 'sheet-card');
     const head = el('div', 'sheet-sq-head', `<div class="todo-head">${esc(q.label)}</div>`);
+    // Légende des ronds (1 = titulaire, C = capitaine…) : plus besoin de deviner
+    const legendEl = settings.marks.length && el('p', 'sheet-legend muted', settings.marks.map(m => `<b>${esc(m.code)}</b> ${esc(m.label)}`).join(' · '));
     // Joueurs présents à la convocation, pas encore placés
     const placed = () => new Set(settings.squads.flatMap(s => sheet.squads[s.id].map(p => p.user_id).filter(Boolean)));
     const avail = members.filter(m => present.has(m.id) && !placed().has(m.id));
     if (avail.length) head.appendChild(btn(`+ Ajouter les présents (${avail.length})`, 'secondary small', () => {
       const free = members.filter(m => present.has(m.id) && !placed().has(m.id));
-      free.forEach(m => { const slot = list.find(p => !p.name); if (slot) { slot.name = m.name; slot.user_id = m.id; } });
-      clearTimeout(saveTimer); saveSheet().then(() => E.refreshView());
+      const added = [];
+      free.forEach(m => { const i = list.findIndex(p => !p.name); if (i >= 0) { list[i].name = m.name; list[i].user_id = m.id; added.push(`${m.name} en n° ${i + 1}`); } });
+      // On reste à la même place et on dit ce qui a été fait
+      syncDoubles(); clearTimeout(saveTimer); saveSheet();
+      card.replaceWith(squadCard(q));
+      E.toast(added.length ? (added.length > 2 ? `${added.length} joueurs ajoutés (${added.slice(0, 2).join(', ')}…).` : `Ajouté : ${added.join(', ')}.`) : 'Plus de place libre dans cette équipe.');
     }));
     card.appendChild(head);
+    if (legendEl) card.appendChild(legendEl);
     // Un joueur ne figure qu'une fois par équipe : dès qu'il est placé, il disparaît des suggestions de cette équipe
     // (il reste proposé dans les autres équipes : c'est le cas du « double »)
     const listId = 'sheet-names-' + q.id;
@@ -9646,9 +9772,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
-        b.type = 'button'; b.title = m.label;
+        b.type = 'button'; b.title = m.label; b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); b.setAttribute('aria-label', `${m.label}${p.name ? ' : ' + p.name : ''}`);
         if (m.auto === 'double') { b.classList.add('auto'); b.title = m.label + ' : se coche tout seul quand le joueur est dans deux équipes'; }
-        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mets le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); queueSave(); };
+        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mettez le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
         cur.markButtons.push({ p, code: m.code, el: b });
         marks.appendChild(b);
       });
@@ -9687,7 +9813,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       settings.squadFields.forEach(f => foot.appendChild(field(f.label, sheet.squadValues[q.id][f.id], v => { sheet.squadValues[q.id][f.id] = v; }, 'text', 'sheet-names')));
       card.appendChild(foot);
     }
-    if (settings.marks.length) card.appendChild(el('p', 'muted small', 'Repères : ' + settings.marks.map(m => `<b>${esc(m.code)}</b> ${esc(m.label)}`).join(' · ')));
     return card;
   }
   const html = () => sheetHtml(cur.settings, cur.sheet, cur.ev, cur.team, null);
@@ -10240,6 +10365,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       slot.insertBefore(box, slot.firstChild);
     });
   }
+  /** Écran de chargement : quelques formes grises à la place des blocs de l'accueil. */
+  function skeleton() {
+    return el('div', 'skel', '<div class="skel-line title"></div><div class="todo-card"><div class="skel-line"></div><div class="skel-line"></div><div class="skel-line short"></div></div><div class="skel-tiles"><div></div><div></div><div></div><div></div></div><span class="sr-only">Chargement…</span>');
+  }
   /** Bouton avec une précision en petit dessous (« Voir la démo » : visiter un club fictif). */
   const twoLines = (b, sub) => { b.classList.add('two-lines'); b.appendChild(el('small', '', sub)); return b; };
   /** « de » ou « d’ » devant un prénom (d’Emma, de Léo). */
@@ -10253,7 +10382,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function renderHome() {
     const my = ++seq;
     const root = $('#hub-home'); root.replaceChildren();
-    if (!active || !A.isLoggedIn()) { if (active && !A.isReady()) { root.appendChild(el('p', 'muted center', 'Chargement…')); return; } hero(root); return; }
+    // Compte en cours de chargement (ouverture, juste après la connexion) : formes grises neutres, pas d'écran faux
+    if (active && !A.isReady()) { root.appendChild(skeleton()); return; }
+    if (!active || !A.isLoggedIn()) { hero(root); return; }
     const team = A.team();
     if (!team) {
       hello(root, 'Bienvenue sur Rugbeo.');
@@ -10291,7 +10422,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const roleLabel = team.superadmin ? 'super-admin' : team.notMember ? 'bureau du club' : { coach: 'coach', admin: 'admin', player: 'joueur' }[team.role] || team.role;
     hello(root, `${esc(team.name)}${team.kidName ? ' · ' + esc(team.kidName) : ''} · ${roleLabel}`);
     const slot = el('div', 'hub-slots'); root.appendChild(slot);
-    slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><p class="muted">Chargement…</p>'));
+    slot.appendChild(el('div', 'todo-card loading', '<div class="todo-head">À faire cette semaine</div><div class="skel-line"></div><div class="skel-line short"></div><span class="sr-only">Chargement…</span>'));
     let d;
     try {
       const [hd, ag, sh] = await Promise.all([A.homeData(), AG() ? AG().upcoming(team).catch(() => null) : null, SH() ? SH().upcoming(team).catch(() => null) : null]);

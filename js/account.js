@@ -69,6 +69,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
+    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoignez votre club »
+    if (session && !S.user && ready) { ready = false; if (E.currentView() === 'home') E.refreshView(); }
     S.user = session ? session.user : null;
     if (S.user) {
       const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle();
@@ -910,13 +912,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
           E.toast(sel.value ? `${nameOf(r)} : ${sel.value}. Gère maintenant toutes les équipes du club.` : `${nameOf(r)} n’est plus au bureau du club.`); refresh();
         };
         acts.appendChild(sel);
-        if (r.user_id !== actorId()) acts.appendChild(btn('Retirer du club', 'outline small danger', async () => {
-          if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Il quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
+        if (r.user_id !== actorId()) acts.appendChild(moreMenu([[`Retirer ${nameOf(r)} du club`, async () => {
+          if (!await window.RugbyDialog.confirm(`Retirer ${nameOf(r)} du club ? Cette personne quittera aussi toutes les équipes de « ${club.name} ».`, { title: 'Retirer du club', ok: 'Retirer', danger: true })) return;
           if (teamIds.length) { const { error: e1 } = await sb.from('team_members').delete().eq('user_id', r.user_id).in('team_id', teamIds); if (e1) return E.toast(errMsg(e1)); }
           const { error } = await sb.from('club_members').delete().match({ club_id: club.id, user_id: r.user_id });
           if (error) return E.toast(errMsg(error));
           E.toast(`${nameOf(r)} ne fait plus partie du club.`); refresh();
-        }));
+        }]], nameOf(r)));
         row.appendChild(acts);
         ms.appendChild(row);
       });
@@ -1154,6 +1156,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       row.appendChild(el('div', 'who', `${esc(name)}${m.user_id === actorId() ? ' (moi)' : ''}<small>${esc((P && P.summary(pr)) || 'Membre depuis le ' + new Date(m.joined_at).toLocaleDateString('fr-FR'))}${pr.guardian_id && staff ? ' · compte géré par un parent' : ''}</small>`));
       row.title = 'Voir la fiche';
       row.onclick = e => { if (e.target.closest('select, button')) return; if (P) P.viewMember(m.user_id, m.role); };
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(row.querySelector('.who'), `Fiche de ${name}`);
       // « Joue aussi » : seul le staff le coche, pour un coach ou un admin (il devient convoqué comme un joueur)
       const playsToggle = () => {
         const l = el('label', 'plays-toggle' + (m.plays ? ' on' : ''), '<input type="checkbox"> Joue aussi');
@@ -1166,12 +1169,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (staff && m.user_id !== actorId()) {
         const sel = el('select', 'select small');
         [['player', 'Joueur'], ['coach', 'Coach'], ['admin', 'Admin']].forEach(([v, l]) => { const o = el('option'); o.value = v; o.textContent = l; o.selected = m.role === v; sel.appendChild(o); });
-        sel.onchange = () => setMember(m, { role: sel.value });
-        // Rôle, « Joue aussi » et « Retirer » toujours regroupés, à la même place sur chaque ligne
+        sel.setAttribute('aria-label', `Rôle ${de(name)}${name}`);
+        sel.onclick = e => e.stopPropagation();
+        // Changer un rôle donne ou retire des droits : on confirme (un geste de travers ne suffit plus)
+        sel.onchange = async () => {
+          const label = sel.options[sel.selectedIndex].textContent;
+          if (!await window.RugbyDialog.confirm(`${name} devient ${label.toLowerCase()} de « ${S.team.name} ».`, { title: 'Changer le rôle ?', ok: 'Changer le rôle' })) { sel.value = m.role; return; }
+          setMember(m, { role: sel.value });
+        };
+        // Rôle et « Joue aussi » visibles ; « Retirer » rangé dans le menu ⋯ (action rare et sensible)
         const acts = el('div', 'member-actions');
         acts.appendChild(sel);
         if (m.role !== 'player') acts.appendChild(playsToggle());
-        acts.appendChild(btn('Retirer', 'outline small danger', () => setMember(m, null, `Retirer ${name} de l’équipe ?`)));
+        const more = moreMenu([[`Retirer ${name} de l’équipe`, () => setMember(m, null, `Retirer ${name} de l’équipe ?`)]], name);
+        more.addEventListener('click', e => e.stopPropagation());
+        acts.appendChild(more);
         row.appendChild(acts);
       } else if (staff && m.role !== 'player') {
         // Ma propre ligne de coach / admin : mon rôle + la case pour me convoquer moi-même
@@ -1479,6 +1491,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const modeBadge = mode && mode !== 'public' ? `<span class="vis-badge share-${mode}">${SHARE[mode].label}</span> ` : '';
     c.querySelector('.date').innerHTML = `<span class="vis-badge ${row.visibility}">${vis}</span> ${modeBadge}${cat}${mine ? '' : esc((row.owner && row.owner.display_name) || '') + ' · '}${steps} étape${steps > 1 ? 's' : ''} · ${fmtDate(row.updated_at)}`;   // l'essentiel seulement : auteur (si ce n'est pas moi), étapes, date
     c.querySelector('.thumb').onclick = c.querySelector('.body').onclick = () => loadCloud(row);
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c.querySelector('.body'), `Ouvrir « ${row.title} »`);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
       if (visibility !== 'private' && !S.team) { E.toast('Rejoignez ou créez d’abord une équipe.'); return; }

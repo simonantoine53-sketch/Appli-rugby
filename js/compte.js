@@ -84,12 +84,14 @@
         const acts = el('div', 'row-wrap');
         acts.appendChild(btn('Son profil', 'outline small', () => P && P.openProfile(k.id)));
         acts.appendChild(btn(logins[k.id] ? 'Renvoyer le lien' : 'Lui donner son compte', 'outline small', () => handOver(k)));
-        acts.appendChild(btn('Retirer', 'ghost small danger', async () => {
+        const more = btn('⋯', 'ghost small', () => window.RugbySelect.openMenu(more, [[`Retirer ${k.display_name} de mon compte`, async () => {
           if (!await window.RugbyDialog.confirm(`Retirer ${k.display_name} de votre compte ? Son profil, ses équipes et ses réponses aux convocations seront effacés.`, { title: 'Retirer un jeune', ok: 'Retirer', danger: true })) return;
           const { error } = await sb.rpc('remove_child', { p_child: k.id });
           if (error) return E.toast(errMsg(error));
-          await A.reloadKids(); render(); E.toast(`${k.display_name} a été retiré de votre compte.`);
-        }));
+          await A.reloadKids(); render(); E.toast(`${k.display_name} n’est plus rattaché à votre compte.`);
+        }]], k.display_name));
+        more.title = 'Plus d’actions'; more.setAttribute('aria-label', `Plus d’actions pour ${k.display_name}`);
+        acts.appendChild(more);
         row.appendChild(acts);
         box.appendChild(row);
         if (logins[k.id]) box.appendChild(el('p', 'help kid-handover', `Compte transmis à ${esc(logins[k.id])} : vous le gérez jusqu’à sa première connexion.`));

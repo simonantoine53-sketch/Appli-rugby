@@ -77,6 +77,7 @@
           const r = el('button', 'st-row'); r.type = 'button';
           r.innerHTML = `<span class="st-name">${esc(p.name)}</span><span>${cell(p.training)}</span><span>${cell(p.match)}</span><span class="${unanswered(p) ? 'st-none' : 'muted'}">${unanswered(p)}</span>`;
           r.onclick = () => window.RugbyProfile && window.RugbyProfile.viewMember && window.RugbyProfile.viewMember(p.id, 'player');
+          if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(r);
           t.appendChild(r);
         });
         box.appendChild(t);

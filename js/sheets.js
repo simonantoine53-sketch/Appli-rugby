@@ -154,7 +154,9 @@
     const vars = `--c1:${esc(settings.primary)};--c2:${esc(settings.accent)}`;
     const fieldVal = f => esc(sheet.values[f.id] || '');
     const isMe = p => me && p.user_id === me;
-    const nSq = settings.squads.length;
+    // Une équipe B (ou plus) vide n'est ni affichée ni imprimée
+    const squads = settings.squads.filter((q, i) => i === 0 || sheet.squads[q.id].some(p => p.name));
+    const nSq = squads.length;
     let h = '';
     if (settings.template === 'classic') {
       h += `<div class="ms-top"><div class="ms-fields">`;
@@ -164,7 +166,7 @@
       settings.fields.forEach(f => { h += `<div class="ms-f"><span>${esc(f.label)} :</span><b>${fieldVal(f)}</b></div>`; });
       h += `</div><div class="ms-logo">${logoHtml(settings, club)}</div></div>`;
       h += `<div class="ms-squads" style="grid-template-columns:repeat(${nSq},1fr)">`;
-      settings.squads.forEach(q => {
+      squads.forEach(q => {
         h += `<div><table><tr><th colspan="3">${esc(q.label)}</th></tr>`;
         sheet.squads[q.id].forEach((p, i) => { h += `<tr class="${isMe(p) ? 'ms-me' : ''}"><td class="n">${i + 1}</td><td>${esc(p.name)}</td><td class="m">${marksHtml(p, settings)}</td></tr>`; });
         h += `</table>${settings.squadFields.map(f => `<div class="ms-sq-foot">${esc(f.label)} : <b>${esc((sheet.squadValues[q.id] || {})[f.id] || '')}</b></div>`).join('')}</div>`;
@@ -179,7 +181,7 @@
       if (settings.template === 'modern') {
         if (filled.length) h += `<div class="ms-chips">${filled.map(f => `<span class="ms-chip"><span>${esc(f.label)} :</span> <b>${fieldVal(f)}</b></span>`).join('')}</div>`;
         h += `<div class="ms-squads" style="grid-template-columns:repeat(${Math.min(nSq, 2)},1fr)">`;
-        settings.squads.forEach(q => {
+        squads.forEach(q => {
           h += `<div><h2>${esc(q.label)}</h2>`;
           sheet.squads[q.id].forEach((p, i) => {
             const pos = settings.showPositions ? `<span class="ms-pos">${i < 15 ? POSITIONS[i] : 'Remplaçant'}</span>` : '';
@@ -224,7 +226,7 @@
     const w = window.open('', '_blank');
     if (!w) { E.toast('Autorisez les fenêtres surgissantes pour imprimer la feuille.'); return; }
     w.document.open();
-    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=800"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
     w.document.close(); w.focus();
     setTimeout(() => { try { w.print(); } catch (e) { /* bouton dans la page */ } }, 500);
     track('sheet_print');
@@ -335,6 +337,7 @@
       const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
       wrap.appendChild(c);
     });
     root.appendChild(wrap);
@@ -505,15 +508,22 @@
     const list = sheet.squads[q.id];
     const card = el('div', 'sheet-card');
     const head = el('div', 'sheet-sq-head', `<div class="todo-head">${esc(q.label)}</div>`);
+    // Légende des ronds (1 = titulaire, C = capitaine…) : plus besoin de deviner
+    const legendEl = settings.marks.length && el('p', 'sheet-legend muted', settings.marks.map(m => `<b>${esc(m.code)}</b> ${esc(m.label)}`).join(' · '));
     // Joueurs présents à la convocation, pas encore placés
     const placed = () => new Set(settings.squads.flatMap(s => sheet.squads[s.id].map(p => p.user_id).filter(Boolean)));
     const avail = members.filter(m => present.has(m.id) && !placed().has(m.id));
     if (avail.length) head.appendChild(btn(`+ Ajouter les présents (${avail.length})`, 'secondary small', () => {
       const free = members.filter(m => present.has(m.id) && !placed().has(m.id));
-      free.forEach(m => { const slot = list.find(p => !p.name); if (slot) { slot.name = m.name; slot.user_id = m.id; } });
-      clearTimeout(saveTimer); saveSheet().then(() => E.refreshView());
+      const added = [];
+      free.forEach(m => { const i = list.findIndex(p => !p.name); if (i >= 0) { list[i].name = m.name; list[i].user_id = m.id; added.push(`${m.name} en n° ${i + 1}`); } });
+      // On reste à la même place et on dit ce qui a été fait
+      syncDoubles(); clearTimeout(saveTimer); saveSheet();
+      card.replaceWith(squadCard(q));
+      E.toast(added.length ? (added.length > 2 ? `${added.length} joueurs ajoutés (${added.slice(0, 2).join(', ')}…).` : `Ajouté : ${added.join(', ')}.`) : 'Plus de place libre dans cette équipe.');
     }));
     card.appendChild(head);
+    if (legendEl) card.appendChild(legendEl);
     // Un joueur ne figure qu'une fois par équipe : dès qu'il est placé, il disparaît des suggestions de cette équipe
     // (il reste proposé dans les autres équipes : c'est le cas du « double »)
     const listId = 'sheet-names-' + q.id;
@@ -559,9 +569,9 @@
       const marks = el('div', 'sheet-marks');
       settings.marks.forEach(m => {
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
-        b.type = 'button'; b.title = m.label;
+        b.type = 'button'; b.title = m.label; b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); b.setAttribute('aria-label', `${m.label}${p.name ? ' : ' + p.name : ''}`);
         if (m.auto === 'double') { b.classList.add('auto'); b.title = m.label + ' : se coche tout seul quand le joueur est dans deux équipes'; }
-        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mets le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); queueSave(); };
+        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mettez le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
         cur.markButtons.push({ p, code: m.code, el: b });
         marks.appendChild(b);
       });
@@ -600,7 +610,6 @@
       settings.squadFields.forEach(f => foot.appendChild(field(f.label, sheet.squadValues[q.id][f.id], v => { sheet.squadValues[q.id][f.id] = v; }, 'text', 'sheet-names')));
       card.appendChild(foot);
     }
-    if (settings.marks.length) card.appendChild(el('p', 'muted small', 'Repères : ' + settings.marks.map(m => `<b>${esc(m.code)}</b> ${esc(m.label)}`).join(' · ')));
     return card;
   }
   const html = () => sheetHtml(cur.settings, cur.sheet, cur.ev, cur.team, null);

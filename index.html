@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Rugbeo">
-  <link rel="stylesheet" href="css/style.css?v=202610220641">
+  <link rel="stylesheet" href="css/style.css?v=202610220646">
 </head>
 <body>
 
@@ -36,12 +36,12 @@
 </header>
 
 <!-- ===== Accueil : « À faire » + tuiles ===== -->
-<div id="view-home" class="view">
+<div id="view-home" role="main" class="view">
   <div class="home-body" id="hub-home"></div>
 </div>
 
 <!-- ===== Stratégies (bibliothèque de dessins) ===== -->
-<div id="view-strats" class="view hidden">
+<div id="view-strats" role="main" class="view hidden">
   <div class="home-body">
     <div id="home-tabs" class="tabs small"></div>
     <div id="home-list" class="library-list"></div>
@@ -49,27 +49,27 @@
 </div>
 
 <!-- ===== Agenda (bientôt : convocations) ===== -->
-<div id="view-agenda" class="view hidden">
+<div id="view-agenda" role="main" class="view hidden">
   <div class="home-body" id="hub-agenda"></div>
 </div>
 
 <!-- ===== Compositions et feuilles de match ===== -->
-<div id="view-compos" class="view hidden">
+<div id="view-compos" role="main" class="view hidden">
   <div class="home-body" id="hub-compos"></div>
 </div>
 
 <!-- ===== Fonctionnalité à venir ===== -->
-<div id="view-soon" class="view hidden">
+<div id="view-soon" role="main" class="view hidden">
   <div class="home-body" id="hub-soon"></div>
 </div>
 
 <!-- ===== Équipe ===== -->
-<div id="view-team" class="view hidden">
+<div id="view-team" role="main" class="view hidden">
   <div class="home-body" id="team-page"></div>
 </div>
 
 <!-- ===== Compte ===== -->
-<div id="view-account" class="view hidden">
+<div id="view-account" role="main" class="view hidden">
   <div class="home-body account-page">
     <!-- Page Compte en cinq groupes courts : Mon profil, Mon club et mes équipes, Réglages, Aide, Compte (js/compte.js) -->
     <section class="acc-group">
@@ -127,7 +127,7 @@
         <form id="password-form" class="form password-form hidden" novalidate>
           <label>Nouveau mot de passe<input id="password-new" type="password" autocomplete="new-password" minlength="6" required></label>
           <label>Retapez-le<input id="password-again" type="password" autocomplete="new-password" minlength="6" required></label>
-          <p id="password-msg" class="form-error"></p>
+          <p id="password-msg" class="form-error" role="alert"></p>
           <div class="row-wrap"><button id="password-save" class="btn primary small" type="submit">Enregistrer</button><button id="password-cancel" class="btn ghost small" type="button">Annuler</button></div>
         </form>
         <button id="btn-logout" class="acc-row">Se déconnecter</button>
@@ -138,12 +138,12 @@
 </div>
 
 <!-- ===== Back-office super-admin ===== -->
-<div id="view-admin" class="view hidden">
+<div id="view-admin" role="main" class="view hidden">
   <div class="home-body admin-page" id="admin-page"></div>
 </div>
 
 <!-- ===== Stratégie partagée par lien (lecture seule, sans compte) ===== -->
-<div id="view-share" class="view hidden">
+<div id="view-share" role="main" class="view hidden">
   <header class="topbar home-bar">
     <div class="brand">
       <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
@@ -500,7 +500,7 @@
         <p class="help auth-terms">En créant un compte, vous acceptez les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Vos données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
       </div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
-      <p id="auth-error" class="form-error"></p>
+      <p id="auth-error" class="form-error" role="alert"></p>
       <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
       <a href="#" id="auth-back" class="auth-link center hidden">← Retour à la connexion</a>
       <p class="help">Gratuit, sans publicité. Votre compte garde vos dessins sur tous vos appareils et vous relie à votre équipe. <a href="#" data-legal="privacy">Confidentialité</a> · <a href="#" data-legal="legal">Mentions légales</a></p>
@@ -512,7 +512,7 @@
       <p>Cliquez sur le lien qu’il contient : <strong>vous serez connecté automatiquement</strong>, même si vous l’ouvrez sur un autre appareil.</p>
       <p id="auth-pending-next">Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.</p>
       <p class="muted small">Rien reçu ? Regardez dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
-      <p id="auth-pending-msg" class="form-error"></p>
+      <p id="auth-pending-msg" class="form-error" role="alert"></p>
       <button id="auth-resend" class="btn outline wide" type="button">Renvoyer l’e-mail</button>
       <button id="auth-change" class="btn ghost wide" type="button">Changer d’adresse e-mail</button>
     </div>
@@ -566,7 +566,7 @@
       </div>
       <label id="ev-series-field" class="check hidden"><input id="ev-apply-series" type="checkbox"> Appliquer aussi aux séances suivantes de ce planning</label>
       <label class="check"><input id="ev-notify" type="checkbox" checked> <span id="ev-notify-label">Envoyer la convocation à l’équipe (notification)</span></label>
-      <p id="ev-error" class="form-error"></p>
+      <p id="ev-error" class="form-error" role="alert"></p>
       <button id="ev-submit" class="btn primary wide" type="submit">Enregistrer</button>
     </form>
   </div>
@@ -686,7 +686,7 @@
         <label><input type="radio" name="feedback-kind" value="other"> Autre</label>
       </div>
       <textarea id="feedback-message" class="admin-textarea" rows="5" maxlength="2000" placeholder="Qu’est-ce qui ne marche pas, ou qu’est-ce qui vous aiderait ? Pour un bug, dites ce que vous faisiez."></textarea>
-      <p id="feedback-error" class="form-error"></p>
+      <p id="feedback-error" class="form-error" role="alert"></p>
       <button id="feedback-submit" class="btn primary wide" type="submit">Envoyer</button>
       <p class="help">La page, l’appareil et la version de l’appli sont joints automatiquement pour nous aider à comprendre.</p>
     </form>
@@ -701,32 +701,32 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610220641"></script>
-<script src="js/legal.js?v=202610220641"></script>
-<script src="js/consent.js?v=202610220641"></script>
-<script src="js/selects.js?v=202610220641"></script>
-<script src="js/dialog.js?v=202610220641"></script>
-<script src="js/icons.js?v=202610220641"></script>
-<script src="js/field.js?v=202610220641"></script>
-<script src="js/formations.js?v=202610220641"></script>
-<script src="js/objects.js?v=202610220641"></script>
-<script src="js/export.js?v=202610220641"></script>
-<script src="vendor/supabase.min.js?v=202610220641"></script>
-<script src="js/config.js?v=202610220641"></script>
-<script src="js/offline.js?v=202610220641"></script>
-<script src="js/demo.js?v=202610220641"></script>
-<script src="js/editor.js?v=202610220641"></script>
-<script src="js/account.js?v=202610220641"></script>
-<script src="js/push.js?v=202610220641"></script>
-<script src="js/profile.js?v=202610220641"></script>
-<script src="js/compte.js?v=202610220641"></script>
-<script src="js/admin.js?v=202610220641"></script>
-<script src="js/agenda.js?v=202610220641"></script>
-<script src="js/stats.js?v=202610220641"></script>
-<script src="js/sponsors.js?v=202610220641"></script>
-<script src="js/calimport.js?v=202610220641"></script>
-<script src="js/sheets.js?v=202610220641"></script>
-<script src="js/tour.js?v=202610220641"></script>
-<script src="js/hub.js?v=202610220641"></script>
+<script src="js/update.js?v=202610220646"></script>
+<script src="js/legal.js?v=202610220646"></script>
+<script src="js/consent.js?v=202610220646"></script>
+<script src="js/selects.js?v=202610220646"></script>
+<script src="js/dialog.js?v=202610220646"></script>
+<script src="js/icons.js?v=202610220646"></script>
+<script src="js/field.js?v=202610220646"></script>
+<script src="js/formations.js?v=202610220646"></script>
+<script src="js/objects.js?v=202610220646"></script>
+<script src="js/export.js?v=202610220646"></script>
+<script src="vendor/supabase.min.js?v=202610220646"></script>
+<script src="js/config.js?v=202610220646"></script>
+<script src="js/offline.js?v=202610220646"></script>
+<script src="js/demo.js?v=202610220646"></script>
+<script src="js/editor.js?v=202610220646"></script>
+<script src="js/account.js?v=202610220646"></script>
+<script src="js/push.js?v=202610220646"></script>
+<script src="js/profile.js?v=202610220646"></script>
+<script src="js/compte.js?v=202610220646"></script>
+<script src="js/admin.js?v=202610220646"></script>
+<script src="js/agenda.js?v=202610220646"></script>
+<script src="js/stats.js?v=202610220646"></script>
+<script src="js/sponsors.js?v=202610220646"></script>
+<script src="js/calimport.js?v=202610220646"></script>
+<script src="js/sheets.js?v=202610220646"></script>
+<script src="js/tour.js?v=202610220646"></script>
+<script src="js/hub.js?v=202610220646"></script>
 </body>
 </html>

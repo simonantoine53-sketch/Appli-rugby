@@ -73,4 +73,18 @@
     prompt: (label, value, o) => show('prompt', Object.assign({ label, value }, o || {})),
     copy: (text, o) => show('copy', Object.assign({ text }, o || {}))
   };
+
+  /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */
+  window.RugbyA11y = {
+    clickable(node, label) {
+      if (!node || node.dataset.kbd) return node;
+      node.dataset.kbd = '1'; node.tabIndex = 0; node.setAttribute('role', 'button');
+      if (label) node.setAttribute('aria-label', label);
+      node.addEventListener('keydown', e => {
+        if (e.target !== node || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault(); node.click();
+      });
+      return node;
+    }
+  };
 })();

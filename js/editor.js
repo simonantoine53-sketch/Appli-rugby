@@ -218,6 +218,10 @@
   svg.addEventListener('pointercancel', endTouch, true);
 
   /* ---------- Palette ---------- */
+  /** Boutons à icône seule : le nom lu par les lecteurs d'écran reprend l'info-bulle. */
+  function nameIconButtons() {
+    document.querySelectorAll('#view-editor button[title]:not([aria-label])').forEach(b => { if (!b.textContent.trim() || b.textContent.trim().length <= 2) b.setAttribute('aria-label', b.title.replace(/\s*\(.*\)$/, '')); });
+  }
   function buildPalette() {
     const root = $('#palette');
     TOOL_GROUPS.forEach((g, gi) => {
@@ -236,6 +240,7 @@
       root.appendChild(sec);
     });
     $('#btn-list-formations').onclick = openSavedFormations;
+    nameIconButtons();
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
     $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
@@ -783,6 +788,7 @@
         card.appendChild(opts);
       }
       card.onclick = () => { if (state.framing) endFraming(true); state.step = i; state.selected = null; render(); renderSteps(); closeDrawer(); };
+      if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(card, `Étape ${i + 1}`);
       card.querySelector('.dup').onclick = e => { e.stopPropagation(); const b = snapshot(); state.drawing.steps.splice(i + 1, 0, { id: uid(), objects: clone(st.objects), frame: st.frame ? clone(st.frame) : undefined }); state.step = i + 1; state.selected = null; commit(b); };
       card.querySelector('.del').onclick = async e => {
         e.stopPropagation();
@@ -898,7 +904,7 @@
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
   const previewPrev = () => { setPlaying(false); animateTo((preview.step - 1 + pd().steps.length) % pd().steps.length); };
-  $('#btn-preview').onclick = () => openPreview();
+  $('#btn-preview').onclick = () => { state.step = 0; renderSteps(); render(); openPreview(true); };   // l'aperçu part de l'étape 1 et s'anime
   $('#preview-play').onclick = () => setPlaying(!preview.playing);
   $('#preview-next').onclick = previewNext;
   $('#preview-prev').onclick = previewPrev;
@@ -1104,6 +1110,7 @@
     c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${escHtml(d.category)}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${escHtml(d.tags)}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
     c.onclick = onOpen;
+    if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
     c.querySelector('.del').onclick = async e => { e.stopPropagation(); if (await window.RugbyDialog.confirm(`Supprimer « ${d.title} » ?`)) { writeLib(readLib().filter(x => x.id !== d.id)); renderStrats(); } };
     return c;
   }
@@ -1131,6 +1138,10 @@
     if (view === 'admin' && !(active && acc.isSuper())) view = 'home';
     if (view === 'open') { view = 'strats'; if (active && !waiting && acc.openById) acc.openById(location.hash.slice(4).split(/[?&]/)[0]); }
     ['home', 'strats', 'agenda', 'compos', 'soon', 'team', 'account', 'admin', 'editor', 'share'].forEach(v => $('#view-' + v).classList.toggle('hidden', v !== view));
+    // Titre de l'onglet du navigateur : la page, puis l'équipe (repère pour les lecteurs d'écran et l'historique)
+    const team = active && acc.team && acc.team();
+    const PAGE = { home: 'Accueil', strats: 'Stratégies', agenda: 'Agenda', compos: 'Compos', soon: 'Bientôt', team: 'Équipe', account: 'Compte', admin: 'Back-office', editor: 'Éditeur', share: 'Stratégie partagée' };
+    document.title = [PAGE[view], team && team.name, 'Rugbeo'].filter(Boolean).join(' – ');
     const hub = HUB_VIEWS.includes(view);
     $('#hub-bar').classList.toggle('hidden', !hub); $('#app-nav').classList.toggle('hidden', !hub);
     if (view !== 'share' && preview.drawing) stopPreview();
@@ -1169,8 +1180,31 @@
   $('#btn-library').onclick = async () => { if (!await confirmLeave()) return; if (location.hash !== lastPage) { leaving = true; location.hash = lastPage; } else showView(currentView()); };
 
   /* ---------- Modales & toast ---------- */
-  function openModal(id) { $('#' + id).classList.remove('hidden'); }
-  function closeModal(id) { $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); } }
+  /* Fenêtres : vraie fenêtre pour les lecteurs d'écran, curseur placé dedans, Échap ferme, retour à l'élément d'origine */
+  const opener = {};
+  function openModal(id) {
+    const m = $('#' + id), wasHidden = m.classList.contains('hidden');
+    m.classList.remove('hidden');
+    if (!wasHidden) return;
+    m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    const head = m.querySelector('.modal-head strong, h2, h3'); if (head) { if (!head.id) head.id = id + '-title'; m.setAttribute('aria-labelledby', head.id); }
+    opener[id] = document.activeElement;
+    requestAnimationFrame(() => {
+      if (m.contains(document.activeElement)) return;
+      const f = m.querySelector('input:not([type=hidden]):not([disabled]), textarea, select, button:not(.btn-close)') || m.querySelector('.btn-close');
+      if (f && f.offsetParent !== null) f.focus();
+    });
+  }
+  function closeModal(id) {
+    $('#' + id).classList.add('hidden'); if (id === 'modal-preview') { setPlaying(false); setPresenting(false); }
+    const o = opener[id]; delete opener[id];
+    if (o && o.isConnected && o.focus) o.focus();
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    const open = [...document.querySelectorAll('.modal:not(.hidden):not(.dialog-modal)')].filter(m => m.id !== 'modal-preview');
+    if (open.length && !document.querySelector('.dialog-modal:not(.hidden), .rs-pop')) { e.preventDefault(); closeModal(open[open.length - 1].id); }
+  });
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
   let toastTimer;

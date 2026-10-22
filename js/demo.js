@@ -96,6 +96,21 @@
           return { user_id: m.user_id, display_name: p.display_name, role: m.role, views: v ? v.views : 0, played: !!(v && v.played), first_seen_at: v && v.first_seen_at, last_seen_at: v && v.last_seen_at }; }), error: null };
       }
       if (name === 'club_creation_open') return { data: false, error: null };
+      // Présences de la saison : la démo n'a pas d'historique, on en fabrique un, stable d'une visite à l'autre
+      if (name === 'attendance_stats') {
+        const members = DB.team_members.filter(m => m.team_id === a.p_team && m.status === 'active' && (m.role === 'player' || m.plays));
+        const seed = id => [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+        const rows = [];
+        members.forEach(m => {
+          const p = DB.profiles.find(x => x.id === m.user_id) || {}, h = seed(m.user_id);
+          [['training', 14], ['match', 5]].forEach(([kind, total], k) => {
+            const present = Math.max(0, total - (h >> (k * 3)) % (kind === 'match' ? 3 : 6)), absent = Math.min(total - present, (h >> 7) % 3);
+            const maybe = Math.min(total - present - absent, (h >> 9) % 2);
+            rows.push({ user_id: m.user_id, display_name: p.display_name, kind, total, present, maybe, absent, unanswered: total - present - absent - maybe });
+          });
+        });
+        return { data: rows, error: null };
+      }
       if (!['touch_activity', 'count_page', 'mark_drawing_viewed', 'my_kids_login', 'claim_my_account'].includes(name)) warn();
       return { data: null, error: null };
     });
