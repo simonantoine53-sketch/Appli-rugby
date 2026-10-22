@@ -3,7 +3,7 @@
   'use strict';
 
   const { svgEl, fieldSpec, renderField, frameRect, lerpFrame, SVG_NS, M, PAD } = window.RugbyField;
-  const { renderObject, bounds, move, lerpObject, tweenStep, polyPoints, EQUIP_SIZE } = window.RugbyObjects;
+  const { renderObject, bounds, move, lerpObject, tweenStep, polyPoints, EQUIP_SIZE, PLAYER_R } = window.RugbyObjects;
   const { TOOL_GROUPS, TOOLS, COLORS } = window.RugbyPalette;
 
   const $ = s => document.querySelector(s);
@@ -29,9 +29,10 @@
   const wrap = $('#canvas-wrap');
   const isDemo = () => !!(window.RugbyDemo && window.RugbyDemo.isOn());
   const fieldG = svgEl('g');
+  const trailG = svgEl('g', { class: 'trail', 'pointer-events': 'none' });
   const objectsG = svgEl('g', { class: 'objects' });
   const overlayG = svgEl('g', { class: 'overlay' });
-  svg.append(fieldG, objectsG, overlayG);
+  svg.append(fieldG, trailG, objectsG, overlayG);
 
   const curStep = () => state.drawing.steps[state.step];
   const curObjects = () => curStep().objects;
@@ -69,7 +70,26 @@
     fitZoom();
   }
 
+  /** Trace de la course, seulement en dessinant (ni aperçu, ni export) : la place du joueur à l'étape d'avant,
+      en pointillés, reliée à sa place actuelle. */
+  function renderTrail() {
+    const prev = state.step > 0 ? state.drawing.steps[state.step - 1].objects : [];
+    const out = [], ink = 'rgba(255,255,255,.6)';
+    curObjects().forEach(o => {
+      if (o.type !== 'player') return;
+      const a = prev.find(x => x.id === o.id && x.type === 'player');
+      if (!a) return;
+      const dx = o.x - a.x, dy = o.y - a.y, dist = Math.hypot(dx, dy), r = PLAYER_R * (a.scale || 1);
+      if (dist < r * 1.2) return;   // n'a presque pas bougé
+      const ux = dx / dist, uy = dy / dist, r2 = PLAYER_R * (o.scale || 1);
+      out.push(svgEl('circle', { cx: a.x, cy: a.y, r, fill: 'none', stroke: ink, 'stroke-width': 2, 'stroke-dasharray': '4 4' }));
+      if (dist > r + r2 + 4) out.push(svgEl('line', { x1: a.x + ux * r, y1: a.y + uy * r, x2: o.x - ux * r2, y2: o.y - uy * r2, stroke: ink, 'stroke-width': 2, 'stroke-dasharray': '6 6', 'stroke-linecap': 'round' }));
+    });
+    trailG.replaceChildren(...out);
+  }
+
   function render() {
+    renderTrail();
     objectsG.replaceChildren(...curObjects().map(renderObject));
     renderOverlay();
     renderProps();
@@ -752,7 +772,7 @@
     btn('Derrière', 'Mettre à l’arrière-plan', false, () => { const a = curObjects(); const i = a.indexOf(obj); a.splice(i, 1); a.unshift(obj); });
     btn('Supprimer', 'Supprimer (Suppr)', false, () => { removeObj(obj.id); clearSelection(); }, 'danger');
   }
-  function render_objectsOnly() { objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
+  function render_objectsOnly() { renderTrail(); objectsG.replaceChildren(...curObjects().map(renderObject)); renderOverlay(); }
 
   /* ---------- Étapes ---------- */
   function sceneSvg(settings, objects, note, frame) {
