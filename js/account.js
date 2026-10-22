@@ -1509,7 +1509,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const mine = row.owner_id === actorId();
     const vis = { private: 'Privé', proposed: 'Proposé au coach', team: 'Publié' }[row.visibility];
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span></div><div class="date"></div><div class="card-btns"></div>`;
-    c.querySelector('.thumb').appendChild(E.sceneSvg(d.settings || {}, ((d.steps || [])[0] || {}).objects || []));
+    c.querySelector('.thumb').appendChild(E.thumbSvg(d.settings, ((d.steps || [])[0] || {}).objects || []));
     c.querySelector('.name').textContent = row.title;
     const cat = d.category ? `<span class="vis-badge cat">${esc(d.category)}</span> ` : '';
     const mode = row.visibility === 'team' ? shareMode(row) : null;

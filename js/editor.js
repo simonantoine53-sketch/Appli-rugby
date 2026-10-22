@@ -771,6 +771,24 @@
     return s;
   }
 
+  /** Miniature des cartes de stratégie : toujours à l'horizontale (un dessin fait en vertical sur téléphone est tourné),
+      pour des cartes compactes. Les joueurs et les textes restent droits. */
+  function thumbSvg(settings, objects) {
+    const spec = fieldSpec(settings || {});
+    if (spec.landscape) return sceneSvg(settings || {}, objects);
+    const s = svgEl('svg', { xmlns: SVG_NS, viewBox: `0 0 ${spec.Wl} ${spec.Hl}` });
+    const g = svgEl('g', { transform: `translate(0 ${spec.Hl}) rotate(-90)` });
+    g.appendChild(renderField(spec));
+    objects.forEach(o => {
+      const el = renderObject(o);
+      if (o.type === 'player') { const inner = el.lastChild; inner.setAttribute('transform', inner.getAttribute('transform') + ' rotate(90)'); }
+      else if (o.type === 'text') el.setAttribute('transform', `rotate(90 ${o.x} ${o.y})`);
+      g.appendChild(el);
+    });
+    s.appendChild(g);
+    return s;
+  }
+
   function renderSteps() {
     const root = $('#steps');
     root.replaceChildren();
@@ -1126,7 +1144,7 @@
   function localCard(d, onOpen, onDuplicate) {
     const c = document.createElement('div'); c.className = 'lib-card';
     c.innerHTML = `<div class="thumb"></div><div class="body"><span class="name"></span><button class="del" title="Supprimer">✕</button></div><div class="date"></div>`;
-    c.querySelector('.thumb').appendChild(sceneSvg(d.settings || {}, (d.steps[0] || {}).objects || []));
+    c.querySelector('.thumb').appendChild(thumbSvg(d.settings, (d.steps[0] || {}).objects || []));
     c.querySelector('.name').textContent = d.title;
     c.querySelector('.date').innerHTML = (d.category ? `<span class="vis-badge cat">${escHtml(d.category)}</span> ` : '') + `${d.steps.length} étape${d.steps.length > 1 ? 's' : ''} · ${new Date(d.updatedAt || 0).toLocaleDateString('fr-FR')}` + (d.tags ? ` · ${escHtml(d.tags)}` : '');
     if (onDuplicate) { const wrap = document.createElement('div'); wrap.className = 'card-btns'; const b = document.createElement('button'); b.className = 'btn small outline'; b.textContent = 'Dupliquer'; b.onclick = e => { e.stopPropagation(); onDuplicate(); }; wrap.appendChild(b); c.appendChild(wrap); }
@@ -1250,7 +1268,7 @@
   /* ---------- API pour les modules externes ---------- */
   window.RugbyEditor = {
     get drawing() { return state.drawing; },
-    loadDrawing, newDrawing, markSaved, sceneSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, refreshView, currentView, startNewDrawing, renderStrats, localCard, openPreview,
+    loadDrawing, newDrawing, markSaved, sceneSvg, thumbSvg, toast, openModal, closeModal, readLib, writeLib, afterChange, clone, go, refreshView, currentView, startNewDrawing, renderStrats, localCard, openPreview,
     filterBar, filterDrawings, countByCat, CATEGORIES
   };
 
