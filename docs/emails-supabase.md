@@ -18,6 +18,6 @@ Un même contenu s'adapte à la situation grâce aux données du compte (`.Data`
 
 Ne pas modifier les morceaux `{{ … }}` : Supabase les remplit (`{{ .ConfirmationURL }}` = le lien).
 
-Couleurs : celles de `docs/charte-couleurs.md`, écrites en dur car les messageries ne lisent pas les variables CSS. Le logo est chargé depuis le site publié (`icons/icon-192.png`).
+Couleurs : celles de `docs/charte-couleurs.md`, écrites en dur car les messageries ne lisent pas les variables CSS. Pas d’image dans les e-mails (souvent bloquées par les messageries) : le logo est un ballon 🏉 sur un carré blanc, en texte.
 
 **Limite actuelle** : sans service d'envoi branché (SMTP), Supabase n'envoie qu'aux membres de l'équipe du projet Supabase et quelques e-mails par heure. Pour les vrais utilisateurs, il faudra un nom de domaine et un service d'envoi (par exemple Brevo), puis « Sender name : Rugbeo » dans Authentication → Emails → SMTP Settings, et mettre à jour `js/legal.js` (nouveau prestataire).
