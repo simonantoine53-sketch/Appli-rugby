@@ -228,10 +228,12 @@ button { font: inherit; cursor: pointer; }
 kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-size: 11px; font-family: inherit; color: var(--text); }
 
 /* ---------- Modales ---------- */
-.modal { position: fixed; inset: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100%); bottom: auto; overscroll-behavior: contain; background: rgba(15,23,42,.55); display: grid; grid-template-columns: minmax(0, 100%); place-items: center; z-index: 50; padding: 24px; }
+.modal { position: fixed; inset: 0; overscroll-behavior: contain; background: rgba(15,23,42,.55); display: grid; grid-template-columns: minmax(0, 100%); place-items: center; z-index: 50; padding: 24px; }
 .modal-box { overscroll-behavior: contain; background: var(--panel); max-width: 100%; min-width: 0; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: flex; flex-direction: column; max-height: 100%; width: min(1100px, 100%); }
 .modal-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .modal-head strong { font-size: 16px; }
+/* Fenêtre qui défile en entier : le titre et la croix restent en haut */
+.modal-box > .modal-head { position: sticky; top: 0; z-index: 2; background: var(--panel); border-radius: inherit; }
 .btn-close { margin-left: auto; border: none; background: transparent; font-size: 18px; width: 32px; height: 32px; border-radius: 8px; }
 .btn-close:hover { background: var(--subtle); }
 .preview-canvas { padding: 20px; display: grid; place-items: center; background: var(--subtle); min-height: 0; overflow: auto; }
@@ -491,7 +493,7 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .modal-box form { min-width: 0; }
 .form label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; }
 .form textarea { font: inherit; font-size: 15px; }
-#modal-event .modal-box { max-height: 94vh; overflow-y: auto; }
+#modal-event .modal-box { max-height: 94%; overflow-y: auto; }
 .agenda-acts { display: flex; gap: 8px; flex-wrap: wrap; }
 .import-body p { margin: 0; }
 .import-body .small { font-size: 13px; }
@@ -736,6 +738,8 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
   /* Fenêtre collée en bas : marge pour la barre d'accueil de l'iPhone (retirée quand le clavier est ouvert) */
   .modal-box { width: 100%; max-height: 94%; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
   html.kb-open .modal-box { padding-bottom: 0; }
+  /* Clavier ouvert : le fond grisé couvre tout l'écran, la fenêtre se place dans la partie visible au-dessus du clavier */
+  html.kb-open .modal { padding-top: var(--vv-top, 0px); padding-bottom: var(--vv-bottom, 0px); }
   .modal-head { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
   .modal-head .btn-close { order: 99; }
   .team-box, .auth-box, .library-box, .preview-box { width: 100%; }
@@ -1053,7 +1057,7 @@ select:disabled { opacity: .5; cursor: default; }
 .invite-links .btn { width: 100%; text-decoration: none; }
 /* Une fenêtre ne dépasse jamais la hauteur de l'écran ; son contenu défile */
 .modal-box { max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow: hidden; }
-@media (max-width: 900px) { .modal-box { max-height: 94vh; max-height: 94dvh; } }
+@media (max-width: 900px) { .modal-box { max-height: 94%; } }
 
 /* Réglages du dessin : sections aérées, contrôles modernes */
 .settings-pane { display: flex; flex-direction: column; gap: 0; padding: 4px 16px 24px; }

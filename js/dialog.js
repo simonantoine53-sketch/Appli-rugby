@@ -98,14 +98,32 @@
     if (!vv) return;
     const kb = window.innerHeight - vv.height > 120;   // clavier ouvert
     root.classList.toggle('kb-open', kb);
-    if (kb && anyOpen()) { root.style.setProperty('--vv-h', vv.height + 'px'); root.style.setProperty('--vv-top', vv.offsetTop + 'px'); }
-    else { root.style.removeProperty('--vv-h'); root.style.removeProperty('--vv-top'); }
+    if (kb && anyOpen()) {
+      root.style.setProperty('--vv-top', Math.max(0, vv.offsetTop) + 'px');
+      root.style.setProperty('--vv-bottom', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px');
+    } else { root.style.removeProperty('--vv-top'); root.style.removeProperty('--vv-bottom'); }
   }
-  if (vv) { vv.addEventListener('resize', syncViewport); vv.addEventListener('scroll', syncViewport); }
+  /* Le champ en cours de saisie reste visible : on fait défiler seulement la fenêtre, juste ce qu'il faut
+     (pas scrollIntoView, qui ferait aussi remonter toute la page sur iPhone, en plus de ce que fait déjà Safari). */
+  function keepFieldVisible() {
+    const f = document.activeElement, m = f && f.closest && f.closest('.modal:not(.hidden)');
+    if (!m || !f.matches('input, textarea, select')) return;
+    let box = f.parentElement;
+    while (box && box !== m && !(/(auto|scroll)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+    if (!box || box === m) return;
+    const head = box.querySelector(':scope > .modal-head'), top = box.getBoundingClientRect().top + (head ? head.offsetHeight : 0);
+    const bottom = Math.min(box.getBoundingClientRect().bottom, vv ? vv.offsetTop + vv.height : window.innerHeight);
+    const r = f.getBoundingClientRect(), gap = 12;
+    if (r.bottom > bottom - gap) box.scrollTop += r.bottom - bottom + gap;
+    else if (r.top < top + gap) box.scrollTop -= top + gap - r.top;
+  }
+  let settle = null;
+  const onViewport = () => { syncViewport(); clearTimeout(settle); settle = setTimeout(keepFieldVisible, 120); };
+  if (vv) { vv.addEventListener('resize', onViewport); vv.addEventListener('scroll', onViewport); }
   document.addEventListener('focusin', e => {
     const f = e.target;
     if (!f || !f.matches || !f.matches('input, textarea, select') || !f.closest('.modal')) return;
-    setTimeout(() => { syncViewport(); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+    setTimeout(() => { syncViewport(); keepFieldVisible(); }, 350);
   });
   document.addEventListener('focusout', () => setTimeout(syncViewport, 300));
   const scrollable = (el, stop) => {
