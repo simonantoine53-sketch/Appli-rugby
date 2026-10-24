@@ -297,8 +297,8 @@ button { font: inherit; cursor: pointer; }
 kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-size: 11px; font-family: inherit; color: var(--text); }
 
 /* ---------- Modales ---------- */
-.modal { position: fixed; inset: 0; background: rgba(15,23,42,.55); display: grid; grid-template-columns: minmax(0, 100%); place-items: center; z-index: 50; padding: 24px; }
-.modal-box { background: var(--panel); max-width: 100%; min-width: 0; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: flex; flex-direction: column; max-height: 100%; width: min(1100px, 100%); }
+.modal { position: fixed; inset: 0; top: var(--vv-top, 0px); height: var(--vv-h, 100%); bottom: auto; overscroll-behavior: contain; background: rgba(15,23,42,.55); display: grid; grid-template-columns: minmax(0, 100%); place-items: center; z-index: 50; padding: 24px; }
+.modal-box { overscroll-behavior: contain; background: var(--panel); max-width: 100%; min-width: 0; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: flex; flex-direction: column; max-height: 100%; width: min(1100px, 100%); }
 .modal-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .modal-head strong { font-size: 16px; }
 .btn-close { margin-left: auto; border: none; background: transparent; font-size: 18px; width: 32px; height: 32px; border-radius: 8px; }
@@ -554,6 +554,10 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .form-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
 .form-row label { min-width: 0; }
 .form-row input { width: 100%; min-width: 0; }
+/* Safari sur iPhone : les champs date et heure ont une largeur minimale qui fait déborder les fenêtres sur le côté */
+input[type=date], input[type=time] { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%; box-sizing: border-box; min-height: 42px; background: var(--panel); color: var(--text); }
+input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-and-time-value { text-align: left; }
+.modal-box form { min-width: 0; }
 .form label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; }
 .form textarea { font: inherit; font-size: 15px; }
 #modal-event .modal-box { max-height: 94vh; overflow-y: auto; }
@@ -749,7 +753,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 @media (max-width: 900px) {
   .topbar { height: 52px; gap: 6px; padding: 0 8px; }
   .zoom { display: none; }
-  .hint { display: none; position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
+  .hint { display: none; position: absolute; top: 120px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
   .hint.tool-on { display: block; }
   body:has(#props:not(.hidden)) .hint.tool-on { display: none; }   /* ne cache pas « Supprimer » quand un objet est sélectionné */
   .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
@@ -758,8 +762,12 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .title-input.long { font-size: 14px; }
   /* Téléphone : le nom du dessin a sa propre ligne, à droite d'Annuler / Rétablir (plus coupé par les boutons) */
   #view-editor { position: relative; }
-  #view-editor .title-wrap { position: absolute; top: 64px; left: 146px; right: 12px; z-index: 6; }
-  #view-editor .title-input { background: var(--panel); border-color: var(--border); min-height: 44px; }
+  #view-editor .title-wrap { position: absolute; top: 64px; left: 140px; right: 10px; height: 50px; z-index: 6; }
+  /* Le nom se lit comme un titre (souligné en pointillés, crayon) ; en le touchant, il devient un champ */
+  #view-editor .title-input { background: transparent; border: 1.5px solid transparent; border-bottom: 1.5px dashed var(--border-strong); border-radius: 8px 8px 0 0; min-height: 0; font-weight: 700; padding: 4px 28px 4px 6px; }
+  #view-editor .title-input:focus { background: var(--panel); border-color: var(--primary); border-radius: 8px; }
+  #view-editor .title-wrap::after { content: '✎'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+  #view-editor .title-wrap:focus-within::after { display: none; }
   .actions { margin-left: auto; gap: 4px; flex: 0 0 auto; }
   .actions .btn { padding: 4px 8px; flex-direction: column; gap: 1px; font-size: 11px; font-weight: 600; }
   .actions .btn > span { display: block; line-height: 1.1; }
@@ -794,7 +802,9 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 
   /* Modales en feuilles plein écran */
   .modal { padding: 0; align-items: end; }
-  .modal-box { width: 100%; max-height: 94vh; border-radius: 16px 16px 0 0; }
+  /* Fenêtre collée en bas : marge pour la barre d'accueil de l'iPhone (retirée quand le clavier est ouvert) */
+  .modal-box { width: 100%; max-height: 94%; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html.kb-open .modal-box { padding-bottom: 0; }
   .modal-head { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
   .modal-head .btn-close { order: 99; }
   .team-box, .auth-box, .library-box, .preview-box { width: 100%; }
@@ -822,7 +832,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 
   .layout { position: relative; }
   .canvas-area { padding-bottom: calc(56px + var(--bar-safe)); }
-  .canvas-wrap { padding: 8px; }
+  /* Place réservée en haut (Annuler, Rétablir, nom) et en bas (sélection, zoom) : le terrain n'est jamais dessous */
+  .canvas-wrap { padding: 66px 8px 64px; }
   #canvas { border-radius: 10px; }
   .props { top: 6px; left: 6px; right: 6px; transform: none; max-width: none; padding: 4px 6px; gap: 4px; }
   .props input[type=text] { font-size: 16px; width: 52px; }
@@ -841,7 +852,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .tab-content { padding: 12px; }
 
   .zoom-fab { display: flex; }
-  .fab-left { left: 12px; bottom: 68px; }
+  .fab-left { left: 12px; bottom: calc(68px + var(--bar-safe)); }
+  .zoom-fab { bottom: calc(68px + var(--bar-safe)); }
   .fab-select, .fab-mode { width: 50px; height: 50px; }
   .fab-left.with-modes .fab-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 56px; }
   .props .pbtn { padding: 6px 8px; }
@@ -1079,6 +1091,7 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
 .dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden, .dialog-choices.hidden, .dialog-ok.hidden { display: none; }
 .dialog-choices { display: grid; gap: 10px; }
+.home-ffr { display: block; text-align: center; margin: 14px auto 0; font-weight: 600; }
 .dialog-choices .btn { width: 100%; min-width: 0; justify-content: center; min-height: 56px; white-space: normal; text-align: center; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--gap); flex-wrap: wrap; }
@@ -1299,7 +1312,7 @@ select:disabled { opacity: .5; cursor: default; }
 .club-team-row .grow { flex: 1 1 140px; min-width: 0; }
 .club-team-row small { display: block; color: var(--muted); font-size: 12px; }
 .club-section { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Rejoindre ou créer : blocs séparés (code, équipe du club, nouveau club) */
 .forms-part { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -2688,7 +2701,7 @@ img, svg { -webkit-user-drag: none; }
       b.type = 'button'; b.className = 'rs-opt' + (i === sel.selectedIndex ? ' on' : '');
       b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(i === sel.selectedIndex));
       b.dataset.i = i; b.disabled = o.disabled;
-      b.innerHTML = `<span>${esc(o.textContent)}</span>${i === sel.selectedIndex ? CHECK : ''}`;
+      b.innerHTML = `<span>${esc(o.dataset.full || o.textContent)}</span>${i === sel.selectedIndex ? CHECK : ''}`;   // nom complet dans la liste, même si l'en-tête montre un diminutif
       b.onclick = e => { e.stopPropagation(); choose(sel, i); };
       list.appendChild(b);
     };
@@ -2858,7 +2871,7 @@ img, svg { -webkit-user-drag: none; }
       <div class="modal-head"><strong id="dialog-title"></strong></div>
       <form class="form dialog-form" novalidate>
         <p class="dialog-msg"></p>
-        <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off"></label>
+        <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off" autocapitalize="off"></label>
         <textarea class="dialog-text admin-textarea" readonly rows="4"></textarea>
         <div class="dialog-choices"></div>
         <div class="dialog-actions"><button type="button" class="btn outline dialog-cancel">Annuler</button><button type="submit" class="btn primary dialog-ok">OK</button></div>
@@ -2888,6 +2901,8 @@ img, svg { -webkit-user-drag: none; }
     text.classList.toggle('hidden', mode !== 'copy');
     $('.dialog-label').textContent = o.label || '';
     input.value = o.value == null ? '' : o.value; input.placeholder = o.placeholder || ''; input.maxLength = o.maxLength || 120;
+    // Lien : clavier d'adresse web, et pas de « Préremplir le contact » de l'iPhone
+    input.type = o.type === 'url' ? 'url' : 'text'; input.inputMode = o.type === 'url' ? 'url' : 'text';
     text.value = o.text || '';
     const choices = $('.dialog-choices');
     choices.replaceChildren(...(o.choices || []).map(c => {
@@ -2930,6 +2945,38 @@ img, svg { -webkit-user-drag: none; }
   };
 
   /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */
+  /* iPhone : la fenêtre ouverte suit la partie visible de l'écran (au-dessus du clavier), le champ touché reste
+     visible, et la page derrière ne défile pas. */
+  const root = document.documentElement, vv = window.visualViewport;
+  const anyOpen = () => !!document.querySelector('.modal:not(.hidden)');
+  function syncViewport() {
+    if (!vv) return;
+    const kb = window.innerHeight - vv.height > 120;   // clavier ouvert
+    root.classList.toggle('kb-open', kb);
+    if (kb && anyOpen()) { root.style.setProperty('--vv-h', vv.height + 'px'); root.style.setProperty('--vv-top', vv.offsetTop + 'px'); }
+    else { root.style.removeProperty('--vv-h'); root.style.removeProperty('--vv-top'); }
+  }
+  if (vv) { vv.addEventListener('resize', syncViewport); vv.addEventListener('scroll', syncViewport); }
+  document.addEventListener('focusin', e => {
+    const f = e.target;
+    if (!f || !f.matches || !f.matches('input, textarea, select') || !f.closest('.modal')) return;
+    setTimeout(() => { syncViewport(); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+  });
+  document.addEventListener('focusout', () => setTimeout(syncViewport, 300));
+  const scrollable = (el, stop) => {
+    for (; el && el !== stop; el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      if ((/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1)) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchmove', e => {
+    const t = e.target, m = t && t.closest && t.closest('.modal');
+    if (!m || m.classList.contains('hidden') || e.touches.length > 1) return;
+    if (t.closest('input, textarea, select, #canvas, .preview-canvas') || scrollable(t, m)) return;
+    e.preventDefault();   // fond grisé ou partie fixe de la fenêtre : rien ne bouge
+  }, { passive: false });
+
   window.RugbyA11y = {
     clickable(node, label) {
       if (!node || node.dataset.kbd) return node;
@@ -4347,7 +4394,9 @@ img, svg { -webkit-user-drag: none; }
   let baseWidth = 800;
   function fitZoom() {
     const spec = fieldSpec(state.drawing.settings);
-    const availW = wrap.clientWidth - 48, availH = wrap.clientHeight - 48;
+    // Marges réelles du cadre (sur téléphone, place réservée en haut et en bas pour les boutons)
+    const cs = getComputedStyle(wrap), pad = k => parseFloat(cs[k]) || 0;
+    const availW = wrap.clientWidth - pad('paddingLeft') - pad('paddingRight'), availH = wrap.clientHeight - pad('paddingTop') - pad('paddingBottom');
     baseWidth = Math.max(200, Math.min(availW, availH * spec.W / spec.H));
     applyZoom();
   }
@@ -5560,6 +5609,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return m;
   };
 
+  /** Nom du club en entier, ou son diminutif (ex. « SCB ») seulement s'il ne tient pas sur la ligne. */
+  function fitName(node, full, short) {
+    node.textContent = full;
+    if (short) requestAnimationFrame(() => { if (node.scrollWidth > node.clientWidth + 1) node.textContent = short; });
+    return node;
+  }
+
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
@@ -5660,7 +5716,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
       sb.from('team_members').select(`user_id, role, status, plays, teams(${TEAM_COLS})`).in('user_id', ids),
-      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start, settings)').in('user_id', ids)
+      sb.from('club_members').select('user_id, role, title, clubs(id, name, short_name, join_code, season_start, settings)').in('user_id', ids)
     ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
@@ -5679,11 +5735,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id && !x.who); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
     if (isSuper()) {
-      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start, settings').order('name')]);
+      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, short_name, join_code, season_start, settings').order('name')]);
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id && !x.who)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
       (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
     }
-    S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; });
+    S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; t.clubShort = (c && c.short_name) || ''; });
     S.teams.sort((a, b) => a.clubName.localeCompare(b.clubName) || a.name.localeCompare(b.name) || (a.kidName || '').localeCompare(b.kidName || ''));
     let wanted = null; try { wanted = localStorage.getItem(TEAM_KEY); } catch (e) { /* ignore */ }
     setTeam(S.teams.find(t => teamKey(t) === wanted) || S.teams.find(t => t.id === wanted) || S.teams[0] || null);
@@ -6263,7 +6319,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const staff = isStaff();
     const badges = S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>'
       : (S.team.notMember ? '' : roleBadge(S.team.role, S.team.plays)) + (S.team.clubAdmin ? ` <span class="role-badge coach">${esc(((S.clubs.find(c => c.id === S.team.club_id) || {}).myTitle) || 'Bureau du club')}</span>` : '');
-    if (S.team.clubName) root.appendChild(el('div', 'team-club muted small', esc(S.team.clubName)));
+    if (S.team.clubName) root.appendChild(fitName(el('div', 'team-club muted small'), S.team.clubName, S.team.clubShort));
     root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${badges}`));
 
     // Onglets (la pastille de Membres compte les demandes à valider pour le staff)
@@ -6352,7 +6408,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       season.appendChild(month);
       card.appendChild(season);
       card.appendChild(btn(ffr ? 'Modifier le lien FFR' : 'Ajouter la page FFR du club', 'outline small', async () => {
-        const v = await window.RugbyDialog.prompt('Adresse de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300 });
+        const v = await window.RugbyDialog.prompt('Lien de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300, type: 'url' });
         if (v == null) return;
         const url = v.trim();
         if (url && !/^https:\/\/[^\s]+\.[^\s]+$/.test(url)) return E.toast('Adresse invalide : elle doit commencer par https://');
@@ -6360,6 +6416,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { error } = await sb.from('clubs').update({ settings }).eq('id', club.id);
         if (error) return E.toast(errMsg(error));
         club.settings = settings; E.toast(settings.ffr_url ? 'Lien FFR enregistré : il s’affiche pour tous les membres du club.' : 'Lien FFR retiré.'); renderTeamPage();
+      }));
+      card.appendChild(btn(club.short_name ? `Diminutif : ${club.short_name}` : 'Ajouter un diminutif (ex. SCB)', 'outline small club-short', async () => {
+        const v = await window.RugbyDialog.prompt('Diminutif du club (8 caractères au plus), utilisé quand le nom complet ne tient pas', club.short_name || '', { title: 'Diminutif du club', placeholder: 'Ex. SCB', ok: 'Enregistrer', maxLength: 8, required: false });
+        if (v === null) return;
+        const short = v.trim() || null;
+        const { error } = await sb.from('clubs').update({ short_name: short }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        E.toast(short ? `Diminutif enregistré : ${short}.` : 'Diminutif retiré.'); refresh();
       }));
       card.appendChild(btn('Renommer le club', 'outline small club-rename', async () => {
         const v = await window.RugbyDialog.prompt('Nom du club', club.name, { title: 'Renommer le club', ok: 'Renommer', maxLength: 60 });
@@ -7154,7 +7218,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
   function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, errMsg, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, errMsg, fitName, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();
 
@@ -10610,8 +10674,17 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const sel = $('#hub-team'), title = $('#hub-title');
     const multiClub = new Set(teams.map(t => t.club_id)).size > 1;   // le nom du club seulement s'il y en a plusieurs
     if (teams.length > 1) {
-      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = A.teamKey(t); o.textContent = t.name + (t.kidName ? ' · ' + t.kidName : '') + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : ''); o.selected = !!team && A.teamKey(team) === A.teamKey(t); return o; }));
+      const label = (t, club) => t.name + (t.kidName ? ' · ' + t.kidName : '') + (multiClub && club ? ' · ' + club : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : '');
+      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = A.teamKey(t); o.textContent = label(t, t.clubName); o.dataset.full = o.textContent; o.selected = !!team && A.teamKey(team) === A.teamKey(t); return o; }));
       sel.classList.remove('hidden'); title.classList.add('hidden');
+      // Nom du club coupé dans l'en-tête : son diminutif à la place (la liste qui s'ouvre garde les noms complets)
+      const cur = team && teams.find(t => A.teamKey(t) === A.teamKey(team)), o = sel.selectedOptions[0];
+      if (multiClub && cur && cur.clubShort && o) requestAnimationFrame(() => {
+        const cs = getComputedStyle(sel), ctx = document.createElement('canvas').getContext('2d');
+        ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const room = sel.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+        if (ctx.measureText(o.dataset.full).width > room) o.textContent = label(cur, cur.clubShort);
+      });
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
       title.textContent = team ? team.name + (team.kidName ? ' · ' + team.kidName : '') : 'Rugbeo';
@@ -10795,6 +10868,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     slot.appendChild(todo(d, notifOn, staff));
     kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
+    // Page FFR du club (renseignée par le bureau dans Équipe › Club) : lien discret en bas de l'accueil
+    const club = team.club_id && (A.clubs() || []).find(c => c.id === team.club_id), ffr = club && club.settings && club.settings.ffr_url;
+    if (ffr) { const a = el('a', 'link home-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; slot.appendChild(a); }
     // Partenaires du club : bloc discret en bas de l'accueil
     if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
     // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.

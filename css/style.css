@@ -1243,7 +1243,7 @@ select:disabled { opacity: .5; cursor: default; }
 .club-team-row .grow { flex: 1 1 140px; min-width: 0; }
 .club-team-row small { display: block; color: var(--muted); font-size: 12px; }
 .club-section { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-.team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.team-club { margin-bottom: -6px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Rejoindre ou créer : blocs séparés (code, équipe du club, nouveau club) */
 .forms-part { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); }

@@ -66,6 +66,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return m;
   };
 
+  /** Nom du club en entier, ou son diminutif (ex. « SCB ») seulement s'il ne tient pas sur la ligne. */
+  function fitName(node, full, short) {
+    node.textContent = full;
+    if (short) requestAnimationFrame(() => { if (node.scrollWidth > node.clientWidth + 1) node.textContent = short; });
+    return node;
+  }
+
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
@@ -166,7 +173,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
       sb.from('team_members').select(`user_id, role, status, plays, teams(${TEAM_COLS})`).in('user_id', ids),
-      sb.from('club_members').select('user_id, role, title, clubs(id, name, join_code, season_start, settings)').in('user_id', ids)
+      sb.from('club_members').select('user_id, role, title, clubs(id, name, short_name, join_code, season_start, settings)').in('user_id', ids)
     ]);
     if (error) { E.toast('Équipes : ' + errMsg(error)); return; }
     const rows = (data || []).filter(r => r.teams);
@@ -185,11 +192,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       (ct || []).forEach(t => { const mine = S.teams.find(x => x.id === t.id && !x.who); if (mine) mine.clubAdmin = true; else S.teams.push(Object.assign({ role: 'coach', clubAdmin: true, notMember: true }, t)); });
     }
     if (isSuper()) {
-      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, join_code, season_start, settings').order('name')]);
+      const [{ data: all }, { data: allClubs }] = await Promise.all([sb.from('teams').select(TEAM_COLS).order('name'), sb.from('clubs').select('id, name, short_name, join_code, season_start, settings').order('name')]);
       (all || []).forEach(t => { if (!S.teams.find(x => x.id === t.id && !x.who)) S.teams.push(Object.assign({ role: 'admin', superadmin: true }, t)); });
       (allClubs || []).forEach(c => { if (!S.clubs.find(x => x.id === c.id)) S.clubs.push(Object.assign({ myRole: 'superadmin' }, c)); });
     }
-    S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; });
+    S.teams.forEach(t => { const c = S.clubs.find(x => x.id === t.club_id); t.clubName = c ? c.name : ''; t.clubShort = (c && c.short_name) || ''; });
     S.teams.sort((a, b) => a.clubName.localeCompare(b.clubName) || a.name.localeCompare(b.name) || (a.kidName || '').localeCompare(b.kidName || ''));
     let wanted = null; try { wanted = localStorage.getItem(TEAM_KEY); } catch (e) { /* ignore */ }
     setTeam(S.teams.find(t => teamKey(t) === wanted) || S.teams.find(t => t.id === wanted) || S.teams[0] || null);
@@ -769,7 +776,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const staff = isStaff();
     const badges = S.team.superadmin ? '<span class="role-badge admin">Super-admin</span>'
       : (S.team.notMember ? '' : roleBadge(S.team.role, S.team.plays)) + (S.team.clubAdmin ? ` <span class="role-badge coach">${esc(((S.clubs.find(c => c.id === S.team.club_id) || {}).myTitle) || 'Bureau du club')}</span>` : '');
-    if (S.team.clubName) root.appendChild(el('div', 'team-club muted small', esc(S.team.clubName)));
+    if (S.team.clubName) root.appendChild(fitName(el('div', 'team-club muted small'), S.team.clubName, S.team.clubShort));
     root.appendChild(el('div', 'team-title', `<h2>${esc(S.team.name)}</h2>${badges}`));
 
     // Onglets (la pastille de Membres compte les demandes à valider pour le staff)
@@ -866,6 +873,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { error } = await sb.from('clubs').update({ settings }).eq('id', club.id);
         if (error) return E.toast(errMsg(error));
         club.settings = settings; E.toast(settings.ffr_url ? 'Lien FFR enregistré : il s’affiche pour tous les membres du club.' : 'Lien FFR retiré.'); renderTeamPage();
+      }));
+      card.appendChild(btn(club.short_name ? `Diminutif : ${club.short_name}` : 'Ajouter un diminutif (ex. SCB)', 'outline small club-short', async () => {
+        const v = await window.RugbyDialog.prompt('Diminutif du club (8 caractères au plus), utilisé quand le nom complet ne tient pas', club.short_name || '', { title: 'Diminutif du club', placeholder: 'Ex. SCB', ok: 'Enregistrer', maxLength: 8, required: false });
+        if (v === null) return;
+        const short = v.trim() || null;
+        const { error } = await sb.from('clubs').update({ short_name: short }).eq('id', club.id);
+        if (error) return E.toast(errMsg(error));
+        E.toast(short ? `Diminutif enregistré : ${short}.` : 'Diminutif retiré.'); refresh();
       }));
       card.appendChild(btn('Renommer le club', 'outline small club-rename', async () => {
         const v = await window.RugbyDialog.prompt('Nom du club', club.name, { title: 'Renommer le club', ok: 'Renommer', maxLength: 60 });
@@ -1660,6 +1675,6 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Par clé « équipe|jeune » (sélecteur) ou par identifiant d'équipe (liens) : on garde la personne en cours si possible. */
   function selectTeam(key) { const t = S.teams.find(x => teamKey(x) === key) || S.teams.find(x => x.id === key && x.who === (S.team && S.team.who)) || S.teams.find(x => x.id === key); if (t) setTeam(t); }
 
-  window.RugbyAccount = { sb, errMsg, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
+  window.RugbyAccount = { sb, errMsg, fitName, termsChecked: () => S.termsCheck || Promise.resolve(), roleBadge, pendingCard, kidLogins: () => S.kidLogins || {}, reloadKids: async () => { await loadKids(); await loadTeams(); watchMyMemberships(); }, user: () => (S.user ? Object.assign({}, S.user, { id: actorId() }) : null), authUser: () => S.user, kids: () => S.kids, actorName: () => (S.team && S.team.who ? kidName(S.team.who) : ''), teamKey, profile: () => actorProfile(), ownProfile: () => S.profile, profileIncomplete, team: () => S.team, teams: () => S.teams, clubs: () => S.clubs, currentClub, isClubAdmin, openTeamPicker, pendingTeams: () => S.pending || [], isSuper, isCoach, isStaff, isClubMember, openTeam, onPreview, openViews, openById, homeData, selectTeam, shareCode, teamForms, renderAccountPage, setLibTab: t => { libTab = t; }, saveFormation, listFormations, deleteFormation, memberNames, fetchShared, isActive: () => true, isLoggedIn: () => !!S.user, isReady: () => ready, canUse, save: saveSmart, renderStrats, renderTeamPage, openAuth, openAccount, onNewDrawing };
   refreshCurrentView();
 })();

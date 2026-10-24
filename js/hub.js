@@ -81,8 +81,17 @@
     const sel = $('#hub-team'), title = $('#hub-title');
     const multiClub = new Set(teams.map(t => t.club_id)).size > 1;   // le nom du club seulement s'il y en a plusieurs
     if (teams.length > 1) {
-      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = A.teamKey(t); o.textContent = t.name + (t.kidName ? ' · ' + t.kidName : '') + (multiClub && t.clubName ? ' · ' + t.clubName : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : ''); o.selected = !!team && A.teamKey(team) === A.teamKey(t); return o; }));
+      const label = (t, club) => t.name + (t.kidName ? ' · ' + t.kidName : '') + (multiClub && club ? ' · ' + club : '') + (t.superadmin ? ' · super-admin' : t.notMember ? ' · bureau' : '');
+      sel.replaceChildren(...teams.map(t => { const o = el('option'); o.value = A.teamKey(t); o.textContent = label(t, t.clubName); o.dataset.full = o.textContent; o.selected = !!team && A.teamKey(team) === A.teamKey(t); return o; }));
       sel.classList.remove('hidden'); title.classList.add('hidden');
+      // Nom du club coupé dans l'en-tête : son diminutif à la place (la liste qui s'ouvre garde les noms complets)
+      const cur = team && teams.find(t => A.teamKey(t) === A.teamKey(team)), o = sel.selectedOptions[0];
+      if (multiClub && cur && cur.clubShort && o) requestAnimationFrame(() => {
+        const cs = getComputedStyle(sel), ctx = document.createElement('canvas').getContext('2d');
+        ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const room = sel.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+        if (ctx.measureText(o.dataset.full).width > room) o.textContent = label(cur, cur.clubShort);
+      });
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
       title.textContent = team ? team.name + (team.kidName ? ' · ' + team.kidName : '') : 'Rugbeo';

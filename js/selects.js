@@ -39,7 +39,7 @@
       b.type = 'button'; b.className = 'rs-opt' + (i === sel.selectedIndex ? ' on' : '');
       b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(i === sel.selectedIndex));
       b.dataset.i = i; b.disabled = o.disabled;
-      b.innerHTML = `<span>${esc(o.textContent)}</span>${i === sel.selectedIndex ? CHECK : ''}`;
+      b.innerHTML = `<span>${esc(o.dataset.full || o.textContent)}</span>${i === sel.selectedIndex ? CHECK : ''}`;   // nom complet dans la liste, même si l'en-tête montre un diminutif
       b.onclick = e => { e.stopPropagation(); choose(sel, i); };
       list.appendChild(b);
     };
