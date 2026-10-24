@@ -76,6 +76,7 @@
     if (team && !(team.id in logos)) loadLogo(team);
     const logoUrl = team && logos[team.id];
     $('#hub-logo').classList.toggle('hidden', !logoUrl); $('#hub-logo-default').classList.toggle('hidden', !!logoUrl);
+    const lt = document.querySelector('#hub-bar .logo-terrain'); if (lt) lt.classList.toggle('hidden', !!logoUrl);   // logo du club à la place
     if (logoUrl && $('#hub-logo').getAttribute('src') !== logoUrl) $('#hub-logo').src = logoUrl;
     // Équipe : sélecteur s'il y en a plusieurs, sinon son nom
     const sel = $('#hub-team'), title = $('#hub-title');
@@ -95,6 +96,7 @@
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
       title.textContent = team ? team.name + (team.kidName ? ' · ' + team.kidName : '') : 'Rugbeo';
+      title.classList.toggle('is-brand', !team);
     }
     // Une seule action principale : nouveau dessin (Stratégies, et accueil du staff)
     $('#home-new').classList.toggle('hidden', !(view === 'strats' || (view === 'home' && logged && A.isStaff() && team)));

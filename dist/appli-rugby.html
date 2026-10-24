@@ -16,6 +16,8 @@
     document.addEventListener('touchmove', function (e) { if (e.touches.length > 1 && !(e.target.closest && e.target.closest('#canvas'))) e.preventDefault(); }, { passive: false });
   </script>
   <script>try { var t = localStorage.getItem('rs-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
+  <!-- Charte « Terrain » en aperçu : lien « ?charte=terrain » (retour : « ?charte=classique »), gardée sur cet appareil -->
+  <script>try { var c = (location.search.match(/[?&]charte=(terrain|classique)\b/) || [])[1]; if (c) localStorage.setItem('rs-charte', c); if (localStorage.getItem('rs-charte') === 'terrain') document.documentElement.classList.add('charte-terrain'); } catch (e) {}</script>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1699,6 +1701,90 @@ img, svg { -webkit-user-drag: none; }
 .zoom-fab .help-m { font-weight: 800; color: var(--primary); margin-bottom: 6px; }
 @media (max-width: 900px) { .fab-history #fab-help { display: none; } }
 
+/* ---------- Charte « Terrain » (aperçu) ----------
+   Activée par le lien « ?charte=terrain » (retour : « ?charte=classique »), mémorisée sur l'appareil (classe
+   html.charte-terrain posée dans index.html). Reprend la charte graphique Rugbeo : vert Pelouse pour les actions,
+   texte vert Vestiaire, orange Ballon en accent (focus, ballon), Archivo pour les titres, DM Sans pour le texte,
+   boutons en pilule, cartes très arrondies à ombre plate. Seules les variables changent : le reste de l'appli suit.
+   Polices hébergées avec l'appli (vendor/fonts), jamais chargées depuis Google. */
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700 900; font-display: swap; src: url(../vendor/fonts/archivo-latin.woff2) format('woff2'); }
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../vendor/fonts/dmsans-latin.woff2) format('woff2'); }
+@media screen {
+  :root.charte-terrain {
+    --bg: #f4f6f1; --panel: #ffffff; --subtle: #eaefe7; --border: #dce3d8; --border-strong: #8fa294;
+    --text: #0b3d2a; --muted: #4a6357;
+    --primary: #0e7a4b; --primary-dark: #0b6a41; --primary-soft: #e3f2ea;
+    --success: #108653; --success-soft: #e3f2ea;
+    --warning: #8f5600; --warning-soft: #fff0d1;
+    --danger: #c2362b; --danger-dark: #a12c23; --danger-soft: #fbe6e3;
+    --primary-ink: #0b6a41; --success-ink: #0b6a41; --warning-ink: #8f5600; --danger-ink: #a12c23;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #0e7a4b; --field: #0e7a4b;
+    --accent: #ffb020; --on-accent: #0b3d2a; --accent-soft: #fff0d1;
+    --chart-1: #0e7a4b; --chart-2: #2563c9; --chart-3: #ffb020; --chart-4: #8f5600; --chart-5: #5fb98a;
+    --radius: 12px;
+    --shadow: 0 2px 0 #dce3d8;
+    --shadow-pop: 0 12px 32px rgba(11, 61, 42, .16);
+    --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  :root.charte-terrain[data-theme="dark"] {
+    --bg: #0c1712; --panel: #13221a; --subtle: #1a2d23; --border: #2a3f33; --border-strong: #557263;
+    --text: #eaf2ec; --muted: #a3b8ab;
+    --primary: #3fbf7f; --primary-dark: #5acd93; --primary-soft: #173b2a;
+    --success: #3fbf7f; --success-soft: #173b2a;
+    --warning: #ffc95c; --warning-soft: #3a2c0e;
+    --danger: #f07a6e; --danger-dark: #f59a90; --danger-soft: #3a1916;
+    --primary-ink: #6fd6a0; --success-ink: #6fd6a0; --warning-ink: #ffc95c; --danger-ink: #f59a90;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #6fd6a0; --field: #0f5c3a; --accent-soft: #3a2c0e;
+    --shadow: 0 2px 0 #08120d; --shadow-pop: 0 12px 32px rgba(0, 0, 0, .5);
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root.charte-terrain:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #0c1712; --panel: #13221a; --subtle: #1a2d23; --border: #2a3f33; --border-strong: #557263;
+    --text: #eaf2ec; --muted: #a3b8ab;
+    --primary: #3fbf7f; --primary-dark: #5acd93; --primary-soft: #173b2a;
+    --success: #3fbf7f; --success-soft: #173b2a;
+    --warning: #ffc95c; --warning-soft: #3a2c0e;
+    --danger: #f07a6e; --danger-dark: #f59a90; --danger-soft: #3a1916;
+    --primary-ink: #6fd6a0; --success-ink: #6fd6a0; --warning-ink: #ffc95c; --danger-ink: #f59a90;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #6fd6a0; --field: #0f5c3a; --accent-soft: #3a2c0e;
+    --shadow: 0 2px 0 #08120d; --shadow-pop: 0 12px 32px rgba(0, 0, 0, .5);
+  }
+}
+@media screen {
+  /* Typographie : DM Sans pour le texte, Archivo pour les titres et les chiffres */
+  .charte-terrain body, .charte-terrain button, .charte-terrain input, .charte-terrain select, .charte-terrain textarea { font-family: var(--font-sans); }
+  .charte-terrain :is(h1, h2, h3, .modal-head strong, .hub-tile strong, .kpi strong, .ev-date strong, .boot-name, .page-title) { font-family: var(--font-display); letter-spacing: -.3px; }
+  .charte-terrain :is(h1, .hub-hello h1) { font-weight: 900; letter-spacing: -1px; }
+  /* Logo : poteaux en H et ballon ; « rugbeo » en minuscules, Archivo 900 */
+  .logo-terrain { display: none; }
+  .charte-terrain .logo-terrain { display: block; }
+  .charte-terrain #hub-logo-default, .charte-terrain .logo-classique { display: none; }
+  .lt-disc { fill: var(--primary-fill); } .lt-h { stroke: var(--on-color); } .lt-ball { fill: var(--accent); }
+  .charte-terrain .logo-terrain { flex: 0 0 auto; }
+  .charte-terrain .brand strong { font-family: var(--font-display); font-weight: 900; letter-spacing: -.5px; color: var(--text); }
+  .charte-terrain .brand strong.is-brand { text-transform: lowercase; letter-spacing: -1px; }   /* « rugbeo », jamais le nom d'une équipe */
+  /* Boutons en pilule, texte gras */
+  .charte-terrain .btn { border-radius: 999px; font-weight: 700; }
+  .charte-terrain .btn.primary:hover:not(:disabled) { background: var(--primary-dark); }
+  /* Cartes très arrondies, ombre plate (marche de 2 px) ; ce qui flotte garde une ombre douce */
+  .charte-terrain :is(.todo-card, .hub-tile, .ev-card, .lib-card, .admin-card, .sponsor-card, .sponsor-box, .pres-card, .soon-card, .kpi, .club-card, .member-card) { border-radius: 20px; box-shadow: var(--shadow); }
+  .charte-terrain :is(.modal-box, .menu, .rs-pop, .tour-card, .toast) { box-shadow: var(--shadow-pop); }
+  .charte-terrain .modal-box { border-radius: 24px; }
+  @media (max-width: 900px) { .charte-terrain .modal-box { border-radius: 24px 24px 0 0; } }
+  .charte-terrain :is(input, select, textarea):not([type=checkbox]):not([type=radio]):not(.title-input) { border-radius: 12px; }
+  /* Focus clavier : anneau orange Ballon */
+  .charte-terrain :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent); }
+  /* Terrain des stratégies : vert Pelouse de la charte (à l'écran ; les exports gardent leurs couleurs) */
+  .charte-terrain .field > rect:first-child { fill: var(--field); }
+  /* Pastille de date des événements : vert pâle, chiffre en Archivo */
+  .charte-terrain .ev-date { border-radius: 16px; }
+}
+
 </style>
 
 <div id="announce-bar" class="announce-bar hidden"></div>
@@ -1707,6 +1793,7 @@ img, svg { -webkit-user-drag: none; }
 <header id="hub-bar" class="topbar home-bar hub-bar">
   <div class="brand">
     <svg id="hub-logo-default" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+    <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><circle class="lt-ball" cx="32" cy="17" r="5.5"/></svg>
     <img id="hub-logo" class="hub-logo hidden" alt="">
     <strong id="hub-title">Rugbeo</strong>
     <select id="hub-team" class="hub-team hidden" aria-label="Changer d’équipe"></select>
@@ -1829,7 +1916,8 @@ img, svg { -webkit-user-drag: none; }
 <div id="view-share" role="main" class="view hidden">
   <header class="topbar home-bar">
     <div class="brand">
-      <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <svg class="logo-classique" viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
+      <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><circle class="lt-ball" cx="32" cy="17" r="5.5"/></svg>
       <strong id="share-title">Stratégie partagée</strong>
     </div>
     <div class="actions">
@@ -10801,6 +10889,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (team && !(team.id in logos)) loadLogo(team);
     const logoUrl = team && logos[team.id];
     $('#hub-logo').classList.toggle('hidden', !logoUrl); $('#hub-logo-default').classList.toggle('hidden', !!logoUrl);
+    const lt = document.querySelector('#hub-bar .logo-terrain'); if (lt) lt.classList.toggle('hidden', !!logoUrl);   // logo du club à la place
     if (logoUrl && $('#hub-logo').getAttribute('src') !== logoUrl) $('#hub-logo').src = logoUrl;
     // Équipe : sélecteur s'il y en a plusieurs, sinon son nom
     const sel = $('#hub-team'), title = $('#hub-title');
@@ -10820,6 +10909,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     } else {
       sel.classList.add('hidden'); title.classList.remove('hidden');
       title.textContent = team ? team.name + (team.kidName ? ' · ' + team.kidName : '') : 'Rugbeo';
+      title.classList.toggle('is-brand', !team);
     }
     // Une seule action principale : nouveau dessin (Stratégies, et accueil du staff)
     $('#home-new').classList.toggle('hidden', !(view === 'strats' || (view === 'home' && logged && A.isStaff() && team)));

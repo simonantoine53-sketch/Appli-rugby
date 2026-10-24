@@ -1629,3 +1629,87 @@ img, svg { -webkit-user-drag: none; }
 /* Aide de l'éditeur : à côté d'Annuler / Rétablir sur ordinateur, au-dessus du zoom sur téléphone (la ligne du haut porte le nom du dessin) */
 .zoom-fab .help-m { font-weight: 800; color: var(--primary); margin-bottom: 6px; }
 @media (max-width: 900px) { .fab-history #fab-help { display: none; } }
+
+/* ---------- Charte « Terrain » (aperçu) ----------
+   Activée par le lien « ?charte=terrain » (retour : « ?charte=classique »), mémorisée sur l'appareil (classe
+   html.charte-terrain posée dans index.html). Reprend la charte graphique Rugbeo : vert Pelouse pour les actions,
+   texte vert Vestiaire, orange Ballon en accent (focus, ballon), Archivo pour les titres, DM Sans pour le texte,
+   boutons en pilule, cartes très arrondies à ombre plate. Seules les variables changent : le reste de l'appli suit.
+   Polices hébergées avec l'appli (vendor/fonts), jamais chargées depuis Google. */
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700 900; font-display: swap; src: url(../vendor/fonts/archivo-latin.woff2) format('woff2'); }
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../vendor/fonts/dmsans-latin.woff2) format('woff2'); }
+@media screen {
+  :root.charte-terrain {
+    --bg: #f4f6f1; --panel: #ffffff; --subtle: #eaefe7; --border: #dce3d8; --border-strong: #8fa294;
+    --text: #0b3d2a; --muted: #4a6357;
+    --primary: #0e7a4b; --primary-dark: #0b6a41; --primary-soft: #e3f2ea;
+    --success: #108653; --success-soft: #e3f2ea;
+    --warning: #8f5600; --warning-soft: #fff0d1;
+    --danger: #c2362b; --danger-dark: #a12c23; --danger-soft: #fbe6e3;
+    --primary-ink: #0b6a41; --success-ink: #0b6a41; --warning-ink: #8f5600; --danger-ink: #a12c23;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #0e7a4b; --field: #0e7a4b;
+    --accent: #ffb020; --on-accent: #0b3d2a; --accent-soft: #fff0d1;
+    --chart-1: #0e7a4b; --chart-2: #2563c9; --chart-3: #ffb020; --chart-4: #8f5600; --chart-5: #5fb98a;
+    --radius: 12px;
+    --shadow: 0 2px 0 #dce3d8;
+    --shadow-pop: 0 12px 32px rgba(11, 61, 42, .16);
+    --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  :root.charte-terrain[data-theme="dark"] {
+    --bg: #0c1712; --panel: #13221a; --subtle: #1a2d23; --border: #2a3f33; --border-strong: #557263;
+    --text: #eaf2ec; --muted: #a3b8ab;
+    --primary: #3fbf7f; --primary-dark: #5acd93; --primary-soft: #173b2a;
+    --success: #3fbf7f; --success-soft: #173b2a;
+    --warning: #ffc95c; --warning-soft: #3a2c0e;
+    --danger: #f07a6e; --danger-dark: #f59a90; --danger-soft: #3a1916;
+    --primary-ink: #6fd6a0; --success-ink: #6fd6a0; --warning-ink: #ffc95c; --danger-ink: #f59a90;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #6fd6a0; --field: #0f5c3a; --accent-soft: #3a2c0e;
+    --shadow: 0 2px 0 #08120d; --shadow-pop: 0 12px 32px rgba(0, 0, 0, .5);
+  }
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root.charte-terrain:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #0c1712; --panel: #13221a; --subtle: #1a2d23; --border: #2a3f33; --border-strong: #557263;
+    --text: #eaf2ec; --muted: #a3b8ab;
+    --primary: #3fbf7f; --primary-dark: #5acd93; --primary-soft: #173b2a;
+    --success: #3fbf7f; --success-soft: #173b2a;
+    --warning: #ffc95c; --warning-soft: #3a2c0e;
+    --danger: #f07a6e; --danger-dark: #f59a90; --danger-soft: #3a1916;
+    --primary-ink: #6fd6a0; --success-ink: #6fd6a0; --warning-ink: #ffc95c; --danger-ink: #f59a90;
+    --primary-fill: #0e7a4b; --success-fill: #108653; --warning-fill: #8f5600; --danger-fill: #c2362b;
+    --brand-ink: #6fd6a0; --field: #0f5c3a; --accent-soft: #3a2c0e;
+    --shadow: 0 2px 0 #08120d; --shadow-pop: 0 12px 32px rgba(0, 0, 0, .5);
+  }
+}
+@media screen {
+  /* Typographie : DM Sans pour le texte, Archivo pour les titres et les chiffres */
+  .charte-terrain body, .charte-terrain button, .charte-terrain input, .charte-terrain select, .charte-terrain textarea { font-family: var(--font-sans); }
+  .charte-terrain :is(h1, h2, h3, .modal-head strong, .hub-tile strong, .kpi strong, .ev-date strong, .boot-name, .page-title) { font-family: var(--font-display); letter-spacing: -.3px; }
+  .charte-terrain :is(h1, .hub-hello h1) { font-weight: 900; letter-spacing: -1px; }
+  /* Logo : poteaux en H et ballon ; « rugbeo » en minuscules, Archivo 900 */
+  .logo-terrain { display: none; }
+  .charte-terrain .logo-terrain { display: block; }
+  .charte-terrain #hub-logo-default, .charte-terrain .logo-classique { display: none; }
+  .lt-disc { fill: var(--primary-fill); } .lt-h { stroke: var(--on-color); } .lt-ball { fill: var(--accent); }
+  .charte-terrain .logo-terrain { flex: 0 0 auto; }
+  .charte-terrain .brand strong { font-family: var(--font-display); font-weight: 900; letter-spacing: -.5px; color: var(--text); }
+  .charte-terrain .brand strong.is-brand { text-transform: lowercase; letter-spacing: -1px; }   /* « rugbeo », jamais le nom d'une équipe */
+  /* Boutons en pilule, texte gras */
+  .charte-terrain .btn { border-radius: 999px; font-weight: 700; }
+  .charte-terrain .btn.primary:hover:not(:disabled) { background: var(--primary-dark); }
+  /* Cartes très arrondies, ombre plate (marche de 2 px) ; ce qui flotte garde une ombre douce */
+  .charte-terrain :is(.todo-card, .hub-tile, .ev-card, .lib-card, .admin-card, .sponsor-card, .sponsor-box, .pres-card, .soon-card, .kpi, .club-card, .member-card) { border-radius: 20px; box-shadow: var(--shadow); }
+  .charte-terrain :is(.modal-box, .menu, .rs-pop, .tour-card, .toast) { box-shadow: var(--shadow-pop); }
+  .charte-terrain .modal-box { border-radius: 24px; }
+  @media (max-width: 900px) { .charte-terrain .modal-box { border-radius: 24px 24px 0 0; } }
+  .charte-terrain :is(input, select, textarea):not([type=checkbox]):not([type=radio]):not(.title-input) { border-radius: 12px; }
+  /* Focus clavier : anneau orange Ballon */
+  .charte-terrain :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent); }
+  /* Terrain des stratégies : vert Pelouse de la charte (à l'écran ; les exports gardent leurs couleurs) */
+  .charte-terrain .field > rect:first-child { fill: var(--field); }
+  /* Pastille de date des événements : vert pâle, chiffre en Archivo */
+  .charte-terrain .ev-date { border-radius: 16px; }
+}

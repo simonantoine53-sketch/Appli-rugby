@@ -106,3 +106,10 @@ Chaque variable garde **le même rôle** ; seules les valeurs changent (bloc `:r
 Contrastes vérifiés en sombre : texte 14,7:1 et texte secondaire 7,1:1 sur les cartes ; texte « encre » 6:1 sur les teintes pâles. Depuis le test utilisateur du 22 octobre 2026, chaque couleur d'état a deux rôles séparés pour passer le seuil de 4,5:1 dans les deux modes : **la couleur de base** (`--primary`, `--success`…) pour un texte, une bordure ou une icône sur une carte ; **la version `-fill`** pour un fond plein sous un texte blanc (`background: var(--primary-fill)`, bouton principal, réponse choisie). En clair les deux sont identiques ; en sombre, la base est plus lumineuse (≥ 5:1 sur une carte) et le fond plein plus sombre (≥ 4,9:1 avec du blanc). Le survol d'un bouton plein l'assombrit (ombre intérieure), au lieu de changer de couleur. Le nom « Rugbeo » en texte utilise `--brand-ink` (le vert du terrain `--field` reste pour les fonds et les coches). Pour un long texte coloré sur une teinte pâle, utiliser la variable `-ink`.
 
 Restent toujours en clair : **l'impression** (bloc `@media print`), la **feuille de match** (aperçu, image, PDF), les **dessins du terrain** et leurs exports (couleurs propres à `js/field.js` et `js/export.js`).
+
+## Charte « Terrain » (aperçu, 24 octobre 2026)
+
+La charte graphique complète est dans `docs/charte-graphique-terrain.md`. Elle est appliquée **en aperçu seulement** :
+- activation sur un appareil avec le lien `…/?charte=terrain`, retour avec `…/?charte=classique` (gardé sur l'appareil) ;
+- mise en œuvre : bloc « Charte Terrain » à la fin de `css/style.css` (variables redéfinies sous `html.charte-terrain`, clair et sombre), polices Archivo et DM Sans hébergées dans `vendor/fonts/`, logo « poteaux + ballon » (`.logo-terrain` dans `index.html`).
+- pas encore repris : textes (la charte demande le tutoiement, l'appli vouvoie), couleurs du terrain dans les exports (image, GIF, vidéo), icônes de l'appli installée.
