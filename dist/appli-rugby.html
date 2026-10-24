@@ -808,9 +808,11 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
   .modal { padding: 0; align-items: end; }
   /* Fenêtre collée en bas : marge pour la barre d'accueil de l'iPhone (retirée quand le clavier est ouvert) */
   .modal-box { width: 100%; max-height: 94%; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-  html.kb-open .modal-box { padding-bottom: 0; }
+  /* Clavier ouvert : la fenêtre blanche continue derrière le clavier (pas de page visible dessous) ;
+     son contenu défile dans la partie visible, au-dessus du clavier */
+  html.kb-open .modal-box { padding-bottom: var(--vv-bottom, 0px); max-height: 100%; }
   /* Clavier ouvert : le fond grisé couvre tout l'écran, la fenêtre se place dans la partie visible au-dessus du clavier */
-  html.kb-open .modal { padding-top: var(--vv-top, 0px); padding-bottom: var(--vv-bottom, 0px); }
+  html.kb-open .modal { padding-top: var(--vv-top, 0px); }
   .modal-head { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
   .modal-head .btn-close { order: 99; }
   .team-box, .auth-box, .library-box, .preview-box { width: 100%; }
@@ -1396,6 +1398,12 @@ label.check input { margin-top: 2px; flex: 0 0 auto; }
 .acc-item .muted { padding: 0 16px 12px; margin: -4px 0 0; }
 .acc-item + .acc-row { border-top: 1px solid var(--border); }
 .push-block .acc-row.hidden { display: none; }
+/* Aide des notifications : même marge que les lignes de la carte, aussi quand le bouton est masqué (iPhone sans appli installée) */
+.push-block #push-help { padding: 0 16px 12px; }
+.push-block #push-help:empty { display: none; }
+.push-block .acc-row.hidden + #push-help { padding-top: 14px; }
+/* Safari (iPhone) colore en bleu le texte des boutons et des listes sans couleur : on reprend celle du texte */
+.btn-close, select { color: var(--text); }
 
 /* Tableau de bord du back-office */
 .dash-period { margin-bottom: 4px; }
@@ -1771,6 +1779,10 @@ img, svg { -webkit-user-drag: none; }
   /* Boutons en pilule, texte gras */
   .charte-terrain .btn { border-radius: 999px; font-weight: 700; }
   .charte-terrain .btn.primary:hover:not(:disabled) { background: var(--primary-dark); }
+  /* Gros boutons de la barre du haut (Aperçu, Exporter, Enregistrer…) : coins arrondis, pas de pilule */
+  .charte-terrain :is(.topbar .actions .btn, .topbar .btn-back, .fab-history button) { border-radius: 14px; }
+  /* Tutoriel : la zone expliquée entourée d'orange Ballon (le vert se confondait avec les cartes) */
+  .charte-terrain .tour-spot { outline: 4px solid var(--accent); outline-offset: 2px; border-radius: 22px; }
   /* Cartes très arrondies, ombre plate (marche de 2 px) ; ce qui flotte garde une ombre douce */
   .charte-terrain :is(.todo-card, .hub-tile, .ev-card, .lib-card, .admin-card, .sponsor-card, .sponsor-box, .pres-card, .soon-card, .kpi, .club-card, .member-card) { border-radius: 20px; box-shadow: var(--shadow); }
   .charte-terrain :is(.modal-box, .menu, .rs-pop, .tour-card, .toast) { box-shadow: var(--shadow-pop); }
