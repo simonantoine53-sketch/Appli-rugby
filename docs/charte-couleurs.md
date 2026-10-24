@@ -107,9 +107,9 @@ Contrastes vérifiés en sombre : texte 14,7:1 et texte secondaire 7,1:1 sur les
 
 Restent toujours en clair : **l'impression** (bloc `@media print`), la **feuille de match** (aperçu, image, PDF), les **dessins du terrain** et leurs exports (couleurs propres à `js/field.js` et `js/export.js`).
 
-## Charte « Terrain » (aperçu, 24 octobre 2026)
+## Charte « Terrain » (appliquée par défaut depuis le 24 octobre 2026)
 
-La charte graphique complète est dans `docs/charte-graphique-terrain.md`. Elle est appliquée **en aperçu seulement** :
-- activation sur un appareil avec le lien `…/?charte=terrain`, retour avec `…/?charte=classique` (gardé sur l'appareil) ;
-- mise en œuvre : bloc « Charte Terrain » à la fin de `css/style.css` (variables redéfinies sous `html.charte-terrain`, clair et sombre), polices Archivo et DM Sans hébergées dans `vendor/fonts/`, logo « poteaux + ballon » (`.logo-terrain` dans `index.html`).
-- pas encore repris : textes (la charte demande le tutoiement, l'appli vouvoie), couleurs du terrain dans les exports (image, GIF, vidéo), icônes de l'appli installée.
+La charte graphique complète est dans `docs/charte-graphique-terrain.md`. C'est l'apparence de l'appli pour tout le monde :
+- mise en œuvre : bloc « Charte Terrain » à la fin de `css/style.css` (variables redéfinies sous `html.charte-terrain`, clair et sombre), polices Archivo et DM Sans hébergées dans `vendor/fonts/`, logo « poteaux + ballon » (`.logo-terrain` dans `index.html`, icônes `icons/`, écran de démarrage), terrain des exports au vert Pelouse (`js/field.js`) ;
+- `…/?charte=classique` remet l'ancienne apparence sur un appareil (retour : `…/?charte=terrain`) ;
+- pas encore repris : textes (la charte demande le tutoiement, l'appli vouvoie) et en-tête vert des e-mails (`supabase/templates/`, à recoller dans Supabase).

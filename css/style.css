@@ -754,16 +754,17 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
   #team-user { width: 100%; font-size: 12px; }
   .tabs.small { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; min-width: 0; max-width: 100%; }
   .tabs.small .tab { white-space: nowrap; margin-right: 4px; }
-  .library-list { grid-template-columns: 1fr; padding: 12px; gap: 10px; min-width: 0; }
+  .library-list { grid-template-columns: 1fr; padding: 12px; gap: 16px; min-width: 0; }
   .lib-card { min-width: 0; }
   .lib-card .thumb svg { width: 100%; height: 100%; }
   /* Téléphone : carte en ligne, petite miniature à gauche, pour voir plusieurs stratégies d'un coup */
-  .lib-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-areas: "thumb body" "thumb date" "thumb btns"; align-items: start; }
+  .lib-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-areas: "thumb body" "thumb date" "thumb btns"; align-items: start; grid-template-rows: auto auto 1fr; }
   .lib-card .thumb { grid-area: thumb; aspect-ratio: auto; height: 100%; min-height: 84px; border-radius: 9px 0 0 9px !important; }
   .lib-card .thumb svg { object-fit: cover; }
-  .lib-card .body { grid-area: body; padding: 8px 10px 2px; }
-  .lib-card .date { grid-area: date; padding: 0 10px 6px; }
-  .lib-card .card-btns { grid-area: btns; padding: 0 10px 8px; }
+  /* Cartes aérées : plus de marge intérieure, nom et infos espacés, boutons séparés des infos */
+  .lib-card .body { grid-area: body; padding: 14px 14px 4px; }
+  .lib-card .date { grid-area: date; padding: 2px 14px 10px; line-height: 1.5; }
+  .lib-card .card-btns { grid-area: btns; padding: 4px 14px 14px; gap: 10px; }
   .menu { min-width: 250px; }
   .menu button span { display: block; }
 
@@ -1646,8 +1647,8 @@ img, svg { -webkit-user-drag: none; }
    Polices hébergées avec l'appli (vendor/fonts), jamais chargées depuis Google. */
 @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700 900; font-display: swap; src: url(../vendor/fonts/archivo-latin.woff2) format('woff2'); }
 @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../vendor/fonts/dmsans-latin.woff2) format('woff2'); }
-@media screen {
-  :root.charte-terrain {
+/* Couleurs claires de la charte : à l'écran et à l'impression (toujours claire) */
+:root.charte-terrain {
     --bg: #f4f6f1; --panel: #ffffff; --subtle: #eaefe7; --border: #dce3d8; --border-strong: #8fa294;
     --text: #0b3d2a; --muted: #4a6357;
     --primary: #0e7a4b; --primary-dark: #0b6a41; --primary-soft: #e3f2ea;
@@ -1664,7 +1665,8 @@ img, svg { -webkit-user-drag: none; }
     --shadow-pop: 0 12px 32px rgba(11, 61, 42, .16);
     --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
     --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  }
+}
+@media screen {
   :root.charte-terrain[data-theme="dark"] {
     --bg: #0c1712; --panel: #13221a; --subtle: #1a2d23; --border: #2a3f33; --border-strong: #557263;
     --text: #eaf2ec; --muted: #a3b8ab;

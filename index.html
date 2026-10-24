@@ -6,8 +6,8 @@
   <title>Rugbeo – L’appli des clubs de rugby</title>
   <meta name="description" content="Rugbeo, l’appli des clubs de rugby : stratégies animées, convocations, compos et feuilles de match. De la convoc’ au maillot, Rugbeo.">
   <meta name="application-name" content="Rugbeo">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234a9e4f'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='6.5' fill='%23fff' transform='rotate(-30 16 16)'/%3E%3C/svg%3E">
-  <meta name="theme-color" content="#4a9e4f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230E7A4B'/%3E%3Cpath d='M20 20v26M44 20v26M20 35h24' fill='none' stroke='%23FFFFFF' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='17' r='5.5' fill='%23FFB020'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0e7a4b">
   <!-- Thème choisi (Compte → Réglages) appliqué avant l'affichage : pas d'éclair blanc en mode sombre -->
   <script>
     /* Pas de zoom de la page (choix d'appli) : Safari sur iPhone ignore « user-scalable=no », on bloque donc le geste.
@@ -16,8 +16,8 @@
     document.addEventListener('touchmove', function (e) { if (e.touches.length > 1 && !(e.target.closest && e.target.closest('#canvas'))) e.preventDefault(); }, { passive: false });
   </script>
   <script>try { var t = localStorage.getItem('rs-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}</script>
-  <!-- Charte « Terrain » en aperçu : lien « ?charte=terrain » (retour : « ?charte=classique »), gardée sur cet appareil -->
-  <script>try { var c = (location.search.match(/[?&]charte=(terrain|classique)\b/) || [])[1]; if (c) localStorage.setItem('rs-charte', c); if (localStorage.getItem('rs-charte') === 'terrain') document.documentElement.classList.add('charte-terrain'); } catch (e) {}</script>
+  <!-- Charte « Terrain » : l'apparence de l'appli. « ?charte=classique » remet l'ancienne sur cet appareil (« ?charte=terrain » pour revenir) -->
+  <script>(function () { var c = null; try { c = (location.search.match(/[?&]charte=(terrain|classique)\b/) || [])[1]; if (c) localStorage.setItem('rs-charte', c); else c = localStorage.getItem('rs-charte'); } catch (e) {} if (c !== 'classique') document.documentElement.classList.add('charte-terrain'); })();</script>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,8 +29,14 @@
     :root[data-theme="dark"] { --bg: #0d1117; --text: #e6edf3; --muted: #9da7b3; --subtle: #1d252e; --primary-fill: #1a6fd0; }
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { --bg: #0d1117; --text: #e6edf3; --muted: #9da7b3; --subtle: #1d252e; --primary-fill: #1a6fd0; } }
     .boot { position: fixed; inset: 0; z-index: 6000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
+    /* Charte « Terrain » (classe posée plus haut) : mêmes valeurs que la fin de css/style.css */
+    :root.charte-terrain { --bg: #f4f6f1; --text: #0b3d2a; --muted: #4a6357; --subtle: #eaefe7; --field: #0e7a4b; --primary-fill: #0e7a4b; --accent: #ffb020; }
+    @media screen { :root.charte-terrain[data-theme="dark"] { --bg: #0c1712; --text: #eaf2ec; --muted: #a3b8ab; --subtle: #1a2d23; } }
+    @media screen and (prefers-color-scheme: dark) { :root.charte-terrain:not([data-theme="light"]):not([data-theme="dark"]) { --bg: #0c1712; --text: #eaf2ec; --muted: #a3b8ab; --subtle: #1a2d23; } }
     .boot-tile { fill: var(--field); }
-    .boot-oval { fill: var(--on-color); }
+    .boot-oval, .boot-h { fill: var(--on-color); }
+    .boot-h { fill: none; stroke: var(--on-color); }
+    .boot-dot { fill: var(--accent, var(--on-color)); }
     .boot-ball { animation: boot-bounce 1.1s ease-in-out infinite; }
     .boot-name { font-size: 26px; color: var(--text); }
     .boot-msg { margin: 0; color: var(--muted); max-width: 300px; line-height: 1.45; }
@@ -48,7 +54,7 @@
 
 <!-- Écran de démarrage : visible pendant le téléchargement de l'appli (réseau lent), retiré dès qu'elle est prête -->
 <div id="boot" class="boot" role="status" aria-live="polite">
-  <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 32 32" width="64" height="64"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg></div>
+  <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="32" class="boot-tile"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" class="boot-h" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" class="boot-dot"/></svg></div>
   <strong class="boot-name">Rugbeo</strong>
   <p class="boot-msg">Chargement de votre club…</p>
   <div class="boot-bar" aria-hidden="true"><i></i></div>
@@ -68,7 +74,7 @@
   })();
 </script>
 <!-- Feuille de style après l'écran de démarrage : il s'affiche sans l'attendre (réseau lent) -->
-<link rel="stylesheet" href="css/style.css?v=202610241422">
+<link rel="stylesheet" href="css/style.css?v=202610241448">
 
 <div id="announce-bar" class="announce-bar hidden"></div>
 
@@ -758,32 +764,32 @@
 <input type="file" id="file-import" accept="application/json" hidden>
 <datalist id="player-names"></datalist>
 
-<script src="js/update.js?v=202610241422"></script>
-<script src="js/legal.js?v=202610241422"></script>
-<script src="js/consent.js?v=202610241422"></script>
-<script src="js/selects.js?v=202610241422"></script>
-<script src="js/dialog.js?v=202610241422"></script>
-<script src="js/icons.js?v=202610241422"></script>
-<script src="js/field.js?v=202610241422"></script>
-<script src="js/formations.js?v=202610241422"></script>
-<script src="js/objects.js?v=202610241422"></script>
-<script src="js/export.js?v=202610241422"></script>
-<script src="vendor/supabase.min.js?v=202610241422"></script>
-<script src="js/config.js?v=202610241422"></script>
-<script src="js/offline.js?v=202610241422"></script>
-<script src="js/demo.js?v=202610241422"></script>
-<script src="js/editor.js?v=202610241422"></script>
-<script src="js/account.js?v=202610241422"></script>
-<script src="js/push.js?v=202610241422"></script>
-<script src="js/profile.js?v=202610241422"></script>
-<script src="js/compte.js?v=202610241422"></script>
-<script src="js/admin.js?v=202610241422"></script>
-<script src="js/agenda.js?v=202610241422"></script>
-<script src="js/stats.js?v=202610241422"></script>
-<script src="js/sponsors.js?v=202610241422"></script>
-<script src="js/calimport.js?v=202610241422"></script>
-<script src="js/sheets.js?v=202610241422"></script>
-<script src="js/tour.js?v=202610241422"></script>
-<script src="js/hub.js?v=202610241422"></script>
+<script src="js/update.js?v=202610241448"></script>
+<script src="js/legal.js?v=202610241448"></script>
+<script src="js/consent.js?v=202610241448"></script>
+<script src="js/selects.js?v=202610241448"></script>
+<script src="js/dialog.js?v=202610241448"></script>
+<script src="js/icons.js?v=202610241448"></script>
+<script src="js/field.js?v=202610241448"></script>
+<script src="js/formations.js?v=202610241448"></script>
+<script src="js/objects.js?v=202610241448"></script>
+<script src="js/export.js?v=202610241448"></script>
+<script src="vendor/supabase.min.js?v=202610241448"></script>
+<script src="js/config.js?v=202610241448"></script>
+<script src="js/offline.js?v=202610241448"></script>
+<script src="js/demo.js?v=202610241448"></script>
+<script src="js/editor.js?v=202610241448"></script>
+<script src="js/account.js?v=202610241448"></script>
+<script src="js/push.js?v=202610241448"></script>
+<script src="js/profile.js?v=202610241448"></script>
+<script src="js/compte.js?v=202610241448"></script>
+<script src="js/admin.js?v=202610241448"></script>
+<script src="js/agenda.js?v=202610241448"></script>
+<script src="js/stats.js?v=202610241448"></script>
+<script src="js/sponsors.js?v=202610241448"></script>
+<script src="js/calimport.js?v=202610241448"></script>
+<script src="js/sheets.js?v=202610241448"></script>
+<script src="js/tour.js?v=202610241448"></script>
+<script src="js/hub.js?v=202610241448"></script>
 </body>
 </html>

@@ -40,7 +40,7 @@
   /** Construit le groupe <g> du terrain. */
   function renderField(spec) {
     const root = svgEl('g', { class: 'field' });
-    root.appendChild(svgEl('rect', { x: 0, y: 0, width: spec.W, height: spec.H, fill: '#4a9e4f' }));
+    root.appendChild(svgEl('rect', { x: 0, y: 0, width: spec.W, height: spec.H, fill: '#0e7a4b' }));
 
     if (spec.type === 'empty') return root;
 

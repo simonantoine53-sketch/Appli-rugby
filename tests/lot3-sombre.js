@@ -10,7 +10,9 @@ const MATCH = '30000000-0000-4000-8000-000000000002';
   const page = await t.open(view);
   await page.emulateMedia({ colorScheme: 'dark' });
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  t.check(await bg() === 'rgb(13, 17, 23)', 'automatique : suit le téléphone (sombre)');
+  // Fond de page de la charte « Terrain » (craie en clair, vert très sombre en sombre)
+  const LIGHT = 'rgb(244, 246, 241)', DARK = 'rgb(12, 23, 18)';
+  t.check(await bg() === DARK, 'automatique : suit le téléphone (sombre)');
   await t.shot(page, `${view}-sombre-0-visiteur`);
   await page.evaluate(() => window.RugbyAccount.openAuth('signup')); await page.waitForTimeout(600);
   await t.shot(page, `${view}-sombre-1-inscription`);
@@ -24,16 +26,16 @@ const MATCH = '30000000-0000-4000-8000-000000000002';
   // Réglage manuel : Clair puis Sombre, gardé après rechargement
   await t.go(page, '#/account');
   await page.click('[data-theme-set="light"]');
-  t.check(await bg() === 'rgb(244, 246, 248)', 'Clair : forcé même si le téléphone est en sombre');
+  t.check(await bg() === LIGHT, 'Clair : forcé même si le téléphone est en sombre');
   await page.click('[data-theme-set="dark"]');
   await page.emulateMedia({ colorScheme: 'light' });
-  t.check(await bg() === 'rgb(13, 17, 23)', 'Sombre : forcé même si le téléphone est en clair');
+  t.check(await bg() === DARK, 'Sombre : forcé même si le téléphone est en clair');
   await page.reload(); await page.waitForTimeout(2500);
   t.check(await page.evaluate(() => document.documentElement.getAttribute('data-theme')) === 'dark', 'choix gardé après rechargement');
   await t.shot(page, `${view}-sombre-reglages`);
   // Impression : toujours claire
   await page.emulateMedia({ media: 'print' });
-  t.check(await bg() === 'rgb(244, 246, 248)', 'impression : couleurs claires');
+  t.check(await bg() === LIGHT, 'impression : couleurs claires');
   await page.emulateMedia({ media: 'screen' });
   // Éditeur, mentions légales
   await t.go(page, '#/editor'); await page.waitForTimeout(2000); await t.shot(page, `${view}-sombre-editeur`);
