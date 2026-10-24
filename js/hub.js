@@ -266,6 +266,9 @@
     slot.appendChild(todo(d, notifOn, staff));
     kidsNudge(slot, team, my);
     slot.appendChild(tiles(d, staff));
+    // Page FFR du club (renseignée par le bureau dans Équipe › Club) : lien discret en bas de l'accueil
+    const club = team.club_id && (A.clubs() || []).find(c => c.id === team.club_id), ffr = club && club.settings && club.settings.ffr_url;
+    if (ffr) { const a = el('a', 'link home-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; slot.appendChild(a); }
     // Partenaires du club : bloc discret en bas de l'accueil
     if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
     // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.
