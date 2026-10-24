@@ -168,7 +168,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.refreshView();      // l'éditeur gère les pages réservées (connexion demandée) et les liens #/d/<id>
   }
 
-  const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id';
+  const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id, youth';
   async function loadTeams() {
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
@@ -823,7 +823,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const admin = isClubAdmin(club.id);
     const refresh = async () => { await loadTeams(); renderTeamPage(); };
     const [{ data: teams }, { data: heads }] = await Promise.all([
-      sb.from('teams').select('id, name').eq('club_id', club.id).order('name'),
+      sb.from('teams').select('id, name, youth').eq('club_id', club.id).order('name'),
       sb.from('club_members').select('user_id, role, title, joined_at, profiles(display_name)').eq('club_id', club.id).order('joined_at')
     ]);
     if (seq !== teamSeq) return;
@@ -918,6 +918,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const row = el('div', 'club-team-row');
       const c = counts[t.id];
       row.appendChild(el('div', 'grow', `<strong>${esc(t.name)}</strong>${admin && c ? `<small>${c.active} membre${c.active > 1 ? 's' : ''}${c.pending ? ` · ${c.pending} en attente` : ''}</small>` : admin ? '<small>Aucun membre pour l’instant</small>' : ''}`));
+      // Équipe de jeunes : les partenaires « réservés aux adultes » (bar, brasserie) n'y sont pas affichés
+      if (admin) {
+        const yl = el('label', 'check small team-youth', '<input type="checkbox"> Jeunes');
+        const yc = yl.querySelector('input'); yc.checked = !!t.youth;
+        yl.title = 'Équipe de jeunes : les partenaires réservés aux adultes n’y sont pas affichés';
+        yc.onchange = async () => {
+          const { error } = await sb.from('teams').update({ youth: yc.checked }).eq('id', t.id);
+          if (error) { yc.checked = !yc.checked; return E.toast(errMsg(error)); }
+          t.youth = yc.checked; const mt = S.teams.find(x => x.id === t.id); if (mt) mt.youth = yc.checked;
+          E.toast(yc.checked ? `${t.name} : équipe de jeunes (pas de partenaire réservé aux adultes).` : `${t.name} : équipe adulte.`);
+        };
+        row.appendChild(yl);
+      } else if (t.youth) row.appendChild(el('span', 'vis-badge private', 'Jeunes'));
       if (mine.has(t.id)) row.appendChild(el('span', 'role-badge player', 'Mon équipe'));
       else if (asked.has(t.id)) row.appendChild(el('span', 'vis-badge proposed', 'Demande envoyée'));
       const open = S.teams.find(x => x.id === t.id);

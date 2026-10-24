@@ -306,10 +306,11 @@
   let period = 12;
 
   async function renderOverview() {
-    const [m, pend, demo] = await Promise.all([
+    const [m, pend, demo, spons] = await Promise.all([
       sb.rpc('admin_metrics', { p_weeks: period }).then(must),
       sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending'),
-      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null)
+      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null),
+      sb.rpc('admin_sponsor_stats', { p_weeks: period }).then(r => r.data || null)
     ]);
     cache.feedbackNew = m.feedback_new; cache.pending = pend.count || 0;
     const W = m.weeks || [];
@@ -353,6 +354,23 @@
       cd.append(weekChart('Démo par semaine', W, [{ name: 'Comme coach', values: demo.coach, color: 'var(--chart-1)' }, { name: 'Comme joueur', values: demo.joueur, color: 'var(--chart-2)' }, { name: 'Comptes créés après', values: demo.inscription, color: 'var(--chart-3)' }],
         { wide: true, note: 'Compteur anonyme, démarré avec cette version. « Après » : compte créé sur un appareil où la démo a été ouverte dans les 30 jours. Les comptes fictifs du club démo ne comptent dans aucun chiffre du tableau de bord.' }));
       out.push(cd);
+    }
+
+    // Partenaires des clubs : affichages et clics (compteur anonyme), l'argument des clubs pour leurs sponsors
+    if (spons && spons.length) {
+      const box = el('div', 'admin-card wide');
+      box.appendChild(el('h4', '', 'Partenaires : affichages et clics'));
+      box.appendChild(el('p', 'muted small dash-note', 'Compteur anonyme, sur la période choisie. Affichage : partenaire vu à l’écran (une fois par jour et par appareil). Clic : ouverture de son site.'));
+      const tb = el('table', 'admin-table');
+      tb.innerHTML = '<thead><tr><th>Club</th><th>Partenaire</th><th>Affichages</th><th>Clics</th><th>Taux de clic</th></tr></thead>';
+      const body = el('tbody');
+      spons.forEach(r => {
+        const tr = el('tr');
+        tr.innerHTML = `<td data-label="Club">${esc(r.club)}</td><td data-label="Partenaire">${esc(r.sponsor)}${r.adults_only ? ' <small class="muted">(adultes)</small>' : ''}</td><td data-label="Affichages">${r.views}</td><td data-label="Clics"><strong>${r.clicks}</strong></td><td data-label="Taux de clic">${r.views ? pct(r.clicks, r.views) : '–'}</td>`;
+        body.appendChild(tr);
+      });
+      tb.appendChild(body); box.appendChild(tb);
+      const g = el('div', 'admin-grid'); g.appendChild(box); out.push(g);
     }
 
     // 2. Onglets

@@ -124,7 +124,7 @@
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
       <h4>Mesure d’audience anonyme</h4>
-      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, ou que la démo a été ouverte 30 fois, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
+      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, que la démo a été ouverte 30 fois, ou combien de fois le logo d’un partenaire du club a été vu et touché, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
       <p><button type="button" class="btn outline small" data-anon-toggle></button> <span class="muted small" data-anon-state></span></p>
       <h4>Mesure d’usage détaillée : seulement avec votre accord</h4>
       <p>Si vous l’acceptez, l’appli enregistre les pages et fonctions utilisées et la durée des visites, liées à votre compte, pour comprendre ce qui sert et l’améliorer. Ces données restent chez nous, ne servent jamais à la publicité et sont effacées après 13 mois. Refuser ne change rien au fonctionnement de l’appli.</p>

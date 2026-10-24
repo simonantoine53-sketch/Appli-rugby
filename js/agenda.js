@@ -215,11 +215,17 @@
       list.appendChild(empty); return;
     }
     watch(evs.map(e => e.id), () => { if (my === seq) render(root, undefined, undefined, true); });
+    // Partenaires du club : une annonce toutes les 4 lignes, à tour de rôle (pas ceux réservés aux adultes sur une équipe de jeunes)
+    const SP = window.RugbySponsors;
+    const sponsors = SP && team && team.club_id ? SP.forTeam(await SP.load(team.club_id).catch(() => []), team) : [];
+    if (my !== seq) return;
+    const first = sponsors.length ? sponsors.indexOf(SP.pick(sponsors, 'agenda-' + team.club_id)) : 0;
     let lastWeek = '';
-    evs.forEach(ev => {
+    evs.forEach((ev, i) => {
       const w = weekLabel(ev.starts_at);
       if (w !== lastWeek) { list.appendChild(el('h4', 'home-h4 agenda-week', w)); lastWeek = w; }
       list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root, undefined, undefined, true)));
+      if (sponsors.length && (i + 1) % 4 === 0 && i < evs.length - 1) list.appendChild(SP.card(sponsors[(first + (i + 1) / 4 - 1) % sponsors.length], { cls: 'agenda-sponsor', tag: 'Partenaire' }));
     });
     restore();
   }

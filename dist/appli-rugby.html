@@ -1596,6 +1596,29 @@ a.sponsor-item:hover img { opacity: .8; }
 .sponsor-row { flex-wrap: wrap; }
 .sponsor-acts { margin-left: auto; flex-wrap: nowrap; }
 @media (max-width: 560px) { .sponsor-acts { width: 100%; justify-content: flex-end; } }
+/* Partenaires dans l'onglet Club : une carte par partenaire */
+.sponsor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+.sponsor-box { display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px; min-width: 0; }
+.sponsor-box-logo { height: 90px; display: grid; place-items: center; background: var(--subtle); border-radius: 10px; overflow: hidden; }
+.sponsor-box-logo img { max-height: 76px; max-width: 80%; object-fit: contain; }
+.sponsor-box-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sponsor-box-text strong { font-size: 16px; }
+.sponsor-box-text small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sponsor-box .sponsor-acts { width: 100%; margin: 0; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 8px; }
+.sponsor-adult { align-self: flex-start; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--warning-ink); background: var(--warning-soft); border-radius: 999px; padding: 2px 10px; }
+.sponsor-card-initial { font-size: 28px; font-weight: 800; color: var(--muted); }
+/* Annonce d'un partenaire (accueil, agenda) : toute la carte mène au site */
+.sponsor-card { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; grid-template-areas: "tag tag tag" "logo text go"; align-items: center; gap: 4px 12px;
+  background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; padding: 10px 14px; color: var(--text); text-decoration: none; margin: 12px 0; }
+a.sponsor-card:hover { border-color: var(--primary); }
+.sponsor-card-tag { grid-area: tag; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.sponsor-card-logo { grid-area: logo; height: 52px; display: grid; place-items: center; background: var(--subtle); border-radius: 10px; overflow: hidden; }
+.sponsor-card-logo img { max-height: 46px; max-width: 64px; object-fit: contain; }
+.sponsor-card-text { grid-area: text; display: flex; flex-direction: column; min-width: 0; }
+.sponsor-card-text strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sponsor-card-text small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sponsor-card-go { grid-area: go; font-weight: 700; color: var(--primary); font-size: 14px; white-space: nowrap; }
+.agenda-sponsor { margin: 6px 0 14px; }
 
 /* Hors ligne */
 .offline-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 60; background: var(--neutral); color: var(--panel); font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; box-shadow: var(--shadow); max-width: calc(100% - 32px); text-align: center; }
@@ -2527,7 +2550,7 @@ img, svg { -webkit-user-drag: none; }
         <li>votre choix sur la mesure d’usage.</li>
       </ul>
       <h4>Mesure d’audience anonyme</h4>
-      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, ou que la démo a été ouverte 30 fois, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
+      <p>L’appli compte les onglets ouverts et le nombre de personnes actives, <strong>sans aucun identifiant</strong> : nous savons par exemple que l’Agenda a été ouvert 120 fois cette semaine, que la démo a été ouverte 30 fois, ou combien de fois le logo d’un partenaire du club a été vu et touché, jamais par qui. La CNIL dispense ce type de mesure de consentement ; vous pouvez tout de même vous y opposer :</p>
       <p><button type="button" class="btn outline small" data-anon-toggle></button> <span class="muted small" data-anon-state></span></p>
       <h4>Mesure d’usage détaillée : seulement avec votre accord</h4>
       <p>Si vous l’acceptez, l’appli enregistre les pages et fonctions utilisées et la durée des visites, liées à votre compte, pour comprendre ce qui sert et l’améliorer. Ces données restent chez nous, ne servent jamais à la publicité et sont effacées après 13 mois. Refuser ne change rien au fonctionnement de l’appli.</p>
@@ -5733,7 +5756,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     E.refreshView();      // l'éditeur gère les pages réservées (connexion demandée) et les liens #/d/<id>
   }
 
-  const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id';
+  const TEAM_COLS = 'id, name, join_code, created_by, share_default, club_id, youth';
   async function loadTeams() {
     const ids = [S.user.id, ...S.kids.map(k => k.id)];
     const [{ data, error }, { data: cm }] = await Promise.all([
@@ -6388,7 +6411,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const admin = isClubAdmin(club.id);
     const refresh = async () => { await loadTeams(); renderTeamPage(); };
     const [{ data: teams }, { data: heads }] = await Promise.all([
-      sb.from('teams').select('id, name').eq('club_id', club.id).order('name'),
+      sb.from('teams').select('id, name, youth').eq('club_id', club.id).order('name'),
       sb.from('club_members').select('user_id, role, title, joined_at, profiles(display_name)').eq('club_id', club.id).order('joined_at')
     ]);
     if (seq !== teamSeq) return;
@@ -6483,6 +6506,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const row = el('div', 'club-team-row');
       const c = counts[t.id];
       row.appendChild(el('div', 'grow', `<strong>${esc(t.name)}</strong>${admin && c ? `<small>${c.active} membre${c.active > 1 ? 's' : ''}${c.pending ? ` · ${c.pending} en attente` : ''}</small>` : admin ? '<small>Aucun membre pour l’instant</small>' : ''}`));
+      // Équipe de jeunes : les partenaires « réservés aux adultes » (bar, brasserie) n'y sont pas affichés
+      if (admin) {
+        const yl = el('label', 'check small team-youth', '<input type="checkbox"> Jeunes');
+        const yc = yl.querySelector('input'); yc.checked = !!t.youth;
+        yl.title = 'Équipe de jeunes : les partenaires réservés aux adultes n’y sont pas affichés';
+        yc.onchange = async () => {
+          const { error } = await sb.from('teams').update({ youth: yc.checked }).eq('id', t.id);
+          if (error) { yc.checked = !yc.checked; return E.toast(errMsg(error)); }
+          t.youth = yc.checked; const mt = S.teams.find(x => x.id === t.id); if (mt) mt.youth = yc.checked;
+          E.toast(yc.checked ? `${t.name} : équipe de jeunes (pas de partenaire réservé aux adultes).` : `${t.name} : équipe adulte.`);
+        };
+        row.appendChild(yl);
+      } else if (t.youth) row.appendChild(el('span', 'vis-badge private', 'Jeunes'));
       if (mine.has(t.id)) row.appendChild(el('span', 'role-badge player', 'Mon équipe'));
       else if (asked.has(t.id)) row.appendChild(el('span', 'vis-badge proposed', 'Demande envoyée'));
       const open = S.teams.find(x => x.id === t.id);
@@ -8060,10 +8096,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   let period = 12;
 
   async function renderOverview() {
-    const [m, pend, demo] = await Promise.all([
+    const [m, pend, demo, spons] = await Promise.all([
       sb.rpc('admin_metrics', { p_weeks: period }).then(must),
       sb.from('team_members').select('user_id', { count: 'exact', head: true }).eq('status', 'pending'),
-      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null)
+      sb.rpc('admin_demo_stats', { p_weeks: period }).then(r => r.data || null),
+      sb.rpc('admin_sponsor_stats', { p_weeks: period }).then(r => r.data || null)
     ]);
     cache.feedbackNew = m.feedback_new; cache.pending = pend.count || 0;
     const W = m.weeks || [];
@@ -8107,6 +8144,23 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       cd.append(weekChart('Démo par semaine', W, [{ name: 'Comme coach', values: demo.coach, color: 'var(--chart-1)' }, { name: 'Comme joueur', values: demo.joueur, color: 'var(--chart-2)' }, { name: 'Comptes créés après', values: demo.inscription, color: 'var(--chart-3)' }],
         { wide: true, note: 'Compteur anonyme, démarré avec cette version. « Après » : compte créé sur un appareil où la démo a été ouverte dans les 30 jours. Les comptes fictifs du club démo ne comptent dans aucun chiffre du tableau de bord.' }));
       out.push(cd);
+    }
+
+    // Partenaires des clubs : affichages et clics (compteur anonyme), l'argument des clubs pour leurs sponsors
+    if (spons && spons.length) {
+      const box = el('div', 'admin-card wide');
+      box.appendChild(el('h4', '', 'Partenaires : affichages et clics'));
+      box.appendChild(el('p', 'muted small dash-note', 'Compteur anonyme, sur la période choisie. Affichage : partenaire vu à l’écran (une fois par jour et par appareil). Clic : ouverture de son site.'));
+      const tb = el('table', 'admin-table');
+      tb.innerHTML = '<thead><tr><th>Club</th><th>Partenaire</th><th>Affichages</th><th>Clics</th><th>Taux de clic</th></tr></thead>';
+      const body = el('tbody');
+      spons.forEach(r => {
+        const tr = el('tr');
+        tr.innerHTML = `<td data-label="Club">${esc(r.club)}</td><td data-label="Partenaire">${esc(r.sponsor)}${r.adults_only ? ' <small class="muted">(adultes)</small>' : ''}</td><td data-label="Affichages">${r.views}</td><td data-label="Clics"><strong>${r.clicks}</strong></td><td data-label="Taux de clic">${r.views ? pct(r.clicks, r.views) : '–'}</td>`;
+        body.appendChild(tr);
+      });
+      tb.appendChild(body); box.appendChild(tb);
+      const g = el('div', 'admin-grid'); g.appendChild(box); out.push(g);
     }
 
     // 2. Onglets
@@ -8698,11 +8752,17 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       list.appendChild(empty); return;
     }
     watch(evs.map(e => e.id), () => { if (my === seq) render(root, undefined, undefined, true); });
+    // Partenaires du club : une annonce toutes les 4 lignes, à tour de rôle (pas ceux réservés aux adultes sur une équipe de jeunes)
+    const SP = window.RugbySponsors;
+    const sponsors = SP && team && team.club_id ? SP.forTeam(await SP.load(team.club_id).catch(() => []), team) : [];
+    if (my !== seq) return;
+    const first = sponsors.length ? sponsors.indexOf(SP.pick(sponsors, 'agenda-' + team.club_id)) : 0;
     let lastWeek = '';
-    evs.forEach(ev => {
+    evs.forEach((ev, i) => {
       const w = weekLabel(ev.starts_at);
       if (w !== lastWeek) { list.appendChild(el('h4', 'home-h4 agenda-week', w)); lastWeek = w; }
       list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root, undefined, undefined, true)));
+      if (sponsors.length && (i + 1) % 4 === 0 && i < evs.length - 1) list.appendChild(SP.card(sponsors[(first + (i + 1) / 4 - 1) % sponsors.length], { cls: 'agenda-sponsor', tag: 'Partenaire' }));
     });
     restore();
   }
@@ -9260,8 +9320,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
 </script>
 <script>
-/* Partenaires du club : nom, logo, lien, ordre d'affichage. Gérés par le bureau du club (et le super-admin).
-   Affichés : bloc discret sur l'accueil de l'équipe et bas de page des liens publics (pas sur la feuille de match). */
+/* Partenaires du club : nom, logo, lien, ordre d'affichage, « réservé aux adultes ». Gérés par le bureau du club (et le super-admin).
+   Affichés : carte « Partenaire du club » (accueil, à tour de rôle) et entre les événements de l'Agenda, logos en bas de l'accueil
+   et des liens publics (pas sur la feuille de match). Un partenaire réservé aux adultes (bar, brasserie : loi Évin) n'apparaît
+   jamais sur une équipe de jeunes. Affichages et clics sont comptés sans identifiant (count_sponsor), pour le super-admin. */
 (function () {
   'use strict';
   const A = window.RugbyAccount;
@@ -9270,6 +9332,48 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.type = 'button'; b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(b); }; return b; };
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const safeUrl = u => (/^https?:\/\/[^\s]+$/i.test(u || '') ? u : null);
+
+  /* Compteur anonyme : un affichage par partenaire et par jour sur cet appareil (pas à chaque rafraîchissement), chaque clic.
+     Rien n'est compté si la personne s'oppose à la mesure d'audience. */
+  const anonOk = () => !(window.RugbyConsent && window.RugbyConsent.anon && !window.RugbyConsent.anon());
+  function count(s, kind) {
+    if (!s || !s.id || !A || !A.sb || !anonOk()) return;
+    if (kind === 'view') {
+      const k = 'rs-sp-' + new Date().toISOString().slice(0, 10) + '-' + s.id;
+      try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) { /* ignore */ }
+    }
+    A.sb.rpc('count_sponsor', { p_sponsor: s.id, p_kind: kind }).then(() => {}, () => {});
+  }
+  /** Compte l'affichage quand l'élément est vraiment à l'écran (au moins à moitié). */
+  function seen(node, s) {
+    if (!('IntersectionObserver' in window)) { count(s, 'view'); return; }
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); count(s, 'view'); } }, { threshold: 0.5 });
+    io.observe(node);
+  }
+  const link = (node, s) => { const url = safeUrl(s.url); if (!url) return; node.href = url; node.target = '_blank'; node.rel = 'noopener sponsored'; node.addEventListener('click', () => count(s, 'click')); };
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+  /** Partenaires montrés à cette équipe : sans ceux réservés aux adultes sur une équipe de jeunes. */
+  const forTeam = (list, team) => (list || []).filter(s => !(s.adults_only && team && team.youth));
+
+  /** Carte « Partenaire du club » : logo, nom, site ; toute la carte mène au site du partenaire. */
+  function card(s, opts) {
+    const o = opts || {}, url = safeUrl(s.url);
+    const c = el(url ? 'a' : 'div', 'sponsor-card' + (o.cls ? ' ' + o.cls : ''));
+    if (url) link(c, s);
+    c.innerHTML = `<span class="sponsor-card-tag">${esc(o.tag || 'Partenaire du club')}</span>
+      <span class="sponsor-card-logo">${s.logo ? `<img src="${esc(s.logo)}" alt="" loading="lazy">` : `<span class="sponsor-card-initial">${esc(s.name.slice(0, 1).toUpperCase())}</span>`}</span>
+      <span class="sponsor-card-text"><strong>${esc(s.name)}</strong>${url ? `<small>${esc(host(url))}</small>` : ''}</span>
+      ${url ? '<span class="sponsor-card-go">Découvrir ↗</span>' : ''}`;
+    seen(c, s);
+    return c;
+  }
+  /** Un partenaire différent à chaque ouverture (à tour de rôle, mémorisé sur l'appareil). */
+  function pick(list, key) {
+    if (!list || !list.length) return null;
+    let n = 0;
+    try { n = (+localStorage.getItem('rs-sp-turn-' + key) || 0) + 1; localStorage.setItem('rs-sp-turn-' + key, String(n)); } catch (e) { /* ignore */ }
+    return list[n % list.length];
+  }
 
   /** Bandeau de logos (ou de noms sans logo), cliquables quand il y a un lien. */
   function strip(list, opts) {
@@ -9280,7 +9384,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     (list || []).forEach(s => {
       const url = safeUrl(s.url);
       const item = el(url && !o.print ? 'a' : 'span', 'sponsor-item');
-      if (url && !o.print) { item.href = url; item.target = '_blank'; item.rel = 'noopener sponsored'; item.title = s.name; }
+      if (url && !o.print) { link(item, s); item.title = s.name; }
+      if (!o.print) seen(item, s);
       if (s.logo) { const img = el('img'); img.src = s.logo; img.alt = s.name; img.loading = 'lazy'; item.appendChild(img); }
       else item.appendChild(el('span', 'sponsor-name', esc(s.name)));
       row.appendChild(item);
@@ -9293,7 +9398,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function load(clubId, fresh) {
     if (!clubId || !A || !A.isActive()) return [];
     if (!fresh && cache[clubId] && Date.now() - cache[clubId].at < 5 * 60e3) return cache[clubId].list;
-    const { data, error } = await A.sb.from('club_sponsors').select('id, name, logo, url, position, created_at').eq('club_id', clubId).order('position').order('created_at');
+    const { data, error } = await A.sb.from('club_sponsors').select('id, name, logo, url, position, adults_only, created_at').eq('club_id', clubId).order('position').order('created_at');
     if (error) return [];
     cache[clubId] = { at: Date.now(), list: data || [] };
     return cache[clubId].list;
@@ -9327,11 +9432,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const head = el('div', 'members-head', `<span class="muted">${list.length ? `${list.length} partenaire${list.length > 1 ? 's' : ''}` : 'Partenaires du club'}</span>`);
       if (admin) head.appendChild(btn('+ Ajouter un partenaire', 'outline small', () => form(null)));
       sec.appendChild(head);
-      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Les logos de vos partenaires s’affichent sur l’accueil des équipes et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
+      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Vos partenaires s’affichent sur l’accueil des équipes, entre les événements de l’Agenda et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
+      const grid = el('div', 'sponsor-grid');
+      sec.appendChild(grid);
       list.forEach((s, i) => {
-        const row = el('div', 'sponsor-row');
-        row.appendChild(s.logo ? Object.assign(el('img', 'sponsor-thumb'), { src: s.logo, alt: '' }) : el('div', 'sponsor-thumb empty', esc(s.name.slice(0, 1).toUpperCase())));
-        row.appendChild(el('div', 'grow', `<strong>${esc(s.name)}</strong>${safeUrl(s.url) ? `<small>${esc(s.url.replace(/^https?:\/\//, ''))}</small>` : ''}`));
+        const row = el('div', 'sponsor-box');
+        row.appendChild(el('div', 'sponsor-box-logo', s.logo ? `<img src="${esc(s.logo)}" alt="">` : `<span class="sponsor-card-initial">${esc(s.name.slice(0, 1).toUpperCase())}</span>`));
+        row.appendChild(el('div', 'sponsor-box-text', `<strong>${esc(s.name)}</strong>${safeUrl(s.url) ? `<small>${esc(host(s.url))}</small>` : '<small>Sans lien</small>'}${s.adults_only ? '<span class="sponsor-adult">Réservé aux adultes</span>' : ''}`));
         if (admin) {
           const acts = el('div', 'row-wrap sponsor-acts');
           const up = btn('↑', 'ghost small icon-only', () => move(list, i, -1)); up.disabled = i === 0; up.setAttribute('aria-label', 'Monter ' + s.name);
@@ -9344,7 +9451,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
           }));
           row.appendChild(acts);
         }
-        sec.appendChild(row);
+        grid.appendChild(row);
       });
     };
     async function move(list, i, d) {
@@ -9358,6 +9465,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       f.innerHTML = `<label>Nom<input name="name" required maxlength="80" value="${esc(s ? s.name : '')}"></label>
         <label>Lien (facultatif)<input name="url" type="url" maxlength="300" placeholder="https://…" value="${esc(s && s.url ? s.url : '')}"></label>
         <label>Logo (facultatif)<input name="logo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <label class="check"><input name="adults" type="checkbox"${s && s.adults_only ? ' checked' : ''}> Réservé aux adultes : jamais affiché sur les équipes de jeunes (bar, brasserie, alcool : loi Évin)</label>
         <p class="form-error"></p>`;
       const preview = el('div', 'sponsor-preview');
       let logo = s ? s.logo : null;
@@ -9373,7 +9481,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         e.preventDefault();
         const url = f.url.value.trim();
         if (url && !safeUrl(url)) { f.querySelector('.form-error').textContent = 'Le lien doit commencer par https://'; return; }
-        const row = { name: f.name.value.trim(), url: url || null, logo: logo || null };
+        const row = { name: f.name.value.trim(), url: url || null, logo: logo || null, adults_only: f.adults.checked };
         const list = await load(club.id);
         const { error } = s ? await sb.from('club_sponsors').update(row).eq('id', s.id) : await sb.from('club_sponsors').insert(Object.assign(row, { club_id: club.id, position: list.length }));
         if (error) { f.querySelector('.form-error').textContent = A.errMsg(error); return; }
@@ -9385,7 +9493,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     await draw();
   }
 
-  window.RugbySponsors = { strip, load, manage };
+  window.RugbySponsors = { strip, card, pick, forTeam, load, manage };
 })();
 
 </script>
@@ -10894,7 +11002,15 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const club = team.club_id && (A.clubs() || []).find(c => c.id === team.club_id), ffr = club && club.settings && club.settings.ffr_url;
     if (ffr) { const a = el('a', 'link home-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; slot.appendChild(a); }
     // Partenaires du club : bloc discret en bas de l'accueil
-    if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
+    // et une carte « Partenaire du club » sous les tuiles, un partenaire différent à chaque ouverture
+    const SP = window.RugbySponsors;
+    if (team.club_id && SP) SP.load(team.club_id).then(all => {
+      const list = SP.forTeam(all, team);
+      if (my !== seq || !list.length) return;
+      const tilesBox = slot.querySelector('.hub-tiles'), featured = SP.card(SP.pick(list, team.club_id));
+      if (tilesBox) tilesBox.after(featured); else slot.appendChild(featured);
+      slot.appendChild(SP.strip(list, { cls: 'home-sponsors' }));
+    });
     // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.
     // Les notifications sont proposées plus tard, après la première réponse à une convocation.
     setTimeout(async () => {

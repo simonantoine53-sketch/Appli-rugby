@@ -279,7 +279,15 @@
     const club = team.club_id && (A.clubs() || []).find(c => c.id === team.club_id), ffr = club && club.settings && club.settings.ffr_url;
     if (ffr) { const a = el('a', 'link home-ffr', 'Page du club sur la FFR ↗'); a.href = ffr; a.target = '_blank'; a.rel = 'noopener'; slot.appendChild(a); }
     // Partenaires du club : bloc discret en bas de l'accueil
-    if (team.club_id && window.RugbySponsors) window.RugbySponsors.load(team.club_id).then(list => { if (my === seq && list.length) slot.appendChild(window.RugbySponsors.strip(list, { cls: 'home-sponsors' })); });
+    // et une carte « Partenaire du club » sous les tuiles, un partenaire différent à chaque ouverture
+    const SP = window.RugbySponsors;
+    if (team.club_id && SP) SP.load(team.club_id).then(all => {
+      const list = SP.forTeam(all, team);
+      if (my !== seq || !list.length) return;
+      const tilesBox = slot.querySelector('.hub-tiles'), featured = SP.card(SP.pick(list, team.club_id));
+      if (tilesBox) tilesBox.after(featured); else slot.appendChild(featured);
+      slot.appendChild(SP.strip(list, { cls: 'home-sponsors' }));
+    });
     // Première connexion : visite guidée proposée, une fois les bandeaux (mesure d'usage, conditions) refermés.
     // Les notifications sont proposées plus tard, après la première réponse à une convocation.
     setTimeout(async () => {
