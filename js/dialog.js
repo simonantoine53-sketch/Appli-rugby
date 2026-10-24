@@ -16,7 +16,7 @@
       <div class="modal-head"><strong id="dialog-title"></strong></div>
       <form class="form dialog-form" novalidate>
         <p class="dialog-msg"></p>
-        <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off"></label>
+        <label class="dialog-field"><span class="dialog-label"></span><input class="dialog-input" type="text" autocomplete="off" autocapitalize="off"></label>
         <textarea class="dialog-text admin-textarea" readonly rows="4"></textarea>
         <div class="dialog-choices"></div>
         <div class="dialog-actions"><button type="button" class="btn outline dialog-cancel">Annuler</button><button type="submit" class="btn primary dialog-ok">OK</button></div>
@@ -46,6 +46,8 @@
     text.classList.toggle('hidden', mode !== 'copy');
     $('.dialog-label').textContent = o.label || '';
     input.value = o.value == null ? '' : o.value; input.placeholder = o.placeholder || ''; input.maxLength = o.maxLength || 120;
+    // Lien : clavier d'adresse web, et pas de « Préremplir le contact » de l'iPhone
+    input.type = o.type === 'url' ? 'url' : 'text'; input.inputMode = o.type === 'url' ? 'url' : 'text';
     text.value = o.text || '';
     const choices = $('.dialog-choices');
     choices.replaceChildren(...(o.choices || []).map(c => {
@@ -88,6 +90,38 @@
   };
 
   /** Carte ou ligne qui s'ouvre au clic : aussi au clavier (Tab puis Entrée ou Espace) et annoncée comme un bouton. */
+  /* iPhone : la fenêtre ouverte suit la partie visible de l'écran (au-dessus du clavier), le champ touché reste
+     visible, et la page derrière ne défile pas. */
+  const root = document.documentElement, vv = window.visualViewport;
+  const anyOpen = () => !!document.querySelector('.modal:not(.hidden)');
+  function syncViewport() {
+    if (!vv) return;
+    const kb = window.innerHeight - vv.height > 120;   // clavier ouvert
+    root.classList.toggle('kb-open', kb);
+    if (kb && anyOpen()) { root.style.setProperty('--vv-h', vv.height + 'px'); root.style.setProperty('--vv-top', vv.offsetTop + 'px'); }
+    else { root.style.removeProperty('--vv-h'); root.style.removeProperty('--vv-top'); }
+  }
+  if (vv) { vv.addEventListener('resize', syncViewport); vv.addEventListener('scroll', syncViewport); }
+  document.addEventListener('focusin', e => {
+    const f = e.target;
+    if (!f || !f.matches || !f.matches('input, textarea, select') || !f.closest('.modal')) return;
+    setTimeout(() => { syncViewport(); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+  });
+  document.addEventListener('focusout', () => setTimeout(syncViewport, 300));
+  const scrollable = (el, stop) => {
+    for (; el && el !== stop; el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      if ((/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) || (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1)) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchmove', e => {
+    const t = e.target, m = t && t.closest && t.closest('.modal');
+    if (!m || m.classList.contains('hidden') || e.touches.length > 1) return;
+    if (t.closest('input, textarea, select, #canvas, .preview-canvas') || scrollable(t, m)) return;
+    e.preventDefault();   // fond grisé ou partie fixe de la fenêtre : rien ne bouge
+  }, { passive: false });
+
   window.RugbyA11y = {
     clickable(node, label) {
       if (!node || node.dataset.kbd) return node;

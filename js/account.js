@@ -858,7 +858,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       season.appendChild(month);
       card.appendChild(season);
       card.appendChild(btn(ffr ? 'Modifier le lien FFR' : 'Ajouter la page FFR du club', 'outline small', async () => {
-        const v = await window.RugbyDialog.prompt('Adresse de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300 });
+        const v = await window.RugbyDialog.prompt('Lien de la page du club (FFR, Mon Club House…)', ffr || 'https://', { title: 'Page FFR du club', placeholder: 'https://…', ok: 'Enregistrer', maxLength: 300, type: 'url' });
         if (v == null) return;
         const url = v.trim();
         if (url && !/^https:\/\/[^\s]+\.[^\s]+$/.test(url)) return E.toast('Adresse invalide : elle doit commencer par https://');
