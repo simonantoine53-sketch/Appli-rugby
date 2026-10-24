@@ -225,7 +225,9 @@
       const w = weekLabel(ev.starts_at);
       if (w !== lastWeek) { list.appendChild(el('h4', 'home-h4 agenda-week', w)); lastWeek = w; }
       list.appendChild(card(ev, summarize(ev, resp, team_), staff, () => render(root, undefined, undefined, true)));
-      if (sponsors.length && (i + 1) % 4 === 0 && i < evs.length - 1) list.appendChild(SP.card(sponsors[(first + (i + 1) / 4 - 1) % sponsors.length], { cls: 'agenda-sponsor', tag: 'Partenaire' }));
+      // Toutes les 4 lignes ; sur une liste courte (2 à 4 événements), une seule après le 2e ; jamais après le dernier
+      const slot = (i + 1) % 4 === 0 ? (i + 1) / 4 - 1 : (evs.length < 5 && i === 1 ? 0 : -1);
+      if (sponsors.length && slot >= 0 && i < evs.length - 1) list.appendChild(SP.card(sponsors[(first + slot) % sponsors.length], { cls: 'agenda-sponsor', tag: 'Partenaire' }));
     });
     restore();
   }

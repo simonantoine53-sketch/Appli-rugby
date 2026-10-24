@@ -16,9 +16,8 @@ begin
   if not new.youth then new.youth := public.guess_youth(new.name); end if;
   return new;
 end $$;
-drop trigger if exists teams_youth on public.teams;
-create trigger teams_youth before insert on public.teams for each row execute function public.teams_guess_youth();
-update public.teams set youth = true where not youth and public.guess_youth(name);
+create or replace trigger teams_youth before insert on public.teams for each row execute function public.teams_guess_youth();
+-- Équipes déjà créées : cochées « Jeunes » à la main par le bureau (Équipe › Club) ; seules les nouvelles sont devinées.
 grant update (youth) on public.teams to authenticated;
 
 -- 3. Compteur anonyme (aucun identifiant de personne) : affichages et clics par partenaire et par jour
