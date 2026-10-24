@@ -680,7 +680,7 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 @media (max-width: 900px) {
   .topbar { height: 52px; gap: 6px; padding: 0 8px; }
   .zoom { display: none; }
-  .hint { display: none; position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
+  .hint { display: none; position: absolute; top: 120px; left: 50%; transform: translateX(-50%); z-index: 7; border: none; border-radius: 999px; background: var(--text); color: var(--panel); font-size: 13px; padding: 6px 14px; max-width: calc(100% - 24px); text-align: center; box-shadow: var(--shadow); }
   .hint.tool-on { display: block; }
   body:has(#props:not(.hidden)) .hint.tool-on { display: none; }   /* ne cache pas « Supprimer » quand un objet est sélectionné */
   .btn-back { width: 40px; height: 40px; flex: 0 0 auto; }
@@ -689,8 +689,12 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .title-input.long { font-size: 14px; }
   /* Téléphone : le nom du dessin a sa propre ligne, à droite d'Annuler / Rétablir (plus coupé par les boutons) */
   #view-editor { position: relative; }
-  #view-editor .title-wrap { position: absolute; top: 64px; left: 146px; right: 12px; z-index: 6; }
-  #view-editor .title-input { background: var(--panel); border-color: var(--border); min-height: 44px; }
+  #view-editor .title-wrap { position: absolute; top: 64px; left: 140px; right: 10px; height: 50px; z-index: 6; }
+  /* Le nom se lit comme un titre (souligné en pointillés, crayon) ; en le touchant, il devient un champ */
+  #view-editor .title-input { background: transparent; border: 1.5px solid transparent; border-bottom: 1.5px dashed var(--border-strong); border-radius: 8px 8px 0 0; min-height: 0; font-weight: 700; padding: 4px 28px 4px 6px; }
+  #view-editor .title-input:focus { background: var(--panel); border-color: var(--primary); border-radius: 8px; }
+  #view-editor .title-wrap::after { content: '✎'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+  #view-editor .title-wrap:focus-within::after { display: none; }
   .actions { margin-left: auto; gap: 4px; flex: 0 0 auto; }
   .actions .btn { padding: 4px 8px; flex-direction: column; gap: 1px; font-size: 11px; font-weight: 600; }
   .actions .btn > span { display: block; line-height: 1.1; }
@@ -753,7 +757,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 
   .layout { position: relative; }
   .canvas-area { padding-bottom: calc(56px + var(--bar-safe)); }
-  .canvas-wrap { padding: 8px; }
+  /* Place réservée en haut (Annuler, Rétablir, nom) et en bas (sélection, zoom) : le terrain n'est jamais dessous */
+  .canvas-wrap { padding: 66px 8px 64px; }
   #canvas { border-radius: 10px; }
   .props { top: 6px; left: 6px; right: 6px; transform: none; max-width: none; padding: 4px 6px; gap: 4px; }
   .props input[type=text] { font-size: 16px; width: 52px; }
@@ -772,7 +777,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
   .tab-content { padding: 12px; }
 
   .zoom-fab { display: flex; }
-  .fab-left { left: 12px; bottom: 68px; }
+  .fab-left { left: 12px; bottom: calc(68px + var(--bar-safe)); }
+  .zoom-fab { bottom: calc(68px + var(--bar-safe)); }
   .fab-select, .fab-mode { width: 50px; height: 50px; }
   .fab-left.with-modes .fab-mode { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 56px; }
   .props .pbtn { padding: 6px 8px; }

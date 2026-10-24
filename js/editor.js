@@ -180,7 +180,9 @@
   let baseWidth = 800;
   function fitZoom() {
     const spec = fieldSpec(state.drawing.settings);
-    const availW = wrap.clientWidth - 48, availH = wrap.clientHeight - 48;
+    // Marges réelles du cadre (sur téléphone, place réservée en haut et en bas pour les boutons)
+    const cs = getComputedStyle(wrap), pad = k => parseFloat(cs[k]) || 0;
+    const availW = wrap.clientWidth - pad('paddingLeft') - pad('paddingRight'), availH = wrap.clientHeight - pad('paddingTop') - pad('paddingBottom');
     baseWidth = Math.max(200, Math.min(availW, availH * spec.W / spec.H));
     applyZoom();
   }
