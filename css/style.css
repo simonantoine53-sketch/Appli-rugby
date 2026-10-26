@@ -1736,3 +1736,14 @@ img, svg { -webkit-user-drag: none; }
   /* Pastille de date des événements : vert pâle, chiffre en Archivo */
   .charte-terrain .ev-date { border-radius: 10px; }
 }
+
+/* En-tête des pages (accueil, agenda, équipe…) sur téléphone : plus haut et aligné sur la marge des pages (l'éditeur garde sa barre compacte) */
+@media (max-width: 900px) {
+  .home-bar { height: 62px; padding: 0 16px; gap: 12px; }
+  .home-bar .brand { gap: 10px; }
+  .home-bar .logo-terrain { width: 34px; height: 34px; }
+  .home-bar .brand strong { font-size: 17px; }
+  .hub-team { font-size: 15px; padding: 8px 32px 8px 12px; max-width: 200px; }
+  .hub-account { min-width: 42px; height: 42px; }
+  .hub-account .avatar-dot { width: 40px; height: 40px; }
+}
