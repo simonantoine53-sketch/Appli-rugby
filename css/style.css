@@ -467,7 +467,8 @@ kbd { background: var(--subtle); border: 1px solid var(--border-strong); border-
 .ev-detail { background: var(--panel); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .ev-detail h2 { margin: 0; font-size: 22px; }
 .ev-lines { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
-.ev-notes { margin: 0; white-space: pre-wrap; background: var(--subtle); border-radius: 8px; padding: 8px 10px; font-size: 14px; }
+.ev-notes { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--subtle); border-radius: 8px; padding: 8px 10px; font-size: 14px; -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.ev-notes a { color: var(--primary); font-weight: 600; }
 .ev-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .ev-answer { background: var(--panel); border: 2px solid var(--primary); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 .ev-comment input { font-size: 15px; }

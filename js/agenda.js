@@ -11,6 +11,8 @@
   const sb = A.sb;
   const track = (name, props) => { if (window.RugbyTrack) window.RugbyTrack.track(name, props); };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  /** Notes : les adresses web deviennent des liens (ouverts dans un nouvel onglet), affichés sans « https:// ». */
+  const linkify = s => esc(s).replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)»]/g, u => `<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, '')}</a>`);
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
   const btn = (label, cls, fn) => { const b = el('button', 'btn ' + cls); b.textContent = label; b.onclick = e => { e.stopPropagation(); fn(b); }; return b; };
   const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
@@ -301,7 +303,7 @@
     if (ev.meet_at) lines.push(`Rendez-vous à ${time(ev.meet_at)}`);
     if (ev.location) lines.push(`<a class="link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}" target="_blank" rel="noopener">${esc(ev.location)}</a>`);
     info.appendChild(el('div', 'ev-lines', lines.map(l => `<div>${l}</div>`).join('')));
-    if (ev.notes) info.appendChild(el('p', 'ev-notes', esc(ev.notes)));
+    if (ev.notes) info.appendChild(el('p', 'ev-notes', linkify(ev.notes)));
     const tools = el('div', 'ev-tools');
     if (ev.kind === 'match' && window.RugbySheets) tools.appendChild(btn(staff ? 'Feuille de match' : 'Voir la compo', 'secondary small', () => E.go('compos', ev.id)));
     tools.appendChild(btn('Ajouter à mon agenda', 'outline small', () => downloadIcs(ev)));
