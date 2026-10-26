@@ -56,7 +56,7 @@
 <div id="boot" class="boot" role="status" aria-live="polite">
   <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="32" class="boot-tile"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" class="boot-h" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" class="boot-dot"/></svg></div>
   <strong class="boot-name">Rugbeo</strong>
-  <p class="boot-msg">Chargement de votre club…</p>
+  <p class="boot-msg">Chargement de ton club…</p>
   <div class="boot-bar" aria-hidden="true"><i></i></div>
   <button type="button" class="btn outline boot-retry hidden" onclick="location.reload()">Réessayer</button>
 </div>
@@ -65,12 +65,12 @@
   (function () {
     var b = document.getElementById('boot'), m = b.querySelector('.boot-msg'), r = b.querySelector('.boot-retry');
     function say(t, retry) { if (!b.isConnected) return; m.textContent = t; if (retry) r.classList.remove('hidden'); }
-    function offline() { say('Pas de réseau pour le moment. Rugbeo s’ouvrira dès que votre téléphone captera.', true); }
+    function offline() { say('Pas de réseau pour le moment. Rugbeo s’ouvrira dès que ton téléphone captera.', true); }
     if (navigator.onLine === false) offline();
     window.addEventListener('offline', offline);
     window.addEventListener('online', function () { if (b.isConnected) location.reload(); });
     setTimeout(function () { say('Connexion lente : encore quelques secondes…'); }, 5000);
-    setTimeout(function () { say('Le réseau a du mal à suivre. Vous pouvez patienter ou réessayer.', true); }, 20000);
+    setTimeout(function () { say('Le réseau a du mal à suivre. Tu peux patienter ou réessayer.', true); }, 20000);
   })();
 </script>
 <!-- Feuille de style après l'écran de démarrage : il s'affiche sans l'attendre (réseau lent) -->
@@ -1924,7 +1924,7 @@ img, svg { -webkit-user-drag: none; }
         <button id="btn-password" class="acc-row" aria-expanded="false" aria-controls="password-form">Changer mon mot de passe<span class="acc-chev" aria-hidden="true">›</span></button>
         <form id="password-form" class="form password-form hidden" novalidate>
           <label>Nouveau mot de passe<input id="password-new" type="password" autocomplete="new-password" minlength="6" required></label>
-          <label>Retapez-le<input id="password-again" type="password" autocomplete="new-password" minlength="6" required></label>
+          <label>Retape-le<input id="password-again" type="password" autocomplete="new-password" minlength="6" required></label>
           <p id="password-msg" class="form-error" role="alert"></p>
           <div class="row-wrap"><button id="password-save" class="btn primary small" type="submit">Enregistrer</button><button id="password-cancel" class="btn ghost small" type="button">Annuler</button></div>
         </form>
@@ -1974,7 +1974,7 @@ img, svg { -webkit-user-drag: none; }
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
   <div class="title-wrap">
-    <textarea id="title" class="title-input" rows="1" maxlength="80" spellcheck="false" aria-label="Nom du dessin" title="Cliquez pour renommer le dessin" placeholder="Nom du dessin">Nouveau dessin</textarea>
+    <textarea id="title" class="title-input" rows="1" maxlength="80" spellcheck="false" aria-label="Nom du dessin" title="Touche pour renommer le dessin" placeholder="Nom du dessin">Nouveau dessin</textarea>
   </div>
 
   <div class="zoom">
@@ -2044,7 +2044,7 @@ img, svg { -webkit-user-drag: none; }
     </div>
     <div id="frame-bar" class="frame-bar hidden">
       <strong id="frame-bar-title">Cadrage</strong>
-      <span class="frame-help">Glissez le cadre sur la zone à montrer, tirez un coin pour zoomer.</span>
+      <span class="frame-help">Glisse le cadre sur la zone à montrer, tire un coin pour zoomer.</span>
       <div class="frame-btns">
         <button id="frame-in" class="btn outline small" title="Zoomer davantage">+ Zoom</button>
         <button id="frame-out" class="btn outline small" title="Élargir le cadre">− Zoom</button>
@@ -2053,7 +2053,7 @@ img, svg { -webkit-user-drag: none; }
         <button id="frame-ok" class="btn primary small">Valider le cadrage</button>
       </div>
     </div>
-    <div class="hint" id="hint">Choisissez un outil à gauche, puis cliquez ou glissez sur le terrain.</div>
+    <div class="hint" id="hint">Choisis un outil à gauche, puis touche ou glisse sur le terrain.</div>
   </section>
 
   <aside class="panel">
@@ -2065,7 +2065,7 @@ img, svg { -webkit-user-drag: none; }
     <div id="tab-steps" class="tab-content">
       <div id="steps" class="steps"></div>
       <button id="add-step" class="btn outline wide">+ Ajouter une étape</button>
-      <p class="help">La nouvelle étape reprend les joueurs là où ils sont. Déplacez-les : l’aperçu animera le mouvement.</p>
+      <p class="help">La nouvelle étape reprend les joueurs là où ils sont. Déplace-les : l’aperçu animera le mouvement.</p>
     </div>
 
     <div id="tab-settings" class="tab-content hidden settings-pane">
@@ -2223,7 +2223,7 @@ img, svg { -webkit-user-drag: none; }
     </div>
     <div id="comments-list" class="team-body comments-list"></div>
     <form id="comments-form" class="inline-form comments-form">
-      <input id="comments-input" type="text" placeholder="Votre commentaire…" maxlength="1000" required>
+      <input id="comments-input" type="text" placeholder="Ton commentaire…" maxlength="1000" required>
       <button class="btn primary small" type="submit">Envoyer</button>
     </form>
   </div>
@@ -2267,19 +2267,19 @@ img, svg { -webkit-user-drag: none; }
     <p id="auth-note" class="auth-note hidden"></p>
     <!-- Inscription, étape 1 : qui crée le compte ? -->
     <div id="auth-who" class="auth-who hidden">
-      <button type="button" class="who-card who-login hidden" data-who="login"><strong>J’ai déjà un compte Rugbeo</strong><span>Connectez-vous : vous rejoindrez l’équipe tout de suite.</span></button>
+      <button type="button" class="who-card who-login hidden" data-who="login"><strong>J’ai déjà un compte Rugbeo</strong><span>Connecte-toi : tu rejoindras l’équipe tout de suite.</span></button>
       <p class="auth-step-title">Qui crée le compte ?</p>
       <button type="button" class="who-card" data-who="adult"><strong>J’ai 15 ans ou plus</strong><span>Joueur, coach, dirigeant, bénévole…</span></button>
       <button type="button" class="who-card" data-who="parent"><strong>Je suis parent d’un joueur ou d’une joueuse de moins de 15 ans</strong><span>Vous créez son compte et répondez à ses convocations. Plusieurs enfants ? Un seul compte suffit.</span></button>
-      <button type="button" class="who-card" data-who="kid"><strong>J’ai moins de 15 ans</strong><span>Un parent crée le compte pour vous.</span></button>
+      <button type="button" class="who-card" data-who="kid"><strong>J’ai moins de 15 ans</strong><span>Un parent crée le compte pour toi.</span></button>
       <div id="auth-kid-info" class="auth-parent hidden">
-        <p class="help">Avant 15 ans, c’est un parent qui crée le compte (la loi le demande). Il pourra ensuite répondre aux convocations avec vous, et vous donner votre propre compte à 15 ans.</p>
+        <p class="help">Avant 15 ans, c’est un parent qui crée le compte (la loi le demande). Il pourra ensuite répondre aux convocations avec toi, et te donner ton propre compte à 15 ans.</p>
         <button type="button" id="auth-kid-share" class="btn primary">Envoyer le lien à un parent</button>
       </div>
     </div>
     <form id="auth-form" class="form" data-mode="login">
       <a href="#" id="auth-who-back" class="auth-link hidden">← Retour</a>
-      <p id="auth-switch" class="auth-switch hidden">Vous inscrivez votre enfant de moins de 15 ans ? <a href="#" data-switch="parent">Créer un compte parent</a><br>Vous avez moins de 15 ans ? <a href="#" data-switch="choose">Voir comment faire</a></p>
+      <p id="auth-switch" class="auth-switch hidden">Vous inscrivez votre enfant de moins de 15 ans ? <a href="#" data-switch="parent">Créer un compte parent</a><br>Tu as moins de 15 ans ? <a href="#" data-switch="choose">Voir comment faire</a></p>
       <div id="auth-kids" class="auth-kids hidden">
         <span class="auth-kids-label">Prénom et nom du jeune</span>
         <div id="auth-kid-list"></div>
@@ -2299,21 +2299,21 @@ img, svg { -webkit-user-drag: none; }
           </ul>
           <label class="check"><input id="auth-parent-ok" type="checkbox"><span><span id="auth-parent-who">Je suis son parent (ou son représentant légal)</span>. J’accepte, pour mon enfant, la <a href="#" data-legal="privacy">politique de confidentialité</a>.</span></label>
         </div>
-        <p class="help auth-terms">En créant un compte, vous acceptez les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Vos données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
+        <p class="help auth-terms">En créant un compte, tu acceptes les <a href="#" data-legal="cgu">conditions d’utilisation</a>. Tes données sont traitées comme expliqué dans la <a href="#" data-legal="privacy">politique de confidentialité</a>.</p>
       </div>
       <a href="#" id="auth-forgot" class="auth-link">Mot de passe oublié ?</a>
       <p id="auth-error" class="form-error" role="alert"></p>
       <button id="auth-submit" class="btn primary wide" type="submit">Se connecter</button>
       <a href="#" id="auth-back" class="auth-link center hidden">← Retour à la connexion</a>
-      <p class="help">Gratuit, sans publicité. Votre compte garde vos dessins sur tous vos appareils et vous relie à votre équipe. <a href="#" data-legal="privacy">Confidentialité</a> · <a href="#" data-legal="legal">Mentions légales</a></p>
+      <p class="help">Gratuit, sans publicité. Ton compte garde tes dessins sur tous tes appareils et te relie à ton équipe. <a href="#" data-legal="privacy">Confidentialité</a> · <a href="#" data-legal="legal">Mentions légales</a></p>
     </form>
     <div id="auth-pending" class="auth-pending hidden">
       <div class="auth-pending-icon" aria-hidden="true">✉️</div>
-      <h3>Vérifiez votre boîte mail</h3>
+      <h3>Vérifie ta boîte mail</h3>
       <p>Un e-mail de confirmation a été envoyé à <strong id="auth-pending-email"></strong>.</p>
-      <p>Cliquez sur le lien qu’il contient : <strong>vous serez connecté automatiquement</strong>, même si vous l’ouvrez sur un autre appareil.</p>
-      <p id="auth-pending-next">Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.</p>
-      <p class="muted small">Rien reçu ? Regardez dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
+      <p>Clique sur le lien qu’il contient : <strong>tu seras connecté automatiquement</strong>, même si tu l’ouvres sur un autre appareil.</p>
+      <p id="auth-pending-next">Ensuite : entre le code donné par ton club ou ton coach pour rejoindre ton équipe.</p>
+      <p class="muted small">Rien reçu ? Regarde dans les spams. Sans confirmation sous 24 h, l’inscription est annulée et l’adresse peut être réutilisée.</p>
       <p id="auth-pending-msg" class="form-error" role="alert"></p>
       <button id="auth-resend" class="btn outline wide" type="button">Renvoyer l’e-mail</button>
       <button id="auth-change" class="btn ghost wide" type="button">Changer d’adresse e-mail</button>
@@ -2456,7 +2456,7 @@ img, svg { -webkit-user-drag: none; }
 <div id="modal-club-teams" class="modal hidden">
   <div class="modal-box auth-box">
     <div class="modal-head">
-      <strong id="club-teams-title">Rejoindre vos équipes</strong>
+      <strong id="club-teams-title">Rejoindre tes équipes</strong>
       <button class="btn-close" data-close="modal-club-teams" title="Fermer">✕</button>
     </div>
     <div id="club-teams-body" class="club-teams-body"></div>
@@ -2487,7 +2487,7 @@ img, svg { -webkit-user-drag: none; }
         <label><input type="radio" name="feedback-kind" value="idea" checked> Une idée</label>
         <label><input type="radio" name="feedback-kind" value="other"> Autre</label>
       </div>
-      <textarea id="feedback-message" class="admin-textarea" rows="5" maxlength="2000" placeholder="Qu’est-ce qui ne marche pas, ou qu’est-ce qui vous aiderait ? Pour un bug, dites ce que vous faisiez."></textarea>
+      <textarea id="feedback-message" class="admin-textarea" rows="5" maxlength="2000" placeholder="Qu’est-ce qui ne marche pas, ou qu’est-ce qui t’aiderait ? Pour un bug, dis ce que tu faisais."></textarea>
       <p id="feedback-error" class="form-error" role="alert"></p>
       <button id="feedback-submit" class="btn primary wide" type="submit">Envoyer</button>
       <p class="help">La page, l’appareil et la version de l’appli sont joints automatiquement pour nous aider à comprendre.</p>
@@ -2777,7 +2777,7 @@ img, svg { -webkit-user-drag: none; }
     if (bar || (!force && read())) return;
     bar = document.createElement('div');
     bar.className = 'consent-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-labelledby', 'consent-title');
-    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> Pouvons-nous mesurer votre usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
+    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> On peut mesurer ton usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
       <div class="consent-actions"><button type="button" class="btn outline" data-c="0">Refuser</button><button type="button" class="btn outline" data-c="1">Accepter</button></div>`;
     bar.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
       const ok = b.dataset.c === '1';
@@ -4137,7 +4137,7 @@ img, svg { -webkit-user-drag: none; }
     box.innerHTML = `<svg viewBox="0 0 32 32" width="56" height="56" aria-hidden="true"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg>
       <h2>Pas de réseau</h2>
       <p>Cette page n’a pas encore été ouverte sur ce téléphone, elle ne peut donc pas s’afficher sans réseau.</p>
-      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Vos réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
+      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Tes réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = 'Réessayer';
     b.onclick = () => (retry ? retry() : location.reload());
     box.appendChild(b);
@@ -4182,7 +4182,7 @@ img, svg { -webkit-user-drag: none; }
       if (r === 'coach' || r === 'joueur') { open(r); return; }
       const D = window.RugbyDialog;
       if (!D || !D.choose) { open('coach'); return; }
-      D.choose('Voir la démo', 'Visitez le RC Démo, un club fictif. Rien n’est enregistré.', [
+      D.choose('Voir la démo', 'Visite le RC Démo, un club fictif. Rien n’est enregistré.', [
         { value: 'coach', label: 'Comme coach', sub: 'convoquer, dessiner les stratégies, faire la compo' },
         { value: 'joueur', label: 'Comme joueur', sub: 'répondre aux convocations, voir les stratégies et la compo' }
       ]).then(v => { if (v) open(v); });
@@ -4190,8 +4190,8 @@ img, svg { -webkit-user-drag: none; }
     stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); },
     /** Exporter dans la démo : on propose de créer un compte ; la stratégie y sera copiée à la première connexion. */
     wantExport(id, title) {
-      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), créez votre compte gratuit : la stratégie sera ajoutée à vos stratégies dès votre inscription.`,
-        { title: 'Créez votre compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
+      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), crée ton compte gratuit : la stratégie sera ajoutée à tes stratégies dès ton inscription.`,
+        { title: 'Crée ton compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
         if (!ok) return;
         try { localStorage.setItem(WANT, JSON.stringify({ id, at: Date.now() })); } catch (e) { /* ignore */ }
         toSignup();
@@ -4226,7 +4226,7 @@ img, svg { -webkit-user-drag: none; }
   // Mesure d'usage, erreurs : ignorées sans rien dire ; le reste est une action de l'utilisateur
   const SILENT = new Set(['events', 'usage_sessions', 'client_errors', 'page_counts', 'activity_last', 'push_subscriptions']);
   let warned = 0;
-  const warn = () => { if (Date.now() - warned < 4000) return; warned = Date.now(); const E = window.RugbyEditor; if (E && E.toast) E.toast('Mode démo : rien n’est enregistré. Créez votre compte pour essayer avec votre équipe.'); };
+  const warn = () => { if (Date.now() - warned < 4000) return; warned = Date.now(); const E = window.RugbyEditor; if (E && E.toast) E.toast('Mode démo : rien n’est enregistré. Crée ton compte pour essayer avec ton équipe.'); };
 
   let DB = null, ME = null;
   function build(snap) {
@@ -4343,8 +4343,8 @@ img, svg { -webkit-user-drag: none; }
           getSession: () => session().then(s => ({ data: { session: s } })),
           getUser: () => session().then(s => ({ data: { user: s && s.user } })),
           onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-          signInWithPassword: () => Promise.resolve({ data: {}, error: { message: 'Quittez la démo pour vous connecter.' } }),
-          signUp: () => Promise.resolve({ data: {}, error: { message: 'Quittez la démo pour créer votre compte.' } }),
+          signInWithPassword: () => Promise.resolve({ data: {}, error: { message: 'Quitte la démo pour te connecter.' } }),
+          signUp: () => Promise.resolve({ data: {}, error: { message: 'Quitte la démo pour créer ton compte.' } }),
           signOut: () => { window.RugbyDemo.stop(); return Promise.resolve({ error: null }); },
           resend: () => Promise.resolve({ error: null }), resetPasswordForEmail: () => Promise.resolve({ error: null }), updateUser: () => Promise.resolve({ data: {}, error: null })
         }
@@ -4641,17 +4641,17 @@ img, svg { -webkit-user-drag: none; }
     $('#btn-list-formations').onclick = openSavedFormations;
     nameIconButtons();
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
-    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
+    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touche les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
-    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.'; };
+    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touche un objet pour le déplacer, glisse dans le vide pour en sélectionner plusieurs.'; };
   }
 
   /* ---------- Formations prêtes à placer ---------- */
   const formation = { tool: null, opts: { attack: 'blue', defense: 'red' } };
   const FORMATION_INFO = {
-    scrum: { name: 'Mêlée', title: 'Mêlée : 15 contre 15', help: 'Après validation, touchez le terrain à l’endroit de la mêlée : les 30 joueurs se placent d’un coup.' },
-    lineout: { name: 'Touche', title: 'Touche : 15 contre 15', help: 'Après validation, touchez le terrain : l’alignement se met sur la ligne de touche la plus proche du point touché.' },
-    ruck: { name: 'Ruck', masc: true, title: 'Ruck et alignement', help: 'Après validation, touchez le terrain à l’endroit du ruck : le plaqué, ses deux soutiens, le 9 et l’alignement des arrières se placent côté ouvert.' },
+    scrum: { name: 'Mêlée', title: 'Mêlée : 15 contre 15', help: 'Après validation, touche le terrain à l’endroit de la mêlée : les 30 joueurs se placent d’un coup.' },
+    lineout: { name: 'Touche', title: 'Touche : 15 contre 15', help: 'Après validation, touche le terrain : l’alignement se met sur la ligne de touche la plus proche du point touché.' },
+    ruck: { name: 'Ruck', masc: true, title: 'Ruck et alignement', help: 'Après validation, touche le terrain à l’endroit du ruck : le plaqué, ses deux soutiens, le 9 et l’alignement des arrières se placent côté ouvert.' },
     kickoff: { name: 'Engagement', masc: true, title: 'Engagement en 4-4 : 15 contre 15', help: 'Tout se place au centre de la ligne médiane : quatre avants de chaque côté du botteur, et en face deux paquets de quatre avants pour la réception.', a: 'Équipe qui engage', d: 'Équipe qui reçoit', dir: 'Sens du coup d’envoi', ok: 'Placer au centre du terrain' }
   };
   function openFormation(t) {
@@ -4699,7 +4699,7 @@ img, svg { -webkit-user-drag: none; }
   async function saveCurrentFormation() {
     closeDrawer();
     const objs = curObjects();
-    if (!objs.length) { toast('Le terrain est vide : placez d’abord des joueurs.'); return; }
+    if (!objs.length) { toast('Le terrain est vide : place d’abord des joueurs.'); return; }
     if (acc() && !acc().canUse('save')) return;
     const name = await window.RugbyDialog.prompt('Nom de la formation', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '', { title: 'Enregistrer la formation actuelle', placeholder: 'Ex. Touche à 5 attaque, Mêlée 8 avants', ok: 'Enregistrer', maxLength: 60 });
     if (!name) return;
@@ -4717,7 +4717,7 @@ img, svg { -webkit-user-drag: none; }
     const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = 'Enregistrer la formation actuelle';
     create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
     root.appendChild(create);
-    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistrez les joueurs placés sur le terrain : vous pourrez les replacer d’un appui dans n’importe quel dessin.' }));
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistre les joueurs placés sur le terrain : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';
@@ -4751,7 +4751,7 @@ img, svg { -webkit-user-drag: none; }
     setTool(null);
     
     const info = formation.opts.type === 'custom' ? { name: `Formation « ${formation.opts.name} »` } : FORMATION_INFO[formation.opts.type] || FORMATION_INFO.scrum;
-    toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
+    toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplace-les si besoin.`);
   }
 
   function setTool(id) {
@@ -4767,12 +4767,12 @@ img, svg { -webkit-user-drag: none; }
     const t = id === 'formation' ? { label: 'Formation', kind: 'formation' } : id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
-    $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touchez un élément pour le déplacer ou le modifier';
+    $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touche un élément pour le déplacer ou le modifier';
     const touch = window.matchMedia('(pointer: coarse)').matches, name = t ? t.label.split(' (')[0] : '';
-    $('#hint').textContent = !t ? (touch ? 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.' : 'Mode sélection : cliquez un objet pour le déplacer, tirez un cadre dans le vide pour en sélectionner plusieurs.')
-      : t.kind === 'formation' ? 'Touchez le terrain là où placer la formation.'
-      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glissez le doigt sur le terrain` : `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
-      : touch ? `${name} : touchez le terrain pour placer` : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
+    $('#hint').textContent = !t ? (touch ? 'Mode sélection : touche un objet pour le déplacer, glisse dans le vide pour en sélectionner plusieurs.' : 'Mode sélection : clique un objet pour le déplacer, tire un cadre dans le vide pour en sélectionner plusieurs.')
+      : t.kind === 'formation' ? 'Touche le terrain là où placer la formation.'
+      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glisse le doigt sur le terrain` : `${t.label} : clique-glisse sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
+      : touch ? `${name} : touche le terrain pour placer` : `${t.label} : clique sur le terrain pour placer. Échap pour revenir à la sélection.`;
   }
 
   /* ---------- Création d'objets ---------- */
@@ -5331,13 +5331,13 @@ img, svg { -webkit-user-drag: none; }
     const hold = cur.duration || d.settings.stepDuration || 1200;
     preview.timer = setTimeout(() => {
       if (!preview.playing) return;
-      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
+      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuie sur Lire pour continuer.'); } else playLoop(); });
     }, hold * 0.6);
   }
   function setPlaying(on) {
     preview.playing = on; $(preview.playBtn).textContent = on ? 'Pause' : 'Lire';
     clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
-    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = 'Lire'; return; } playLoop(); }
+    if (on) { if (pd().steps.length < 2) { toast('Ajoute au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = 'Lire'; return; } playLoop(); }
     else showPreviewStep(preview.step);
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
@@ -5425,7 +5425,7 @@ img, svg { -webkit-user-drag: none; }
     track('export', { kind, steps: state.drawing.steps.length });
     if (kind === 'png') return exportPng();
     if (kind === 'pdf') return exportPdf();
-    if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
+    if (state.drawing.steps.length < 2) { toast('Ajoute au moins deux étapes pour un export animé.'); return; }
     const label = kind === 'gif' ? 'Création du GIF animé…' : 'Enregistrement de la vidéo…';
     const prog = showProgress(label);
     const fn = kind === 'gif' ? window.RugbyExport.exportGif : window.RugbyExport.exportWebm;
@@ -5455,7 +5455,7 @@ img, svg { -webkit-user-drag: none; }
       <p class="noprint"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></p>
       <div class="grid">${steps}</div></body></html>`;
     const w = window.open('', '_blank');
-    if (!w) { toast('Autorisez les fenêtres surgissantes pour la fiche PDF.'); return; }
+    if (!w) { toast('Autorise les fenêtres surgissantes pour la fiche PDF.'); return; }
     w.document.open(); w.document.write(html); w.document.close();
     w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* l'utilisateur imprimera depuis le bouton */ } }, 400);
   }
@@ -5490,7 +5490,7 @@ img, svg { -webkit-user-drag: none; }
   /** true : on peut quitter (rien à perdre, enregistré, ou abandon choisi). */
   async function confirmLeave() {
     if (!isDirty()) return true;
-    const ok = await window.RugbyDialog.confirm('Vos derniers changements ne sont pas enregistrés.', { title: 'Quitter l’éditeur ?', ok: 'Enregistrer', cancel: 'Quitter sans enregistrer' });
+    const ok = await window.RugbyDialog.confirm('Tes derniers changements ne sont pas enregistrés.', { title: 'Quitter l’éditeur ?', ok: 'Enregistrer', cancel: 'Quitter sans enregistrer' });
     if (!ok) { markSaved(); return true; }
     await saveNow();
     return !isDirty();
@@ -5535,7 +5535,7 @@ img, svg { -webkit-user-drag: none; }
     $('#home-tabs').classList.add('hidden');
     const root = $('#home-list'); root.replaceChildren();
     const all = readLib();
-    if (!all.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); return; }
+    if (!all.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Touche « Nouveau dessin » pour commencer.'; root.appendChild(p); return; }
     root.appendChild(filterBar(renderLocalHome, countByCat(all)));
     const list = filterDrawings(all);
     if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin ne correspond à la recherche.'; root.appendChild(p); }
@@ -5758,15 +5758,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const m = (e && e.message) || String(e), code = (e && e.code) || '';
     // Limites de Supabase : on dit pourquoi et combien de temps attendre
     const wait = m.match(/after (\d+) seconds?/i);
-    if (wait) return `Patientez ${wait[1]} secondes avant de redemander un e-mail.`;
-    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessayez dans 1 heure environ. Si votre e-mail est déjà confirmé, vous pouvez vous connecter normalement.';
-    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessayez dans 5 minutes.';
+    if (wait) return `Patiente ${wait[1]} secondes avant de redemander un e-mail.`;
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessaie dans 1 heure environ. Si ton e-mail est déjà confirmé, tu peux te connecter normalement.';
+    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessaie dans 5 minutes.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
-    if (/Email not confirmed/i.test(m)) return 'Confirmez votre e-mail (lien reçu par mail) avant de vous connecter.';
+    if (/Email not confirmed/i.test(m)) return 'Confirme ton e-mail (lien reçu par mail) avant de te connecter.';
     if (/already registered/i.test(m)) return 'Cet e-mail a déjà un compte.';
     if (/different from the old/i.test(m)) return 'Le nouveau mot de passe doit être différent de l’ancien.';
     if (/Password should be/i.test(m)) return 'Mot de passe trop court (6 caractères minimum).';
-    if (/row-level security/i.test(m)) return 'Action non autorisée pour votre rôle.';
+    if (/row-level security/i.test(m)) return 'Action non autorisée pour ton rôle.';
+    // Messages de la base encore au vouvoiement : repris au tutoiement de l'appli
+    if (/Demandez un code à votre club/i.test(m)) return 'La création de club se fait sur invitation. Demande un code à ton club.';
+    if (/Nommez d.abord une autre personne au bureau/i.test(m)) return 'Nomme d’abord une autre personne au bureau du club.';
+    if (/Rejoignez d.abord le club/i.test(m)) return 'Rejoins d’abord le club.';
     return m;
   };
 
@@ -5780,7 +5784,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
-    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoignez votre club »
+    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoins ton club »
     if (session && !S.user && ready) { ready = false; if (E.currentView() === 'home') E.refreshView(); }
     S.user = session ? session.user : null;
     if (S.user) {
@@ -5788,7 +5792,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
       if (S.profile.guardian_id) {
         const { data: claimed } = await sb.rpc('claim_my_account');
-        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le vôtre.'); }
+        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le tien.'); }
       }
       await loadKids();
       await loadTeams();
@@ -5810,9 +5814,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   // getSession attend que Supabase ait lu le jeton du lien : on peut ensuite nettoyer l'adresse
   if (authReturn) sb.auth.getSession().then(({ data }) => {
     history.replaceState(null, '', location.pathname + location.search + '#/');
-    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, tu es connecté !');
     else if (authReturn === 'recovery' && data.session) openAuth('reset');
-    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
+    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connecte-toi : si ton e-mail n’est pas encore confirmé, tu pourras recevoir un nouveau lien.', 'info'); }
   });
 
   async function loadKids() {
@@ -5852,7 +5856,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const before = new Set((S.pending || []).map(t => t.id));
       await loadTeams();
       const joined = S.teams.find(t => before.has(t.id) && !t.notMember && !t.superadmin);
-      if (joined) E.toast(`Demande acceptée : vous faites partie de « ${joined.name} ».`);
+      if (joined) E.toast(`Demande acceptée : tu fais partie de « ${joined.name} ».`);
       // On ne redessine que les pages sans saisie en cours (accueil, équipe, compte)
       if (/^(#\/?|#\/(team|account))?$/.test(location.hash)) refreshCurrentView(); else renderAccountButton();
     }, 400);
@@ -6001,7 +6005,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const text = `Bonjour ! Pour que je puisse suivre mon équipe de rugby sur Rugbeo (convocations, compos), il faut qu’un parent crée mon compte. Choisissez « Je suis parent d’un joueur de moins de 15 ans » : ${link}`;
     track('kid_share_parent');
     if (navigator.share) navigator.share({ title: 'Rugbeo', text }).catch(() => {});
-    else window.RugbyDialog.copy(text, { title: 'Message pour votre parent', message: 'Copiez ce message et envoyez-le à un parent (SMS, WhatsApp…).' });
+    else window.RugbyDialog.copy(text, { title: 'Message pour ton parent', message: 'Copie ce message et envoie-le à un parent (SMS, WhatsApp…).' });
   };
   $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho('adult'); };
   // Cas moins fréquents (parent d'un enfant, moins de 15 ans) : un lien sous le formulaire, plutôt qu'une étape de choix
@@ -6024,7 +6028,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-forgot').classList.toggle('hidden', mode !== 'login');
     $('#auth-back').classList.toggle('hidden', mode !== 'forgot');
     $('#auth-title').textContent = { forgot: 'Mot de passe oublié', reset: 'Nouveau mot de passe' }[mode] || ''; $('#auth-title').classList.toggle('hidden', tabs);
-    const intro = { forgot: 'Indiquez l’adresse e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.', reset: 'Choisissez votre nouveau mot de passe.' }[mode];
+    const intro = { forgot: 'Indique l’adresse e-mail de ton compte : tu recevras un lien pour choisir un nouveau mot de passe.', reset: 'Choisis ton nouveau mot de passe.' }[mode];
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
@@ -6042,7 +6046,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (/\d/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     if (/^(.)\1+$/.test(pw) || /^(123456|password|azerty|qwerty|motdepasse)/i.test(pw)) score = 0;
-    if (score <= 1) return { level: 2, text: 'Faible : ajoutez des chiffres, des majuscules ou des symboles.' };
+    if (score <= 1) return { level: 2, text: 'Faible : ajoute des chiffres, des majuscules ou des symboles.' };
     if (score <= 3) return { level: 3, text: 'Moyen : un peu plus long ou avec un symbole, ce serait mieux.' };
     return { level: 4, text: 'Solide ✓' };
   }
@@ -6068,7 +6072,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function startPending(email, password) {
     Object.assign(pending, { email, password, until: Date.now() + 30 * 60 * 1000 });
     $('#auth-pending-email').textContent = email;
-    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, vous rejoindrez automatiquement l’équipe de l’invitation.' : 'Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.';
+    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, tu rejoindras automatiquement l’équipe de l’invitation.' : 'Ensuite : entre le code donné par ton club ou ton coach pour rejoindre ton équipe.';
     $('#auth-pending-msg').textContent = '';
     showPending(true);
     clearInterval(pending.timer);
@@ -6080,7 +6084,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (Date.now() > pending.until) return stopPending();
     const { error } = await sb.auth.signInWithPassword({ email: pending.email, password: pending.password });
     if (error) return;   // pas encore confirmé (ou limite atteinte) : on réessaiera
-    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, tu es connecté !');
   }
   // Retour sur l'onglet après avoir cliqué le lien dans la boîte mail : on vérifie tout de suite
   document.addEventListener('visibilitychange', () => { if (!document.hidden && pending.timer) tryPendingLogin(); });
@@ -6102,13 +6106,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
         if (error) throw error;
         // Même message que le compte existe ou non : on ne révèle pas quelles adresses sont inscrites
-        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de vous être envoyé. Cliquez sur le lien qu’il contient pour choisir un nouveau mot de passe (pensez aux spams).`, 'info');
+        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de t’être envoyé. Clique sur le lien qu’il contient pour choisir un nouveau mot de passe (pense aux spams).`, 'info');
         b.disabled = false; return;
       }
       if (mode === 'reset') {
         const { error } = await sb.auth.updateUser({ password });
         if (error) throw error;
-        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : vous êtes connecté.');
+        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : tu es connecté.');
         b.disabled = false; return;
       }
       if (mode === 'signup') {
@@ -6116,13 +6120,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const parent = signupWho === 'parent';
         const kids = parent ? [...document.querySelectorAll('#auth-kid-list input')].map(i => i.value.trim()).filter(Boolean) : [];
         if (parent && !kids.length) { setAuthMsg('Indiquez le prénom et le nom du jeune.'); b.disabled = false; return; }
-        if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indiquez votre prénom et votre nom.'); b.disabled = false; return; }
+        if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indique ton prénom et ton nom.'); b.disabled = false; return; }
         if (parent && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord du parent.'); b.disabled = false; return; }
         const meta = Object.assign({ display_name: name, terms_version: window.RugbyLegal ? window.RugbyLegal.version : '' }, parent ? { kids } : {}, pendingJoin() ? { join_code: pendingJoin() } : {});
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
-        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
+        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connecte-toi.', 'info'); b.disabled = false; return; }
         if (window.RugbyDemo) window.RugbyDemo.signedUp();   // mesure anonyme : compte créé après avoir vu la démo ?
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
@@ -6163,12 +6167,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     forId = forId || S.user.id;
     const { data, error } = await sb.rpc('join_with_code', Object.assign({ p_code: code }, forArg(forId)));
     if (error) return E.toast(errMsg(error));
-    if (!data || !data.kind) return E.toast('Code invalide : vérifiez-le auprès de votre club.');
+    if (!data || !data.kind) return E.toast('Code invalide : vérifie-le auprès de ton club.');
     await loadTeams();
     const kid = forId !== S.user.id ? kidName(forId) : '';
     if (data.kind === 'club') { if (quiet) return; E.toast(kid ? `${kid} entre au club « ${data.name} » !` : `Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id, forId); }
     const t = S.teams.find(x => x.id === data.id && (x.who || S.user.id) === forId);
-    if (t) { setTeam(t); E.toast(`${kid || 'Vous'} ${kid ? 'est' : 'êtes'} membre de « ${data.name} ».`); }
+    if (t) { setTeam(t); E.toast(`${kid || 'Tu'} ${kid ? 'est' : 'es'} membre de « ${data.name} ».`); }
     else { pushJoin('join_request', data.id, undefined, forId); if (!quiet) E.toast(`Demande envoyée à « ${data.name} »${kid ? ' pour ' + kid : ''}. Un coach ou le bureau du club doit la valider.`); }
     if (quiet) return;
     E.go('team'); renderTeamPage();
@@ -6183,8 +6187,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const isFor = t => (t.who || S.user.id) === forId;
     const mine = new Set(S.teams.filter(t => !t.notMember && isFor(t)).map(t => t.id)), asked = new Set((S.pending || []).filter(isFor).map(t => t.id));
     const body = $('#club-teams-body'); body.replaceChildren();
-    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
-    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
+    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre tes équipes') + (club ? ` · ${club.name}` : '');
+    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Coche les équipes dont tu fais partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
     // Pour un jeune : les équipes adultes (Séniors, Réserve, Loisirs…) sont rangées sous un repli, pas proposées d'emblée
     const adult = t => kid && /s[ée]nior|r[ée]serve|v[ée]t[ée]ran|loisir/i.test(t.name) && !/\b[UM]\s?-?\d{1,2}\b|-\s?\d{1,2}\s?ans/i.test(t.name);
@@ -6210,7 +6214,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!(teams || []).length) body.appendChild(el('p', 'library-empty', 'Ce club n’a pas encore d’équipe.'));
     const go = btn('Envoyer mes demandes', 'primary wide', async () => {
       const picked = rows.filter(r => r.cb.checked);
-      if (!picked.length) return E.toast('Cochez au moins une équipe.');
+      if (!picked.length) return E.toast('Coche au moins une équipe.');
       go.disabled = true;
       for (const r of picked) {
         const { error: e } = await sb.rpc('request_team', Object.assign({ p_team: r.t.id, p_as: r.as.value }, forArg(forId)));
@@ -6228,13 +6232,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
   function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre votre club'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre ton club'));
     if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
     box.appendChild(head);
     const part = (title, help) => { const d = el('div', 'forms-part'); d.appendChild(el('strong', 'forms-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); box.appendChild(d); return d; };
 
     // 1. Rejoindre : un seul champ pour le code du club ou de l'équipe
-    const p1 = part('Rejoindre avec un code', 'Le code vous est donné par votre club ou votre coach. Avec le code du club, vous choisissez ensuite vos équipes.');
+    const p1 = part('Rejoindre avec un code', 'Le code t’est donné par ton club ou ton coach. Avec le code du club, tu choisis ensuite tes équipes.');
     let forSel = null;
     if (S.kids.length) {
       forSel = el('select', 'select'); forSel.setAttribute('aria-label', 'Pour qui ?');
@@ -6250,7 +6254,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     // 2. Direction du club : ajouter une équipe à son club (le super-admin : au club de l'équipe ouverte)
     const mineAdmin = S.clubs.filter(c => c.myRole === 'responsable' || (isSuper() && S.team && c.id === S.team.club_id));
     mineAdmin.forEach(c => {
-      const p = part(`Ajouter une équipe à « ${c.name} »`, 'Vous dirigez ce club : la nouvelle équipe reçoit son propre code d’invitation.');
+      const p = part(`Ajouter une équipe à « ${c.name} »`, 'Tu diriges ce club : la nouvelle équipe reçoit son propre code d’invitation.');
       const f = el('form', 'inline-form', '<input type="text" placeholder="Ex. U16, Féminines, Réserve…" required minlength="2" maxlength="60" aria-label="Nom de la nouvelle équipe"><button class="btn primary small" type="submit">Créer l’équipe</button>');
       f.onsubmit = async e => {
         e.preventDefault();
@@ -6258,25 +6262,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (error) return E.toast(errMsg(error));
         track('club_team_create'); await loadTeams();
         const t = S.teams.find(x => x.id === data.id); if (t) setTeam(t);
-        E.toast(`Équipe « ${data.name} » créée. Invitez ses joueurs avec son code.`); teamTab = 'members'; E.go('team'); renderTeamPage();
+        E.toast(`Équipe « ${data.name} » créée. Invite ses joueurs avec son code.`); teamTab = 'members'; E.go('team'); renderTeamPage();
       };
       p.appendChild(f);
     });
 
     // 3. Nouveau club : seulement quand le back-office l'ouvre (création volontairement fermée pour l'instant,
     //    pour éviter les comptes et équipes en série). Fermée : pas de bouton grisé, on dit simplement quoi faire.
-    const p3 = part('Créer un nouveau club', 'Vous serez au bureau du club et coach de sa première équipe.');
+    const p3 = part('Créer un nouveau club', 'Tu seras au bureau du club et coach de sa première équipe.');
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom du club" required minlength="2" maxlength="60" aria-label="Nom du nouveau club"><button class="btn outline small" type="submit">Créer le club</button>');
     f1.onsubmit = e => { e.preventDefault(); createClub(f1.querySelector('input').value); };
     p3.appendChild(f1);
     p3.classList.add('hidden');
-    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach.');
+    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demande-le au bureau de ton club ou à ton coach.');
     p1.appendChild(noCode);
     clubCreationOpen().then(open => {
       p3.classList.toggle('hidden', !open);
       head.firstChild.textContent = open && (S.teams.length || S.clubs.length) ? 'Rejoindre ou créer' : head.firstChild.textContent;
       if (open) return;
-      noCode.innerHTML = 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach. Votre club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écrivez-nous</a>.';
+      noCode.innerHTML = 'Pas de code ? Demande-le au bureau de ton club ou à ton coach. Ton club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écris-nous</a>.';
       noCode.querySelector('a').onclick = e => {
         e.preventDefault(); if (!window.RugbyAdmin) return;
         window.RugbyAdmin.openFeedback();
@@ -6316,7 +6320,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const lk = el('div', 'invite-link', `<span class="muted">Lien d’invitation</span><a class="invite-url" href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\//, ''))}</a>`);
     const lkActs = el('div', 'row-wrap');
     lkActs.appendChild(btn('Copier le lien', 'primary small', () => copy(link, 'Lien copié.', 'link')));
-    if (navigator.share) lkActs.appendChild(btn('Partager', 'outline small', () => { track('invite', { channel: 'share-link' }); navigator.share({ title: 'Rugbeo', text: forClub ? `Rejoignez le club « ${club.name} » sur Rugbeo` : `Rejoignez l’équipe « ${t.name} » sur Rugbeo`, url: link }).catch(() => {}); }));
+    if (navigator.share) lkActs.appendChild(btn('Partager', 'outline small', () => { track('invite', { channel: 'share-link' }); navigator.share({ title: 'Rugbeo', text: forClub ? `Rejoins le club « ${club.name} » sur Rugbeo` : `Rejoins l’équipe « ${t.name} » sur Rugbeo`, url: link }).catch(() => {}); }));
     lkActs.appendChild(btn('QR code', 'outline small', () => showQr(link, forClub ? club.name : t.name, code, forClub)));
     lk.appendChild(lkActs);
     body.appendChild(lk);
@@ -6333,12 +6337,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     body.appendChild(box);
     body.appendChild(el('p', 'help invite-explain', forClub
       ? 'Avec ce code, la personne rejoint le club, puis choisit ses équipes (comme joueur ou comme coach). Chaque demande est validée par le coach de l’équipe ou le bureau.'
-      : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Vous validez sa demande dans Équipe.`));
+      : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Tu valides sa demande dans Équipe.`));
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
     msg.value = forClub
-      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien, créez votre compte (gratuit), puis choisissez vos équipes :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`
-      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien et créez votre compte (gratuit) :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`;
-    body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
+      ? `Salut ! Rejoins le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouche ce lien, crée ton compte (gratuit), puis choisis tes équipes :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`
+      : `Salut ! Rejoins l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouche ce lien et crée ton compte (gratuit) :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`;
+    body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
       whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.1 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.1.3 0 .5.6 1.1 1.5 2 2.6 2.6.2.1.4.1.5 0l.6-.5c.2-.1.4-.2.6-.1l1.6.7c.4.2.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.5.6-2.8.1-2.3-.9-4.2-2.8-5.1-5.1-.4-1.3-.2-2.3.2-2.7z" fill="currentColor"/></svg>',
@@ -6358,7 +6362,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
       icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
-      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoignez le club ' + club.name : 'Rejoignez l’équipe ' + t.name) + ' sur Rugbeo')}&body=${enc()}`)
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoins le club ' + club.name : 'Rejoins l’équipe ' + t.name) + ' sur Rugbeo')}&body=${enc()}`)
     );
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
@@ -6366,7 +6370,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       links.appendChild(caption(more, CAPTIONS.more));
     }
     body.appendChild(links);
-    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
+    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy')));
     E.openModal('modal-invite');
   }
   const joinLink = code => `${location.origin}${location.pathname}#/rejoindre/${encodeURIComponent(code)}`;
@@ -6377,11 +6381,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const qrSvg = text => { const q = window.qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); };
   /** QR code du lien en grand, à montrer ou à imprimer pour le vestiaire. */
   async function showQr(link, name, code, forClub) {
-    try { await loadQrLib(); } catch (e) { return E.toast('QR code indisponible : vérifiez la connexion.'); }
+    try { await loadQrLib(); } catch (e) { return E.toast('QR code indisponible : vérifie la connexion.'); }
     track('invite', { channel: 'qr' });
     const body = $('#invite-body'); const prevNodes = [...body.childNodes];
     body.replaceChildren();
-    const box = el('div', 'qr-box', `<div class="qr-img">${qrSvg(link)}</div><strong>${esc(name)}</strong><span class="muted">Scannez avec l’appareil photo du téléphone pour rejoindre ${forClub ? 'le club' : 'l’équipe'}. Code : ${esc(code)}</span>`);
+    const box = el('div', 'qr-box', `<div class="qr-img">${qrSvg(link)}</div><strong>${esc(name)}</strong><span class="muted">Scanne avec l’appareil photo du téléphone pour rejoindre ${forClub ? 'le club' : 'l’équipe'}. Code : ${esc(code)}</span>`);
     body.appendChild(box);
     const acts = el('div', 'row-wrap qr-acts');
     acts.appendChild(btn('Imprimer pour le vestiaire', 'primary', () => printQr(link, name, code, forClub)));
@@ -6390,14 +6394,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
   function printQr(link, name, code, forClub) {
     const w = window.open('', '_blank');
-    if (!w) return E.toast('Autorisez les fenêtres surgissantes pour imprimer.');
+    if (!w) return E.toast('Autorise les fenêtres surgissantes pour imprimer.');
     // Page imprimée : noir sur blanc, indépendante des couleurs de l'appli
     w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rejoindre ${esc(name)} sur Rugbeo</title><style>
       body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;text-align:center;margin:40px;color:#111}
       h1{font-size:34px;margin:0 0 8px}p{font-size:18px;margin:6px 0}.qr{width:360px;height:360px;margin:24px auto}.qr svg{width:100%;height:100%}
       .code{font-size:28px;font-weight:800;letter-spacing:.15em}.small{font-size:14px;color:#555}button{margin-top:24px;font-size:16px;padding:10px 18px}@media print{button{display:none}}
-    </style></head><body><h1>Rejoignez ${forClub ? 'le club' : 'l’équipe'} ${esc(name)}</h1><p>sur Rugbeo : convocations, stratégies et compos</p>
-    <div class="qr">${qrSvg(link)}</div><p>1. Ouvrez l’appareil photo du téléphone et visez le code.</p><p>2. Touchez le lien, puis créez votre compte (gratuit).</p>
+    </style></head><body><h1>Rejoins ${forClub ? 'le club' : 'l’équipe'} ${esc(name)}</h1><p>sur Rugbeo : convocations, stratégies et compos</p>
+    <div class="qr">${qrSvg(link)}</div><p>1. Ouvre l’appareil photo du téléphone et vise le code.</p><p>2. Touche le lien, puis crée ton compte (gratuit).</p>
     <p class="small">Sans QR code : ${esc(location.origin + location.pathname)} puis le code</p><p class="code">${esc(code)}</p>
     <button onclick="print()">Imprimer</button></body></html>`);
     w.document.close();
@@ -6423,7 +6427,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function showInvite(code) {
     const note = $('#auth-note');
     const put = who => {
-      note.innerHTML = `<strong>${who ? `Vous êtes invité à rejoindre ${who}` : 'Vous avez reçu une invitation'}</strong><br>Créez votre compte ci-dessous : vous rejoindrez ensuite l’équipe automatiquement. Déjà un compte ? <a href="#" data-login>Se connecter</a>`;
+      note.innerHTML = `<strong>${who ? `Tu es invité à rejoindre ${who}` : 'Tu as reçu une invitation'}</strong><br>Crée ton compte ci-dessous : tu rejoindras ensuite l’équipe automatiquement. Déjà un compte ? <a href="#" data-login>Se connecter</a>`;
       note.querySelector('[data-login]').onclick = e => { e.preventDefault(); setAuthMode('login'); };
       note.classList.remove('hidden');
     };
@@ -6612,7 +6616,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       // Équipe créée : on dit quoi faire ensuite (inviter la ou le coach avec le code de l'équipe)
       await loadTeams();
       const nt = S.teams.find(x => x.id === data.id);
-      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invitez la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
+      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invite la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
       refresh();
     }));
     else head.appendChild(btn('Rejoindre d’autres équipes', 'outline small', () => openTeamPicker(club.id)));
@@ -6665,7 +6669,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const titles = CLUB_TITLES.includes(cur) || !cur ? CLUB_TITLES : CLUB_TITLES.concat([cur]);
         [['', 'Membre']].concat(titles.map(x => [x, x])).forEach(([v, l]) => sel.appendChild(Object.assign(el('option'), { value: v, textContent: l, selected: cur === v })));
         sel.onchange = async () => {
-          if (!sel.value && r.user_id === actorId() && !await window.RugbyDialog.confirm('Vous retirer du bureau du club ? Vous perdrez la gestion des équipes du club.')) { sel.value = cur; return; }
+          if (!sel.value && r.user_id === actorId() && !await window.RugbyDialog.confirm('Te retirer du bureau du club ? Tu perdras la gestion des équipes du club.')) { sel.value = cur; return; }
           const { error } = await sb.rpc('set_club_function', { p_club: club.id, p_user: r.user_id, p_title: sel.value || null });
           if (error) { sel.value = cur; return E.toast(errMsg(error)); }
           E.toast(sel.value ? `${nameOf(r)} : ${sel.value}. Gère maintenant toutes les équipes du club.` : `${nameOf(r)} n’est plus au bureau du club.`); refresh();
@@ -6736,21 +6740,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
             strip.appendChild(tb);
           });
           c.appendChild(strip);
-          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.'));
-        } else c.appendChild(el('p', 'help', 'Votre club n’a pas encore d’autre équipe.'));
+          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Ton original ne change pas.'));
+        } else c.appendChild(el('p', 'help', 'Ton club n’a pas encore d’autre équipe.'));
         body.appendChild(c);
       }
       // 2. Lien public et 3. téléchargement
       if (canMode) {
         const eff = shareMode(row), dl = eff !== 'app', link = eff === 'public' && !!row.share_token;
         const p = el('div', 'share-part');
-        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Activez d’abord le téléchargement.', link, !dl,
+        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Active d’abord le téléchargement.', link, !dl,
           on => apply(on ? 'public' : 'download', on, on ? 'Lien public activé.' : 'Lien public arrêté : il ne fonctionne plus.')));
         if (link) p.appendChild(btn('Copier le lien', 'outline small share-copy', () => shareLink(row)));
         p.appendChild(switchRow('Téléchargement', 'Les joueurs peuvent télécharger (image, vidéo, PDF) et copier la stratégie.', dl, false,
           on => apply(on ? 'download' : 'app', false, on ? 'Téléchargement autorisé.' : `Dans l’appli seulement${link ? ', le lien public est arrêté' : ''}.`)));
         body.appendChild(p);
-      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publiez d’abord la stratégie à l’équipe.'));
+      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publie d’abord la stratégie à l’équipe.'));
       body.appendChild(btn('Terminé', 'ghost wide', () => E.closeModal('modal-strat-share')));
     };
     draw();
@@ -6770,10 +6774,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function leaveTeam(t) {
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
+    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
     const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: actorId() });
     if (error) return E.toast(errMsg(error));
-    teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
+    teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
   }
 
   /** Onglet Réglages : l'équipe, le code d'invitation, le partage, la feuille, mon appartenance, la zone sensible. */
@@ -6802,7 +6806,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       c.foot.append(name, save);
     }
     // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
-    const code = card(`Code de l’équipe ${t.name}`, (staff ? 'Avec ce code, une personne demande directement à rejoindre cette équipe ; vous validez sa demande dans Membres.' : 'Les personnes que vous invitez devront être acceptées par le staff.') + (t.club_id ? ' Pour rejoindre le club et choisir ses équipes, c’est le code du club (onglet Club).' : ''));
+    const code = card(`Code de l’équipe ${t.name}`, (staff ? 'Avec ce code, une personne demande directement à rejoindre cette équipe ; tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.') + (t.club_id ? ' Pour rejoindre le club et choisir ses équipes, c’est le code du club (onglet Club).' : ''));
     code.insertBefore(el('div', 'code-big', esc(t.join_code)), code.foot);
     code.foot.appendChild(btn('Inviter', 'primary small', shareCode));
     if (staff) code.foot.appendChild(btn('Nouveau code', 'outline small', async () => {
@@ -6818,11 +6822,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       share.foot.appendChild(shareDefaultSelect(desc => { share.help.textContent = desc + ' Modifiable stratégie par stratégie.'; }));
       const sheet = card('Feuille de match', 'Logo, couleurs, modèle, champs et repères imprimés sur la feuille de match.');
       sheet.foot.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
-      reminderCard(card('Rappel la veille', 'La veille de chaque match et entraînement, une notification : « À demain » pour les présents, « Vous n’avez pas répondu » pour les autres. Rien pour les absents.'), t);
+      reminderCard(card('Rappel la veille', 'La veille de chaque match et entraînement, une notification : « À demain » pour les présents, « Tu n’as pas répondu » pour les autres. Rien pour les absents.'), t);
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
+    const me = card('Mon appartenance', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
     if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', () => leaveTeam(t)));
     if (isClubAdmin(t.club_id)) {   // supprimer une équipe : direction du club seulement
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
@@ -6958,8 +6962,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Restrictions ---------- */
   /** Enregistrer et exporter sont réservés aux membres d'un club. */
   function canUse(feature) {
-    if (!S.user) { openAuth(); E.toast(feature === 'export' ? 'Connectez-vous et rejoignez un club pour exporter.' : 'Connectez-vous et rejoignez un club pour enregistrer.'); return false; }
-    if (!isClubMember()) { E.toast((feature === 'export' ? 'L’export' : 'L’enregistrement') + ' est réservé aux membres d’un club. Rejoignez un club avec son code.'); E.go('team'); return false; }
+    if (!S.user) { openAuth(); E.toast(feature === 'export' ? 'Connecte-toi et rejoins un club pour exporter.' : 'Connecte-toi et rejoins un club pour enregistrer.'); return false; }
+    if (!isClubMember()) { E.toast((feature === 'export' ? 'L’export' : 'L’enregistrement') + ' est réservé aux membres d’un club. Rejoins un club avec son code.'); E.go('team'); return false; }
     return true;
   }
 
@@ -6995,7 +6999,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
       return;
     }
-    E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
+    E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans ton compte.');
   }
   async function saveSmart() {
     if (E.drawing.__share === 'app' && !isCoach()) { E.toast('Le coach a réservé cette stratégie à l’appli : elle ne peut pas être copiée.'); return; }
@@ -7011,7 +7015,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const row = { owner_id: actorId(), team_id: S.team ? S.team.id : null, name, data };
     const { error } = await sb.from('formations').insert(row);
     if (error) { E.toast('Enregistrement impossible : ' + errMsg(error)); return; }
-    E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans votre compte.`);
+    E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans ton compte.`);
   }
   async function listFormations() {
     if (!S.user) { openAuth(); return { list: [], scope: '' }; }
@@ -7102,11 +7106,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { data: res, error: err } = await sb.functions.invoke('push-notify', { body: { drawing_id: row.id, kind: 'reminder' } });
         if (err) return E.toast('Relance impossible : ' + errMsg(err));
         track('reminder', { recipients: res && res.recipients });
-        E.toast(res && res.sent ? `Rappel envoyé sur ${res.sent} téléphone${res.sent > 1 ? 's' : ''}.` : 'Aucun de ces joueurs n’a activé les notifications : utilisez « Copier la liste » pour WhatsApp.');
+        E.toast(res && res.sent ? `Rappel envoyé sur ${res.sent} téléphone${res.sent > 1 ? 's' : ''}.` : 'Aucun de ces joueurs n’a activé les notifications : utilise « Copier la liste » pour WhatsApp.');
       }));
       actions.appendChild(btn('Copier la liste pour WhatsApp', 'outline', () => {
         const text = `À regarder avant le match : « ${row.title} » dans l’appli. Pas encore vu : ${notSeen.map(r => r.display_name).join(', ')}.`;
-        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : collez-le dans le groupe WhatsApp.'));
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));
         else window.RugbyDialog.copy(text, { title: 'Message à copier' });
       }));
     }
@@ -7131,7 +7135,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const list = $('#comments-list'); list.replaceChildren();
     const { data, error } = await sb.from('drawing_comments').select('id, user_id, body, created_at, author:profiles!drawing_comments_user_id_fkey(display_name)').eq('drawing_id', commentsFor.row.id).order('created_at');
     if (error) { list.appendChild(el('p', 'library-empty', errMsg(error))); return; }
-    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Posez une question au coach ou faites une remarque.'));
+    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Pose une question au coach ou fais une remarque.'));
     const coachIds = new Set();
     data.forEach(c => {
       const item = el('div', 'comment');
@@ -7175,7 +7179,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!S.user) {
       root.replaceChildren();
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p>Sans compte, vos dessins restent sur cet appareil. Créez un compte gratuit pour les retrouver partout et les partager à votre équipe.</p>');
+      const box = el('div', 'home-login', '<p>Sans compte, tes dessins restent sur cet appareil. Crée un compte gratuit pour les retrouver partout et les partager à ton équipe.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => openAuth('signup')));
       root.appendChild(box);
       const local = E.readLib();
@@ -7185,7 +7189,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isClubMember()) {
       root.replaceChildren();
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
+      const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoins ton club.</strong><br>Entre le code donné par ton club ou ton coach (code du club ou d’une équipe). Ensuite tu pourras enregistrer, exporter et partager tes dessins.</p>');
       box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
       root.appendChild(box);
       const pend = pendingCard(); if (pend) root.appendChild(pend);
@@ -7223,9 +7227,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (seq !== renderSeq) return;
     root.replaceChildren(); root.classList.remove('refreshing');
     if (!data.length) {
-      empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touchez « + Nouveau dessin », puis « Enregistrer » dans l’éditeur.'
+      empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touche « + Dessin », puis « Enregistrer » dans l’éditeur.'
         : libTab === 'proposed' ? 'Aucune proposition de joueur pour le moment. Les joueurs proposent leurs dessins depuis « Mes dessins ».'
-        : isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et touchez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.');
+        : isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvre un de tes dessins et touche « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.');
       return;
     }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
@@ -7253,7 +7257,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c.querySelector('.body'), `Ouvrir « ${row.title} »`);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
-      if (visibility !== 'private' && !S.team) { E.toast('Rejoignez ou créez d’abord une équipe.'); return; }
+      if (visibility !== 'private' && !S.team) { E.toast('Rejoins ou crée d’abord une équipe.'); return; }
       const patch = { visibility, team_id: visibility === 'private' ? row.team_id : S.team.id };
       if (visibility === 'team') patch.published_at = new Date().toISOString();
       const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
@@ -7332,7 +7336,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const b = btn('Envoyer dans mon compte', 'small secondary', async () => {
         const copy = E.clone(d); copy.id = crypto.randomUUID();
         const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: actorId(), title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
-        E.toast(error ? errMsg(error) : 'Copié dans votre compte.');
+        E.toast(error ? errMsg(error) : 'Copié dans ton compte.');
       });
       const wrap = el('div', 'card-btns'); wrap.appendChild(b); c.appendChild(wrap);
       root.appendChild(c);
@@ -7346,7 +7350,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!copy) return;
     S.current = { visibility: 'private', team_id: S.team ? S.team.id : null, owner_id: actorId() };
     E.loadDrawing(E.clone(copy)); E.markSaved && E.markSaved(); E.go('editor');
-    E.toast(`« ${copy.title} » a été ajoutée à vos stratégies : touchez « Exporter » pour la télécharger.`);
+    E.toast(`« ${copy.title} » a été ajoutée à tes stratégies : touche « Exporter » pour la télécharger.`);
   }
 
   /** Ouvre la page d'une équipe (super-admin : n'importe quelle équipe). */
@@ -7361,7 +7365,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function openById(id) {
     if (!isUuid(id)) { E.go('strats'); return; }
     const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, share_token, share_mode').eq('id', id).maybeSingle();
-    if (error || !data) { E.toast('Cette stratégie n’existe plus ou n’est plus partagée avec vous.'); E.go('strats'); return; }
+    if (error || !data) { E.toast('Cette stratégie n’existe plus ou n’est plus partagée avec toi.'); E.go('strats'); return; }
     if (data.team_id && S.team && data.team_id !== S.team.id) { const t = S.teams.find(x => x.id === data.team_id); if (t) setTeam(t); }
     track('open_link');
     loadCloud(data);
@@ -7432,7 +7436,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function enable() {
     const A = acc(); if (!A || !A.isLoggedIn()) return;
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { $('#push-help').textContent = 'Notifications refusées par le navigateur. Autorisez-les dans les réglages du site.'; return; }
+    if (perm !== 'granted') { $('#push-help').textContent = 'Notifications refusées par le navigateur. Autorise-les dans les réglages du site.'; return; }
     const r = await getReg(); if (!r) return;
     let sub = await r.pushManager.getSubscription();
     if (!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.vapidPublicKey) });
@@ -7450,13 +7454,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function renderButton(hasTeam) {
     const block = $('#push-block'), btn = $('#btn-push'), help = $('#push-help');
     if (!block) return;
-    if (!hasTeam || !supported()) { block.classList.toggle('hidden', !hasTeam || !isIosNotInstalled()); if (hasTeam && isIosNotInstalled()) { btn.classList.add('hidden'); help.textContent = 'Sur iPhone : ajoutez l’appli à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour recevoir les notifications.'; } return; }
+    if (!hasTeam || !supported()) { block.classList.toggle('hidden', !hasTeam || !isIosNotInstalled()); if (hasTeam && isIosNotInstalled()) { btn.classList.add('hidden'); help.textContent = 'Sur iPhone : ajoute l’appli à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour recevoir les notifications.'; } return; }
     block.classList.remove('hidden'); btn.classList.remove('hidden');
     const sub = await current();
     const on = !!sub && Notification.permission === 'granted';
     btn.textContent = on ? 'Désactiver les notifications' : 'Activer les notifications';
     btn.classList.toggle('on', on);
-    help.textContent = on ? 'Vous serez prévenu des convocations, des compos et des nouvelles stratégies de votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil pour les convocations, les compos et les nouvelles stratégies.';
+    help.textContent = on ? 'Tu seras prévenu des convocations, des compos et des nouvelles stratégies de ton équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorise-les dans les réglages du site.' : 'Reçois une alerte sur cet appareil pour les convocations, les compos et les nouvelles stratégies.';
     btn.onclick = () => (on ? disable() : enable()).catch(e => { console.warn(e); help.textContent = 'Erreur : ' + e.message; });
   }
 
@@ -7483,7 +7487,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
     const D = window.RugbyDialog;
     const why = 'Vous serez prévenu dès qu’une convocation, une relance avant le match, une compo ou une nouvelle stratégie arrive. Sans notifications, vous risquez de rater un rendez-vous de l’équipe.';
-    if (iosTip) await D.confirm(why + '\n\nSur iPhone, ajoutez d’abord l’appli à l’écran d’accueil (bouton Partager → « Sur l’écran d’accueil »), ouvrez-la depuis cette icône, puis activez les notifications dans la page Compte.', { title: 'Restez informé', ok: 'Compris', cancel: 'Plus tard' });
+    if (iosTip) await D.confirm(why + '\n\nSur iPhone, ajoute d’abord l’appli à l’écran d’accueil (bouton Partager → « Sur l’écran d’accueil »), ouvre-la depuis cette icône, puis active les notifications dans la page Compte.', { title: 'Reste informé', ok: 'Compris', cancel: 'Plus tard' });
     else if (await D.confirm(why, { title: 'Activer les notifications ?', ok: 'Activer les notifications', cancel: 'Plus tard' })) {
       try { await enable(); } catch (e) { console.warn(e); }
     }
@@ -7550,7 +7554,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const drawPhoto = () => {
       photoRow.replaceChildren(avatar(p.display_name, photo));
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'profile-photo-file'; f.className = 'file-input';
-      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essayez une photo JPG ou PNG.')); };
+      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essaie une photo JPG ou PNG.')); };
       const lb = el('label', 'btn outline small', photo ? 'Changer la photo' : 'Ajouter une photo'); lb.htmlFor = 'profile-photo-file';
       const acts = el('div', 'row-wrap'); acts.append(lb, f);
       if (photo) acts.appendChild(btn('Retirer', 'ghost small', () => { photo = null; drawPhoto(); }));
@@ -7567,7 +7571,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
     // Postes : choix multiple, 4 au plus
     const posBox = el('div', 'profile-field');
-    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Vos postes (4 au plus)'));
+    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Tes postes (4 au plus)'));
     const chips = el('div', 'day-chips poste-chips');
     let positions = (p.positions || []).slice();
     POSTES.forEach(po => {
@@ -7591,11 +7595,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
     form.appendChild(field('Pied fort (facultatif)', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur toi (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
-    form.appendChild(el('div', 'profile-private-head', `<strong>Infos privées</strong><span class="muted">${kid ? 'Visibles seulement par vous et le staff de son équipe.' : 'Visibles seulement par vous et le staff de votre équipe.'}</span>`));
+    form.appendChild(el('div', 'profile-private-head', `<strong>Infos privées</strong><span class="muted">${kid ? 'Visibles seulement par vous et le staff de son équipe.' : 'Visibles seulement par toi et le staff de ton équipe.'}</span>`));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
     const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
@@ -7643,7 +7647,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       save.disabled = false;
       if (r1.error) console.warn('profil', r1.error.message);
       if (r2.error) console.warn('profil privé', r2.error.message);
-      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifiez votre connexion et réessayez.'; return; }
+      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifie ta connexion et réessaie.'; return; }
       if (!r1.error) Object.assign(kid || A.ownProfile(), patch);
       if (r1.error) skipped.push('profil sportif');
       if (r2.error) skipped.push('infos privées');
@@ -7737,7 +7741,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     // 1. Mon profil
     $('#account-name').textContent = me.display_name;
     $('#team-user').textContent = user.email;
-    if (P) { $('#account-avatar').replaceChildren(P.avatar(me.display_name, me.avatar)); $('#account-summary').textContent = P.summary(me) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
+    if (P) { $('#account-avatar').replaceChildren(P.avatar(me.display_name, me.avatar)); $('#account-summary').textContent = P.summary(me) || 'Ajoute ta photo et ton poste pour que l’équipe te reconnaisse.'; }
     $('#account-kids').replaceChildren(kidsCard());
 
     // 2. Mon club et mes équipes (quitter une équipe se fait dans sa page Équipe)
@@ -7745,7 +7749,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const mine = A.teams().filter(t => !t.superadmin && !t.notMember && !t.who);
     mine.forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)}${t.clubName ? ` <span class="muted small">· ${esc(t.clubName)}</span>` : ''} ${A.roleBadge(t.role, t.plays)}`)));
     A.clubs().filter(c => c.myRole === 'responsable').forEach(c => box.appendChild(el('div', 'account-team', `${esc(c.name)} <span class="role-badge coach">${esc(c.myTitle || 'Bureau du club')}</span>`)));
-    if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoignez votre club avec le code ou le lien reçu.'));
+    if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoins ton club avec le code ou le lien reçu.'));
     const join = $('#account-join'); join.replaceChildren();
     const pend = A.pendingCard(); if (pend) join.appendChild(pend);
     const toggle = btn('Rejoindre un club ou une équipe', 'outline wide', () => {
@@ -7894,14 +7898,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
     const D = window.RugbyDialog;
-    if (!await D.confirm('Supprimer définitivement votre compte ? Vos dessins, formations, réponses aux convocations, votre profil et vos statistiques seront effacés, y compris les stratégies que vous avez publiées dans une équipe. Si vous êtes le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
-    const typed = await D.prompt('Pour confirmer, tapez SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
+    if (!await D.confirm('Supprimer définitivement ton compte ? Tes dessins, formations, réponses aux convocations, ton profil et tes statistiques seront effacés, y compris les stratégies que tu as publiées dans une équipe. Si tu es le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
+    const typed = await D.prompt('Pour confirmer, tape SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
     if (typed == null) return;
     if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
     const { error } = await sb.rpc('delete_my_account');
     if (error) return E.toast(errMsg(error));
     await sb.auth.signOut();
-    E.go('home'); E.toast('Votre compte et vos données ont été supprimés.');
+    E.go('home'); E.toast('Ton compte et tes données ont été supprimés.');
   };
 
   window.RugbyCompte = { render };
@@ -7920,7 +7924,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const A = window.RugbyAccount;
   if (!A || !A.isActive()) {
     window.RugbyTrack = { track: () => {} };
-    window.RugbyAdmin = { onSession: () => {}, render: () => {}, flag: () => false, openFeedback: () => E.toast('Mode local : connectez un backend pour envoyer un avis.') };
+    window.RugbyAdmin = { onSession: () => {}, render: () => {}, flag: () => false, openFeedback: () => E.toast('Mode local : connecte un backend pour envoyer un avis.') };
     return;
   }
   const sb = A.sb;
@@ -8062,7 +8066,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const KIND = { bug: '🐞 Bug', idea: '💡 Idée', other: '💬 Autre' };
   const STATUS = { new: 'Nouveau', seen: 'Vu', planned: 'Prévu', done: 'Fait', rejected: 'Écarté' };
   function openFeedback() {
-    if (!loggedIn()) { A.openAuth(); E.toast('Connectez-vous pour donner votre avis.'); return; }
+    if (!loggedIn()) { A.openAuth(); E.toast('Connecte-toi pour donner ton avis.'); return; }
     $('#feedback-error').textContent = '';
     E.openModal('modal-feedback');
     $('#feedback-message').focus();
@@ -8071,7 +8075,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   $('#feedback-form').onsubmit = async e => {
     e.preventDefault();
     const message = $('#feedback-message').value.trim();
-    if (message.length < 3) { $('#feedback-error').textContent = 'Écrivez quelques mots.'; return; }
+    if (message.length < 3) { $('#feedback-error').textContent = 'Écris quelques mots.'; return; }
     const kind = document.querySelector('input[name=feedback-kind]:checked').value;
     const d = E.drawing;
     const context = { view: view(), device: device(), build, screen: `${innerWidth}x${innerHeight}`, ua: navigator.userAgent.slice(0, 200), drawing: view() === 'editor' && d ? d.title : undefined };
@@ -8081,7 +8085,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (error) { $('#feedback-error').textContent = error.message; return; }
     $('#feedback-message').value = '';
     track('feedback', { kind });
-    E.toast('Merci ! Votre avis a bien été envoyé.');
+    E.toast('Merci ! Ton avis a bien été envoyé.');
     renderMyFeedback();
   };
   async function renderMyFeedback() {
@@ -8426,7 +8430,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const first = await window.RugbyDialog.prompt('Première équipe (facultatif)', 'Séniors', { title: `Club « ${name} »`, maxLength: 60, required: false });
       const { error } = await sb.rpc('create_club', { p_name: name, p_team: first || null });
       if (error) return E.toast(error.message);
-      E.toast(`Club « ${name} » créé. Nommez son bureau ci-dessous.`); render();
+      E.toast(`Club « ${name} » créé. Nomme son bureau ci-dessous.`); render();
     });
     const byName = users.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Bureau', ''], rows.map(r => {
@@ -8758,7 +8762,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     return true;
   }
   async function clearAnswer(evId, userId) {
-    if (!navigator.onLine) { E.toast('Hors ligne : changez plutôt votre réponse, ou réessayez au retour du réseau.'); return; }
+    if (!navigator.onLine) { E.toast('Hors ligne : change plutôt ta réponse, ou réessaie au retour du réseau.'); return; }
     const { error } = await sb.from('event_responses').delete().match({ event_id: evId, user_id: userId });
     if (error) E.toast(error.message);
   }
@@ -8779,10 +8783,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** Après une convocation ou un changement : dit combien de téléphones l'ont reçue, sinon propose WhatsApp. */
   async function report(pending, ev, what) {
     const res = await pending, e = /^Convocation/.test(what) ? 'e' : '';
-    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Prévenez l’équipe sur WhatsApp.`);
+    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Préviens l’équipe sur WhatsApp.`);
     if (!res.recipients) return E.toast(`${what} enregistré${e}.`);
     if (res.sent) return E.toast(`${what} envoyé${e} sur ${plural(res.sent, 'téléphone', 'téléphones')}.`);
-    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoyez le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
+    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoie le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
   }
   async function remind(ev, names) {
     const res = await notify(ev.id, 'event_reminder');
@@ -8792,8 +8796,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     else {
       // Les notifications ne touchent que ceux qui les ont activées : on propose tout de suite WhatsApp pour les autres
       const msg = res.sent
-        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoyez aussi le message dans le groupe WhatsApp.`
-        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoyez plutôt le message dans le groupe WhatsApp.';
+        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoie aussi le message dans le groupe WhatsApp.`
+        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoie plutôt le message dans le groupe WhatsApp.';
       if (await window.RugbyDialog.confirm(msg, { title: res.sent ? 'Relance envoyée' : 'Relance non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev, names));
     }
   }
@@ -8825,13 +8829,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const team = A.team();
     if (!A.isLoggedIn()) {
       // Visiteur : on explique à quoi sert la page au lieu d'afficher une page vide
-      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouvez ici les matchs et entraînements de votre équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouve ici les matchs et entraînements de ton équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
       box.appendChild(btn('J’ai déjà un compte', 'outline', () => A.openAuth('login')));
       root.appendChild(box); return;
     }
     if (!team) {
-      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoins ou crée ton équipe pour voir les matchs et entraînements.</p>');
       box.appendChild(btn('Rejoindre mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
@@ -8864,7 +8868,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     list.replaceChildren();
     if (!evs.length) {
       const empty = el('div', 'soon-card agenda-empty', tab === 'next'
-        ? (staff ? '<h2>Rien de prévu</h2><p>Créez le prochain entraînement ou match. Vos joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
+        ? (staff ? '<h2>Rien de prévu</h2><p>Crée le prochain entraînement ou match. Tes joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
         : '<h2>Aucun événement passé</h2>');
       if (staff && tab === 'next') {
         empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
@@ -8991,7 +8995,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     // Ma réponse (seulement si je suis convoqué)
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
-      box.appendChild(el('div', 'todo-head', 'Votre réponse'));
+      box.appendChild(el('div', 'todo-head', 'Ta réponse'));
       // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
       const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire : retard, blessure…'; input.value = (mine && mine.comment) || '';
       box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true, () => input.value.trim()));
@@ -9003,7 +9007,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         clearTimeout(timer);
         const v = input.value.trim();
         if (v === saved) return;
-        if (!mine) { state.textContent = 'Envoyé avec votre réponse.'; return; }
+        if (!mine) { state.textContent = 'Envoyé avec ta réponse.'; return; }
         state.textContent = 'Enregistrement…';
         if (await answer(ev.id, mine.status, me, v)) { saved = v; mine.comment = v; state.textContent = 'Enregistré ✓'; }
         else state.textContent = '';
@@ -9087,7 +9091,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     else people.forEach(p => {
       const cur = byUser[p.id] && byUser[p.id].status;
       const part = el('div', 'quick-person');
-      part.appendChild(el('div', 'todo-head', people.length > 1 || p.id !== own ? `Réponse de ${esc(p.name.split(' ')[0])}` : 'Serez-vous là ?'));
+      part.appendChild(el('div', 'todo-head', people.length > 1 || p.id !== own ? `Réponse de ${esc(p.name.split(' ')[0])}` : 'Tu seras là ?'));
       const row = el('div', 'quick-buttons');
       [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
         const b = btn(l, 'rsvp-btn quick ' + s, async () => {
@@ -9099,7 +9103,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         row.appendChild(b);
       });
       part.appendChild(row);
-      if (cur) part.appendChild(el('p', 'quick-done', `✓ Réponse enregistrée : <strong>${STATUS[cur]}</strong>. Vous pouvez la changer.`));
+      if (cur) part.appendChild(el('p', 'quick-done', `✓ Réponse enregistrée : <strong>${STATUS[cur]}</strong>. Tu peux la changer.`));
       box.appendChild(part);
     });
     box.appendChild(btn('Voir l’événement et qui vient', 'outline wide', () => E.go('agenda', ev.id)));
@@ -9157,7 +9161,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     body.replaceChildren(el('p', 'muted', 'Préparation du lien…'));
     E.openModal('modal-calendar');
     const { data: token, error } = await sb.rpc('my_calendar_token', { p_renew: !!renew });
-    if (error || !token) { body.replaceChildren(el('p', 'muted', window.RugbyDemo && window.RugbyDemo.isOn() ? 'Dans la démo, l’abonnement n’est pas disponible : créez votre compte pour l’essayer.' : 'Lien indisponible pour le moment : ' + esc(error ? A.errMsg(error) : 'réessayez.'))); return; }
+    if (error || !token) { body.replaceChildren(el('p', 'muted', window.RugbyDemo && window.RugbyDemo.isOn() ? 'Dans la démo, l’abonnement n’est pas disponible : crée ton compte pour l’essayer.' : 'Lien indisponible pour le moment : ' + esc(error ? A.errMsg(error) : 'réessaie.'))); return; }
     const https = `${(window.RUGBY_CONFIG || {}).supabaseUrl}/functions/v1/calendar?t=${token}`;
     const webcal = https.replace(/^https:/, 'webcal:');
     body.replaceChildren();
@@ -9169,14 +9173,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     links.appendChild(link('Outlook', 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(https) + '&name=Rugbeo', 'outlook'));
     links.appendChild(btn('Copier le lien', 'outline wide', () => {
       track('calendar_subscribe', { app: 'copy' });
-      if (navigator.clipboard) navigator.clipboard.writeText(https).then(() => E.toast('Lien copié : collez-le dans votre calendrier (« Ajouter par URL »).'), () => window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' }));
+      if (navigator.clipboard) navigator.clipboard.writeText(https).then(() => E.toast('Lien copié : colle-le dans ton calendrier (« Ajouter par URL »).'), () => window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' }));
       else window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' });
     }));
     body.appendChild(links);
     body.appendChild(el('p', 'help', 'Google Agenda peut mettre plusieurs heures à afficher un changement ; l’appli reste à jour tout de suite.'));
-    body.appendChild(el('p', 'help', 'Ce lien est personnel : ne le partagez pas. Si vous l’avez donné par erreur, créez-en un nouveau (l’ancien ne marchera plus).'));
+    body.appendChild(el('p', 'help', 'Ce lien est personnel : ne le partage pas. Si tu l’as donné par erreur, crées-en un nouveau (l’ancien ne marchera plus).'));
     body.appendChild(btn('Nouveau lien', 'ghost small', async () => {
-      if (!await window.RugbyDialog.confirm('Créer un nouveau lien ? L’ancien ne marchera plus : il faudra vous réabonner dans votre calendrier.', { ok: 'Nouveau lien' })) return;
+      if (!await window.RugbyDialog.confirm('Créer un nouveau lien ? L’ancien ne marchera plus : il faudra te réabonner dans ton calendrier.', { ok: 'Nouveau lien' })) return;
       track('calendar_renew'); openSubscribe(true);
     }));
   }
@@ -9228,7 +9232,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!on) return;
     const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
     const date = $('#ev-date').value, t = $('#ev-time').value || '19:00', until = $('#ev-repeat').value;
-    if (!days.length) { $('#ev-recur-help').textContent = 'Cochez au moins un jour.'; return; }
+    if (!days.length) { $('#ev-recur-help').textContent = 'Coche au moins un jour.'; return; }
     if (!date || !until) { $('#ev-recur-help').textContent = ''; return; }
     const n = recurDates(new Date(`${date}T${t}`), days, new Date(`${until}T23:59`)).length;
     const names = [1, 2, 3, 4, 5, 6, 0].filter(x => days.includes(x)).map(x => DAY_NAMES[x]);
@@ -9253,12 +9257,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const team = A.team(); if (!team) return;
     const kind = document.querySelector('input[name=ev-kind]:checked').value;
     const date = $('#ev-date').value, t = $('#ev-time').value;
-    if (!date || !t) { $('#ev-error').textContent = 'Indiquez la date et l’heure.'; return; }
+    if (!date || !t) { $('#ev-error').textContent = 'Indique la date et l’heure.'; return; }
     const start = new Date(`${date}T${t}`);
     const meet = $('#ev-meet').value ? new Date(`${date}T${$('#ev-meet').value}`) : null;
     if (meet && meet > start) { $('#ev-error').textContent = 'Le rendez-vous doit être avant le début.'; return; }
     const opponent = $('#ev-opponent').value.trim();
-    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indiquez l’adversaire.'; return; }
+    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indique l’adversaire.'; return; }
     const base = {
       team_id: team.id, kind,
       title: kind === 'match' ? 'Match' : ($('#ev-title').value.trim() || (kind === 'training' ? 'Entraînement' : 'Rendez-vous')),
@@ -9298,10 +9302,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       let dates = [start];
       if (recurring) {
         const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
-        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
-        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
+        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Coche au moins un jour d’entraînement.'; return; }
+        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indique la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
-        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifiez les jours et la date de fin.'; return; }
+        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
       }
       const series = dates.length > 1 ? crypto.randomUUID() : null;
       const meetDelta = meet ? start - meet : 0;
@@ -9391,7 +9395,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     root.appendChild(el('p', 'help st-help', `${period === 'season' ? 'Depuis le début de la saison' : 'Sur les 30 derniers jours'} : matchs et entraînements passés, sans les annulés, depuis l’arrivée de chacun dans l’équipe. « Peut-être » ne compte pas comme présent ; les convocations sans réponse sont comptées à part.`));
     const draw = () => {
       box.replaceChildren();
-      if (!rows.length) { box.appendChild(el('p', 'muted', staff ? 'Pas encore de joueur dans l’équipe.' : 'Vous n’êtes pas convoqué dans cette équipe.')); return; }
+      if (!rows.length) { box.appendChild(el('p', 'muted', staff ? 'Pas encore de joueur dans l’équipe.' : 'Tu n’es pas convoqué dans cette équipe.')); return; }
       const list = rows.slice();
       const by = k => (a, b) => ((rate(b[k]) == null ? -1 : rate(b[k])) - (rate(a[k]) == null ? -1 : rate(a[k]))) || a.name.localeCompare(b.name);
       list.sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'unanswered' ? (a, b) => unanswered(b) - unanswered(a) || a.name.localeCompare(b.name) : by(sort));
@@ -9555,7 +9559,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const head = el('div', 'members-head', `<span class="muted">${list.length ? `${list.length} partenaire${list.length > 1 ? 's' : ''}` : 'Partenaires du club'}</span>`);
       if (admin) head.appendChild(btn('+ Ajouter un partenaire', 'outline small', () => form(null)));
       sec.appendChild(head);
-      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Vos partenaires s’affichent sur l’accueil des équipes, entre les événements de l’Agenda et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
+      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Tes partenaires s’affichent sur l’accueil des équipes, entre les événements de l’Agenda et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
       const grid = el('div', 'sponsor-grid');
       sec.appendChild(grid);
       list.forEach((s, i) => {
@@ -9595,7 +9599,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const showLogo = () => { preview.replaceChildren(); if (logo) { preview.appendChild(Object.assign(el('img'), { src: logo, alt: '' })); preview.appendChild(btn('Enlever le logo', 'ghost small', () => { logo = null; showLogo(); })); } };
       showLogo();
       f.insertBefore(preview, f.querySelector('.form-error'));
-      f.logo.onchange = async () => { const file = f.logo.files[0]; if (!file) return; try { logo = await shrink(file); showLogo(); } catch (e) { f.querySelector('.form-error').textContent = 'Image illisible : essayez un PNG ou un JPEG.'; } };
+      f.logo.onchange = async () => { const file = f.logo.files[0]; if (!file) return; try { logo = await shrink(file); showLogo(); } catch (e) { f.querySelector('.form-error').textContent = 'Image illisible : essaie un PNG ou un JPEG.'; } };
       const acts = el('div', 'row-wrap');
       acts.append(el('button', 'btn primary small', 'Enregistrer'), btn('Annuler', 'ghost small', () => draw()));
       acts.firstChild.type = 'submit';
@@ -9726,7 +9730,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
   function renderStart(error) {
     const body = $('#import-body'); body.replaceChildren();
-    body.appendChild(el('p', '', 'Récupérez le calendrier de votre poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Votre téléphone ou votre ordinateur télécharge un fichier <strong>.ics</strong> : choisissez-le ici.'));
+    body.appendChild(el('p', '', 'Récupère le calendrier de ta poule dans <strong>Mon Club House</strong> (page de la compétition → Calendrier → « Ajouter à mon agenda »). Ton téléphone ou ton ordinateur télécharge un fichier <strong>.ics</strong> : choisis-le ici.'));
     body.appendChild(el('p', 'muted small', 'Tout fichier agenda .ics fonctionne (ligue, comité, autre fédération). Réimporter le même calendrier plus tard met à jour les matchs déplacés, sans doublon.'));
     const input = el('input'); input.type = 'file'; input.accept = '.ics,text/calendar'; input.id = 'import-file'; input.className = 'file-input';
     const label = el('label', 'btn primary wide file-btn', 'Choisir le fichier .ics');
@@ -9773,7 +9777,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function renderPreview() {
     const body = $('#import-body'); body.replaceChildren();
     if (state.calName) body.appendChild(el('p', 'muted small', esc(state.calName)));
-    const f1 = el('label', 'import-field', 'Votre club dans ce calendrier');
+    const f1 = el('label', 'import-field', 'Ton club dans ce calendrier');
     const sel = el('select', 'select'); sel.id = 'import-club';
     sel.appendChild(Object.assign(el('option'), { value: '', textContent: 'Choisir…' }));
     state.clubs.forEach(c => sel.appendChild(Object.assign(el('option'), { value: c, textContent: c, selected: c === state.club })));
@@ -9785,7 +9789,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     meet.onchange = () => { state.meet = +meet.value; };
     f2.appendChild(meet);
     body.append(f1, f2);
-    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisissez votre club pour voir ses matchs.')); return; }
+    if (!state.club) { body.appendChild(el('p', 'muted', 'Choisis ton club pour voir ses matchs.')); return; }
     const items = plan();
     const nNew = items.filter(i => i.state === 'new').length, nChg = items.filter(i => i.state === 'changed').length;
     body.appendChild(el('p', 'import-sum', items.length
@@ -10072,7 +10076,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Impression, image, partage ---------- */
   function printSheet(html, title) {
     const w = window.open('', '_blank');
-    if (!w) { E.toast('Autorisez les fenêtres surgissantes pour imprimer la feuille.'); return; }
+    if (!w) { E.toast('Autorise les fenêtres surgissantes pour imprimer la feuille.'); return; }
     w.document.open();
     w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=800"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
     w.document.close(); w.focus();
@@ -10105,7 +10109,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }).catch(() => {}); return; }
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    } catch (e) { E.toast('Image impossible pour le moment : utilisez « Imprimer / PDF ».'); }
+    } catch (e) { E.toast('Image impossible pour le moment : utilise « Imprimer / PDF ».'); }
   }
 
   /* ---------- Données ---------- */
@@ -10161,7 +10165,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoignez votre équipe pour voir les compos.')); return; }
+    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoins ton équipe pour voir les compos.')); return; }
     if (eventId) return renderSheetPage(root, eventId, my);
     const staff = A.isStaff();
     const head = el('div', 'agenda-head');
@@ -10172,7 +10176,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (my !== seq) return;
     const shown = staff ? list : list.filter(e => e.sheet === 'published');
     if (!shown.length) {
-      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoutez vos matchs dans l’Agenda (ou importez le calendrier de la fédération), puis préparez la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Vous recevrez une notification.</p>');
+      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoute tes matchs dans l’Agenda (ou importe le calendrier de la fédération), puis prépare la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Tu recevras une notification.</p>');
       if (staff) box.appendChild(btn('Aller à l’agenda', 'primary', () => E.go('agenda')));
       root.appendChild(box); return;
     }
@@ -10182,7 +10186,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const d = new Date(ev.starts_at);
       c.appendChild(el('div', 'ev-date match', `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`));
       const st = { none: '<span class="sheet-st none">À faire</span>', draft: '<span class="sheet-st draft">Brouillon</span>', published: '<span class="sheet-st pub">Publiée</span>' }[ev.sheet];
-      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
+      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Tu es n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
       if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
@@ -10206,7 +10210,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const staff = A.isStaff();
     root.appendChild(btn('‹ Compos', 'ghost back-link', () => E.go('compos')));
     if (!staff) {
-      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Vous serez prévenu dès que le coach l’aura publiée.</p>')); return; }
+      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Tu seras prévenu dès que le coach l’aura publiée.</p>')); return; }
       const sheet = normSheet(row.data, settings, ev);
       const html = sheetHtml(settings, sheet, ev, team, A.user().id);
       const tools = el('div', 'sheet-actions');
@@ -10254,11 +10258,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const laterKey = 'rs-logo-later-' + cur.team.id;
     let later = false; try { later = !!localStorage.getItem(laterKey); } catch (e) { /* ignore */ }
     if (!settings.logo && !later) {
-      const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
+      const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
-      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Vous pourrez l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
+      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Tu pourras l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
       call.append(l, f, x);
       root.appendChild(call);
     }
@@ -10424,7 +10428,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
         b.type = 'button'; b.title = m.label; b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); b.setAttribute('aria-label', `${m.label}${p.name ? ' : ' + p.name : ''}`);
         if (m.auto === 'double') { b.classList.add('auto'); b.title = m.label + ' : se coche tout seul quand le joueur est dans deux équipes'; }
-        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mettez le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
+        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mets le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
         cur.markButtons.push({ p, code: m.code, el: b });
         marks.appendChild(b);
       });
@@ -10550,7 +10554,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (!(await saveSettings(cur.settings))) return;
       const n = await shareLogo(cur.settings, true);
       track('sheet_logo', { shared: n });
-      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'vos ' + n + ' autres équipes' : 'votre autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
+      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'tes ' + n + ' autres équipes' : 'ton autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
       E.refreshView();
     } catch (e) { E.toast('Image illisible : essaie un PNG ou un JPG.'); }
   }
@@ -10604,7 +10608,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (await saveSettings(clean)) {
           const n = share ? await shareLogo(clean, false) : 0;
           E.closeModal('modal-sheet-settings');
-          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'votre autre équipe'}.` : 'Feuille personnalisée.');
+          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'ton autre équipe'}.` : 'Feuille personnalisée.');
           E.refreshView();
         }
         b.disabled = false;
@@ -10709,38 +10713,38 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   const STEPS = {
     coach: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour découvrir l’accueil ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
-      { sel: '.todo-card.onboarding', title: 'Démarrer avec votre équipe', text: 'Les premières étapes pour lancer votre équipe : inviter les joueurs, publier une stratégie, créer un match. Ce bloc disparaît quand tout est fait.' },
-      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Ce qui demande votre attention : joueurs sans réponse à relancer, demandes d’adhésion à valider, stratégies peu vues, compo à préparer.' },
-      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Dessinez vos combinaisons étape par étape, publiez-les à l’équipe et voyez qui les a regardées. Les joueurs peuvent aussi vous proposer leurs idées.' },
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour découvrir l’accueil ? Tu pourras aussi la lancer plus tard depuis la page Compte.' },
+      { sel: '.todo-card.onboarding', title: 'Démarrer avec ton équipe', text: 'Les premières étapes pour lancer ton équipe : inviter les joueurs, publier une stratégie, créer un match. Ce bloc disparaît quand tout est fait.' },
+      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Ce qui demande ton attention : joueurs sans réponse à relancer, demandes d’adhésion à valider, stratégies peu vues, compo à préparer.' },
+      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Dessine tes combinaisons étape par étape, publie-les à l’équipe et vois qui les a regardées. Les joueurs peuvent aussi te proposer leurs idées.' },
       { sel: '[data-tile="team"]', title: 'Équipe', text: 'Les membres, leurs postes et leurs coordonnées, les demandes d’adhésion à accepter et les rôles (coach, admin, joueur). L’onglet Club montre les autres équipes du club. Pour leur envoyer une stratégie : menu ⋯ de la stratégie, puis « Partager… ».' },
-      { sel: '[data-tile="invite"]', title: 'Inviter', text: 'Partagez le code de l’équipe ou un message tout prêt par WhatsApp, SMS ou e-mail. Chaque nouvelle personne attend votre validation.' },
-      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Créez matchs et entraînements (ou importez le calendrier de la fédération). Les joueurs répondent Présent, Peut-être ou Absent, et vous relancez ceux qui n’ont pas répondu.' },
-      { sel: '[data-tile="compos"]', title: 'Compos', text: 'Préparez la feuille de match aux couleurs du club, publiez la compo à l’équipe, imprimez-la ou partagez-la en image.' },
-      { club: true, title: 'Bureau du club', text: 'Vous êtes au bureau du club : vous avez les droits de coach dans toutes ses équipes. Dans Équipe, onglet Club, vous gérez le code du club, la date de début de saison, les équipes et les fonctions du bureau (présidente, secrétaire…). Changez d’équipe avec le sélecteur en haut de l’accueil.' },
-      { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui vous attend.' },
-      { sel: '#home-new', title: 'Nouveau dessin', text: 'Créez une nouvelle stratégie à tout moment.' },
-      { sel: () => account(), title: 'Votre compte', text: 'Votre profil, les notifications, vos retours sur l’appli et la confidentialité. C’est aussi là que vous pourrez revoir ce tutoriel.' }
+      { sel: '[data-tile="invite"]', title: 'Inviter', text: 'Partage le code de l’équipe ou un message tout prêt par WhatsApp, SMS ou e-mail. Chaque nouvelle personne attend ta validation.' },
+      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Crée matchs et entraînements (ou importe le calendrier de la fédération). Les joueurs répondent Présent, Peut-être ou Absent, et tu relances ceux qui n’ont pas répondu.' },
+      { sel: '[data-tile="compos"]', title: 'Compos', text: 'Prépare la feuille de match aux couleurs du club, publie la compo à l’équipe, imprime-la ou partage-la en image.' },
+      { club: true, title: 'Bureau du club', text: 'Tu es au bureau du club : tu as les droits de coach dans toutes ses équipes. Dans Équipe, onglet Club, tu gères le code du club, la date de début de saison, les équipes et les fonctions du bureau (présidente, secrétaire…). Change d’équipe avec le sélecteur en haut de l’accueil.' },
+      { sel: () => nav(), title: 'Navigation', text: 'Passe d’une page à l’autre : Accueil, Agenda, Stratégies, Compos et Équipe. Les pastilles rouges signalent ce qui t’attend.' },
+      { sel: '#home-new', title: 'Nouveau dessin', text: 'Crée une nouvelle stratégie à tout moment.' },
+      { sel: () => account(), title: 'Ton compte', text: 'Ton profil, les notifications, tes retours sur l’appli et la confidentialité. C’est aussi là que tu pourras revoir ce tutoriel.' }
     ],
     editor: [
       { title: 'Dessiner une stratégie 🏉', text: 'En 4 temps : placer les joueurs, découper l’action en étapes, regarder l’animation, puis publier à l’équipe. Une minute pour faire le tour ?' },
-      { sel: () => tools(), title: '1. Placez les joueurs', text: 'Le plus rapide : une formation toute prête (mêlée, touche…). Sinon, touchez un joueur dans les outils, puis touchez le terrain pour le poser.' },
-      { sel: '#canvas', title: 'Déplacez et modifiez', text: 'Faites glisser un joueur pour le déplacer. Touchez-le pour changer son numéro, son nom ou lui donner le ballon. Pour une course ou une passe : choisissez la flèche, puis glissez sur le terrain.' },
-      { sel: () => stepsBox(), title: '2. Découpez l’action en étapes', text: 'Une étape = un moment de l’action. Ajoutez une étape : les joueurs restent où ils sont, déplacez-les et l’animation fera le mouvement entre les deux.' },
+      { sel: () => tools(), title: '1. Place les joueurs', text: 'Le plus rapide : une formation toute prête (mêlée, touche…). Sinon, touche un joueur dans les outils, puis touche le terrain pour le poser.' },
+      { sel: '#canvas', title: 'Déplace et modifie', text: 'Fais glisser un joueur pour le déplacer. Touche-le pour changer son numéro, son nom ou lui donner le ballon. Pour une course ou une passe : choisis la flèche, puis glisse sur le terrain.' },
+      { sel: () => stepsBox(), title: '2. Découpe l’action en étapes', text: 'Une étape = un moment de l’action. Ajoute une étape : les joueurs restent où ils sont, déplace-les et l’animation fera le mouvement entre les deux.' },
       { sel: '#fab-undo', title: 'Une erreur ?', text: '« Annuler » revient en arrière, autant de fois que nécessaire.' },
-      { sel: '#btn-preview', title: '3. Regardez l’animation', text: 'L’aperçu joue la stratégie étape par étape, comme vos joueurs la verront sur leur téléphone.' },
-      { sel: '#btn-save', title: '4. Enregistrez et publiez', text: 'Donnez un nom à la stratégie, puis publiez-la à l’équipe : les joueurs sont prévenus et vous voyez qui l’a regardée.' },
+      { sel: '#btn-preview', title: '3. Regarde l’animation', text: 'L’aperçu joue la stratégie étape par étape, comme tes joueurs la verront sur leur téléphone.' },
+      { sel: '#btn-save', title: '4. Enregistre et publie', text: 'Donne un nom à la stratégie, puis publie-la à l’équipe : les joueurs sont prévenus et tu vois qui l’a regardée.' },
       { sel: () => (visible($('#fab-help')) ? '#fab-help' : '#fab-help-m'), title: 'Besoin d’un rappel ?', text: 'Le bouton « Aide » (ou « ? » sur téléphone) relance ce tutoriel à tout moment.' }
     ],
     player: [
-      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre votre équipe ? Vous pourrez aussi la lancer plus tard depuis la page Compte.' },
-      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Répondez aux convocations d’un appui (Présent, Peut-être, Absent) et retrouvez les stratégies à regarder avant le match.' },
-      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Les combinaisons publiées par le coach, animées étape par étape. Vous pouvez aussi dessiner vos idées et les proposer au coach.' },
-      { sel: '[data-tile="team"]', title: 'Équipe', text: 'Tous les membres de l’équipe et leurs postes. L’onglet Club liste les autres équipes du club : vous pouvez demander à en rejoindre une, comme joueur ou comme coach.' },
-      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Les matchs et entraînements à venir, qui vient, et votre réponse. Vous pouvez ajouter un commentaire (retard, blessure…).' },
-      { sel: '[data-tile="compos"]', title: 'Compos', text: 'La composition du prochain match, dès que le coach l’a publiée, avec votre numéro.' },
-      { sel: () => nav(), title: 'Navigation', text: 'Passez d’une page à l’autre. Les pastilles rouges signalent ce qui vous attend.' },
-      { sel: () => account(), title: 'Votre compte', text: 'Complétez votre profil (photo, poste) et activez les notifications pour ne rater aucune convocation.' }
+      { title: 'Bienvenue dans Rugbeo 👋', text: 'Une visite d’une minute pour voir comment suivre ton équipe ? Tu pourras aussi la lancer plus tard depuis la page Compte.' },
+      { sel: '.todo-card.week', title: 'À faire cette semaine', text: 'Réponds aux convocations d’un appui (Présent, Peut-être, Absent) et retrouve les stratégies à regarder avant le match.' },
+      { sel: '[data-tile="strats"]', title: 'Stratégies', text: 'Les combinaisons publiées par le coach, animées étape par étape. Tu peux aussi dessiner tes idées et les proposer au coach.' },
+      { sel: '[data-tile="team"]', title: 'Équipe', text: 'Tous les membres de l’équipe et leurs postes. L’onglet Club liste les autres équipes du club : tu peux demander à en rejoindre une, comme joueur ou comme coach.' },
+      { sel: '[data-tile="agenda"]', title: 'Agenda', text: 'Les matchs et entraînements à venir, qui vient, et ta réponse. Tu peux ajouter un commentaire (retard, blessure…).' },
+      { sel: '[data-tile="compos"]', title: 'Compos', text: 'La composition du prochain match, dès que le coach l’a publiée, avec ton numéro.' },
+      { sel: () => nav(), title: 'Navigation', text: 'Passe d’une page à l’autre. Les pastilles rouges signalent ce qui t’attend.' },
+      { sel: () => account(), title: 'Ton compte', text: 'Complète ton profil (photo, poste) et active les notifications pour ne rater aucune convocation.' }
     ]
   };
 
@@ -10876,9 +10880,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   /* ---------- Fonctionnalités à venir ---------- */
   const SOON = {
-    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Créez vos matchs et entraînements. Vos joueurs répondent présent, peut-être ou absent en un appui, reçoivent un rappel, et vous voyez tout de suite qui manque.', player: 'Tous les matchs et entraînements de votre équipe. Vous répondez présent, peut-être ou absent en un appui et recevez un rappel avant chaque rendez-vous.' },
-    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemblez vos stratégies et vos exercices en une séance chronométrée, avec le matériel à prévoir, et rattachez-la à l’entraînement.', player: '' },
-    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Placez vos joueurs sur les 15 postes et les remplaçants, publiez la compo à l’équipe et imprimez la feuille de match aux couleurs du club.', player: '' }
+    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Crée tes matchs et entraînements. Tes joueurs répondent présent, peut-être ou absent en un appui, reçoivent un rappel, et tu vois tout de suite qui manque.', player: 'Tous les matchs et entraînements de ton équipe. Tu réponds présent, peut-être ou absent en un appui et tu reçois un rappel avant chaque rendez-vous.' },
+    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemble tes stratégies et tes exercices en une séance chronométrée, avec le matériel à prévoir, et rattache-la à l’entraînement.', player: '' },
+    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Place tes joueurs sur les 15 postes et les remplaçants, publie la compo à l’équipe et imprime la feuille de match aux couleurs du club.', player: '' }
   };
   const INTEREST_KEY = 'rugby-interest';
   const interested = () => { try { return JSON.parse(localStorage.getItem(INTEREST_KEY) || '[]'); } catch (e) { return []; } };
@@ -10896,9 +10900,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       renderSoon(feature, rootSel);
     });
     card.appendChild(b);
-    card.appendChild(el('p', 'muted small', 'Votre clic nous aide à choisir quoi développer en premier.'));
+    card.appendChild(el('p', 'muted small', 'Ton clic nous aide à choisir quoi développer en premier.'));
     root.appendChild(card);
-    if (feature === 'agenda') root.appendChild(el('p', 'muted center', 'En attendant, vos stratégies sont dans l’onglet Stratégies.'));
+    if (feature === 'agenda') root.appendChild(el('p', 'muted center', 'En attendant, tes stratégies sont dans l’onglet Stratégies.'));
   }
 
   /* ---------- En-tête et navigation ---------- */
@@ -10991,8 +10995,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     // Arrivé par le lien public d'une stratégie : on parle stratégies ; sinon, de toute l'appli.
     let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
     const pitch = fromStrat
-      ? { h: 'Dessinez vos combinaisons de rugby, toute l’équipe les comprend.', pts: ['Placez joueurs, courses et passes en quelques secondes', 'Animez étape par étape, zoomez sur une touche ou une mêlée', 'Publiez à l’équipe et voyez qui a regardé avant le match'] }
-      : { h: 'Tout votre club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : vos lancements de jeu animés, et vous savez qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
+      ? { h: 'Dessine tes combinaisons de rugby, toute l’équipe les comprend.', pts: ['Place joueurs, courses et passes en quelques secondes', 'Anime étape par étape, zoome sur une touche ou une mêlée', 'Publie à l’équipe et vois qui a regardé avant le match'] }
+      : { h: 'Tout ton club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : tes lancements de jeu animés, et tu sais qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
@@ -11022,10 +11026,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const card = el('section', 'pres-card', `<div class="pres-text"><span class="pres-n">${i + 1}</span><h3>${x.t}</h3><p>${x.p}</p></div><div class="pres-shot"><img src="img/accueil/${x.img}.jpg" alt="Capture : ${x.t.toLowerCase()}" loading="lazy" width="390" height="545"></div>`);
       wrap.appendChild(card);
     });
-    wrap.appendChild(el('div', 'pres-club', '<h3>Tout le club, pas seulement une équipe</h3><ul><li>Autant d’équipes que vous voulez : séniors, réserve, jeunes, féminines…</li><li>Un seul code pour rejoindre le club ; le bureau gère toutes les équipes.</li><li>Moins de 15 ans : un parent gère le compte de ses enfants depuis le sien.</li></ul>'));
+    wrap.appendChild(el('div', 'pres-club', '<h3>Tout le club, pas seulement une équipe</h3><ul><li>Autant d’équipes que tu veux : séniors, réserve, jeunes, féminines…</li><li>Un seul code pour rejoindre le club ; le bureau gère toutes les équipes.</li><li>Moins de 15 ans : un parent gère le compte de ses enfants depuis le sien.</li></ul>'));
     wrap.appendChild(el('div', 'pres-why', '<span>Pensée pour le rugby</span><span>Données en France</span><span>Gratuit, sans publicité</span>'));
     const cta = el('div', 'pres-cta');
-    cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Créez votre compte en une minute.'));
+    cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Crée ton compte en une minute.'));
     cta.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
     cta.appendChild(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()));
     wrap.appendChild(cta);
@@ -11078,7 +11082,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       if (club) {
         const c = el('div', 'todo-card', kids.length
           ? `<div class="todo-head">Dernière étape : leurs équipes</div><p class="muted">Club « ${esc(club.name)} » : choisissez l’équipe de chaque jeune. Le coach ou le bureau du club validera la demande.</p>`
-          : `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
+          : `<div class="todo-head">Dernière étape : tes équipes</div><p class="muted">Tu fais partie du club « ${esc(club.name)} ». Choisis les équipes dont tu fais partie : le coach ou le bureau du club validera ta demande.</p>`);
         const pending = A.pendingTeams();
         if (kids.length) kids.forEach(k => {
           // Demande déjà envoyée pour ce jeune : on le dit, au lieu de reproposer le même bouton
@@ -11096,7 +11100,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
       const card = el('div', 'todo-card', kids.length
         ? `<div class="todo-head">Dernière étape : rejoignez le club</div><p class="muted">Entrez ci-dessous le code donné par le club ou le coach, et choisissez pour quel jeune : le code du club (vous choisirez ensuite son équipe) ou celui d’une équipe.</p>`
-        : '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez ci-dessous le code donné par votre club ou votre coach : le code du club (vous choisirez ensuite vos équipes) ou celui d’une équipe.</p>');
+        : '<div class="todo-head">Dernière étape : rejoins ton club</div><p class="muted">Entre ci-dessous le code donné par ton club ou ton coach : le code du club (tu choisiras ensuite tes équipes) ou celui d’une équipe.</p>');
       root.appendChild(card);
       A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation par un coach.`)));
       root.appendChild(A.teamForms());
@@ -11115,7 +11119,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (my !== seq) return;
     data = d; renderChrome();
     slot.replaceChildren();
-    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
+    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifie la connexion.')); return; }
     let notifOn = false;
     try { notifOn = P() && P().isOn ? await P().isOn() : false; } catch (e) { /* notifications indisponibles */ }
     if (my !== seq) return;
@@ -11149,10 +11153,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function onboarding(d, notifOn) {
     const players = Math.max(0, d.members - 1);
     const steps = [
-      { done: true, label: 'Créer votre équipe' },
-      { done: players >= 5, label: `Inviter vos joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
-      { done: d.published.length > 0, label: 'Publier votre première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
-      { done: d.agenda.total > 0, label: 'Créer votre premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
+      { done: true, label: 'Créer ton équipe' },
+      { done: players >= 5, label: `Inviter tes joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
+      { done: d.published.length > 0, label: 'Publier ta première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
+      { done: d.agenda.total > 0, label: 'Créer ton premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
     ];
     const push = P();
     if (push && push.canAsk && push.canAsk()) steps.push({ done: notifOn, label: 'Activer les notifications sur ce téléphone', action: 'Activer', fn: () => push.enable().then(() => renderHome()) });
@@ -11160,7 +11164,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const n = steps.filter(s => s.done).length;
     if (n === steps.length) return null;
     const card = el('div', 'todo-card onboarding');
-    card.appendChild(el('div', 'todo-head', `Démarrer avec votre équipe <span class="muted">${n}/${steps.length}</span>`));
+    card.appendChild(el('div', 'todo-head', `Démarrer avec ton équipe <span class="muted">${n}/${steps.length}</span>`));
     card.appendChild(el('div', 'progress-line', `<i style="width:${Math.round(100 * n / steps.length)}%"></i>`));
     steps.forEach((s, i) => {
       const row = el('div', 'todo-row' + (s.done ? ' done' : ''), `<span class="todo-check">${s.done ? '✓' : ''}</span><span class="grow">${s.label}</span>`);
@@ -11178,7 +11182,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const soon = Date.now() + 7 * 864e5;
     // Mes convocations sans réponse (joueur, ou coach / admin qui joue aussi) : réponse directe depuis l'accueil
     const rsvpItems = () => ag.events.filter(ev => ev.convoked && !ev.mine).forEach(ev => items.push({
-      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
+      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>tu seras là ?</strong>`,
       // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
       buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
     }));
@@ -11195,14 +11199,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       rsvpItems();
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
-      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>vous êtes n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
-      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complétez votre profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
+      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>tu es n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
+      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complète ton profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
       const push = P();
-      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Activez les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
+      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Active les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
     const card = el('div', 'todo-card week');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
-    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Vous êtes à jour.'));
+    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Tu es à jour.'));
     const addRow = it => {
       const row = el('div', 'todo-row' + (it.buttons ? ' stack' : ''), `<span class="grow">${it.text}</span>`);
       if (it.buttons) { const g = el('div', 'todo-btns'); it.buttons.forEach(([l, cls, fn]) => g.appendChild(btn(l, cls + ' small', fn))); row.appendChild(g); }
@@ -11246,7 +11250,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function sheetLabel(d) {
     const m = (d.sheets || [])[0];
     if (!m) return 'Aucun match à venir';
-    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `vous êtes n°${m.mine.num}` : 'compo publiée' }[m.sheet];
+    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `tu es n°${m.mine.num}` : 'compo publiée' }[m.sheet];
     return `${AG().dayShort(m.starts_at)} · ${st}`;
   }
 

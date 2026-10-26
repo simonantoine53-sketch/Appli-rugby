@@ -71,7 +71,7 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); console.log((ok ? '  �
     // Joueur
     page = await open(view, opts);
     await login(page, 'joueur@exemple.test');
-    check(await waitText(page, 'serez-vous là'), 'joueur : convocation à répondre sur l’accueil');
+    check(await waitText(page, 'tu seras là'), 'joueur : convocation à répondre sur l’accueil');
     await shot(page, view, '05-joueur-accueil');
     await page.close();
 

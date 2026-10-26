@@ -21,7 +21,7 @@ const U16 = '30000000-0000-4000-8000-000000000005';     // entraînement U16 (To
   const player = await t.open(view);
   await t.login(player, 'joueur@exemple.test');
   await t.go(player, `#/agenda/${MATCH}/repondre`);
-  t.check(await waitRaw(player, 'Serez-vous là ?'), 'écran de réponse directe : la question et l’événement');
+  t.check(await waitRaw(player, 'Tu seras là ?'), 'écran de réponse directe : la question et l’événement');
   t.check(await player.$$eval('.quick-buttons .rsvp-btn', b => b.length) === 3, 'trois grands boutons Présent / Peut-être / Absent');
   await t.shot(player, `${view}-lot2-1-repondre`);
   await player.click('.quick-buttons .rsvp-btn.no');

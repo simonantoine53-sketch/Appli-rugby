@@ -110,7 +110,7 @@
       const head = el('div', 'members-head', `<span class="muted">${list.length ? `${list.length} partenaire${list.length > 1 ? 's' : ''}` : 'Partenaires du club'}</span>`);
       if (admin) head.appendChild(btn('+ Ajouter un partenaire', 'outline small', () => form(null)));
       sec.appendChild(head);
-      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Vos partenaires s’affichent sur l’accueil des équipes, entre les événements de l’Agenda et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
+      if (!list.length) { sec.appendChild(el('p', 'help', admin ? 'Tes partenaires s’affichent sur l’accueil des équipes, entre les événements de l’Agenda et en bas des stratégies partagées par lien.' : 'Pas encore de partenaire.')); return; }
       const grid = el('div', 'sponsor-grid');
       sec.appendChild(grid);
       list.forEach((s, i) => {
@@ -150,7 +150,7 @@
       const showLogo = () => { preview.replaceChildren(); if (logo) { preview.appendChild(Object.assign(el('img'), { src: logo, alt: '' })); preview.appendChild(btn('Enlever le logo', 'ghost small', () => { logo = null; showLogo(); })); } };
       showLogo();
       f.insertBefore(preview, f.querySelector('.form-error'));
-      f.logo.onchange = async () => { const file = f.logo.files[0]; if (!file) return; try { logo = await shrink(file); showLogo(); } catch (e) { f.querySelector('.form-error').textContent = 'Image illisible : essayez un PNG ou un JPEG.'; } };
+      f.logo.onchange = async () => { const file = f.logo.files[0]; if (!file) return; try { logo = await shrink(file); showLogo(); } catch (e) { f.querySelector('.form-error').textContent = 'Image illisible : essaie un PNG ou un JPEG.'; } };
       const acts = el('div', 'row-wrap');
       acts.append(el('button', 'btn primary small', 'Enregistrer'), btn('Annuler', 'ghost small', () => draw()));
       acts.firstChild.type = 'submit';

@@ -1,7 +1,7 @@
 # Rugbeo – règles pour les mises à jour
 
 - **Couleurs** : suivre `docs/charte-couleurs.md` et la charte « Terrain » (`docs/charte-graphique-terrain.md`, appliquée par défaut depuis le 24/10/2026). Uniquement les variables CSS (`var(--primary)`, `var(--danger)`…), jamais de code couleur en dur. Un seul vert (`--primary`) pour les actions, l'orange Ballon (`--accent`) en accent rare ; vert / orange / rouge pour les états.
-- **Textes** : vouvoiement partout. Mots fixes : « Équipe », « Compos », « Présent / Peut-être / Absent ».
+- **Textes** : tutoiement partout, sauf les pages légales (`js/legal.js`) et les messages adressés aux parents (vouvoiement). Mots fixes : « Équipe », « Compos », « Présent / Peut-être / Absent ».
 - **Mise en ligne** : `node build.js` (cache et `dist/appli-rugby.html`) avant chaque commit ; un push sur `main` déploie GitHub Pages.
 - **Base Supabase** : chaque changement de schéma va dans `supabase/migrations/` (numéro suivant). Toute nouvelle table a ses règles d'accès (RLS) cohérentes avec l'existant.
 - **Deux bases** (voir README) : la base de **test** (`qrldtcbzsewvjdrzzsdf`, rugbeo-test) sert à tout : chaque migration y est appliquée et testée d'abord, puis sur la **production** (`rnbsupogbesfngjfykyc`) seulement après validation de Simon. Tous les tests (Playwright, notifications, rappels, tâches planifiées) se font sur la base de test ; aucun e-mail ni notification vers de vrais utilisateurs. `js/config.js` choisit la base selon l'adresse (production : `PROD_HOSTS` uniquement). Remise à zéro de la base de test : `select public.test_seed();`.

@@ -76,7 +76,7 @@
     box.innerHTML = `<svg viewBox="0 0 32 32" width="56" height="56" aria-hidden="true"><rect width="32" height="32" rx="7" class="boot-tile"/><ellipse cx="16" cy="16" rx="11" ry="6.5" class="boot-oval" transform="rotate(-30 16 16)"/></svg>
       <h2>Pas de réseau</h2>
       <p>Cette page n’a pas encore été ouverte sur ce téléphone, elle ne peut donc pas s’afficher sans réseau.</p>
-      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Vos réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
+      <ul><li>Les pages déjà ouvertes restent consultables.</li><li>Tes réponses Présent / Peut-être / Absent partent toutes seules au retour du réseau.</li></ul>`;
     const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = 'Réessayer';
     b.onclick = () => (retry ? retry() : location.reload());
     box.appendChild(b);

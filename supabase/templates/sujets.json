@@ -1,26 +1,26 @@
 {
   "confirmation": {
     "name": "Confirm signup",
-    "subject": "Confirmez votre adresse pour Rugbeo"
+    "subject": "{{ if .Data.kids }}Confirmez votre adresse pour Rugbeo{{ else }}Confirme ton adresse pour Rugbeo{{ end }}"
   },
   "recuperation": {
     "name": "Reset password",
-    "subject": "{{ if .Data.managed }}{{ if .Data.first_name }}{{ .Data.first_name }}, votre compte Rugbeo est à vous{{ else }}Votre compte Rugbeo vous attend{{ end }}{{ else }}Rugbeo : choisissez un nouveau mot de passe{{ end }}"
+    "subject": "{{ if .Data.managed }}{{ if .Data.first_name }}{{ .Data.first_name }}, ton compte Rugbeo est à toi{{ else }}Ton compte Rugbeo t’attend{{ end }}{{ else }}Rugbeo : choisis un nouveau mot de passe{{ end }}"
   },
   "invitation": {
     "name": "Invite user",
-    "subject": "Une invitation vous attend sur Rugbeo"
+    "subject": "Une invitation t’attend sur Rugbeo"
   },
   "lien-connexion": {
     "name": "Magic link",
-    "subject": "Votre lien de connexion Rugbeo"
+    "subject": "Ton lien de connexion Rugbeo"
   },
   "changement-email": {
     "name": "Change email address",
-    "subject": "Rugbeo : confirmez votre nouvelle adresse"
+    "subject": "Rugbeo : confirme ta nouvelle adresse"
   },
   "mot-de-passe-modifie": {
     "name": "Password changed",
-    "subject": "Rugbeo : votre mot de passe a été modifié"
+    "subject": "Rugbeo : ton mot de passe a été modifié"
   }
 }

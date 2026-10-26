@@ -20,7 +20,7 @@
     if (bar || (!force && read())) return;
     bar = document.createElement('div');
     bar.className = 'consent-bar'; bar.setAttribute('role', 'dialog'); bar.setAttribute('aria-labelledby', 'consent-title');
-    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> Pouvons-nous mesurer votre usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
+    bar.innerHTML = `<p><strong id="consent-title">Ni cookie ni publicité.</strong> On peut mesurer ton usage pour améliorer l’appli ? Refuser ne change rien. <a href="#" data-legal="cookies">En savoir plus</a></p>
       <div class="consent-actions"><button type="button" class="btn outline" data-c="0">Refuser</button><button type="button" class="btn outline" data-c="1">Accepter</button></div>`;
     bar.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
       const ok = b.dataset.c === '1';

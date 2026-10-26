@@ -30,9 +30,9 @@
 
   /* ---------- Fonctionnalités à venir ---------- */
   const SOON = {
-    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Créez vos matchs et entraînements. Vos joueurs répondent présent, peut-être ou absent en un appui, reçoivent un rappel, et vous voyez tout de suite qui manque.', player: 'Tous les matchs et entraînements de votre équipe. Vous répondez présent, peut-être ou absent en un appui et recevez un rappel avant chaque rendez-vous.' },
-    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemblez vos stratégies et vos exercices en une séance chronométrée, avec le matériel à prévoir, et rattachez-la à l’entraînement.', player: '' },
-    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Placez vos joueurs sur les 15 postes et les remplaçants, publiez la compo à l’équipe et imprimez la feuille de match aux couleurs du club.', player: '' }
+    agenda: { icon: 'agenda', title: 'Agenda et convocations', coach: 'Crée tes matchs et entraînements. Tes joueurs répondent présent, peut-être ou absent en un appui, reçoivent un rappel, et tu vois tout de suite qui manque.', player: 'Tous les matchs et entraînements de ton équipe. Tu réponds présent, peut-être ou absent en un appui et tu reçois un rappel avant chaque rendez-vous.' },
+    seances: { icon: 'seances', title: 'Séances d’entraînement', coach: 'Assemble tes stratégies et tes exercices en une séance chronométrée, avec le matériel à prévoir, et rattache-la à l’entraînement.', player: '' },
+    compos: { icon: 'compos', title: 'Compositions et feuille de match', coach: 'Place tes joueurs sur les 15 postes et les remplaçants, publie la compo à l’équipe et imprime la feuille de match aux couleurs du club.', player: '' }
   };
   const INTEREST_KEY = 'rugby-interest';
   const interested = () => { try { return JSON.parse(localStorage.getItem(INTEREST_KEY) || '[]'); } catch (e) { return []; } };
@@ -50,9 +50,9 @@
       renderSoon(feature, rootSel);
     });
     card.appendChild(b);
-    card.appendChild(el('p', 'muted small', 'Votre clic nous aide à choisir quoi développer en premier.'));
+    card.appendChild(el('p', 'muted small', 'Ton clic nous aide à choisir quoi développer en premier.'));
     root.appendChild(card);
-    if (feature === 'agenda') root.appendChild(el('p', 'muted center', 'En attendant, vos stratégies sont dans l’onglet Stratégies.'));
+    if (feature === 'agenda') root.appendChild(el('p', 'muted center', 'En attendant, tes stratégies sont dans l’onglet Stratégies.'));
   }
 
   /* ---------- En-tête et navigation ---------- */
@@ -145,8 +145,8 @@
     // Arrivé par le lien public d'une stratégie : on parle stratégies ; sinon, de toute l'appli.
     let fromStrat = false; try { fromStrat = sessionStorage.getItem('rs-from') === 'strat'; } catch (e) {}
     const pitch = fromStrat
-      ? { h: 'Dessinez vos combinaisons de rugby, toute l’équipe les comprend.', pts: ['Placez joueurs, courses et passes en quelques secondes', 'Animez étape par étape, zoomez sur une touche ou une mêlée', 'Publiez à l’équipe et voyez qui a regardé avant le match'] }
-      : { h: 'Tout votre club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : vos lancements de jeu animés, et vous savez qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
+      ? { h: 'Dessine tes combinaisons de rugby, toute l’équipe les comprend.', pts: ['Place joueurs, courses et passes en quelques secondes', 'Anime étape par étape, zoome sur une touche ou une mêlée', 'Publie à l’équipe et vois qui a regardé avant le match'] }
+      : { h: 'Tout ton club de rugby dans une seule appli.', pts: ['<b>Convocations</b> : chacun répond Présent, Peut-être ou Absent en un appui', '<b>Stratégies</b> : tes lancements de jeu animés, et tu sais qui les a vus', '<b>Compos</b> : la feuille de match prête en quelques minutes, aux couleurs du club'] };
     const box = el('div', 'hero', `<p class="hero-brand"><strong>Rugbeo</strong> · L’appli des clubs de rugby</p><h1>${pitch.h}</h1>
       <ul>${pitch.pts.map(t => `<li>${t}</li>`).join('')}</ul><p class="hero-slogan">De la convoc’ au maillot, Rugbeo.</p>`);
     const btns = el('div', 'hero-btns');
@@ -176,10 +176,10 @@
       const card = el('section', 'pres-card', `<div class="pres-text"><span class="pres-n">${i + 1}</span><h3>${x.t}</h3><p>${x.p}</p></div><div class="pres-shot"><img src="img/accueil/${x.img}.jpg" alt="Capture : ${x.t.toLowerCase()}" loading="lazy" width="390" height="545"></div>`);
       wrap.appendChild(card);
     });
-    wrap.appendChild(el('div', 'pres-club', '<h3>Tout le club, pas seulement une équipe</h3><ul><li>Autant d’équipes que vous voulez : séniors, réserve, jeunes, féminines…</li><li>Un seul code pour rejoindre le club ; le bureau gère toutes les équipes.</li><li>Moins de 15 ans : un parent gère le compte de ses enfants depuis le sien.</li></ul>'));
+    wrap.appendChild(el('div', 'pres-club', '<h3>Tout le club, pas seulement une équipe</h3><ul><li>Autant d’équipes que tu veux : séniors, réserve, jeunes, féminines…</li><li>Un seul code pour rejoindre le club ; le bureau gère toutes les équipes.</li><li>Moins de 15 ans : un parent gère le compte de ses enfants depuis le sien.</li></ul>'));
     wrap.appendChild(el('div', 'pres-why', '<span>Pensée pour le rugby</span><span>Données en France</span><span>Gratuit, sans publicité</span>'));
     const cta = el('div', 'pres-cta');
-    cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Créez votre compte en une minute.'));
+    cta.appendChild(el('p', '', '<strong>Prêt à essayer ?</strong> Crée ton compte en une minute.'));
     cta.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
     cta.appendChild(btn('Voir la démo', 'outline', () => window.RugbyDemo && window.RugbyDemo.start()));
     wrap.appendChild(cta);
@@ -232,7 +232,7 @@
       if (club) {
         const c = el('div', 'todo-card', kids.length
           ? `<div class="todo-head">Dernière étape : leurs équipes</div><p class="muted">Club « ${esc(club.name)} » : choisissez l’équipe de chaque jeune. Le coach ou le bureau du club validera la demande.</p>`
-          : `<div class="todo-head">Dernière étape : vos équipes</div><p class="muted">Vous faites partie du club « ${esc(club.name)} ». Choisissez les équipes dont vous faites partie : le coach ou le bureau du club validera votre demande.</p>`);
+          : `<div class="todo-head">Dernière étape : tes équipes</div><p class="muted">Tu fais partie du club « ${esc(club.name)} ». Choisis les équipes dont tu fais partie : le coach ou le bureau du club validera ta demande.</p>`);
         const pending = A.pendingTeams();
         if (kids.length) kids.forEach(k => {
           // Demande déjà envoyée pour ce jeune : on le dit, au lieu de reproposer le même bouton
@@ -250,7 +250,7 @@
       }
       const card = el('div', 'todo-card', kids.length
         ? `<div class="todo-head">Dernière étape : rejoignez le club</div><p class="muted">Entrez ci-dessous le code donné par le club ou le coach, et choisissez pour quel jeune : le code du club (vous choisirez ensuite son équipe) ou celui d’une équipe.</p>`
-        : '<div class="todo-head">Dernière étape : rejoignez votre club</div><p class="muted">Entrez ci-dessous le code donné par votre club ou votre coach : le code du club (vous choisirez ensuite vos équipes) ou celui d’une équipe.</p>');
+        : '<div class="todo-head">Dernière étape : rejoins ton club</div><p class="muted">Entre ci-dessous le code donné par ton club ou ton coach : le code du club (tu choisiras ensuite tes équipes) ou celui d’une équipe.</p>');
       root.appendChild(card);
       A.pendingTeams().forEach(t => root.appendChild(el('p', 'muted', `Demande envoyée à « ${esc(t.name)} »${t.kidName ? " pour " + esc(t.kidName) : ""} : en attente de validation par un coach.`)));
       root.appendChild(A.teamForms());
@@ -269,7 +269,7 @@
     if (my !== seq) return;
     data = d; renderChrome();
     slot.replaceChildren();
-    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifiez la connexion.')); return; }
+    if (!d) { slot.appendChild(!navigator.onLine && window.RugbyOffline ? window.RugbyOffline.card(() => renderHome()) : el('p', 'library-empty', 'Impossible de charger l’accueil. Vérifie la connexion.')); return; }
     let notifOn = false;
     try { notifOn = P() && P().isOn ? await P().isOn() : false; } catch (e) { /* notifications indisponibles */ }
     if (my !== seq) return;
@@ -303,10 +303,10 @@
   function onboarding(d, notifOn) {
     const players = Math.max(0, d.members - 1);
     const steps = [
-      { done: true, label: 'Créer votre équipe' },
-      { done: players >= 5, label: `Inviter vos joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
-      { done: d.published.length > 0, label: 'Publier votre première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
-      { done: d.agenda.total > 0, label: 'Créer votre premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
+      { done: true, label: 'Créer ton équipe' },
+      { done: players >= 5, label: `Inviter tes joueurs (${Math.min(players, 5)}/5)`, action: 'Inviter', fn: () => A.shareCode() },
+      { done: d.published.length > 0, label: 'Publier ta première stratégie', action: 'Dessiner', fn: () => E.startNewDrawing() },
+      { done: d.agenda.total > 0, label: 'Créer ton premier match ou entraînement', action: 'Créer', fn: () => AG().openForm() }
     ];
     const push = P();
     if (push && push.canAsk && push.canAsk()) steps.push({ done: notifOn, label: 'Activer les notifications sur ce téléphone', action: 'Activer', fn: () => push.enable().then(() => renderHome()) });
@@ -314,7 +314,7 @@
     const n = steps.filter(s => s.done).length;
     if (n === steps.length) return null;
     const card = el('div', 'todo-card onboarding');
-    card.appendChild(el('div', 'todo-head', `Démarrer avec votre équipe <span class="muted">${n}/${steps.length}</span>`));
+    card.appendChild(el('div', 'todo-head', `Démarrer avec ton équipe <span class="muted">${n}/${steps.length}</span>`));
     card.appendChild(el('div', 'progress-line', `<i style="width:${Math.round(100 * n / steps.length)}%"></i>`));
     steps.forEach((s, i) => {
       const row = el('div', 'todo-row' + (s.done ? ' done' : ''), `<span class="todo-check">${s.done ? '✓' : ''}</span><span class="grow">${s.label}</span>`);
@@ -332,7 +332,7 @@
     const soon = Date.now() + 7 * 864e5;
     // Mes convocations sans réponse (joueur, ou coach / admin qui joue aussi) : réponse directe depuis l'accueil
     const rsvpItems = () => ag.events.filter(ev => ev.convoked && !ev.mine).forEach(ev => items.push({
-      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>serez-vous là ?</strong>`,
+      text: `${esc(AG().short(ev))} à ${AG().time(ev.starts_at)} : <strong>tu seras là ?</strong>`,
       // Mêmes réponses que dans l'Agenda : présent, peut-être, absent (enregistrées dès le clic)
       buttons: [['Présent', 'rsvp-btn yes', 'yes'], ['Peut-être', 'rsvp-btn maybe', 'maybe'], ['Absent', 'rsvp-btn no', 'no']].map(([l, cls, st]) => [l, cls, go('rsvp-' + st, async () => { if (await AG().answer(ev.id, st)) { E.toast(`Réponse envoyée : ${l.toLowerCase()}.`); renderHome(); } })])
     }));
@@ -349,14 +349,14 @@
       rsvpItems();
       if (d.toWatch.length > 2) items.push({ text: `<strong>${d.toWatch.length} stratégies</strong> à regarder`, action: 'Voir', primary: true, fn: go('to-watch', () => { A.setLibTab('team'); E.go('strats'); }) });
       else d.toWatch.forEach(r => items.push({ text: `« ${esc(r.title)} » à regarder`, action: 'Regarder', primary: true, fn: go('to-watch', () => A.openById(r.id)) }));
-      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>vous êtes n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
-      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complétez votre profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
+      (d.sheets || []).filter(m => m.sheet === 'published' && new Date(m.starts_at) < soon).slice(0, 1).forEach(m => items.push({ text: m.mine ? `Compo publiée : <strong>tu es n°${m.mine.num}</strong>` : `Compo publiée pour le match ${esc(AG().label(m).toLowerCase())}`, action: 'Voir', primary: true, fn: go('sheet-view', () => E.go('compos', m.id)) }));
+      if (A.profileIncomplete && A.profileIncomplete() && window.RugbyProfile) items.push({ text: 'Complète ton profil : photo et poste', action: 'Compléter', fn: go('profile', () => window.RugbyProfile.openProfile()) });
       const push = P();
-      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Activez les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
+      if (!notifOn && push && push.canAsk && push.canAsk()) items.push({ text: 'Active les notifications pour ne rien rater', action: 'Activer', fn: go('notifications', () => push.enable().then(() => renderHome())) });
     }
     const card = el('div', 'todo-card week');
     card.appendChild(el('div', 'todo-head', 'À faire cette semaine'));
-    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Vous êtes à jour.'));
+    if (!items.length) card.appendChild(el('p', 'todo-empty', staff ? 'Rien d’urgent. ✓ Tout le monde est à jour.' : 'Rien d’urgent. ✓ Tu es à jour.'));
     const addRow = it => {
       const row = el('div', 'todo-row' + (it.buttons ? ' stack' : ''), `<span class="grow">${it.text}</span>`);
       if (it.buttons) { const g = el('div', 'todo-btns'); it.buttons.forEach(([l, cls, fn]) => g.appendChild(btn(l, cls + ' small', fn))); row.appendChild(g); }
@@ -400,7 +400,7 @@
   function sheetLabel(d) {
     const m = (d.sheets || [])[0];
     if (!m) return 'Aucun match à venir';
-    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `vous êtes n°${m.mine.num}` : 'compo publiée' }[m.sheet];
+    const st = { none: d.staff ? 'compo à faire' : 'compo bientôt', draft: d.staff ? 'brouillon' : 'compo bientôt', published: m.mine ? `tu es n°${m.mine.num}` : 'compo publiée' }[m.sheet];
     return `${AG().dayShort(m.starts_at)} · ${st}`;
   }
 

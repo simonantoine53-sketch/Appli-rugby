@@ -66,7 +66,7 @@
     root.appendChild(el('p', 'help st-help', `${period === 'season' ? 'Depuis le début de la saison' : 'Sur les 30 derniers jours'} : matchs et entraînements passés, sans les annulés, depuis l’arrivée de chacun dans l’équipe. « Peut-être » ne compte pas comme présent ; les convocations sans réponse sont comptées à part.`));
     const draw = () => {
       box.replaceChildren();
-      if (!rows.length) { box.appendChild(el('p', 'muted', staff ? 'Pas encore de joueur dans l’équipe.' : 'Vous n’êtes pas convoqué dans cette équipe.')); return; }
+      if (!rows.length) { box.appendChild(el('p', 'muted', staff ? 'Pas encore de joueur dans l’équipe.' : 'Tu n’es pas convoqué dans cette équipe.')); return; }
       const list = rows.slice();
       const by = k => (a, b) => ((rate(b[k]) == null ? -1 : rate(b[k])) - (rate(a[k]) == null ? -1 : rate(a[k]))) || a.name.localeCompare(b.name);
       list.sort(sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : sort === 'unanswered' ? (a, b) => unanswered(b) - unanswered(a) || a.name.localeCompare(b.name) : by(sort));

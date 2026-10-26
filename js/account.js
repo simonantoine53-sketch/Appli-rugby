@@ -54,15 +54,19 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const m = (e && e.message) || String(e), code = (e && e.code) || '';
     // Limites de Supabase : on dit pourquoi et combien de temps attendre
     const wait = m.match(/after (\d+) seconds?/i);
-    if (wait) return `Patientez ${wait[1]} secondes avant de redemander un e-mail.`;
-    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessayez dans 1 heure environ. Si votre e-mail est déjà confirmé, vous pouvez vous connecter normalement.';
-    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessayez dans 5 minutes.';
+    if (wait) return `Patiente ${wait[1]} secondes avant de redemander un e-mail.`;
+    if (code === 'over_email_send_rate_limit' || /email rate limit/i.test(m)) return 'Limite d’envoi d’e-mails atteinte : trop d’e-mails de confirmation ont été envoyés en peu de temps. Réessaie dans 1 heure environ. Si ton e-mail est déjà confirmé, tu peux te connecter normalement.';
+    if (code === 'over_request_rate_limit' || /rate limit|too many requests/i.test(m) || (e && e.status === 429)) return 'Trop de tentatives depuis cet appareil. Réessaie dans 5 minutes.';
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou mot de passe incorrect.';
-    if (/Email not confirmed/i.test(m)) return 'Confirmez votre e-mail (lien reçu par mail) avant de vous connecter.';
+    if (/Email not confirmed/i.test(m)) return 'Confirme ton e-mail (lien reçu par mail) avant de te connecter.';
     if (/already registered/i.test(m)) return 'Cet e-mail a déjà un compte.';
     if (/different from the old/i.test(m)) return 'Le nouveau mot de passe doit être différent de l’ancien.';
     if (/Password should be/i.test(m)) return 'Mot de passe trop court (6 caractères minimum).';
-    if (/row-level security/i.test(m)) return 'Action non autorisée pour votre rôle.';
+    if (/row-level security/i.test(m)) return 'Action non autorisée pour ton rôle.';
+    // Messages de la base encore au vouvoiement : repris au tutoiement de l'appli
+    if (/Demandez un code à votre club/i.test(m)) return 'La création de club se fait sur invitation. Demande un code à ton club.';
+    if (/Nommez d.abord une autre personne au bureau/i.test(m)) return 'Nomme d’abord une autre personne au bureau du club.';
+    if (/Rejoignez d.abord le club/i.test(m)) return 'Rejoins d’abord le club.';
     return m;
   };
 
@@ -76,7 +80,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Session ---------- */
   let ready = false;
   async function refreshSession(session) {
-    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoignez votre club »
+    // Connexion en cours : écran de chargement neutre plutôt que la page visiteur ou « rejoins ton club »
     if (session && !S.user && ready) { ready = false; if (E.currentView() === 'home') E.refreshView(); }
     S.user = session ? session.user : null;
     if (S.user) {
@@ -84,7 +88,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       S.profile = data || { id: S.user.id, display_name: S.user.email.split('@')[0] };
       if (S.profile.guardian_id) {
         const { data: claimed } = await sb.rpc('claim_my_account');
-        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le vôtre.'); }
+        if (claimed) { S.profile.guardian_id = null; E.toast('Bienvenue : ce compte est maintenant le tien.'); }
       }
       await loadKids();
       await loadTeams();
@@ -106,9 +110,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   // getSession attend que Supabase ait lu le jeton du lien : on peut ensuite nettoyer l'adresse
   if (authReturn) sb.auth.getSession().then(({ data }) => {
     history.replaceState(null, '', location.pathname + location.search + '#/');
-    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    if (authReturn === 'confirmed' && data.session) E.toast('E-mail confirmé : bienvenue, tu es connecté !');
     else if (authReturn === 'recovery' && data.session) openAuth('reset');
-    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connectez-vous : si votre e-mail n’est pas encore confirmé, vous pourrez recevoir un nouveau lien.', 'info'); }
+    else { openAuth('login'); setAuthMsg('Ce lien a expiré ou a déjà servi. Connecte-toi : si ton e-mail n’est pas encore confirmé, tu pourras recevoir un nouveau lien.', 'info'); }
   });
 
   async function loadKids() {
@@ -148,7 +152,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const before = new Set((S.pending || []).map(t => t.id));
       await loadTeams();
       const joined = S.teams.find(t => before.has(t.id) && !t.notMember && !t.superadmin);
-      if (joined) E.toast(`Demande acceptée : vous faites partie de « ${joined.name} ».`);
+      if (joined) E.toast(`Demande acceptée : tu fais partie de « ${joined.name} ».`);
       // On ne redessine que les pages sans saisie en cours (accueil, équipe, compte)
       if (/^(#\/?|#\/(team|account))?$/.test(location.hash)) refreshCurrentView(); else renderAccountButton();
     }, 400);
@@ -297,7 +301,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const text = `Bonjour ! Pour que je puisse suivre mon équipe de rugby sur Rugbeo (convocations, compos), il faut qu’un parent crée mon compte. Choisissez « Je suis parent d’un joueur de moins de 15 ans » : ${link}`;
     track('kid_share_parent');
     if (navigator.share) navigator.share({ title: 'Rugbeo', text }).catch(() => {});
-    else window.RugbyDialog.copy(text, { title: 'Message pour votre parent', message: 'Copiez ce message et envoyez-le à un parent (SMS, WhatsApp…).' });
+    else window.RugbyDialog.copy(text, { title: 'Message pour ton parent', message: 'Copie ce message et envoie-le à un parent (SMS, WhatsApp…).' });
   };
   $('#auth-who-back').onclick = e => { e.preventDefault(); setSignupWho('adult'); };
   // Cas moins fréquents (parent d'un enfant, moins de 15 ans) : un lien sous le formulaire, plutôt qu'une étape de choix
@@ -320,7 +324,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     $('#auth-forgot').classList.toggle('hidden', mode !== 'login');
     $('#auth-back').classList.toggle('hidden', mode !== 'forgot');
     $('#auth-title').textContent = { forgot: 'Mot de passe oublié', reset: 'Nouveau mot de passe' }[mode] || ''; $('#auth-title').classList.toggle('hidden', tabs);
-    const intro = { forgot: 'Indiquez l’adresse e-mail de votre compte : vous recevrez un lien pour choisir un nouveau mot de passe.', reset: 'Choisissez votre nouveau mot de passe.' }[mode];
+    const intro = { forgot: 'Indique l’adresse e-mail de ton compte : tu recevras un lien pour choisir un nouveau mot de passe.', reset: 'Choisis ton nouveau mot de passe.' }[mode];
     $('#auth-intro').textContent = intro || ''; $('#auth-intro').classList.toggle('hidden', !intro);
     $('#auth-submit').textContent = { login: 'Se connecter', signup: 'Créer mon compte', forgot: 'Recevoir le lien', reset: 'Enregistrer le mot de passe' }[mode];
     $('#auth-form').dataset.mode = mode; setAuthMsg('');
@@ -338,7 +342,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (/\d/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     if (/^(.)\1+$/.test(pw) || /^(123456|password|azerty|qwerty|motdepasse)/i.test(pw)) score = 0;
-    if (score <= 1) return { level: 2, text: 'Faible : ajoutez des chiffres, des majuscules ou des symboles.' };
+    if (score <= 1) return { level: 2, text: 'Faible : ajoute des chiffres, des majuscules ou des symboles.' };
     if (score <= 3) return { level: 3, text: 'Moyen : un peu plus long ou avec un symbole, ce serait mieux.' };
     return { level: 4, text: 'Solide ✓' };
   }
@@ -364,7 +368,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   function startPending(email, password) {
     Object.assign(pending, { email, password, until: Date.now() + 30 * 60 * 1000 });
     $('#auth-pending-email').textContent = email;
-    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, vous rejoindrez automatiquement l’équipe de l’invitation.' : 'Ensuite : entrez le code donné par votre club ou votre coach pour rejoindre votre équipe.';
+    $('#auth-pending-next').textContent = pendingJoin() ? 'Ensuite, tu rejoindras automatiquement l’équipe de l’invitation.' : 'Ensuite : entre le code donné par ton club ou ton coach pour rejoindre ton équipe.';
     $('#auth-pending-msg').textContent = '';
     showPending(true);
     clearInterval(pending.timer);
@@ -376,7 +380,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (Date.now() > pending.until) return stopPending();
     const { error } = await sb.auth.signInWithPassword({ email: pending.email, password: pending.password });
     if (error) return;   // pas encore confirmé (ou limite atteinte) : on réessaiera
-    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, vous êtes connecté !');
+    stopPending(); E.closeModal('modal-auth'); E.toast('E-mail confirmé : bienvenue, tu es connecté !');
   }
   // Retour sur l'onglet après avoir cliqué le lien dans la boîte mail : on vérifie tout de suite
   document.addEventListener('visibilitychange', () => { if (!document.hidden && pending.timer) tryPendingLogin(); });
@@ -398,13 +402,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
         if (error) throw error;
         // Même message que le compte existe ou non : on ne révèle pas quelles adresses sont inscrites
-        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de vous être envoyé. Cliquez sur le lien qu’il contient pour choisir un nouveau mot de passe (pensez aux spams).`, 'info');
+        setAuthMsg(`Si un compte existe pour ${email}, un e-mail vient de t’être envoyé. Clique sur le lien qu’il contient pour choisir un nouveau mot de passe (pense aux spams).`, 'info');
         b.disabled = false; return;
       }
       if (mode === 'reset') {
         const { error } = await sb.auth.updateUser({ password });
         if (error) throw error;
-        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : vous êtes connecté.');
+        E.closeModal('modal-auth'); E.toast('Mot de passe modifié : tu es connecté.');
         b.disabled = false; return;
       }
       if (mode === 'signup') {
@@ -412,13 +416,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const parent = signupWho === 'parent';
         const kids = parent ? [...document.querySelectorAll('#auth-kid-list input')].map(i => i.value.trim()).filter(Boolean) : [];
         if (parent && !kids.length) { setAuthMsg('Indiquez le prénom et le nom du jeune.'); b.disabled = false; return; }
-        if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indiquez votre prénom et votre nom.'); b.disabled = false; return; }
+        if (!name) { setAuthMsg(parent ? 'Indiquez votre prénom et votre nom.' : 'Indique ton prénom et ton nom.'); b.disabled = false; return; }
         if (parent && !$('#auth-parent-ok').checked) { setAuthMsg('Cochez la case d’accord du parent.'); b.disabled = false; return; }
         const meta = Object.assign({ display_name: name, terms_version: window.RugbyLegal ? window.RugbyLegal.version : '' }, parent ? { kids } : {}, pendingJoin() ? { join_code: pendingJoin() } : {});
         const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta, emailRedirectTo: location.origin + location.pathname } });
         if (error) throw error;
         // Supabase ne signale pas un e-mail déjà inscrit : il renvoie un compte sans identité
-        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connectez-vous.', 'info'); b.disabled = false; return; }
+        if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) { setAuthMode('login'); $('#auth-email').value = email; setAuthMsg('Cet e-mail a déjà un compte : connecte-toi.', 'info'); b.disabled = false; return; }
         if (window.RugbyDemo) window.RugbyDemo.signedUp();   // mesure anonyme : compte créé après avoir vu la démo ?
         if (!data.session) { startPending(email, password); b.disabled = false; return; }
       } else {
@@ -459,12 +463,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     forId = forId || S.user.id;
     const { data, error } = await sb.rpc('join_with_code', Object.assign({ p_code: code }, forArg(forId)));
     if (error) return E.toast(errMsg(error));
-    if (!data || !data.kind) return E.toast('Code invalide : vérifiez-le auprès de votre club.');
+    if (!data || !data.kind) return E.toast('Code invalide : vérifie-le auprès de ton club.');
     await loadTeams();
     const kid = forId !== S.user.id ? kidName(forId) : '';
     if (data.kind === 'club') { if (quiet) return; E.toast(kid ? `${kid} entre au club « ${data.name} » !` : `Bienvenue au club « ${data.name} » !`); return openTeamPicker(data.id, forId); }
     const t = S.teams.find(x => x.id === data.id && (x.who || S.user.id) === forId);
-    if (t) { setTeam(t); E.toast(`${kid || 'Vous'} ${kid ? 'est' : 'êtes'} membre de « ${data.name} ».`); }
+    if (t) { setTeam(t); E.toast(`${kid || 'Tu'} ${kid ? 'est' : 'es'} membre de « ${data.name} ».`); }
     else { pushJoin('join_request', data.id, undefined, forId); if (!quiet) E.toast(`Demande envoyée à « ${data.name} »${kid ? ' pour ' + kid : ''}. Un coach ou le bureau du club doit la valider.`); }
     if (quiet) return;
     E.go('team'); renderTeamPage();
@@ -479,8 +483,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const isFor = t => (t.who || S.user.id) === forId;
     const mine = new Set(S.teams.filter(t => !t.notMember && isFor(t)).map(t => t.id)), asked = new Set((S.pending || []).filter(isFor).map(t => t.id));
     const body = $('#club-teams-body'); body.replaceChildren();
-    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre vos équipes') + (club ? ` · ${club.name}` : '');
-    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Cochez les équipes dont vous faites partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
+    $('#club-teams-title').textContent = (kid ? `Les équipes ${de(kid)}${kid}` : 'Rejoindre tes équipes') + (club ? ` · ${club.name}` : '');
+    body.appendChild(el('p', 'muted', kid ? `Cochez les équipes ${de(kid)}${esc(kid)}. Chaque demande est validée par le coach de l’équipe ou le bureau du club.` : 'Coche les équipes dont tu fais partie. Chaque demande est validée par le coach de l’équipe ou le bureau du club.'));
     const rows = [];
     // Pour un jeune : les équipes adultes (Séniors, Réserve, Loisirs…) sont rangées sous un repli, pas proposées d'emblée
     const adult = t => kid && /s[ée]nior|r[ée]serve|v[ée]t[ée]ran|loisir/i.test(t.name) && !/\b[UM]\s?-?\d{1,2}\b|-\s?\d{1,2}\s?ans/i.test(t.name);
@@ -506,7 +510,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!(teams || []).length) body.appendChild(el('p', 'library-empty', 'Ce club n’a pas encore d’équipe.'));
     const go = btn('Envoyer mes demandes', 'primary wide', async () => {
       const picked = rows.filter(r => r.cb.checked);
-      if (!picked.length) return E.toast('Cochez au moins une équipe.');
+      if (!picked.length) return E.toast('Coche au moins une équipe.');
       go.disabled = true;
       for (const r of picked) {
         const { error: e } = await sb.rpc('request_team', Object.assign({ p_team: r.t.id, p_as: r.as.value }, forArg(forId)));
@@ -524,13 +528,13 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /** onClose : si fourni, ajoute un bouton pour refermer le panneau. */
   function teamForms(onClose) {
     const box = el('div', 'team-forms-card');
-    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre votre club'));
+    const head = el('div', 'forms-head'); head.appendChild(el('h4', '', S.teams.length || S.clubs.length ? 'Rejoindre un club ou une équipe' : 'Rejoindre ton club'));
     if (onClose) { const x = btn('✕', 'btn-close', onClose); x.className = 'btn-close'; x.title = 'Fermer'; x.setAttribute('aria-label', 'Fermer'); head.appendChild(x); }
     box.appendChild(head);
     const part = (title, help) => { const d = el('div', 'forms-part'); d.appendChild(el('strong', 'forms-part-title', title)); if (help) d.appendChild(el('p', 'help', help)); box.appendChild(d); return d; };
 
     // 1. Rejoindre : un seul champ pour le code du club ou de l'équipe
-    const p1 = part('Rejoindre avec un code', 'Le code vous est donné par votre club ou votre coach. Avec le code du club, vous choisissez ensuite vos équipes.');
+    const p1 = part('Rejoindre avec un code', 'Le code t’est donné par ton club ou ton coach. Avec le code du club, tu choisis ensuite tes équipes.');
     let forSel = null;
     if (S.kids.length) {
       forSel = el('select', 'select'); forSel.setAttribute('aria-label', 'Pour qui ?');
@@ -546,7 +550,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     // 2. Direction du club : ajouter une équipe à son club (le super-admin : au club de l'équipe ouverte)
     const mineAdmin = S.clubs.filter(c => c.myRole === 'responsable' || (isSuper() && S.team && c.id === S.team.club_id));
     mineAdmin.forEach(c => {
-      const p = part(`Ajouter une équipe à « ${c.name} »`, 'Vous dirigez ce club : la nouvelle équipe reçoit son propre code d’invitation.');
+      const p = part(`Ajouter une équipe à « ${c.name} »`, 'Tu diriges ce club : la nouvelle équipe reçoit son propre code d’invitation.');
       const f = el('form', 'inline-form', '<input type="text" placeholder="Ex. U16, Féminines, Réserve…" required minlength="2" maxlength="60" aria-label="Nom de la nouvelle équipe"><button class="btn primary small" type="submit">Créer l’équipe</button>');
       f.onsubmit = async e => {
         e.preventDefault();
@@ -554,25 +558,25 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         if (error) return E.toast(errMsg(error));
         track('club_team_create'); await loadTeams();
         const t = S.teams.find(x => x.id === data.id); if (t) setTeam(t);
-        E.toast(`Équipe « ${data.name} » créée. Invitez ses joueurs avec son code.`); teamTab = 'members'; E.go('team'); renderTeamPage();
+        E.toast(`Équipe « ${data.name} » créée. Invite ses joueurs avec son code.`); teamTab = 'members'; E.go('team'); renderTeamPage();
       };
       p.appendChild(f);
     });
 
     // 3. Nouveau club : seulement quand le back-office l'ouvre (création volontairement fermée pour l'instant,
     //    pour éviter les comptes et équipes en série). Fermée : pas de bouton grisé, on dit simplement quoi faire.
-    const p3 = part('Créer un nouveau club', 'Vous serez au bureau du club et coach de sa première équipe.');
+    const p3 = part('Créer un nouveau club', 'Tu seras au bureau du club et coach de sa première équipe.');
     const f1 = el('form', 'inline-form', '<input type="text" placeholder="Nom du club" required minlength="2" maxlength="60" aria-label="Nom du nouveau club"><button class="btn outline small" type="submit">Créer le club</button>');
     f1.onsubmit = e => { e.preventDefault(); createClub(f1.querySelector('input').value); };
     p3.appendChild(f1);
     p3.classList.add('hidden');
-    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach.');
+    const noCode = el('p', 'help forms-nocode', 'Pas de code ? Demande-le au bureau de ton club ou à ton coach.');
     p1.appendChild(noCode);
     clubCreationOpen().then(open => {
       p3.classList.toggle('hidden', !open);
       head.firstChild.textContent = open && (S.teams.length || S.clubs.length) ? 'Rejoindre ou créer' : head.firstChild.textContent;
       if (open) return;
-      noCode.innerHTML = 'Pas de code ? Demandez-le au bureau de votre club ou à votre coach. Votre club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écrivez-nous</a>.';
+      noCode.innerHTML = 'Pas de code ? Demande-le au bureau de ton club ou à ton coach. Ton club n’est pas encore sur Rugbeo ? L’ouverture se fait sur invitation pour le moment : <a href="#">écris-nous</a>.';
       noCode.querySelector('a').onclick = e => {
         e.preventDefault(); if (!window.RugbyAdmin) return;
         window.RugbyAdmin.openFeedback();
@@ -612,7 +616,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const lk = el('div', 'invite-link', `<span class="muted">Lien d’invitation</span><a class="invite-url" href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https?:\/\//, ''))}</a>`);
     const lkActs = el('div', 'row-wrap');
     lkActs.appendChild(btn('Copier le lien', 'primary small', () => copy(link, 'Lien copié.', 'link')));
-    if (navigator.share) lkActs.appendChild(btn('Partager', 'outline small', () => { track('invite', { channel: 'share-link' }); navigator.share({ title: 'Rugbeo', text: forClub ? `Rejoignez le club « ${club.name} » sur Rugbeo` : `Rejoignez l’équipe « ${t.name} » sur Rugbeo`, url: link }).catch(() => {}); }));
+    if (navigator.share) lkActs.appendChild(btn('Partager', 'outline small', () => { track('invite', { channel: 'share-link' }); navigator.share({ title: 'Rugbeo', text: forClub ? `Rejoins le club « ${club.name} » sur Rugbeo` : `Rejoins l’équipe « ${t.name} » sur Rugbeo`, url: link }).catch(() => {}); }));
     lkActs.appendChild(btn('QR code', 'outline small', () => showQr(link, forClub ? club.name : t.name, code, forClub)));
     lk.appendChild(lkActs);
     body.appendChild(lk);
@@ -629,12 +633,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     body.appendChild(box);
     body.appendChild(el('p', 'help invite-explain', forClub
       ? 'Avec ce code, la personne rejoint le club, puis choisit ses équipes (comme joueur ou comme coach). Chaque demande est validée par le coach de l’équipe ou le bureau.'
-      : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Vous validez sa demande dans Équipe.`));
+      : `Avec ce code, la personne demande directement à rejoindre « ${esc(t.name)} »${club ? ` (et entre dans le club ${esc(club.name)})` : ''}. Tu valides sa demande dans Équipe.`));
     const msg = el('textarea', 'admin-textarea invite-msg'); msg.rows = 6; msg.maxLength = 600; msg.setAttribute('aria-label', 'Message d’invitation');
     msg.value = forClub
-      ? `Bonjour ! Rejoignez le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien, créez votre compte (gratuit), puis choisissez vos équipes :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`
-      : `Bonjour ! Rejoignez l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouchez ce lien et créez votre compte (gratuit) :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`;
-    body.append(el('label', 'invite-label', 'Message (vous pouvez le modifier)'), msg);
+      ? `Salut ! Rejoins le club « ${club.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouche ce lien, crée ton compte (gratuit), puis choisis tes équipes :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`
+      : `Salut ! Rejoins l’équipe « ${t.name} » sur Rugbeo : stratégies, convocations et compos au même endroit.\n\nTouche ce lien et crée ton compte (gratuit) :\n${link}\n\n(Si le lien ne marche pas : ${url} puis le code ${code})`;
+    body.append(el('label', 'invite-label', 'Message (tu peux le modifier)'), msg);
     const enc = () => encodeURIComponent(msg.value);
     const ICONS = {
       whatsapp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.1 7.9c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.6l-.5.6c-.1.1-.1.3 0 .5.6 1.1 1.5 2 2.6 2.6.2.1.4.1.5 0l.6-.5c.2-.1.4-.2.6-.1l1.6.7c.4.2.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.5.6-2.8.1-2.3-.9-4.2-2.8-5.1-5.1-.4-1.3-.2-2.3.2-2.7z" fill="currentColor"/></svg>',
@@ -654,7 +658,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     links.append(
       icon('whatsapp', 'Envoyer par WhatsApp', () => `https://wa.me/?text=${enc()}`),
       icon('sms', 'Envoyer par SMS', () => `sms:?&body=${enc()}`),
-      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoignez le club ' + club.name : 'Rejoignez l’équipe ' + t.name) + ' sur Rugbeo')}&body=${enc()}`)
+      icon('email', 'Envoyer par e-mail', () => `mailto:?subject=${encodeURIComponent((forClub ? 'Rejoins le club ' + club.name : 'Rejoins l’équipe ' + t.name) + ' sur Rugbeo')}&body=${enc()}`)
     );
     if (navigator.share) {
       const more = el('button', 'invite-icon more', ICONS.more); more.type = 'button'; more.title = 'Autre application'; more.setAttribute('aria-label', 'Autre application');
@@ -662,7 +666,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       links.appendChild(caption(more, CAPTIONS.more));
     }
     body.appendChild(links);
-    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : collez-le où vous voulez.', 'copy')));
+    body.appendChild(btn('Copier le message', 'primary wide', () => copy(msg.value, 'Message copié : colle-le où tu veux.', 'copy')));
     E.openModal('modal-invite');
   }
   const joinLink = code => `${location.origin}${location.pathname}#/rejoindre/${encodeURIComponent(code)}`;
@@ -673,11 +677,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   const qrSvg = text => { const q = window.qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); };
   /** QR code du lien en grand, à montrer ou à imprimer pour le vestiaire. */
   async function showQr(link, name, code, forClub) {
-    try { await loadQrLib(); } catch (e) { return E.toast('QR code indisponible : vérifiez la connexion.'); }
+    try { await loadQrLib(); } catch (e) { return E.toast('QR code indisponible : vérifie la connexion.'); }
     track('invite', { channel: 'qr' });
     const body = $('#invite-body'); const prevNodes = [...body.childNodes];
     body.replaceChildren();
-    const box = el('div', 'qr-box', `<div class="qr-img">${qrSvg(link)}</div><strong>${esc(name)}</strong><span class="muted">Scannez avec l’appareil photo du téléphone pour rejoindre ${forClub ? 'le club' : 'l’équipe'}. Code : ${esc(code)}</span>`);
+    const box = el('div', 'qr-box', `<div class="qr-img">${qrSvg(link)}</div><strong>${esc(name)}</strong><span class="muted">Scanne avec l’appareil photo du téléphone pour rejoindre ${forClub ? 'le club' : 'l’équipe'}. Code : ${esc(code)}</span>`);
     body.appendChild(box);
     const acts = el('div', 'row-wrap qr-acts');
     acts.appendChild(btn('Imprimer pour le vestiaire', 'primary', () => printQr(link, name, code, forClub)));
@@ -686,14 +690,14 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   }
   function printQr(link, name, code, forClub) {
     const w = window.open('', '_blank');
-    if (!w) return E.toast('Autorisez les fenêtres surgissantes pour imprimer.');
+    if (!w) return E.toast('Autorise les fenêtres surgissantes pour imprimer.');
     // Page imprimée : noir sur blanc, indépendante des couleurs de l'appli
     w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rejoindre ${esc(name)} sur Rugbeo</title><style>
       body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;text-align:center;margin:40px;color:#111}
       h1{font-size:34px;margin:0 0 8px}p{font-size:18px;margin:6px 0}.qr{width:360px;height:360px;margin:24px auto}.qr svg{width:100%;height:100%}
       .code{font-size:28px;font-weight:800;letter-spacing:.15em}.small{font-size:14px;color:#555}button{margin-top:24px;font-size:16px;padding:10px 18px}@media print{button{display:none}}
-    </style></head><body><h1>Rejoignez ${forClub ? 'le club' : 'l’équipe'} ${esc(name)}</h1><p>sur Rugbeo : convocations, stratégies et compos</p>
-    <div class="qr">${qrSvg(link)}</div><p>1. Ouvrez l’appareil photo du téléphone et visez le code.</p><p>2. Touchez le lien, puis créez votre compte (gratuit).</p>
+    </style></head><body><h1>Rejoins ${forClub ? 'le club' : 'l’équipe'} ${esc(name)}</h1><p>sur Rugbeo : convocations, stratégies et compos</p>
+    <div class="qr">${qrSvg(link)}</div><p>1. Ouvre l’appareil photo du téléphone et vise le code.</p><p>2. Touche le lien, puis crée ton compte (gratuit).</p>
     <p class="small">Sans QR code : ${esc(location.origin + location.pathname)} puis le code</p><p class="code">${esc(code)}</p>
     <button onclick="print()">Imprimer</button></body></html>`);
     w.document.close();
@@ -719,7 +723,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function showInvite(code) {
     const note = $('#auth-note');
     const put = who => {
-      note.innerHTML = `<strong>${who ? `Vous êtes invité à rejoindre ${who}` : 'Vous avez reçu une invitation'}</strong><br>Créez votre compte ci-dessous : vous rejoindrez ensuite l’équipe automatiquement. Déjà un compte ? <a href="#" data-login>Se connecter</a>`;
+      note.innerHTML = `<strong>${who ? `Tu es invité à rejoindre ${who}` : 'Tu as reçu une invitation'}</strong><br>Crée ton compte ci-dessous : tu rejoindras ensuite l’équipe automatiquement. Déjà un compte ? <a href="#" data-login>Se connecter</a>`;
       note.querySelector('[data-login]').onclick = e => { e.preventDefault(); setAuthMode('login'); };
       note.classList.remove('hidden');
     };
@@ -908,7 +912,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       // Équipe créée : on dit quoi faire ensuite (inviter la ou le coach avec le code de l'équipe)
       await loadTeams();
       const nt = S.teams.find(x => x.id === data.id);
-      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invitez la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
+      if (nt && await window.RugbyDialog.confirm(`Prochaine étape : invite la ou le coach de « ${data.name} » avec le code de l’équipe. Ensuite, le coach invite ses joueurs et crée le premier entraînement.`, { title: 'Équipe créée', ok: 'Inviter la ou le coach', cancel: 'Plus tard' })) { setTeam(nt); shareCode('team'); }
       refresh();
     }));
     else head.appendChild(btn('Rejoindre d’autres équipes', 'outline small', () => openTeamPicker(club.id)));
@@ -961,7 +965,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const titles = CLUB_TITLES.includes(cur) || !cur ? CLUB_TITLES : CLUB_TITLES.concat([cur]);
         [['', 'Membre']].concat(titles.map(x => [x, x])).forEach(([v, l]) => sel.appendChild(Object.assign(el('option'), { value: v, textContent: l, selected: cur === v })));
         sel.onchange = async () => {
-          if (!sel.value && r.user_id === actorId() && !await window.RugbyDialog.confirm('Vous retirer du bureau du club ? Vous perdrez la gestion des équipes du club.')) { sel.value = cur; return; }
+          if (!sel.value && r.user_id === actorId() && !await window.RugbyDialog.confirm('Te retirer du bureau du club ? Tu perdras la gestion des équipes du club.')) { sel.value = cur; return; }
           const { error } = await sb.rpc('set_club_function', { p_club: club.id, p_user: r.user_id, p_title: sel.value || null });
           if (error) { sel.value = cur; return E.toast(errMsg(error)); }
           E.toast(sel.value ? `${nameOf(r)} : ${sel.value}. Gère maintenant toutes les équipes du club.` : `${nameOf(r)} n’est plus au bureau du club.`); refresh();
@@ -1032,21 +1036,21 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
             strip.appendChild(tb);
           });
           c.appendChild(strip);
-          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Votre original ne change pas.'));
-        } else c.appendChild(el('p', 'help', 'Votre club n’a pas encore d’autre équipe.'));
+          c.appendChild(el('p', 'help', 'L’équipe la reçoit dans ses propositions et peut la modifier. Ton original ne change pas.'));
+        } else c.appendChild(el('p', 'help', 'Ton club n’a pas encore d’autre équipe.'));
         body.appendChild(c);
       }
       // 2. Lien public et 3. téléchargement
       if (canMode) {
         const eff = shareMode(row), dl = eff !== 'app', link = eff === 'public' && !!row.share_token;
         const p = el('div', 'share-part');
-        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Activez d’abord le téléchargement.', link, !dl,
+        p.appendChild(switchRow('Lien public', dl ? 'N’importe qui avec le lien la voit, même sans compte.' : 'Active d’abord le téléchargement.', link, !dl,
           on => apply(on ? 'public' : 'download', on, on ? 'Lien public activé.' : 'Lien public arrêté : il ne fonctionne plus.')));
         if (link) p.appendChild(btn('Copier le lien', 'outline small share-copy', () => shareLink(row)));
         p.appendChild(switchRow('Téléchargement', 'Les joueurs peuvent télécharger (image, vidéo, PDF) et copier la stratégie.', dl, false,
           on => apply(on ? 'download' : 'app', false, on ? 'Téléchargement autorisé.' : `Dans l’appli seulement${link ? ', le lien public est arrêté' : ''}.`)));
         body.appendChild(p);
-      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publiez d’abord la stratégie à l’équipe.'));
+      } else if (canClub) body.appendChild(el('p', 'help', 'Lien public et téléchargement : publie d’abord la stratégie à l’équipe.'));
       body.appendChild(btn('Terminé', 'ghost wide', () => E.closeModal('modal-strat-share')));
     };
     draw();
@@ -1066,10 +1070,10 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
 
   async function leaveTeam(t) {
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Vous restez membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
+    if (!await window.RugbyDialog.confirm(`Quitter « ${t.name} » ?${others.length ? ` Tu restes membre de ${others.join(', ')}.` : ''}`, { title: 'Quitter l’équipe', ok: 'Quitter', danger: true })) return;
     const { error } = await sb.from('team_members').delete().match({ team_id: t.id, user_id: actorId() });
     if (error) return E.toast(errMsg(error));
-    teamTab = 'members'; E.toast(`Vous avez quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
+    teamTab = 'members'; E.toast(`Tu as quitté « ${t.name} ».`); await loadTeams(); renderTeamPage();
   }
 
   /** Onglet Réglages : l'équipe, le code d'invitation, le partage, la feuille, mon appartenance, la zone sensible. */
@@ -1098,7 +1102,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       c.foot.append(name, save);
     }
     // Le code est visible de tous : un joueur peut aussi inviter, le staff valide ensuite
-    const code = card(`Code de l’équipe ${t.name}`, (staff ? 'Avec ce code, une personne demande directement à rejoindre cette équipe ; vous validez sa demande dans Membres.' : 'Les personnes que vous invitez devront être acceptées par le staff.') + (t.club_id ? ' Pour rejoindre le club et choisir ses équipes, c’est le code du club (onglet Club).' : ''));
+    const code = card(`Code de l’équipe ${t.name}`, (staff ? 'Avec ce code, une personne demande directement à rejoindre cette équipe ; tu valides sa demande dans Membres.' : 'Les personnes que tu invites devront être acceptées par le staff.') + (t.club_id ? ' Pour rejoindre le club et choisir ses équipes, c’est le code du club (onglet Club).' : ''));
     code.insertBefore(el('div', 'code-big', esc(t.join_code)), code.foot);
     code.foot.appendChild(btn('Inviter', 'primary small', shareCode));
     if (staff) code.foot.appendChild(btn('Nouveau code', 'outline small', async () => {
@@ -1114,11 +1118,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       share.foot.appendChild(shareDefaultSelect(desc => { share.help.textContent = desc + ' Modifiable stratégie par stratégie.'; }));
       const sheet = card('Feuille de match', 'Logo, couleurs, modèle, champs et repères imprimés sur la feuille de match.');
       sheet.foot.appendChild(btn('Personnaliser la feuille', 'outline small', () => { if (window.RugbySheets && window.RugbySheets.openSettings) window.RugbySheets.openSettings(); }));
-      reminderCard(card('Rappel la veille', 'La veille de chaque match et entraînement, une notification : « À demain » pour les présents, « Vous n’avez pas répondu » pour les autres. Rien pour les absents.'), t);
+      reminderCard(card('Rappel la veille', 'La veille de chaque match et entraînement, une notification : « À demain » pour les présents, « Tu n’as pas répondu » pour les autres. Rien pour les absents.'), t);
     }
     // Mon appartenance : on quitte toujours l'équipe affichée, et on sait où l'on reste
     const others = S.teams.filter(x => x.id !== t.id && !x.superadmin).map(x => x.name);
-    const me = card('Mon appartenance', `Vous êtes ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
+    const me = card('Mon appartenance', `Tu es ${(ROLE_LABEL[t.role] || t.role).toLowerCase()} de ${esc(t.name)}${others.length ? ` et membre de ${others.map(esc).join(', ')}` : ''}.`);
     if (!t.superadmin) me.foot.appendChild(btn(`Quitter « ${t.name} »`, 'outline small danger', () => leaveTeam(t)));
     if (isClubAdmin(t.club_id)) {   // supprimer une équipe : direction du club seulement
       const z = card('Zone sensible', 'Supprime l’équipe, ses membres et ses stratégies publiées. Irréversible.', 'danger-zone');
@@ -1254,8 +1258,8 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   /* ---------- Restrictions ---------- */
   /** Enregistrer et exporter sont réservés aux membres d'un club. */
   function canUse(feature) {
-    if (!S.user) { openAuth(); E.toast(feature === 'export' ? 'Connectez-vous et rejoignez un club pour exporter.' : 'Connectez-vous et rejoignez un club pour enregistrer.'); return false; }
-    if (!isClubMember()) { E.toast((feature === 'export' ? 'L’export' : 'L’enregistrement') + ' est réservé aux membres d’un club. Rejoignez un club avec son code.'); E.go('team'); return false; }
+    if (!S.user) { openAuth(); E.toast(feature === 'export' ? 'Connecte-toi et rejoins un club pour exporter.' : 'Connecte-toi et rejoins un club pour enregistrer.'); return false; }
+    if (!isClubMember()) { E.toast((feature === 'export' ? 'L’export' : 'L’enregistrement') + ' est réservé aux membres d’un club. Rejoins un club avec son code.'); E.go('team'); return false; }
     return true;
   }
 
@@ -1291,7 +1295,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       }
       return;
     }
-    E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans votre compte.');
+    E.toast(row.visibility === 'team' ? 'Stratégie mise à jour pour l’équipe.' : 'Dessin enregistré dans ton compte.');
   }
   async function saveSmart() {
     if (E.drawing.__share === 'app' && !isCoach()) { E.toast('Le coach a réservé cette stratégie à l’appli : elle ne peut pas être copiée.'); return; }
@@ -1307,7 +1311,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const row = { owner_id: actorId(), team_id: S.team ? S.team.id : null, name, data };
     const { error } = await sb.from('formations').insert(row);
     if (error) { E.toast('Enregistrement impossible : ' + errMsg(error)); return; }
-    E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans votre compte.`);
+    E.toast(S.team ? `Formation « ${name} » enregistrée pour « ${S.team.name} ».` : `Formation « ${name} » enregistrée dans ton compte.`);
   }
   async function listFormations() {
     if (!S.user) { openAuth(); return { list: [], scope: '' }; }
@@ -1398,11 +1402,11 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
         const { data: res, error: err } = await sb.functions.invoke('push-notify', { body: { drawing_id: row.id, kind: 'reminder' } });
         if (err) return E.toast('Relance impossible : ' + errMsg(err));
         track('reminder', { recipients: res && res.recipients });
-        E.toast(res && res.sent ? `Rappel envoyé sur ${res.sent} téléphone${res.sent > 1 ? 's' : ''}.` : 'Aucun de ces joueurs n’a activé les notifications : utilisez « Copier la liste » pour WhatsApp.');
+        E.toast(res && res.sent ? `Rappel envoyé sur ${res.sent} téléphone${res.sent > 1 ? 's' : ''}.` : 'Aucun de ces joueurs n’a activé les notifications : utilise « Copier la liste » pour WhatsApp.');
       }));
       actions.appendChild(btn('Copier la liste pour WhatsApp', 'outline', () => {
         const text = `À regarder avant le match : « ${row.title} » dans l’appli. Pas encore vu : ${notSeen.map(r => r.display_name).join(', ')}.`;
-        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : collez-le dans le groupe WhatsApp.'));
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => E.toast('Message copié : colle-le dans le groupe WhatsApp.'));
         else window.RugbyDialog.copy(text, { title: 'Message à copier' });
       }));
     }
@@ -1427,7 +1431,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     const list = $('#comments-list'); list.replaceChildren();
     const { data, error } = await sb.from('drawing_comments').select('id, user_id, body, created_at, author:profiles!drawing_comments_user_id_fkey(display_name)').eq('drawing_id', commentsFor.row.id).order('created_at');
     if (error) { list.appendChild(el('p', 'library-empty', errMsg(error))); return; }
-    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Posez une question au coach ou faites une remarque.'));
+    if (!data.length) list.appendChild(el('p', 'muted', 'Aucun commentaire. Pose une question au coach ou fais une remarque.'));
     const coachIds = new Set();
     data.forEach(c => {
       const item = el('div', 'comment');
@@ -1471,7 +1475,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!S.user) {
       root.replaceChildren();
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p>Sans compte, vos dessins restent sur cet appareil. Créez un compte gratuit pour les retrouver partout et les partager à votre équipe.</p>');
+      const box = el('div', 'home-login', '<p>Sans compte, tes dessins restent sur cet appareil. Crée un compte gratuit pour les retrouver partout et les partager à ton équipe.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => openAuth('signup')));
       root.appendChild(box);
       const local = E.readLib();
@@ -1481,7 +1485,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isClubMember()) {
       root.replaceChildren();
       tabs.classList.add('hidden');
-      const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoignez votre club.</strong><br>Entrez le code donné par votre club ou votre coach (code du club ou d’une équipe). Ensuite vous pourrez enregistrer, exporter et partager vos dessins.</p>');
+      const box = el('div', 'home-login', '<p><strong>Dernière étape : rejoins ton club.</strong><br>Entre le code donné par ton club ou ton coach (code du club ou d’une équipe). Ensuite tu pourras enregistrer, exporter et partager tes dessins.</p>');
       box.appendChild(btn('Rejoindre mon club', 'primary', () => E.go('team')));
       root.appendChild(box);
       const pend = pendingCard(); if (pend) root.appendChild(pend);
@@ -1519,9 +1523,9 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (seq !== renderSeq) return;
     root.replaceChildren(); root.classList.remove('refreshing');
     if (!data.length) {
-      empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touchez « + Nouveau dessin », puis « Enregistrer » dans l’éditeur.'
+      empty(root, libTab === 'mine' ? 'Aucun dessin enregistré. Touche « + Dessin », puis « Enregistrer » dans l’éditeur.'
         : libTab === 'proposed' ? 'Aucune proposition de joueur pour le moment. Les joueurs proposent leurs dessins depuis « Mes dessins ».'
-        : isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvrez un de vos dessins et touchez « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.');
+        : isCoach() ? 'Aucune stratégie publiée dans cette équipe. Ouvre un de tes dessins et touche « Publier à l’équipe ».' : 'Le coach n’a encore rien publié dans cette équipe.');
       return;
     }
     const withMeta = data.map(r => Object.assign(r, { category: (r.data && r.data.category) || '', tags: (r.data && r.data.tags) || '' }));
@@ -1549,7 +1553,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c.querySelector('.body'), `Ouvrir « ${row.title} »`);
     const btns = c.querySelector('.card-btns');
     const setVis = async visibility => {
-      if (visibility !== 'private' && !S.team) { E.toast('Rejoignez ou créez d’abord une équipe.'); return; }
+      if (visibility !== 'private' && !S.team) { E.toast('Rejoins ou crée d’abord une équipe.'); return; }
       const patch = { visibility, team_id: visibility === 'private' ? row.team_id : S.team.id };
       if (visibility === 'team') patch.published_at = new Date().toISOString();
       const { error } = await sb.from('drawings').update(patch).eq('id', row.id);
@@ -1628,7 +1632,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
       const b = btn('Envoyer dans mon compte', 'small secondary', async () => {
         const copy = E.clone(d); copy.id = crypto.randomUUID();
         const { error } = await sb.from('drawings').insert({ id: copy.id, owner_id: actorId(), title: copy.title, data: copy, team_id: S.team ? S.team.id : null, visibility: 'private' });
-        E.toast(error ? errMsg(error) : 'Copié dans votre compte.');
+        E.toast(error ? errMsg(error) : 'Copié dans ton compte.');
       });
       const wrap = el('div', 'card-btns'); wrap.appendChild(b); c.appendChild(wrap);
       root.appendChild(c);
@@ -1642,7 +1646,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!copy) return;
     S.current = { visibility: 'private', team_id: S.team ? S.team.id : null, owner_id: actorId() };
     E.loadDrawing(E.clone(copy)); E.markSaved && E.markSaved(); E.go('editor');
-    E.toast(`« ${copy.title} » a été ajoutée à vos stratégies : touchez « Exporter » pour la télécharger.`);
+    E.toast(`« ${copy.title} » a été ajoutée à tes stratégies : touche « Exporter » pour la télécharger.`);
   }
 
   /** Ouvre la page d'une équipe (super-admin : n'importe quelle équipe). */
@@ -1657,7 +1661,7 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
   async function openById(id) {
     if (!isUuid(id)) { E.go('strats'); return; }
     const { data, error } = await sb.from('drawings').select('id, title, data, visibility, team_id, owner_id, share_token, share_mode').eq('id', id).maybeSingle();
-    if (error || !data) { E.toast('Cette stratégie n’existe plus ou n’est plus partagée avec vous.'); E.go('strats'); return; }
+    if (error || !data) { E.toast('Cette stratégie n’existe plus ou n’est plus partagée avec toi.'); E.go('strats'); return; }
     if (data.team_id && S.team && data.team_id !== S.team.id) { const t = S.teams.find(x => x.id === data.team_id); if (t) setTeam(t); }
     track('open_link');
     loadCloud(data);

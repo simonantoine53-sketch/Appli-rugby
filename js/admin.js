@@ -9,7 +9,7 @@
   const A = window.RugbyAccount;
   if (!A || !A.isActive()) {
     window.RugbyTrack = { track: () => {} };
-    window.RugbyAdmin = { onSession: () => {}, render: () => {}, flag: () => false, openFeedback: () => E.toast('Mode local : connectez un backend pour envoyer un avis.') };
+    window.RugbyAdmin = { onSession: () => {}, render: () => {}, flag: () => false, openFeedback: () => E.toast('Mode local : connecte un backend pour envoyer un avis.') };
     return;
   }
   const sb = A.sb;
@@ -151,7 +151,7 @@
   const KIND = { bug: '🐞 Bug', idea: '💡 Idée', other: '💬 Autre' };
   const STATUS = { new: 'Nouveau', seen: 'Vu', planned: 'Prévu', done: 'Fait', rejected: 'Écarté' };
   function openFeedback() {
-    if (!loggedIn()) { A.openAuth(); E.toast('Connectez-vous pour donner votre avis.'); return; }
+    if (!loggedIn()) { A.openAuth(); E.toast('Connecte-toi pour donner ton avis.'); return; }
     $('#feedback-error').textContent = '';
     E.openModal('modal-feedback');
     $('#feedback-message').focus();
@@ -160,7 +160,7 @@
   $('#feedback-form').onsubmit = async e => {
     e.preventDefault();
     const message = $('#feedback-message').value.trim();
-    if (message.length < 3) { $('#feedback-error').textContent = 'Écrivez quelques mots.'; return; }
+    if (message.length < 3) { $('#feedback-error').textContent = 'Écris quelques mots.'; return; }
     const kind = document.querySelector('input[name=feedback-kind]:checked').value;
     const d = E.drawing;
     const context = { view: view(), device: device(), build, screen: `${innerWidth}x${innerHeight}`, ua: navigator.userAgent.slice(0, 200), drawing: view() === 'editor' && d ? d.title : undefined };
@@ -170,7 +170,7 @@
     if (error) { $('#feedback-error').textContent = error.message; return; }
     $('#feedback-message').value = '';
     track('feedback', { kind });
-    E.toast('Merci ! Votre avis a bien été envoyé.');
+    E.toast('Merci ! Ton avis a bien été envoyé.');
     renderMyFeedback();
   };
   async function renderMyFeedback() {
@@ -515,7 +515,7 @@
       const first = await window.RugbyDialog.prompt('Première équipe (facultatif)', 'Séniors', { title: `Club « ${name} »`, maxLength: 60, required: false });
       const { error } = await sb.rpc('create_club', { p_name: name, p_team: first || null });
       if (error) return E.toast(error.message);
-      E.toast(`Club « ${name} » créé. Nommez son bureau ci-dessous.`); render();
+      E.toast(`Club « ${name} » créé. Nomme son bureau ci-dessous.`); render();
     });
     const byName = users.slice().sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
     const t = table(['Club', 'Code', 'Équipes', 'Membres', 'Bureau', ''], rows.map(r => {

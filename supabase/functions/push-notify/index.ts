@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     const teamName = team?.name || "équipe";
     const payload = JSON.stringify({
       title: kind === "published" ? `Nouvelle stratégie · ${teamName}` : kind === "reminder" ? `À regarder · ${teamName}` : `Proposition · ${teamName}`,
-      body: kind === "published" ? `${who} a publié « ${drawing.title} »` : kind === "reminder" ? `${who} vous demande de regarder « ${drawing.title} »` : `${who} propose « ${drawing.title} »`,
+      body: kind === "published" ? `${who} a publié « ${drawing.title} »` : kind === "reminder" ? `${who} te demande de regarder « ${drawing.title} »` : `${who} propose « ${drawing.title} »`,
       // Lien direct : la stratégie s'ouvre (et s'anime pour un joueur) ; une proposition ouvre Stratégies → Propositions
       url: kind === "proposed" ? `#/strategies/propositions` : `#/d/${drawing.id}`,
       tag: `drawing-${drawing.id}`,
@@ -186,8 +186,8 @@ async function eventPush(admin: Admin, senderId: string, eventId: string, kind: 
   const { data: team } = await admin.from("teams").select("name").eq("id", ev.team_id).maybeSingle();
   const label = eventLabel(ev);
   const base = {
-    title: kind === "sheet_published" ? `Compo publiée · ${team?.name || "équipe"}` : kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_updated" ? `Changement · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Serez-vous là ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
-    body: kind === "sheet_published" ? `${label}, ${when(ev.starts_at)} : découvrez la composition.` : kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : kind === "event_updated" ? `${label} : désormais ${when(ev.starts_at)}${ev.location ? ` (${ev.location})` : ""}.` : `${label}, ${when(ev.starts_at)}. Répondez présent, peut-être ou absent.`,
+    title: kind === "sheet_published" ? `Compo publiée · ${team?.name || "équipe"}` : kind === "event_cancelled" ? `Annulé · ${team?.name || "équipe"}` : kind === "event_updated" ? `Changement · ${team?.name || "équipe"}` : kind === "event_reminder" ? `Tu seras là ? · ${team?.name || "équipe"}` : `Convocation · ${team?.name || "équipe"}`,
+    body: kind === "sheet_published" ? `${label}, ${when(ev.starts_at)} : découvre la compo.` : kind === "event_cancelled" ? `${label}, ${when(ev.starts_at)}, est annulé.` : kind === "event_updated" ? `${label} : désormais ${when(ev.starts_at)}${ev.location ? ` (${ev.location})` : ""}.` : `${label}, ${when(ev.starts_at)}. Réponds présent, peut-être ou absent.`,
     url: kind === "sheet_published" ? `#/compos/${ev.id}` : `#/agenda/${ev.id}`,
     tag: `event-${ev.id}`,
   };
@@ -223,7 +223,7 @@ async function eventsPush(admin: Admin, senderId: string, ids: string[], kind: s
   const list = evs.slice(0, 3).map((e: { kind: string; title: string; opponent?: string; home?: boolean; starts_at: string }) => (allTrainings ? "" : eventLabel(e) + " ") + when(e.starts_at).split(" à ")[0]).join(", ") + (n > 3 ? "…" : "");
   const payload = JSON.stringify({
     title: kind === "event_cancelled" ? `${n} ${what} annulés · ${team?.name || "équipe"}` : kind === "event_updated" ? `${n} ${what} modifiés · ${team?.name || "équipe"}` : `${n} nouveaux ${what} · ${team?.name || "équipe"}`,
-    body: kind === "event_new" ? `${list}. Répondez dans l'agenda.` : `${list}. Détails dans l'agenda.`,
+    body: kind === "event_new" ? `${list}. Réponds dans l'agenda.` : `${list}. Détails dans l'agenda.`,
     url: "#/agenda",
     tag: `events-${teamId}-${kind}`,
   });
@@ -262,7 +262,7 @@ async function joinPush(admin: Admin, senderId: string, teamId: string, userId: 
     recipients = [userId];
     payload = JSON.stringify({
       title: `Bienvenue · ${team.name}`,
-      body: `Votre demande est acceptée : vous faites partie de « ${team.name} ».`,
+      body: `Ta demande est acceptée : tu fais partie de « ${team.name} ».`,
       url: "#/",
       tag: `join-${teamId}-${userId}`,
     });
@@ -311,7 +311,7 @@ async function rsvpAnswer(admin: Admin, t: { u?: string; e?: string; x?: number;
 /* ---------- Rappels de la veille ---------- */
 
 /** Chaque heure : pour les équipes dont c'est l'heure de rappel (heure de Paris), les événements de demain.
-    Présents : rappel simple. Sans réponse ou « peut-être » : « Vous n'avez pas répondu », avec les boutons.
+    Présents : rappel simple. Sans réponse ou « peut-être » : « Tu n'as pas répondu », avec les boutons.
     Absents, événements annulés, personnes qui ont coupé les rappels : rien. Journal : jamais deux fois le même rappel. */
 async function dailyReminders(admin: Admin, key: string, at?: string) {
   const { data: k } = await admin.from("app_secrets").select("value").eq("key", "cron_key").maybeSingle();
@@ -360,7 +360,7 @@ async function dailyReminders(admin: Admin, key: string, at?: string) {
     const meet = ev.meet_at ? `, rendez-vous à ${when(ev.meet_at).split(" à ")[1]}` : "";
     const res = await send(admin, fresh, async (id: string) => status[id] === "yes"
       ? JSON.stringify({ title: `Demain · ${team?.name || "équipe"}`, body: `${label} ${at}${meet}${ev.location ? ` (${ev.location})` : ""}. À demain !`, url: `#/agenda/${ev.id}`, tag: `event-${ev.id}` })
-      : JSON.stringify({ title: `Vous n'avez pas répondu · ${team?.name || "équipe"}`, body: `${label} ${at}${meet}. Serez-vous là ?`, url: `#/agenda/${ev.id}/repondre`, tag: `event-${ev.id}`, rsvp: await rsvpToken(secret, id, ev) }));
+      : JSON.stringify({ title: `Tu n'as pas répondu · ${team?.name || "équipe"}`, body: `${label} ${at}${meet}. Tu seras là ?`, url: `#/agenda/${ev.id}/repondre`, tag: `event-${ev.id}`, rsvp: await rsvpToken(secret, id, ev) }));
     sent += res.sent;
   }
   return json({ hour, teams: teams.length, events: events.length, people, sent });

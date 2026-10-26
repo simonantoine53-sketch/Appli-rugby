@@ -22,7 +22,7 @@ const VIEWS = { telephone: { viewport: { width: 390, height: 844 }, isMobile: tr
   // Capture sans attendre les polices (la page est encore en train de charger)
   require('fs').writeFileSync(require('path').join(require('./lib').OUT, `${view}-demarrage-1-lent.png`), Buffer.from((await cdp.send('Page.captureScreenshot')).data, 'base64'));
   await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
-  t.check(await page.waitForFunction(() => !document.getElementById('boot') && /Tout votre club/.test(document.body.innerText), null, { timeout: 60000 }).then(() => true, () => false), 'une fois chargée : l’écran disparaît, l’accueil s’affiche');
+  t.check(await page.waitForFunction(() => !document.getElementById('boot') && /Tout ton club/.test(document.body.innerText), null, { timeout: 60000 }).then(() => true, () => false), 'une fois chargée : l’écran disparaît, l’accueil s’affiche');
 
   // 2. Le coach a déjà ouvert l'appli ; plus de réseau : l'appli s'ouvre quand même (gardée sur le téléphone)
   await page.evaluate(() => window.RugbyAccount.openAuth('login'));

@@ -224,7 +224,7 @@
   /* ---------- Impression, image, partage ---------- */
   function printSheet(html, title) {
     const w = window.open('', '_blank');
-    if (!w) { E.toast('Autorisez les fenêtres surgissantes pour imprimer la feuille.'); return; }
+    if (!w) { E.toast('Autorise les fenêtres surgissantes pour imprimer la feuille.'); return; }
     w.document.open();
     w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=800"><title>${esc(title)}</title><style>${CSS}@page{size:A4;margin:8mm}body{margin:0}.ms-sheet{width:100%;margin:0 auto}.bar{font-family:Arial;padding:10px;text-align:center}@media print{.bar{display:none}}</style></head><body><div class="bar"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></div>${html}</body></html>`);
     w.document.close(); w.focus();
@@ -257,7 +257,7 @@
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }).catch(() => {}); return; }
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    } catch (e) { E.toast('Image impossible pour le moment : utilisez « Imprimer / PDF ».'); }
+    } catch (e) { E.toast('Image impossible pour le moment : utilise « Imprimer / PDF ».'); }
   }
 
   /* ---------- Données ---------- */
@@ -313,7 +313,7 @@
     const my = ++seq;
     root.replaceChildren();
     const team = A.team();
-    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoignez votre équipe pour voir les compos.')); return; }
+    if (!A.isLoggedIn() || !team) { root.appendChild(el('p', 'library-empty', 'Rejoins ton équipe pour voir les compos.')); return; }
     if (eventId) return renderSheetPage(root, eventId, my);
     const staff = A.isStaff();
     const head = el('div', 'agenda-head');
@@ -324,7 +324,7 @@
     if (my !== seq) return;
     const shown = staff ? list : list.filter(e => e.sheet === 'published');
     if (!shown.length) {
-      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoutez vos matchs dans l’Agenda (ou importez le calendrier de la fédération), puis préparez la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Vous recevrez une notification.</p>');
+      const box = el('div', 'soon-card', staff ? '<h2>Aucun match à venir</h2><p>Ajoute tes matchs dans l’Agenda (ou importe le calendrier de la fédération), puis prépare la feuille de match ici.</p>' : '<h2>Pas encore de compo publiée</h2><p>Le coach publiera la composition avant le match. Tu recevras une notification.</p>');
       if (staff) box.appendChild(btn('Aller à l’agenda', 'primary', () => E.go('agenda')));
       root.appendChild(box); return;
     }
@@ -334,7 +334,7 @@
       const d = new Date(ev.starts_at);
       c.appendChild(el('div', 'ev-date match', `<span>${d.toLocaleDateString('fr-FR', { weekday: 'short' })}</span><strong>${d.getDate()}</strong><span>${d.toLocaleDateString('fr-FR', { month: 'short' })}</span>`));
       const st = { none: '<span class="sheet-st none">À faire</span>', draft: '<span class="sheet-st draft">Brouillon</span>', published: '<span class="sheet-st pub">Publiée</span>' }[ev.sheet];
-      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Vous êtes n°${ev.mine.num}</div>` : ''}`);
+      const body = el('div', 'ev-body', `<div class="ev-meta"><span class="ev-kind match">Match</span><span>${time(ev.starts_at)}</span>${st}</div><div class="ev-title">${esc(AG() ? AG().label(ev) : ev.opponent)}</div>${ev.mine ? `<div class="ev-place">Tu es n°${ev.mine.num}</div>` : ''}`);
       c.appendChild(body);
       c.onclick = () => E.go('compos', ev.id);
       if (window.RugbyA11y && window.RugbyA11y.clickable) window.RugbyA11y.clickable(c);
@@ -358,7 +358,7 @@
     const staff = A.isStaff();
     root.appendChild(btn('‹ Compos', 'ghost back-link', () => E.go('compos')));
     if (!staff) {
-      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Vous serez prévenu dès que le coach l’aura publiée.</p>')); return; }
+      if (!row || !row.published) { root.appendChild(el('div', 'soon-card', '<h2>Compo pas encore publiée</h2><p>Tu seras prévenu dès que le coach l’aura publiée.</p>')); return; }
       const sheet = normSheet(row.data, settings, ev);
       const html = sheetHtml(settings, sheet, ev, team, A.user().id);
       const tools = el('div', 'sheet-actions');
@@ -406,11 +406,11 @@
     const laterKey = 'rs-logo-later-' + cur.team.id;
     let later = false; try { later = !!localStorage.getItem(laterKey); } catch (e) { /* ignore */ }
     if (!settings.logo && !later) {
-      const call = el('div', 'logo-callout', '<div><strong>Ajoutez le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
+      const call = el('div', 'logo-callout', '<div><strong>Ajoute le logo du club</strong><br><span class="muted">Une seule fois : il sera sur toutes les feuilles de match.</span></div>');
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'sheet-logo-quick'; f.className = 'file-input';
       f.onchange = () => { if (f.files[0]) quickLogo(f.files[0]); };
       const l = el('label', 'btn primary small', 'Choisir le logo'); l.htmlFor = 'sheet-logo-quick';
-      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Vous pourrez l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
+      const x = btn('Plus tard', 'ghost small', () => { try { localStorage.setItem(laterKey, '1'); } catch (e) { /* ignore */ } call.remove(); E.toast('Tu pourras l’ajouter dans « ⋯ Plus » → Personnaliser la feuille.'); });
       call.append(l, f, x);
       root.appendChild(call);
     }
@@ -576,7 +576,7 @@
         const b = el('button', 'sheet-mark' + (p.marks.includes(m.code) ? ' on' : ''), esc(m.code));
         b.type = 'button'; b.title = m.label; b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); b.setAttribute('aria-label', `${m.label}${p.name ? ' : ' + p.name : ''}`);
         if (m.auto === 'double') { b.classList.add('auto'); b.title = m.label + ' : se coche tout seul quand le joueur est dans deux équipes'; }
-        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mettez le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
+        b.onclick = () => { if (m.auto === 'double') { E.toast('« ' + m.label + ' » se coche tout seul : mets le joueur dans les deux équipes.'); return; } p.marks = p.marks.includes(m.code) ? p.marks.filter(c => c !== m.code) : p.marks.concat(m.code); b.classList.toggle('on'); b.setAttribute('aria-pressed', String(p.marks.includes(m.code))); queueSave(); };
         cur.markButtons.push({ p, code: m.code, el: b });
         marks.appendChild(b);
       });
@@ -702,7 +702,7 @@
       if (!(await saveSettings(cur.settings))) return;
       const n = await shareLogo(cur.settings, true);
       track('sheet_logo', { shared: n });
-      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'vos ' + n + ' autres équipes' : 'votre autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
+      E.toast(n ? `Logo ajouté sur toutes les feuilles de l’équipe et de ${n > 1 ? 'tes ' + n + ' autres équipes' : 'ton autre équipe'}.` : 'Logo ajouté : il sera sur toutes les feuilles de match de l’équipe.');
       E.refreshView();
     } catch (e) { E.toast('Image illisible : essaie un PNG ou un JPG.'); }
   }
@@ -756,7 +756,7 @@
         if (await saveSettings(clean)) {
           const n = share ? await shareLogo(clean, false) : 0;
           E.closeModal('modal-sheet-settings');
-          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'votre autre équipe'}.` : 'Feuille personnalisée.');
+          E.toast(n ? `Feuille personnalisée, logo mis aussi sur ${n > 1 ? n + ' autres équipes' : 'ton autre équipe'}.` : 'Feuille personnalisée.');
           E.refreshView();
         }
         b.disabled = false;

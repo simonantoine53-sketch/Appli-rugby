@@ -49,7 +49,7 @@
     const drawPhoto = () => {
       photoRow.replaceChildren(avatar(p.display_name, photo));
       const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.id = 'profile-photo-file'; f.className = 'file-input';
-      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essayez une photo JPG ou PNG.')); };
+      f.onchange = () => { if (f.files[0]) resize(f.files[0]).then(url => { photo = url; drawPhoto(); }).catch(() => E.toast('Image illisible : essaie une photo JPG ou PNG.')); };
       const lb = el('label', 'btn outline small', photo ? 'Changer la photo' : 'Ajouter une photo'); lb.htmlFor = 'profile-photo-file';
       const acts = el('div', 'row-wrap'); acts.append(lb, f);
       if (photo) acts.appendChild(btn('Retirer', 'ghost small', () => { photo = null; drawPhoto(); }));
@@ -66,7 +66,7 @@
 
     // Postes : choix multiple, 4 au plus
     const posBox = el('div', 'profile-field');
-    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Vos postes (4 au plus)'));
+    posBox.appendChild(el('span', 'profile-label', kid ? 'Ses postes (4 au plus)' : 'Tes postes (4 au plus)'));
     const chips = el('div', 'day-chips poste-chips');
     let positions = (p.positions || []).slice();
     POSTES.forEach(po => {
@@ -90,11 +90,11 @@
     const foot = el('select', 'select'); foot.setAttribute('aria-label', 'Pied fort');
     [['', '—']].concat(FEET).forEach(([val, l]) => foot.appendChild(Object.assign(el('option'), { value: val, textContent: l, selected: (p.strong_foot || '') === val })));
     form.appendChild(field('Pied fort (facultatif)', foot));
-    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur vous (facultatif)'; bio.value = p.bio || '';
+    const bio = el('textarea', 'admin-textarea'); bio.rows = 2; bio.maxLength = 200; bio.placeholder = kid ? `Quelques mots sur ${kid.display_name.split(' ')[0]} (facultatif)` : 'Quelques mots sur toi (facultatif)'; bio.value = p.bio || '';
     form.appendChild(field('Présentation', bio));
 
     // Infos privées
-    form.appendChild(el('div', 'profile-private-head', `<strong>Infos privées</strong><span class="muted">${kid ? 'Visibles seulement par vous et le staff de son équipe.' : 'Visibles seulement par vous et le staff de votre équipe.'}</span>`));
+    form.appendChild(el('div', 'profile-private-head', `<strong>Infos privées</strong><span class="muted">${kid ? 'Visibles seulement par vous et le staff de son équipe.' : 'Visibles seulement par toi et le staff de ton équipe.'}</span>`));
     const phone = input('tel', v.phone, { maxLength: 30, autocomplete: 'tel', placeholder: '06 12 34 56 78' });
     // Sur iPhone, toucher le champ le remplit avec la date du jour : on borne les dates et on permet d'effacer
     const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;   // date locale (pas UTC)
@@ -142,7 +142,7 @@
       save.disabled = false;
       if (r1.error) console.warn('profil', r1.error.message);
       if (r2.error) console.warn('profil privé', r2.error.message);
-      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifiez votre connexion et réessayez.'; return; }
+      if (r1.error && r2.error) { err.textContent = 'Enregistrement impossible, vérifie ta connexion et réessaie.'; return; }
       if (!r1.error) Object.assign(kid || A.ownProfile(), patch);
       if (r1.error) skipped.push('profil sportif');
       if (r2.error) skipped.push('infos privées');

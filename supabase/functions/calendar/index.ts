@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   if (!/^[0-9a-f]{20,64}$/.test(token)) return new Response("Adresse d'agenda invalide", { status: 404 });
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: feed } = await admin.from("calendar_feeds").select("user_id").eq("token", token).maybeSingle();
-  if (!feed) return new Response("Adresse d'agenda introuvable : créez un nouveau lien dans l'appli", { status: 404 });
+  if (!feed) return new Response("Adresse d'agenda introuvable : crée un nouveau lien dans l'appli", { status: 404 });
 
   const { data: kids } = await admin.from("profiles").select("id").eq("guardian_id", feed.user_id);
   const people = [feed.user_id, ...(kids || []).map((k: { id: string }) => k.id)];

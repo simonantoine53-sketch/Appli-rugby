@@ -51,7 +51,7 @@ const view = process.argv[2] || 'telephone';
   await page.waitForTimeout(1500);
   const tour = await page.$('.tour-card'); if (tour) { await page.click('.tour-skip'); await page.waitForTimeout(300); }
   await page.click('#btn-export');
-  t.check(await page.waitForSelector('.dialog-modal:not(.hidden) >> text=créez votre compte gratuit', { timeout: 5000 }).then(() => true, () => false) && !(await page.isVisible('#export-menu:not(.hidden)')), 'démo : « Exporter » propose de créer un compte (rien n’est téléchargé)');
+  t.check(await page.waitForSelector('.dialog-modal:not(.hidden) >> text=crée ton compte gratuit', { timeout: 5000 }).then(() => true, () => false) && !(await page.isVisible('#export-menu:not(.hidden)')), 'démo : « Exporter » propose de créer un compte (rien n’est téléchargé)');
   t.check(!(await page.isVisible('.demo-banner')), 'démo : le bandeau ne cache pas la fenêtre');
   await t.shot(page, `${view}-lot1-12b-demo-exporter`);
   await page.click('.dialog-cancel');
@@ -66,6 +66,6 @@ const view = process.argv[2] || 'telephone';
   if (writes.length) console.log(writes.slice(0, 5).join('\n'));
   await page.click('.demo-banner button:has-text("Quitter la démo")');
   await page.waitForLoadState('load'); await page.waitForTimeout(1500);
-  t.check(!(await page.isVisible('.demo-banner')) && await t.waitText(page, 'Tout votre club'), 'quitter la démo : retour à l’accueil visiteur');
+  t.check(!(await page.isVisible('.demo-banner')) && await t.waitText(page, 'Tout ton club'), 'quitter la démo : retour à l’accueil visiteur');
   await t.done();
 })();

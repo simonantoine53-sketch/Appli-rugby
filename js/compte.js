@@ -22,7 +22,7 @@
     // 1. Mon profil
     $('#account-name').textContent = me.display_name;
     $('#team-user').textContent = user.email;
-    if (P) { $('#account-avatar').replaceChildren(P.avatar(me.display_name, me.avatar)); $('#account-summary').textContent = P.summary(me) || 'Ajoutez votre photo et votre poste pour que l’équipe vous reconnaisse.'; }
+    if (P) { $('#account-avatar').replaceChildren(P.avatar(me.display_name, me.avatar)); $('#account-summary').textContent = P.summary(me) || 'Ajoute ta photo et ton poste pour que l’équipe te reconnaisse.'; }
     $('#account-kids').replaceChildren(kidsCard());
 
     // 2. Mon club et mes équipes (quitter une équipe se fait dans sa page Équipe)
@@ -30,7 +30,7 @@
     const mine = A.teams().filter(t => !t.superadmin && !t.notMember && !t.who);
     mine.forEach(t => box.appendChild(el('div', 'account-team', `${esc(t.name)}${t.clubName ? ` <span class="muted small">· ${esc(t.clubName)}</span>` : ''} ${A.roleBadge(t.role, t.plays)}`)));
     A.clubs().filter(c => c.myRole === 'responsable').forEach(c => box.appendChild(el('div', 'account-team', `${esc(c.name)} <span class="role-badge coach">${esc(c.myTitle || 'Bureau du club')}</span>`)));
-    if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoignez votre club avec le code ou le lien reçu.'));
+    if (!box.children.length) box.appendChild(el('p', 'muted small', A.kids().length ? 'Vous n’êtes membre d’aucune équipe vous-même ; les équipes de vos jeunes sont dans « Mes jeunes ».' : 'Pas encore d’équipe : rejoins ton club avec le code ou le lien reçu.'));
     const join = $('#account-join'); join.replaceChildren();
     const pend = A.pendingCard(); if (pend) join.appendChild(pend);
     const toggle = btn('Rejoindre un club ou une équipe', 'outline wide', () => {
@@ -179,14 +179,14 @@
   // Droit à l'effacement : supprime le compte et toutes les données liées (côté serveur)
   $('#btn-delete-account').onclick = async () => {
     const D = window.RugbyDialog;
-    if (!await D.confirm('Supprimer définitivement votre compte ? Vos dessins, formations, réponses aux convocations, votre profil et vos statistiques seront effacés, y compris les stratégies que vous avez publiées dans une équipe. Si vous êtes le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
-    const typed = await D.prompt('Pour confirmer, tapez SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
+    if (!await D.confirm('Supprimer définitivement ton compte ? Tes dessins, formations, réponses aux convocations, ton profil et tes statistiques seront effacés, y compris les stratégies que tu as publiées dans une équipe. Si tu es le seul coach d’une équipe, le plus ancien membre devient coach.', { title: 'Supprimer mon compte', ok: 'Continuer', danger: true })) return;
+    const typed = await D.prompt('Pour confirmer, tape SUPPRIMER', '', { title: 'Supprimer mon compte', placeholder: 'SUPPRIMER', ok: 'Supprimer mon compte', danger: true });
     if (typed == null) return;
     if (typed.trim().toUpperCase() !== 'SUPPRIMER') return E.toast('Suppression annulée : le mot de confirmation ne correspond pas.');
     const { error } = await sb.rpc('delete_my_account');
     if (error) return E.toast(errMsg(error));
     await sb.auth.signOut();
-    E.go('home'); E.toast('Votre compte et vos données ont été supprimés.');
+    E.go('home'); E.toast('Ton compte et tes données ont été supprimés.');
   };
 
   window.RugbyCompte = { render };

@@ -3,8 +3,8 @@
 // signé par le serveur (une personne, un événement). Sur iPhone, pas de boutons : l'appui ouvre l'écran de réponse.
 // Hors ligne : l'appli est gardée en cache (une version par build, VERSION et SHELL écrits par build.js) ;
 // les dernières données lues (base Supabase) restent consultables ; une réponse donnée sans réseau attend son envoi.
-const VERSION = '202610260646';
-const SHELL = ["./","index.html","manifest.json","icons/icon-192.png","icons/icon-180.png","icons/icon-512.png","css/style.css?v=202610260646","js/update.js?v=202610260646","js/legal.js?v=202610260646","js/consent.js?v=202610260646","js/selects.js?v=202610260646","js/dialog.js?v=202610260646","js/icons.js?v=202610260646","js/field.js?v=202610260646","js/formations.js?v=202610260646","js/objects.js?v=202610260646","js/export.js?v=202610260646","vendor/supabase.min.js?v=202610260646","js/config.js?v=202610260646","js/offline.js?v=202610260646","js/demo.js?v=202610260646","js/editor.js?v=202610260646","js/account.js?v=202610260646","js/push.js?v=202610260646","js/profile.js?v=202610260646","js/compte.js?v=202610260646","js/admin.js?v=202610260646","js/agenda.js?v=202610260646","js/stats.js?v=202610260646","js/sponsors.js?v=202610260646","js/calimport.js?v=202610260646","js/sheets.js?v=202610260646","js/tour.js?v=202610260646","js/hub.js?v=202610260646","vendor/591.supabase.js","vendor/html2canvas.min.js","vendor/qrcode.min.js"];
+const VERSION = '202610260655';
+const SHELL = ["./","index.html","manifest.json","icons/icon-192.png","icons/icon-180.png","icons/icon-512.png","css/style.css?v=202610260655","js/update.js?v=202610260655","js/legal.js?v=202610260655","js/consent.js?v=202610260655","js/selects.js?v=202610260655","js/dialog.js?v=202610260655","js/icons.js?v=202610260655","js/field.js?v=202610260655","js/formations.js?v=202610260655","js/objects.js?v=202610260655","js/export.js?v=202610260655","vendor/supabase.min.js?v=202610260655","js/config.js?v=202610260655","js/offline.js?v=202610260655","js/demo.js?v=202610260655","js/editor.js?v=202610260655","js/account.js?v=202610260655","js/push.js?v=202610260655","js/profile.js?v=202610260655","js/compte.js?v=202610260655","js/admin.js?v=202610260655","js/agenda.js?v=202610260655","js/stats.js?v=202610260655","js/sponsors.js?v=202610260655","js/calimport.js?v=202610260655","js/sheets.js?v=202610260655","js/tour.js?v=202610260655","js/hub.js?v=202610260655","vendor/591.supabase.js","vendor/html2canvas.min.js","vendor/qrcode.min.js"];
 const APP = 'rugbeo-app-' + VERSION, DATA = 'rugbeo-data', QUEUE = 'rugbeo-queue';
 // Lectures par fonction (POST) gardées pour le hors ligne : uniquement des lectures
 const READ_RPC = /\/rest\/v1\/rpc\/(team_view_counts|drawing_view_stats|attendance_stats|my_kids_login|guardian_contact|get_shared_drawing|club_creation_open|demo_snapshot)$/;
@@ -146,11 +146,11 @@ async function answer(n, status) {
   try {
     const res = await fetch(t.api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rsvp: Object.assign({}, t, { status }) }) });
     const out = await res.json().catch(() => ({}));
-    if (!res.ok) return done('Réponse non enregistrée', (out.error ? out.error.charAt(0).toUpperCase() + out.error.slice(1) : 'Erreur') + '. Ouvrez l’appli pour répondre.');
-    return done(`Réponse enregistrée : ${STATUS[status]}`, `${out.label || ''}${out.when ? ', ' + out.when : ''}. Touchez pour changer.`, d.url);
+    if (!res.ok) return done('Réponse non enregistrée', (out.error ? out.error.charAt(0).toUpperCase() + out.error.slice(1) : 'Erreur') + '. Ouvre l’appli pour répondre.');
+    return done(`Réponse enregistrée : ${STATUS[status]}`, `${out.label || ''}${out.when ? ', ' + out.when : ''}. Touche pour changer.`, d.url);
   } catch (_) {
     await queue(t, status);
-    return done('Pas de réseau', `Votre réponse (${STATUS[status]}) partira dès le retour du réseau.`);
+    return done('Pas de réseau', `Ta réponse (${STATUS[status]}) partira dès le retour du réseau.`);
   }
 }
 

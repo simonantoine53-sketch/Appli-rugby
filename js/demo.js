@@ -31,7 +31,7 @@
       if (r === 'coach' || r === 'joueur') { open(r); return; }
       const D = window.RugbyDialog;
       if (!D || !D.choose) { open('coach'); return; }
-      D.choose('Voir la démo', 'Visitez le RC Démo, un club fictif. Rien n’est enregistré.', [
+      D.choose('Voir la démo', 'Visite le RC Démo, un club fictif. Rien n’est enregistré.', [
         { value: 'coach', label: 'Comme coach', sub: 'convoquer, dessiner les stratégies, faire la compo' },
         { value: 'joueur', label: 'Comme joueur', sub: 'répondre aux convocations, voir les stratégies et la compo' }
       ]).then(v => { if (v) open(v); });
@@ -39,8 +39,8 @@
     stop() { try { sessionStorage.removeItem(KEY); } catch (e) { /* ignore */ } reload(); },
     /** Exporter dans la démo : on propose de créer un compte ; la stratégie y sera copiée à la première connexion. */
     wantExport(id, title) {
-      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), créez votre compte gratuit : la stratégie sera ajoutée à vos stratégies dès votre inscription.`,
-        { title: 'Créez votre compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
+      window.RugbyDialog.confirm(`Pour télécharger « ${title} » (image, GIF, vidéo ou PDF), crée ton compte gratuit : la stratégie sera ajoutée à tes stratégies dès ton inscription.`,
+        { title: 'Crée ton compte', ok: 'Créer mon compte', cancel: 'Plus tard' }).then(ok => {
         if (!ok) return;
         try { localStorage.setItem(WANT, JSON.stringify({ id, at: Date.now() })); } catch (e) { /* ignore */ }
         toSignup();
@@ -75,7 +75,7 @@
   // Mesure d'usage, erreurs : ignorées sans rien dire ; le reste est une action de l'utilisateur
   const SILENT = new Set(['events', 'usage_sessions', 'client_errors', 'page_counts', 'activity_last', 'push_subscriptions']);
   let warned = 0;
-  const warn = () => { if (Date.now() - warned < 4000) return; warned = Date.now(); const E = window.RugbyEditor; if (E && E.toast) E.toast('Mode démo : rien n’est enregistré. Créez votre compte pour essayer avec votre équipe.'); };
+  const warn = () => { if (Date.now() - warned < 4000) return; warned = Date.now(); const E = window.RugbyEditor; if (E && E.toast) E.toast('Mode démo : rien n’est enregistré. Crée ton compte pour essayer avec ton équipe.'); };
 
   let DB = null, ME = null;
   function build(snap) {
@@ -192,8 +192,8 @@
           getSession: () => session().then(s => ({ data: { session: s } })),
           getUser: () => session().then(s => ({ data: { user: s && s.user } })),
           onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-          signInWithPassword: () => Promise.resolve({ data: {}, error: { message: 'Quittez la démo pour vous connecter.' } }),
-          signUp: () => Promise.resolve({ data: {}, error: { message: 'Quittez la démo pour créer votre compte.' } }),
+          signInWithPassword: () => Promise.resolve({ data: {}, error: { message: 'Quitte la démo pour te connecter.' } }),
+          signUp: () => Promise.resolve({ data: {}, error: { message: 'Quitte la démo pour créer ton compte.' } }),
           signOut: () => { window.RugbyDemo.stop(); return Promise.resolve({ error: null }); },
           resend: () => Promise.resolve({ error: null }), resetPasswordForEmail: () => Promise.resolve({ error: null }), updateUser: () => Promise.resolve({ data: {}, error: null })
         }

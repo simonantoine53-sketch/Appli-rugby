@@ -100,7 +100,7 @@
     return true;
   }
   async function clearAnswer(evId, userId) {
-    if (!navigator.onLine) { E.toast('Hors ligne : changez plutôt votre réponse, ou réessayez au retour du réseau.'); return; }
+    if (!navigator.onLine) { E.toast('Hors ligne : change plutôt ta réponse, ou réessaie au retour du réseau.'); return; }
     const { error } = await sb.from('event_responses').delete().match({ event_id: evId, user_id: userId });
     if (error) E.toast(error.message);
   }
@@ -121,10 +121,10 @@
   /** Après une convocation ou un changement : dit combien de téléphones l'ont reçue, sinon propose WhatsApp. */
   async function report(pending, ev, what) {
     const res = await pending, e = /^Convocation/.test(what) ? 'e' : '';
-    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Prévenez l’équipe sur WhatsApp.`);
+    if (!res) return E.toast(`${what} enregistré${e}, mais la notification n’a pas pu partir. Préviens l’équipe sur WhatsApp.`);
     if (!res.recipients) return E.toast(`${what} enregistré${e}.`);
     if (res.sent) return E.toast(`${what} envoyé${e} sur ${plural(res.sent, 'téléphone', 'téléphones')}.`);
-    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoyez le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
+    if (await window.RugbyDialog.confirm('Personne dans l’équipe n’a encore activé les notifications : c’est bien dans l’agenda, mais aucun téléphone n’a été prévenu. Envoie le message dans le groupe WhatsApp.', { title: 'Notification non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev));
   }
   async function remind(ev, names) {
     const res = await notify(ev.id, 'event_reminder');
@@ -134,8 +134,8 @@
     else {
       // Les notifications ne touchent que ceux qui les ont activées : on propose tout de suite WhatsApp pour les autres
       const msg = res.sent
-        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoyez aussi le message dans le groupe WhatsApp.`
-        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoyez plutôt le message dans le groupe WhatsApp.';
+        ? `Rappel envoyé sur ${plural(res.sent, 'téléphone', 'téléphones')}. Les joueurs sans notifications ne l’ont pas reçu : envoie aussi le message dans le groupe WhatsApp.`
+        : 'Aucun joueur sans réponse n’a activé les notifications : rien n’est parti. Envoie plutôt le message dans le groupe WhatsApp.';
       if (await window.RugbyDialog.confirm(msg, { title: res.sent ? 'Relance envoyée' : 'Relance non envoyée', ok: 'Envoyer sur WhatsApp', cancel: 'Fermer' })) openWhatsApp(waText(ev, names));
     }
   }
@@ -167,13 +167,13 @@
     const team = A.team();
     if (!A.isLoggedIn()) {
       // Visiteur : on explique à quoi sert la page au lieu d'afficher une page vide
-      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouvez ici les matchs et entraînements de votre équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda et convocations</h2><p>Retrouve ici les matchs et entraînements de ton équipe. Le coach crée les événements, chaque joueur répond présent, peut-être ou absent en un clic, et le coach voit tout de suite qui sera là.</p>');
       box.appendChild(btn('Créer un compte gratuit', 'primary', () => A.openAuth('signup')));
       box.appendChild(btn('J’ai déjà un compte', 'outline', () => A.openAuth('login')));
       root.appendChild(box); return;
     }
     if (!team) {
-      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoignez ou créez votre équipe pour voir les matchs et entraînements.</p>');
+      const box = el('div', 'soon-card', '<h2>Agenda</h2><p>Rejoins ou crée ton équipe pour voir les matchs et entraînements.</p>');
       box.appendChild(btn('Rejoindre mon équipe', 'primary', () => E.go('team')));
       root.appendChild(box); return;
     }
@@ -206,7 +206,7 @@
     list.replaceChildren();
     if (!evs.length) {
       const empty = el('div', 'soon-card agenda-empty', tab === 'next'
-        ? (staff ? '<h2>Rien de prévu</h2><p>Créez le prochain entraînement ou match. Vos joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
+        ? (staff ? '<h2>Rien de prévu</h2><p>Crée le prochain entraînement ou match. Tes joueurs sont prévenus et répondent présent, peut-être ou absent en un appui.</p>' : '<h2>Rien de prévu</h2><p>Les matchs et entraînements apparaîtront ici dès que le coach les aura créés.</p>')
         : '<h2>Aucun événement passé</h2>');
       if (staff && tab === 'next') {
         empty.appendChild(btn('+ Créer un événement', 'primary', () => openForm()));
@@ -333,7 +333,7 @@
     // Ma réponse (seulement si je suis convoqué)
     if (sum.meConvoked && !ev.cancelled && new Date(ev.starts_at) > Date.now() - 3 * 3600e3) {
       const box = el('div', 'ev-answer');
-      box.appendChild(el('div', 'todo-head', 'Votre réponse'));
+      box.appendChild(el('div', 'todo-head', 'Ta réponse'));
       // Tout s'enregistre tout seul : la réponse dès le clic, le commentaire dès qu'on arrête d'écrire
       const input = el('input'); input.type = 'text'; input.maxLength = 140; input.placeholder = 'Commentaire : retard, blessure…'; input.value = (mine && mine.comment) || '';
       box.appendChild(rsvpButtons(ev, mine && mine.status, refresh, true, () => input.value.trim()));
@@ -345,7 +345,7 @@
         clearTimeout(timer);
         const v = input.value.trim();
         if (v === saved) return;
-        if (!mine) { state.textContent = 'Envoyé avec votre réponse.'; return; }
+        if (!mine) { state.textContent = 'Envoyé avec ta réponse.'; return; }
         state.textContent = 'Enregistrement…';
         if (await answer(ev.id, mine.status, me, v)) { saved = v; mine.comment = v; state.textContent = 'Enregistré ✓'; }
         else state.textContent = '';
@@ -429,7 +429,7 @@
     else people.forEach(p => {
       const cur = byUser[p.id] && byUser[p.id].status;
       const part = el('div', 'quick-person');
-      part.appendChild(el('div', 'todo-head', people.length > 1 || p.id !== own ? `Réponse de ${esc(p.name.split(' ')[0])}` : 'Serez-vous là ?'));
+      part.appendChild(el('div', 'todo-head', people.length > 1 || p.id !== own ? `Réponse de ${esc(p.name.split(' ')[0])}` : 'Tu seras là ?'));
       const row = el('div', 'quick-buttons');
       [['yes', 'Présent'], ['maybe', 'Peut-être'], ['no', 'Absent']].forEach(([s, l]) => {
         const b = btn(l, 'rsvp-btn quick ' + s, async () => {
@@ -441,7 +441,7 @@
         row.appendChild(b);
       });
       part.appendChild(row);
-      if (cur) part.appendChild(el('p', 'quick-done', `✓ Réponse enregistrée : <strong>${STATUS[cur]}</strong>. Vous pouvez la changer.`));
+      if (cur) part.appendChild(el('p', 'quick-done', `✓ Réponse enregistrée : <strong>${STATUS[cur]}</strong>. Tu peux la changer.`));
       box.appendChild(part);
     });
     box.appendChild(btn('Voir l’événement et qui vient', 'outline wide', () => E.go('agenda', ev.id)));
@@ -499,7 +499,7 @@
     body.replaceChildren(el('p', 'muted', 'Préparation du lien…'));
     E.openModal('modal-calendar');
     const { data: token, error } = await sb.rpc('my_calendar_token', { p_renew: !!renew });
-    if (error || !token) { body.replaceChildren(el('p', 'muted', window.RugbyDemo && window.RugbyDemo.isOn() ? 'Dans la démo, l’abonnement n’est pas disponible : créez votre compte pour l’essayer.' : 'Lien indisponible pour le moment : ' + esc(error ? A.errMsg(error) : 'réessayez.'))); return; }
+    if (error || !token) { body.replaceChildren(el('p', 'muted', window.RugbyDemo && window.RugbyDemo.isOn() ? 'Dans la démo, l’abonnement n’est pas disponible : crée ton compte pour l’essayer.' : 'Lien indisponible pour le moment : ' + esc(error ? A.errMsg(error) : 'réessaie.'))); return; }
     const https = `${(window.RUGBY_CONFIG || {}).supabaseUrl}/functions/v1/calendar?t=${token}`;
     const webcal = https.replace(/^https:/, 'webcal:');
     body.replaceChildren();
@@ -511,14 +511,14 @@
     links.appendChild(link('Outlook', 'https://outlook.live.com/calendar/0/addfromweb?url=' + encodeURIComponent(https) + '&name=Rugbeo', 'outlook'));
     links.appendChild(btn('Copier le lien', 'outline wide', () => {
       track('calendar_subscribe', { app: 'copy' });
-      if (navigator.clipboard) navigator.clipboard.writeText(https).then(() => E.toast('Lien copié : collez-le dans votre calendrier (« Ajouter par URL »).'), () => window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' }));
+      if (navigator.clipboard) navigator.clipboard.writeText(https).then(() => E.toast('Lien copié : colle-le dans ton calendrier (« Ajouter par URL »).'), () => window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' }));
       else window.RugbyDialog.copy(https, { title: 'Lien de l’agenda' });
     }));
     body.appendChild(links);
     body.appendChild(el('p', 'help', 'Google Agenda peut mettre plusieurs heures à afficher un changement ; l’appli reste à jour tout de suite.'));
-    body.appendChild(el('p', 'help', 'Ce lien est personnel : ne le partagez pas. Si vous l’avez donné par erreur, créez-en un nouveau (l’ancien ne marchera plus).'));
+    body.appendChild(el('p', 'help', 'Ce lien est personnel : ne le partage pas. Si tu l’as donné par erreur, crées-en un nouveau (l’ancien ne marchera plus).'));
     body.appendChild(btn('Nouveau lien', 'ghost small', async () => {
-      if (!await window.RugbyDialog.confirm('Créer un nouveau lien ? L’ancien ne marchera plus : il faudra vous réabonner dans votre calendrier.', { ok: 'Nouveau lien' })) return;
+      if (!await window.RugbyDialog.confirm('Créer un nouveau lien ? L’ancien ne marchera plus : il faudra te réabonner dans ton calendrier.', { ok: 'Nouveau lien' })) return;
       track('calendar_renew'); openSubscribe(true);
     }));
   }
@@ -570,7 +570,7 @@
     if (!on) return;
     const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
     const date = $('#ev-date').value, t = $('#ev-time').value || '19:00', until = $('#ev-repeat').value;
-    if (!days.length) { $('#ev-recur-help').textContent = 'Cochez au moins un jour.'; return; }
+    if (!days.length) { $('#ev-recur-help').textContent = 'Coche au moins un jour.'; return; }
     if (!date || !until) { $('#ev-recur-help').textContent = ''; return; }
     const n = recurDates(new Date(`${date}T${t}`), days, new Date(`${until}T23:59`)).length;
     const names = [1, 2, 3, 4, 5, 6, 0].filter(x => days.includes(x)).map(x => DAY_NAMES[x]);
@@ -595,12 +595,12 @@
     const team = A.team(); if (!team) return;
     const kind = document.querySelector('input[name=ev-kind]:checked').value;
     const date = $('#ev-date').value, t = $('#ev-time').value;
-    if (!date || !t) { $('#ev-error').textContent = 'Indiquez la date et l’heure.'; return; }
+    if (!date || !t) { $('#ev-error').textContent = 'Indique la date et l’heure.'; return; }
     const start = new Date(`${date}T${t}`);
     const meet = $('#ev-meet').value ? new Date(`${date}T${$('#ev-meet').value}`) : null;
     if (meet && meet > start) { $('#ev-error').textContent = 'Le rendez-vous doit être avant le début.'; return; }
     const opponent = $('#ev-opponent').value.trim();
-    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indiquez l’adversaire.'; return; }
+    if (kind === 'match' && !opponent) { $('#ev-error').textContent = 'Indique l’adversaire.'; return; }
     const base = {
       team_id: team.id, kind,
       title: kind === 'match' ? 'Match' : ($('#ev-title').value.trim() || (kind === 'training' ? 'Entraînement' : 'Rendez-vous')),
@@ -640,10 +640,10 @@
       let dates = [start];
       if (recurring) {
         const days = [...document.querySelectorAll('input[name=ev-days]:checked')].map(c => +c.value);
-        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Cochez au moins un jour d’entraînement.'; return; }
-        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indiquez la date de fin du planning.'; return; }
+        if (!days.length) { b.disabled = false; $('#ev-error').textContent = 'Coche au moins un jour d’entraînement.'; return; }
+        if (!$('#ev-repeat').value) { b.disabled = false; $('#ev-error').textContent = 'Indique la date de fin du planning.'; return; }
         dates = recurDates(start, days, new Date(`${$('#ev-repeat').value}T23:59`));
-        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifiez les jours et la date de fin.'; return; }
+        if (!dates.length) { b.disabled = false; $('#ev-error').textContent = 'Aucune date ne correspond : vérifie les jours et la date de fin.'; return; }
       }
       const series = dates.length > 1 ? crypto.randomUUID() : null;
       const meetDelta = meet ? start - meet : 0;

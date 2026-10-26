@@ -27,7 +27,7 @@
   async function enable() {
     const A = acc(); if (!A || !A.isLoggedIn()) return;
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { $('#push-help').textContent = 'Notifications refusées par le navigateur. Autorisez-les dans les réglages du site.'; return; }
+    if (perm !== 'granted') { $('#push-help').textContent = 'Notifications refusées par le navigateur. Autorise-les dans les réglages du site.'; return; }
     const r = await getReg(); if (!r) return;
     let sub = await r.pushManager.getSubscription();
     if (!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.vapidPublicKey) });
@@ -45,13 +45,13 @@
   async function renderButton(hasTeam) {
     const block = $('#push-block'), btn = $('#btn-push'), help = $('#push-help');
     if (!block) return;
-    if (!hasTeam || !supported()) { block.classList.toggle('hidden', !hasTeam || !isIosNotInstalled()); if (hasTeam && isIosNotInstalled()) { btn.classList.add('hidden'); help.textContent = 'Sur iPhone : ajoutez l’appli à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour recevoir les notifications.'; } return; }
+    if (!hasTeam || !supported()) { block.classList.toggle('hidden', !hasTeam || !isIosNotInstalled()); if (hasTeam && isIosNotInstalled()) { btn.classList.add('hidden'); help.textContent = 'Sur iPhone : ajoute l’appli à l’écran d’accueil (Partager → Sur l’écran d’accueil) pour recevoir les notifications.'; } return; }
     block.classList.remove('hidden'); btn.classList.remove('hidden');
     const sub = await current();
     const on = !!sub && Notification.permission === 'granted';
     btn.textContent = on ? 'Désactiver les notifications' : 'Activer les notifications';
     btn.classList.toggle('on', on);
-    help.textContent = on ? 'Vous serez prévenu des convocations, des compos et des nouvelles stratégies de votre équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorisez-les dans les réglages du site.' : 'Recevez une alerte sur cet appareil pour les convocations, les compos et les nouvelles stratégies.';
+    help.textContent = on ? 'Tu seras prévenu des convocations, des compos et des nouvelles stratégies de ton équipe.' : Notification.permission === 'denied' ? 'Notifications bloquées dans le navigateur : autorise-les dans les réglages du site.' : 'Reçois une alerte sur cet appareil pour les convocations, les compos et les nouvelles stratégies.';
     btn.onclick = () => (on ? disable() : enable()).catch(e => { console.warn(e); help.textContent = 'Erreur : ' + e.message; });
   }
 
@@ -78,7 +78,7 @@
     try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
     const D = window.RugbyDialog;
     const why = 'Vous serez prévenu dès qu’une convocation, une relance avant le match, une compo ou une nouvelle stratégie arrive. Sans notifications, vous risquez de rater un rendez-vous de l’équipe.';
-    if (iosTip) await D.confirm(why + '\n\nSur iPhone, ajoutez d’abord l’appli à l’écran d’accueil (bouton Partager → « Sur l’écran d’accueil »), ouvrez-la depuis cette icône, puis activez les notifications dans la page Compte.', { title: 'Restez informé', ok: 'Compris', cancel: 'Plus tard' });
+    if (iosTip) await D.confirm(why + '\n\nSur iPhone, ajoute d’abord l’appli à l’écran d’accueil (bouton Partager → « Sur l’écran d’accueil »), ouvre-la depuis cette icône, puis active les notifications dans la page Compte.', { title: 'Reste informé', ok: 'Compris', cancel: 'Plus tard' });
     else if (await D.confirm(why, { title: 'Activer les notifications ?', ok: 'Activer les notifications', cancel: 'Plus tard' })) {
       try { await enable(); } catch (e) { console.warn(e); }
     }

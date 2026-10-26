@@ -266,17 +266,17 @@
     $('#btn-list-formations').onclick = openSavedFormations;
     nameIconButtons();
     $('#fab-undo').onclick = undo; $('#fab-redo').onclick = redo;
-    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touchez les objets à ajouter.' : 'Sélection multiple désactivée.'); };
+    $('#fab-multi').onclick = () => { state.multiMode = !state.multiMode; $('#fab-multi').classList.toggle('on', state.multiMode); if (state.multiMode) setTool(null); toast(state.multiMode ? 'Sélection multiple : touche les objets à ajouter.' : 'Sélection multiple désactivée.'); };
     $('#fab-axis').onclick = () => { state.axisMode = !state.axisMode; $('#fab-axis').classList.toggle('on', state.axisMode); toast(state.axisMode ? 'Déplacement aligné : horizontal ou vertical seulement.' : 'Déplacement libre.'); };
-    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.'; };
+    $('#fab-select').onclick = () => { setTool(null); $('#hint').textContent = 'Mode sélection : touche un objet pour le déplacer, glisse dans le vide pour en sélectionner plusieurs.'; };
   }
 
   /* ---------- Formations prêtes à placer ---------- */
   const formation = { tool: null, opts: { attack: 'blue', defense: 'red' } };
   const FORMATION_INFO = {
-    scrum: { name: 'Mêlée', title: 'Mêlée : 15 contre 15', help: 'Après validation, touchez le terrain à l’endroit de la mêlée : les 30 joueurs se placent d’un coup.' },
-    lineout: { name: 'Touche', title: 'Touche : 15 contre 15', help: 'Après validation, touchez le terrain : l’alignement se met sur la ligne de touche la plus proche du point touché.' },
-    ruck: { name: 'Ruck', masc: true, title: 'Ruck et alignement', help: 'Après validation, touchez le terrain à l’endroit du ruck : le plaqué, ses deux soutiens, le 9 et l’alignement des arrières se placent côté ouvert.' },
+    scrum: { name: 'Mêlée', title: 'Mêlée : 15 contre 15', help: 'Après validation, touche le terrain à l’endroit de la mêlée : les 30 joueurs se placent d’un coup.' },
+    lineout: { name: 'Touche', title: 'Touche : 15 contre 15', help: 'Après validation, touche le terrain : l’alignement se met sur la ligne de touche la plus proche du point touché.' },
+    ruck: { name: 'Ruck', masc: true, title: 'Ruck et alignement', help: 'Après validation, touche le terrain à l’endroit du ruck : le plaqué, ses deux soutiens, le 9 et l’alignement des arrières se placent côté ouvert.' },
     kickoff: { name: 'Engagement', masc: true, title: 'Engagement en 4-4 : 15 contre 15', help: 'Tout se place au centre de la ligne médiane : quatre avants de chaque côté du botteur, et en face deux paquets de quatre avants pour la réception.', a: 'Équipe qui engage', d: 'Équipe qui reçoit', dir: 'Sens du coup d’envoi', ok: 'Placer au centre du terrain' }
   };
   function openFormation(t) {
@@ -324,7 +324,7 @@
   async function saveCurrentFormation() {
     closeDrawer();
     const objs = curObjects();
-    if (!objs.length) { toast('Le terrain est vide : placez d’abord des joueurs.'); return; }
+    if (!objs.length) { toast('Le terrain est vide : place d’abord des joueurs.'); return; }
     if (acc() && !acc().canUse('save')) return;
     const name = await window.RugbyDialog.prompt('Nom de la formation', state.drawing.title !== 'Nouveau dessin' ? state.drawing.title : '', { title: 'Enregistrer la formation actuelle', placeholder: 'Ex. Touche à 5 attaque, Mêlée 8 avants', ok: 'Enregistrer', maxLength: 60 });
     if (!name) return;
@@ -342,7 +342,7 @@
     const create = document.createElement('button'); create.className = 'btn primary wide'; create.textContent = 'Enregistrer la formation actuelle';
     create.onclick = () => { closeModal('modal-saved-formations'); saveCurrentFormation(); };
     root.appendChild(create);
-    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistrez les joueurs placés sur le terrain : vous pourrez les replacer d’un appui dans n’importe quel dessin.' }));
+    root.appendChild(Object.assign(document.createElement('p'), { className: 'muted small saved-help', textContent: 'Enregistre les joueurs placés sur le terrain : tu pourras les replacer d’un appui dans n’importe quel dessin.' }));
     let list, scope;
     if (acc()) { const r = await acc().listFormations(); list = r.list; scope = r.scope; } else { list = readForms(); scope = 'Sur cet appareil'; }
     $('#saved-formations-scope').textContent = scope || '';
@@ -376,7 +376,7 @@
     setTool(null);
     
     const info = formation.opts.type === 'custom' ? { name: `Formation « ${formation.opts.name} »` } : FORMATION_INFO[formation.opts.type] || FORMATION_INFO.scrum;
-    toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplacez-les si besoin.`);
+    toast(`${info.name} placé${info.masc ? '' : 'e'} : ${objs.length} objet${objs.length > 1 ? 's' : ''}. Déplace-les si besoin.`);
   }
 
   function setTool(id) {
@@ -392,12 +392,12 @@
     const t = id === 'formation' ? { label: 'Formation', kind: 'formation' } : id && TOOLS[id];
     const fab = $('#fab-select');
     fab.classList.toggle('tool-on', !!t); fab.classList.toggle('selecting', !t);
-    $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touchez un élément pour le déplacer ou le modifier';
+    $('#fab-select').title = t ? 'Revenir à la sélection (quitter l’outil ' + t.label.toLowerCase() + ')' : 'Mode sélection : touche un élément pour le déplacer ou le modifier';
     const touch = window.matchMedia('(pointer: coarse)').matches, name = t ? t.label.split(' (')[0] : '';
-    $('#hint').textContent = !t ? (touch ? 'Mode sélection : touchez un objet pour le déplacer, glissez dans le vide pour en sélectionner plusieurs.' : 'Mode sélection : cliquez un objet pour le déplacer, tirez un cadre dans le vide pour en sélectionner plusieurs.')
-      : t.kind === 'formation' ? 'Touchez le terrain là où placer la formation.'
-      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glissez le doigt sur le terrain` : `${t.label} : cliquez-glissez sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
-      : touch ? `${name} : touchez le terrain pour placer` : `${t.label} : cliquez sur le terrain pour placer. Échap pour revenir à la sélection.`;
+    $('#hint').textContent = !t ? (touch ? 'Mode sélection : touche un objet pour le déplacer, glisse dans le vide pour en sélectionner plusieurs.' : 'Mode sélection : clique un objet pour le déplacer, tire un cadre dans le vide pour en sélectionner plusieurs.')
+      : t.kind === 'formation' ? 'Touche le terrain là où placer la formation.'
+      : t.kind === 'shape' || t.kind === 'line' || t.kind === 'free' ? (touch ? `${name} : glisse le doigt sur le terrain` : `${t.label} : clique-glisse sur le terrain pour dessiner. Échap pour revenir à la sélection.`)
+      : touch ? `${name} : touche le terrain pour placer` : `${t.label} : clique sur le terrain pour placer. Échap pour revenir à la sélection.`;
   }
 
   /* ---------- Création d'objets ---------- */
@@ -956,13 +956,13 @@
     const hold = cur.duration || d.settings.stepDuration || 1200;
     preview.timer = setTimeout(() => {
       if (!preview.playing) return;
-      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuyez sur Lire pour continuer.'); } else playLoop(); });
+      animateTo(next, () => { if (d.steps[next].hold) { setPlaying(false); toast('Pause sur cette étape : appuie sur Lire pour continuer.'); } else playLoop(); });
     }, hold * 0.6);
   }
   function setPlaying(on) {
     preview.playing = on; $(preview.playBtn).textContent = on ? 'Pause' : 'Lire';
     clearTimeout(preview.timer); cancelAnimationFrame(preview.raf);
-    if (on) { if (pd().steps.length < 2) { toast('Ajoutez au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = 'Lire'; return; } playLoop(); }
+    if (on) { if (pd().steps.length < 2) { toast('Ajoute au moins deux étapes pour animer.'); preview.playing = false; $(preview.playBtn).textContent = 'Lire'; return; } playLoop(); }
     else showPreviewStep(preview.step);
   }
   const previewNext = () => { setPlaying(false); animateTo((preview.step + 1) % pd().steps.length); };
@@ -1050,7 +1050,7 @@
     track('export', { kind, steps: state.drawing.steps.length });
     if (kind === 'png') return exportPng();
     if (kind === 'pdf') return exportPdf();
-    if (state.drawing.steps.length < 2) { toast('Ajoutez au moins deux étapes pour un export animé.'); return; }
+    if (state.drawing.steps.length < 2) { toast('Ajoute au moins deux étapes pour un export animé.'); return; }
     const label = kind === 'gif' ? 'Création du GIF animé…' : 'Enregistrement de la vidéo…';
     const prog = showProgress(label);
     const fn = kind === 'gif' ? window.RugbyExport.exportGif : window.RugbyExport.exportWebm;
@@ -1080,7 +1080,7 @@
       <p class="noprint"><button onclick="window.print()">Imprimer / enregistrer en PDF</button></p>
       <div class="grid">${steps}</div></body></html>`;
     const w = window.open('', '_blank');
-    if (!w) { toast('Autorisez les fenêtres surgissantes pour la fiche PDF.'); return; }
+    if (!w) { toast('Autorise les fenêtres surgissantes pour la fiche PDF.'); return; }
     w.document.open(); w.document.write(html); w.document.close();
     w.focus(); setTimeout(() => { try { w.print(); } catch (e) { /* l'utilisateur imprimera depuis le bouton */ } }, 400);
   }
@@ -1115,7 +1115,7 @@
   /** true : on peut quitter (rien à perdre, enregistré, ou abandon choisi). */
   async function confirmLeave() {
     if (!isDirty()) return true;
-    const ok = await window.RugbyDialog.confirm('Vos derniers changements ne sont pas enregistrés.', { title: 'Quitter l’éditeur ?', ok: 'Enregistrer', cancel: 'Quitter sans enregistrer' });
+    const ok = await window.RugbyDialog.confirm('Tes derniers changements ne sont pas enregistrés.', { title: 'Quitter l’éditeur ?', ok: 'Enregistrer', cancel: 'Quitter sans enregistrer' });
     if (!ok) { markSaved(); return true; }
     await saveNow();
     return !isDirty();
@@ -1160,7 +1160,7 @@
     $('#home-tabs').classList.add('hidden');
     const root = $('#home-list'); root.replaceChildren();
     const all = readLib();
-    if (!all.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Cliquez « Nouveau dessin » pour commencer.'; root.appendChild(p); return; }
+    if (!all.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin enregistré pour le moment. Touche « Nouveau dessin » pour commencer.'; root.appendChild(p); return; }
     root.appendChild(filterBar(renderLocalHome, countByCat(all)));
     const list = filterDrawings(all);
     if (!list.length) { const p = document.createElement('p'); p.className = 'library-empty'; p.textContent = 'Aucun dessin ne correspond à la recherche.'; root.appendChild(p); }
