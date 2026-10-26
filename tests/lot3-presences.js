@@ -65,12 +65,12 @@ const LOGO = (() => {
   const tag = Date.now().toString().slice(-4);
   await add(`Boulangerie ${tag}`, 'https://boulangerie.exemple.test');
   await add(`Garage ${tag}`, null, true);
-  const names = () => pres.$$eval('.sponsor-row strong', s => s.map(x => x.textContent));
-  await pres.waitForFunction(n => [...document.querySelectorAll('.sponsor-row strong')].some(x => x.textContent === n), `Garage ${tag}`, { timeout: 15000 }).catch(() => {});
+  const names = () => pres.$$eval('.sponsor-box-text strong', s => s.map(x => x.textContent));
+  await pres.waitForFunction(n => [...document.querySelectorAll('.sponsor-box-text strong')].some(x => x.textContent === n), `Garage ${tag}`, { timeout: 15000 }).catch(() => {});
   let list = await names();
-  t.check(await pres.$eval(`.sponsor-row:has-text("Garage ${tag}") img.sponsor-thumb`, i => i.naturalWidth > 0).catch(() => false), 'logo affiché dans la liste');
+  t.check(await pres.$eval(`.sponsor-box:has-text("Garage ${tag}") .sponsor-box-logo img`, i => i.naturalWidth > 0).catch(() => false), 'logo affiché dans la liste');
   t.check(list.includes(`Boulangerie ${tag}`) && list.includes(`Garage ${tag}`), 'partenaires ajoutés (nom, lien, logo)');
-  await pres.click(`.sponsor-row:has-text("Garage ${tag}") button[aria-label^="Monter"]`);
+  await pres.click(`.sponsor-box:has-text("Garage ${tag}") button[aria-label^="Monter"]`);
   await pres.waitForTimeout(1500);
   list = await names();
   t.check(list.indexOf(`Garage ${tag}`) < list.indexOf(`Boulangerie ${tag}`), 'ordre d’affichage modifié');
