@@ -1571,7 +1571,12 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     if (!isCoach() && mine && S.team && row.visibility === 'private') btns.appendChild(btn('Proposer au coach', 'secondary small', () => setVis('proposed')));
     if (row.visibility === 'team') {
       const vc = viewCounts[row.id];
-      if (vc && isStaff() && S.team && row.team_id === S.team.id) btns.appendChild(btn(`Vue par ${vc.viewers}/${vc.audience}`, (vc.audience && vc.viewers >= vc.audience ? 'secondary' : 'outline') + ' small', () => openViews(row))).title = 'Qui a vu cette stratégie';
+      // « Vue par » : une info, pas une action principale ; un lien discret dans la ligne d'infos de la carte
+      if (vc && isStaff() && S.team && row.team_id === S.team.id) {
+        const lk = btn(`Vue par ${vc.viewers}/${vc.audience}`, 'link card-views', () => openViews(row));
+        lk.title = 'Qui a vu cette stratégie';
+        c.querySelector('.date').append(' · ', lk);
+      }
       const n = commentCounts[row.id] || 0;
       btns.appendChild(btn(n ? `${n} commentaire${n > 1 ? 's' : ''}` : 'Commenter', 'outline small', () => openComments(row, refresh)));
     }

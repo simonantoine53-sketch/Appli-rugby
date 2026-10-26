@@ -764,7 +764,10 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
   /* Cartes aérées : plus de marge intérieure, nom et infos espacés, boutons séparés des infos */
   .lib-card .body { grid-area: body; padding: 14px 14px 4px; }
   .lib-card .date { grid-area: date; padding: 2px 14px 10px; line-height: 1.5; }
-  .lib-card .card-btns { grid-area: btns; padding: 4px 14px 14px; gap: 10px; }
+  .lib-card .card-btns { grid-area: btns; padding: 4px 14px 14px; gap: 8px; flex-wrap: nowrap; align-items: center; }
+  /* Boutons des cartes : plus petits, tous sur une ligne (« Vue par… », commentaires, ⋯), le ⋯ toujours à droite */
+  .lib-card .card-btns .btn { min-height: 34px; padding: 4px 10px; font-size: 13px; white-space: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .lib-card .card-btns .btn:last-child { margin-left: auto; flex: 0 0 auto; }
   .menu { min-width: 250px; }
   .menu button span { display: block; }
 
@@ -1029,6 +1032,8 @@ select:disabled { opacity: .5; cursor: default; }
 .dialog-field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
 .dialog-field.hidden, .dialog-text.hidden, .dialog-msg.hidden, .dialog-choices.hidden, .dialog-ok.hidden { display: none; }
 .dialog-choices { display: grid; gap: 10px; }
+/* « Vue par 3/4 » dans la ligne d'infos d'une carte de stratégie : lien, pas bouton */
+.card-views.btn { display: inline; min-height: 0; padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--primary-ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .home-ffr { display: block; text-align: center; margin: 14px auto 0; font-weight: 600; }
 .dialog-choices .btn { width: 100%; min-width: 0; justify-content: center; min-height: 56px; white-space: normal; text-align: center; }
 .dialog-text { font: inherit; font-size: 14px; width: 100%; }
@@ -1660,7 +1665,7 @@ img, svg { -webkit-user-drag: none; }
     --brand-ink: #0e7a4b; --field: #0e7a4b;
     --accent: #ffb020; --on-accent: #0b3d2a; --accent-soft: #fff0d1;
     --chart-1: #0e7a4b; --chart-2: #2563c9; --chart-3: #ffb020; --chart-4: #8f5600; --chart-5: #5fb98a;
-    --radius: 12px;
+    --radius: 8px;
     --shadow: 0 2px 0 #dce3d8;
     --shadow-pop: 0 12px 32px rgba(11, 61, 42, .16);
     --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
@@ -1708,22 +1713,25 @@ img, svg { -webkit-user-drag: none; }
   .charte-terrain .brand strong { font-family: var(--font-display); font-weight: 900; letter-spacing: -.5px; color: var(--text); }
   .charte-terrain .brand strong.is-brand { text-transform: lowercase; letter-spacing: -1px; }   /* « rugbeo », jamais le nom d'une équipe */
   /* Boutons en pilule, texte gras */
-  .charte-terrain .btn { border-radius: 999px; font-weight: 700; }
+  .charte-terrain .btn { border-radius: 8px; font-weight: 700; }
+  .charte-terrain :is(.chip, .hub-team, .day-chips span) { border-radius: 8px; }
+  /* Choix dans la compo (« Déplacer ici », « Échanger », « Annuler ») : boutons compacts */
+  .sheet-choice .btn { min-height: 36px; padding: 6px 14px; font-size: 14px; }
   .charte-terrain .btn.primary:hover:not(:disabled) { background: var(--primary-dark); }
   /* Gros boutons de la barre du haut (Aperçu, Exporter, Enregistrer…) : coins arrondis, pas de pilule */
-  .charte-terrain :is(.topbar .actions .btn, .topbar .btn-back, .fab-history button) { border-radius: 14px; }
+  .charte-terrain :is(.topbar .actions .btn, .topbar .btn-back, .fab-history button) { border-radius: 8px; }
   /* Tutoriel : la zone expliquée entourée d'orange Ballon (le vert se confondait avec les cartes) */
-  .charte-terrain .tour-spot { outline: 4px solid var(--accent); outline-offset: 2px; border-radius: 22px; }
+  .charte-terrain .tour-spot { outline: 4px solid var(--accent); outline-offset: 2px; border-radius: 14px; }
   /* Cartes très arrondies, ombre plate (marche de 2 px) ; ce qui flotte garde une ombre douce */
-  .charte-terrain :is(.todo-card, .hub-tile, .ev-card, .lib-card, .admin-card, .sponsor-card, .sponsor-box, .pres-card, .soon-card, .kpi, .club-card, .member-card) { border-radius: 20px; box-shadow: var(--shadow); }
+  .charte-terrain :is(.todo-card, .hub-tile, .ev-card, .lib-card, .admin-card, .sponsor-card, .sponsor-box, .pres-card, .soon-card, .kpi, .club-card, .member-card) { border-radius: 12px; box-shadow: var(--shadow); }
   .charte-terrain :is(.modal-box, .menu, .rs-pop, .tour-card, .toast) { box-shadow: var(--shadow-pop); }
-  .charte-terrain .modal-box { border-radius: 24px; }
-  @media (max-width: 900px) { .charte-terrain .modal-box { border-radius: 24px 24px 0 0; } }
-  .charte-terrain :is(input, select, textarea):not([type=checkbox]):not([type=radio]):not(.title-input) { border-radius: 12px; }
+  .charte-terrain .modal-box { border-radius: 14px; }
+  @media (max-width: 900px) { .charte-terrain .modal-box { border-radius: 14px 14px 0 0; } }
+  .charte-terrain :is(input, select, textarea):not([type=checkbox]):not([type=radio]):not(.title-input) { border-radius: 8px; }
   /* Focus clavier : anneau orange Ballon */
   .charte-terrain :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent); }
   /* Terrain des stratégies : vert Pelouse de la charte (à l'écran ; les exports gardent leurs couleurs) */
   .charte-terrain .field > rect:first-child { fill: var(--field); }
   /* Pastille de date des événements : vert pâle, chiffre en Archivo */
-  .charte-terrain .ev-date { border-radius: 16px; }
+  .charte-terrain .ev-date { border-radius: 10px; }
 }
