@@ -6,7 +6,7 @@
   <title>Rugbeo – L’appli des clubs de rugby</title>
   <meta name="description" content="Rugbeo, l’appli des clubs de rugby : stratégies animées, convocations, compos et feuilles de match. De la convoc’ au maillot, Rugbeo.">
   <meta name="application-name" content="Rugbeo">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230E7A4B'/%3E%3Cpath d='M20 20v26M44 20v26M20 35h24' fill='none' stroke='%23FFFFFF' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='17' r='5.5' fill='%23FFB020'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%230E7A4B'/%3E%3Cpath d='M20 20v26M44 20v26M20 35h24' fill='none' stroke='%23FFFFFF' stroke-width='5' stroke-linecap='round'/%3E%3Cellipse cx='32' cy='17' rx='7.2' ry='4.6' transform='rotate(-28 32 17)' fill='%23FFB020'/%3E%3C/svg%3E">
   <meta name="theme-color" content="#0e7a4b">
   <!-- Thème choisi (Compte → Réglages) appliqué avant l'affichage : pas d'éclair blanc en mode sombre -->
   <script>
@@ -54,7 +54,7 @@
 
 <!-- Écran de démarrage : visible pendant le téléchargement de l'appli (réseau lent), retiré dès qu'elle est prête -->
 <div id="boot" class="boot" role="status" aria-live="polite">
-  <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="32" class="boot-tile"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" class="boot-h" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" class="boot-dot"/></svg></div>
+  <div class="boot-ball" aria-hidden="true"><svg viewBox="0 0 64 64" width="64" height="64"><circle cx="32" cy="32" r="32" class="boot-tile"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" class="boot-h" stroke-width="5" stroke-linecap="round"/><ellipse cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)" class="boot-dot"/></svg></div>
   <strong class="boot-name">Rugbeo</strong>
   <p class="boot-msg">Chargement de ton club…</p>
   <div class="boot-bar" aria-hidden="true"><i></i></div>
@@ -1833,7 +1833,7 @@ img, svg { -webkit-user-drag: none; }
 <header id="hub-bar" class="topbar home-bar hub-bar">
   <div class="brand">
     <svg id="hub-logo-default" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
-    <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><circle class="lt-ball" cx="32" cy="17" r="5.5"/></svg>
+    <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><ellipse class="lt-ball" cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)"/></svg>
     <img id="hub-logo" class="hub-logo hidden" alt="">
     <strong id="hub-title">Rugbeo</strong>
     <select id="hub-team" class="hub-team hidden" aria-label="Changer d’équipe"></select>
@@ -1957,7 +1957,7 @@ img, svg { -webkit-user-drag: none; }
   <header class="topbar home-bar">
     <div class="brand">
       <svg class="logo-classique" viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4a9e4f"/><ellipse cx="16" cy="16" rx="11" ry="6.5" fill="#fff" transform="rotate(-30 16 16)"/></svg>
-      <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><circle class="lt-ball" cx="32" cy="17" r="5.5"/></svg>
+      <svg class="logo-terrain" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><circle class="lt-disc" cx="32" cy="32" r="32"/><path class="lt-h" d="M20 20v26M44 20v26M20 35h24" fill="none" stroke-width="5" stroke-linecap="round"/><ellipse class="lt-ball" cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)"/></svg>
       <strong id="share-title">Stratégie partagée</strong>
     </div>
     <div class="actions">
@@ -10848,11 +10848,16 @@ const roleBadge = (r, plays) => `<span class="role-badge ${r}">${ROLE_LABEL[r] |
     done = onDone || null;
     build(); show(0);
   }
-  /** Première connexion : lance la visite si ce compte ne l'a jamais vue sur cet appareil. */
+  /** Première connexion : lance la visite si ce compte ne l'a jamais vue, sur aucun appareil.
+      Le « déjà vu » est gardé dans l'appareil et dans le compte (une appli réinstallée sur l'écran d'accueil repart d'un stockage vide). */
   function maybeStart(uid, role, onDone) {
-    let seen = false;
-    try { seen = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { seen = true; }
-    if (seen) { if (onDone) onDone(); return false; }
+    const A = window.RugbyAccount, user = A && A.user && A.user();
+    const kind = role === 'editor' ? 'editor' : 'home';
+    const tours = (user && user.user_metadata && user.user_metadata.tours) || [];
+    let local = false;
+    try { local = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { local = true; }
+    if (!tours.includes(kind) && A && A.sb) A.sb.auth.updateUser({ data: { tours: [...tours, kind] } }).catch(() => {});
+    if (local || tours.includes(kind)) { if (onDone) onDone(); return false; }
     start(role, onDone);
     return true;
   }

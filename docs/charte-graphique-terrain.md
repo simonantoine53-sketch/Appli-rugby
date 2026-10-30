@@ -21,10 +21,10 @@ Rugbeo, c'est le carnet de jeu du club amateur : le coach dessine ses combinaiso
 
 ## 2. Logo
 
-- **Symbole** : poteaux en H avec le ballon qui passe au-dessus de la barre (la transformation réussie), dans une pastille ronde.
+- **Symbole** : poteaux en H avec le ballon ovale, légèrement incliné, qui passe au-dessus de la barre (la transformation réussie), dans une pastille ronde. Icône d’écran d’accueil : fond vert plein, symbole agrandi (H sur environ la moitié de la largeur).
 - **Logotype** : « rugbeo », toujours en **minuscules**, Archivo 900, interlettrage −1,5 px. Composé en texte.
 - **Versions** : couleur (fond clair) · inversée (fond vert ou sombre) · monochrome (broderie, gravure, tampon).
-- **Zone de protection** : diamètre du ballon × 2 tout autour.
+- **Zone de protection** : longueur du ballon × 2 tout autour.
 - **Taille mini** : symbole 24 px écran / 8 mm print. Sous 32 px, symbole seul.
 - **Lockup** : symbole + logotype centrés verticalement, écart = 0,25 × hauteur du symbole.
 - **Interdits** : déformer, tourner, ombrer, recolorer le ballon, poser la version couleur sur une photo chargée, écrire « RUGBEO » en capitales.
@@ -33,13 +33,13 @@ Rugbeo, c'est le carnet de jeu du club amateur : le coach dessine ses combinaiso
 
 ```svg
 <!-- Couleur (fond clair) -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#0E7A4B"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" fill="#FFB020"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#0E7A4B"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/><ellipse cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)" fill="#FFB020"/></svg>
 
 <!-- Inversé (fond vert / sombre) -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#FFFFFF"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#0E7A4B" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" fill="#FFB020"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#FFFFFF"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#0E7A4B" stroke-width="5" stroke-linecap="round"/><ellipse cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)" fill="#FFB020"/></svg>
 
 <!-- Monochrome -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#0B3D2A"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/><circle cx="32" cy="17" r="5.5" fill="#FFFFFF"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#0B3D2A"/><path d="M20 20v26M44 20v26M20 35h24" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/><ellipse cx="32" cy="17" rx="7.2" ry="4.6" transform="rotate(-28 32 17)" fill="#FFFFFF"/></svg>
 ```
 
 ---
