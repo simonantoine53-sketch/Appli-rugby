@@ -136,11 +136,16 @@
     done = onDone || null;
     build(); show(0);
   }
-  /** Première connexion : lance la visite si ce compte ne l'a jamais vue sur cet appareil. */
+  /** Première connexion : lance la visite si ce compte ne l'a jamais vue, sur aucun appareil.
+      Le « déjà vu » est gardé dans l'appareil et dans le compte (une appli réinstallée sur l'écran d'accueil repart d'un stockage vide). */
   function maybeStart(uid, role, onDone) {
-    let seen = false;
-    try { seen = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { seen = true; }
-    if (seen) { if (onDone) onDone(); return false; }
+    const A = window.RugbyAccount, user = A && A.user && A.user();
+    const kind = role === 'editor' ? 'editor' : 'home';
+    const tours = (user && user.user_metadata && user.user_metadata.tours) || [];
+    let local = false;
+    try { local = !!localStorage.getItem(key(uid, role)); localStorage.setItem(key(uid, role), '1'); } catch (e) { local = true; }
+    if (!tours.includes(kind) && A && A.sb) A.sb.auth.updateUser({ data: { tours: [...tours, kind] } }).catch(() => {});
+    if (local || tours.includes(kind)) { if (onDone) onDone(); return false; }
     start(role, onDone);
     return true;
   }
